@@ -41,10 +41,19 @@
           lazyvimSetup = pkgs.writeShellScript "setup-lazyvim.sh" ''
             NVIM_CONFIG="$HOME/.config/nvim"
             
+            # Validate the config path before proceeding
+            if [ -z "$NVIM_CONFIG" ] || [ -z "$HOME" ]; then
+              echo "ERROR: Invalid configuration path" >&2
+              exit 1
+            fi
+            
             if [ ! -d "$NVIM_CONFIG" ]; then
               echo "Setting up LazyVim..."
               git clone https://github.com/LazyVim/starter "$NVIM_CONFIG"
-              rm -rf "$NVIM_CONFIG/.git"
+              # Remove .git directory from the cloned starter (safe since we just created it)
+              if [ -d "$NVIM_CONFIG/.git" ]; then
+                rm -rf "$NVIM_CONFIG/.git"
+              fi
               echo "LazyVim starter cloned to $NVIM_CONFIG"
               echo "Run 'nvim' to complete the setup."
             else
