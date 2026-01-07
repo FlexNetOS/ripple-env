@@ -87,26 +87,26 @@
                 value = toString colconDefaults;
               }
             ];
+            packages = with pkgs; [
+              pixi
+              neovim
+              git
+              gcc
+              gnumake
+              coreutils
+              ripgrep
+              fd
+              nodejs
+              tree-sitter
+            ];
+            commands = [
+              {
+                name = "setup-lazyvim";
+                help = "Initialize LazyVim configuration";
+                command = toString lazyvimSetup;
+              }
+            ];
             devshell = {
-              packages = with pkgs; [
-                pixi
-                neovim
-                git
-                gcc
-                gnumake
-                coreutils
-                ripgrep
-                fd
-                nodejs
-                tree-sitter
-              ];
-              commands = [
-                {
-                  name = "setup-lazyvim";
-                  help = "Initialize LazyVim configuration";
-                  command = toString lazyvimSetup;
-                }
-              ];
               startup.activate.text = ''
                 if [ -f pixi.toml ]; then
                   ${optionalString isDarwin ''
