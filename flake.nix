@@ -47,6 +47,20 @@
               exit 1
             fi
             
+            # Ensure the path is within the user's home directory
+            RESOLVED_PATH=$(cd "$(dirname "$NVIM_CONFIG")" 2>/dev/null && pwd -P)/$(basename "$NVIM_CONFIG") || true
+            if [ -n "$RESOLVED_PATH" ]; then
+              case "$RESOLVED_PATH" in
+                "$HOME"*)
+                  # Path is within home directory, safe to proceed
+                  ;;
+                *)
+                  echo "ERROR: Config path must be within home directory" >&2
+                  exit 1
+                  ;;
+              esac
+            fi
+            
             if [ ! -d "$NVIM_CONFIG" ]; then
               echo "Setting up LazyVim..."
               git clone https://github.com/LazyVim/starter "$NVIM_CONFIG"

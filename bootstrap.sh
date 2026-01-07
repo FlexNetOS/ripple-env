@@ -109,12 +109,13 @@ main() {
     echo ""
     
     # Enter the dev shell and run pixi install
-    nix develop --command bash -c '
+    # Using a here-doc for better readability
+    nix develop --command bash <<'DEVSHELL_SCRIPT'
         set -euo pipefail
         
         # Verify pixi is available
         if ! command -v pixi &> /dev/null; then
-            echo -e "'"${RED}"'ERROR: pixi is not available in the dev shell'"${NC}"'" >&2
+            echo "ERROR: pixi is not available in the dev shell" >&2
             exit 1
         fi
         
@@ -124,13 +125,13 @@ main() {
         pixi install
         
         echo ""
-        echo -e "'"${GREEN}"'Bootstrap completed successfully!'"${NC}"'"
+        echo "Bootstrap completed successfully!"
         echo ""
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo "  Next Steps"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
-    '
+DEVSHELL_SCRIPT
     
     exit_code=$?
     
