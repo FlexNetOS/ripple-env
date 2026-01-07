@@ -47,19 +47,23 @@
               exit 1
             fi
             
+            # Create parent directory if it doesn't exist for realpath to work
+            mkdir -p "$(dirname "$NVIM_CONFIG")"
+            
+            # Canonicalize paths to prevent traversal attacks
+            CANONICAL_CONFIG=$(realpath -m "$NVIM_CONFIG")
+            CANONICAL_HOME=$(realpath "$HOME")
+            
             # Ensure the path is within the user's home directory
-            RESOLVED_PATH=$(cd "$(dirname "$NVIM_CONFIG")" 2>/dev/null && pwd -P)/$(basename "$NVIM_CONFIG") || true
-            if [ -n "$RESOLVED_PATH" ]; then
-              case "$RESOLVED_PATH" in
-                "$HOME"*)
-                  # Path is within home directory, safe to proceed
-                  ;;
-                *)
-                  echo "ERROR: Config path must be within home directory" >&2
-                  exit 1
-                  ;;
-              esac
-            fi
+            case "$CANONICAL_CONFIG" in
+              "$CANONICAL_HOME"/*)
+                # Path is within home directory, safe to proceed
+                ;;
+              *)
+                echo "ERROR: Config path must be within home directory" >&2
+                exit 1
+                ;;
+            esac
             
             if [ ! -d "$NVIM_CONFIG" ]; then
               echo "Setting up LazyVim..."
@@ -90,6 +94,7 @@
                 git
                 gcc
                 gnumake
+                coreutils
                 ripgrep
                 fd
                 nodejs
