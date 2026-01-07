@@ -60,6 +60,28 @@ check_pixi_in_shell() {
     return 0
 }
 
+# Check and recommend direnv
+check_direnv() {
+    if command -v direnv &> /dev/null; then
+        print_success "direnv is installed"
+        return 0
+    else
+        print_info "direnv is not installed (recommended for automatic environment activation)"
+        echo ""
+        echo "To install direnv:"
+        echo "  - macOS: brew install direnv"
+        echo "  - Ubuntu/Debian: sudo apt install direnv"
+        echo "  - Fedora: sudo dnf install direnv"
+        echo "  - Arch: sudo pacman -S direnv"
+        echo ""
+        echo "After installation, add to your shell config:"
+        echo "  - bash: echo 'eval \"\$(direnv hook bash)\"' >> ~/.bashrc"
+        echo "  - zsh: echo 'eval \"\$(direnv hook zsh)\"' >> ~/.zshrc"
+        echo ""
+        return 1
+    fi
+}
+
 # Main bootstrap process
 main() {
     echo "=========================================="
@@ -73,6 +95,14 @@ main() {
     fi
     
     check_pixi_in_shell
+    
+    echo ""
+    
+    # Check for direnv (recommended)
+    DIRENV_AVAILABLE=0
+    if check_direnv; then
+        DIRENV_AVAILABLE=1
+    fi
     
     echo ""
     print_info "Entering Nix dev shell and running pixi install..."
@@ -96,18 +126,36 @@ main() {
         echo ""
         echo -e "'"${GREEN}"'Bootstrap completed successfully!'"${NC}"'"
         echo ""
-        echo "To enter the development environment, run:"
-        echo "  nix develop"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "  Next Steps"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
-        echo "Or use direnv for automatic activation:"
-        echo "  direnv allow"
     '
     
     exit_code=$?
     
     if [ $exit_code -eq 0 ]; then
+        # Provide next steps based on whether direnv is available
+        if [ $DIRENV_AVAILABLE -eq 1 ]; then
+            echo "RECOMMENDED: Use direnv for automatic environment activation"
+            echo ""
+            echo "  1. Allow direnv for this directory:"
+            echo "     direnv allow"
+            echo ""
+            echo "  2. The environment will activate automatically when you cd into this directory"
+            echo ""
+            echo "Or manually enter the environment:"
+            echo "  nix develop"
+        else
+            echo "To enter the development environment:"
+            echo ""
+            echo "  nix develop"
+            echo ""
+            echo "RECOMMENDED: Install direnv for automatic environment activation"
+            echo "  (see installation instructions above)"
+        fi
         echo ""
-        print_success "Bootstrap completed successfully!"
+        print_success "Setup complete!"
     else
         echo ""
         print_error "Bootstrap failed with exit code $exit_code"

@@ -74,6 +74,28 @@ function Test-IsWSL {
     return $false
 }
 
+# Check and recommend direnv
+function Test-Direnv {
+    try {
+        $direnvPath = Get-Command direnv -ErrorAction Stop
+        Write-Success-Message "direnv is installed at: $($direnvPath.Source)"
+        return $true
+    }
+    catch {
+        Write-Info-Message "direnv is not installed (recommended for automatic environment activation)"
+        Write-Host ""
+        Write-Host "To install direnv:"
+        Write-Host "  - On WSL2/Linux: sudo apt install direnv (Ubuntu/Debian)"
+        Write-Host "  - On macOS: brew install direnv"
+        Write-Host ""
+        Write-Host "After installation, add to your shell config:"
+        Write-Host "  - bash: echo 'eval `"`$(direnv hook bash)`"' >> ~/.bashrc"
+        Write-Host "  - zsh: echo 'eval `"`$(direnv hook zsh)`"' >> ~/.zshrc"
+        Write-Host ""
+        return $false
+    }
+}
+
 # Main bootstrap process
 function Start-Bootstrap {
     Write-Host "=========================================="
@@ -93,6 +115,10 @@ function Start-Bootstrap {
     }
     
     Write-Info-Message "Pixi will be provided by the Nix dev shell"
+    Write-Host ""
+    
+    # Check for direnv (recommended)
+    $direnvAvailable = Test-Direnv
     Write-Host ""
     
     Write-Info-Message "Entering Nix dev shell and running pixi install..."
@@ -116,11 +142,10 @@ pixi install
 echo ''
 echo 'Bootstrap completed successfully!'
 echo ''
-echo 'To enter the development environment, run:'
-echo '  nix develop'
+echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+echo '  Next Steps'
+echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 echo ''
-echo 'Or use direnv for automatic activation:'
-echo '  direnv allow'
 "@
     
     try {
@@ -128,7 +153,30 @@ echo '  direnv allow'
         
         if ($LASTEXITCODE -eq 0) {
             Write-Host ""
-            Write-Success-Message "Bootstrap completed successfully!"
+            
+            # Provide next steps based on whether direnv is available
+            if ($direnvAvailable) {
+                Write-Host "RECOMMENDED: Use direnv for automatic environment activation" -ForegroundColor Green
+                Write-Host ""
+                Write-Host "  1. Allow direnv for this directory:"
+                Write-Host "     direnv allow"
+                Write-Host ""
+                Write-Host "  2. The environment will activate automatically when you cd into this directory"
+                Write-Host ""
+                Write-Host "Or manually enter the environment:"
+                Write-Host "  nix develop"
+            }
+            else {
+                Write-Host "To enter the development environment:" -ForegroundColor Yellow
+                Write-Host ""
+                Write-Host "  nix develop"
+                Write-Host ""
+                Write-Host "RECOMMENDED: Install direnv for automatic environment activation"
+                Write-Host "  (see installation instructions above)"
+            }
+            
+            Write-Host ""
+            Write-Success-Message "Setup complete!"
         }
         else {
             Write-Host ""

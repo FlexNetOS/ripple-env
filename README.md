@@ -9,13 +9,13 @@ this repository provides a complete development setup for ros2 humble with all n
 - **nix flakes**: for reproducible, declarative environment setup
 - **pixi**: for python and ros package management via robostack
 - **neovim + lazyvim**: for ide functionality with ros2, python, c/c++, and web ui support
-- **direnv** (optional): for automatic environment activation
+- **direnv** (recommended): for automatic environment activation
 
 ## quick start
 
 ### bootstrap (recommended)
 
-the easiest way to get started is using the bootstrap scripts:
+the easiest way to get started is using the bootstrap scripts. they will verify prerequisites, set up the environment, and recommend using direnv for automatic activation:
 
 **linux/macos/wsl2:**
 ```bash
@@ -29,9 +29,14 @@ the easiest way to get started is using the bootstrap scripts:
 
 these scripts will:
 1. verify nix is installed with flakes enabled
-2. enter the nix dev shell
-3. run pixi install to set up ros2 and dependencies
-4. provide clear error messages if prerequisites are missing
+2. check for direnv (recommended) and provide installation instructions if missing
+3. enter the nix dev shell
+4. run pixi install to set up ros2 and dependencies
+5. provide clear error messages if prerequisites are missing
+
+after bootstrap completes:
+- **if you have direnv**: run `direnv allow` and the environment will activate automatically whenever you cd into the directory
+- **without direnv**: use `nix develop` to manually enter the environment
 
 ### manual setup
 
@@ -39,6 +44,37 @@ these scripts will:
 
 - nix with flakes enabled
 - git
+- direnv (recommended for automatic environment activation)
+
+#### installing direnv (recommended)
+
+direnv automatically loads the development environment when you enter the directory:
+
+**macos:**
+```bash
+brew install direnv
+echo 'eval "$(direnv hook bash)"' >> ~/.bashrc  # or ~/.zshrc for zsh
+```
+
+**ubuntu/debian:**
+```bash
+sudo apt install direnv
+echo 'eval "$(direnv hook bash)"' >> ~/.bashrc  # or ~/.zshrc for zsh
+```
+
+**fedora:**
+```bash
+sudo dnf install direnv
+echo 'eval "$(direnv hook bash)"' >> ~/.bashrc  # or ~/.zshrc for zsh
+```
+
+**arch linux:**
+```bash
+sudo pacman -S direnv
+echo 'eval "$(direnv hook bash)"' >> ~/.bashrc  # or ~/.zshrc for zsh
+```
+
+after installing direnv, restart your shell or source your shell config file.
 
 #### installing nix (if not already installed)
 
