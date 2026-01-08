@@ -5,10 +5,72 @@
 | Component | Current Implementation | Status |
 |-----------|----------------------|--------|
 | Package Manager | Nix Flakes + Pixi (RoboStack) | ✅ Active |
-| Dev Shell | numtide/devshell | ✅ Active |
+| Dev Shell | numtide/devshell via flake-parts | ✅ Active |
 | Env Activation | direnv (`.envrc` with `use flake`) | ✅ Active |
-| Python | 3.11.x via Pixi/conda-forge | ✅ Active |
+| Python | 3.11.14+ via Pixi/conda-forge | ✅ Active |
 | ROS | ros-humble-desktop via RoboStack | ✅ Active |
+| Multi-platform | nix-systems/default (linux-64, osx-64, osx-arm64, linux-aarch64) | ✅ Active |
+
+### Current Architecture Details
+
+```
+ros2-humble-env/
+├── .envrc                    # direnv: `use flake`
+├── .pixi/
+│   └── config.toml           # Pixi: run-post-link-scripts = "insecure"
+├── flake.nix                 # Nix flake with devshell
+├── flake.lock                # Locked: nixpkgs-unstable, flake-parts, devshell, nix-systems
+├── pixi.toml                 # RoboStack channels + ROS dependencies
+├── pixi.lock                 # Locked conda/RoboStack packages (~1.6MB)
+└── docs/
+    └── TOOLING-ANALYSIS.md   # This file
+```
+
+### Key Configuration Details
+
+**flake.nix structure (flake-parts + devshell):**
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    systems.url = "github:nix-systems/default";
+    devshell.url = "github:numtide/devshell";
+  };
+  outputs = inputs: flake-parts.lib.mkFlake { inherit inputs; } {
+    imports = [ devshell.flakeModule ];
+    perSystem = { pkgs, ... }: {
+      devshells.default = {
+        env = [{ name = "COLCON_DEFAULTS_FILE"; value = "..."; }];
+        devshell = {
+          packages = with pkgs; [ pixi ];
+          startup.activate.text = ''eval "$(pixi shell-hook)"'';
+        };
+      };
+    };
+  };
+}
+```
+
+**Platform-specific handling:**
+- macOS: Sets `DYLD_FALLBACK_LIBRARY_PATH` for Pixi libraries
+- macOS: Adds `-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON` to colcon cmake-args
+- All: Configures `COLCON_DEFAULTS_FILE` with compile_commands.json generation
+
+**Pixi configuration (`.pixi/config.toml`):**
+```toml
+run-post-link-scripts = "insecure"
+```
+This enables conda post-link scripts required for ROS package activation.
+
+**pixi.toml dependencies (via RoboStack):**
+| Category | Packages |
+|----------|----------|
+| Python | `python >=3.11.14,<3.12` |
+| Build Tools | `compilers`, `cmake >=4.2.0`, `pkg-config`, `make`, `ninja` |
+| ROS Tools | `rosdep`, `colcon-common-extensions`, `catkin_tools` |
+| ROS Core | `ros-humble-desktop >=0.10.0` |
+| Channels | `robostack-humble`, `conda-forge` |
 
 ---
 
@@ -26,9 +88,9 @@
 | **Nix Package** | `pkgs.aider-chat` available in nixpkgs |
 | **Integration Notes** | Works alongside any editor; can add to devshell packages |
 
-**Upgrade Path:**
+**Upgrade Path (flake-parts/devshell syntax):**
 ```nix
-devshell.packages = with pkgs; [
+devshells.default.devshell.packages = with pkgs; [
   pixi
   aider-chat  # Add AI pair programming
 ];
@@ -62,12 +124,21 @@ devshell.packages = with pkgs; [
 | **Current Overlap** | Pixi already handles Python/conda versioning |
 | **Recommendation** | **NOT NEEDED** - Nix+Pixi provides superior reproducibility |
 
-**Analysis:**
-- mise replaces asdf/nvm/pyenv but your current stack (Nix Flakes + Pixi) already provides:
-  - Reproducible package versioning via `flake.lock` + `pixi.lock`
-  - Environment activation via direnv
-  - Cross-platform support
-- mise would add complexity without clear benefit
+**Detailed Overlap Analysis:**
+
+| mise Feature | Current Stack Equivalent |
+|--------------|-------------------------|
+| Tool versioning | `flake.lock` (Nix) + `pixi.lock` (conda) |
+| Python version | `pixi.toml`: `python = ">=3.11.14,<3.12"` |
+| Environment activation | `direnv` + `use flake` + `pixi shell-hook` |
+| `.tool-versions` | Not needed - versions locked in `*.lock` files |
+| Plugin ecosystem | RoboStack channel + nixpkgs |
+| Cross-platform | `nix-systems/default` + pixi platforms |
+
+**Conclusion:** mise would add a third layer of tooling without improving reproducibility. The current Nix+Pixi stack provides:
+- **Stronger guarantees**: Cryptographic hashes in lock files
+- **Atomic rollbacks**: Via Nix generations
+- **No shims**: Pixi uses shell-hook, Nix modifies PATH directly
 
 #### direnv (14.5k ⭐)
 | Aspect | Details |
@@ -185,7 +256,8 @@ ros2-humble-env/
 **Recommendation:** Ship in foundation dev shell as lightweight AI CLI.
 
 ```nix
-devshell.packages = with pkgs; [
+# In flake.nix perSystem block:
+devshells.default.devshell.packages = with pkgs; [
   pixi
   aichat  # Tiny, provider-agnostic AI CLI
 ];
@@ -206,7 +278,8 @@ devshell.packages = with pkgs; [
 
 ### Foundation Layer (Default Dev Shell)
 ```nix
-devshell.packages = with pkgs; [
+# In flake.nix perSystem block:
+devshells.default.devshell.packages = with pkgs; [
   # Current
   pixi
 
@@ -225,19 +298,49 @@ devshell.packages = with pkgs; [
 | `devcontainer` | devpod | Remote dev environments |
 | `sandbox` | boxxy | Linux XDG sandboxing |
 
-### Proposed flake.nix Structure
+### Proposed flake.nix Structure (flake-parts + devshell)
 ```nix
 {
-  outputs = { ... }: {
-    devShells = {
-      default = { /* base shell with pixi + aichat */ };
-
-      # Feature variants
-      ai-heavy = { /* adds aider, cc-mirror */ };
-      full = { /* all tools */ };
-    };
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    systems.url = "github:nix-systems/default";
+    devshell.url = "github:numtide/devshell";
   };
+
+  outputs = inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = import inputs.systems;
+      imports = [ inputs.devshell.flakeModule ];
+
+      perSystem = { pkgs, ... }: {
+        # Default shell: foundation tools
+        devshells.default = {
+          devshell.packages = with pkgs; [ pixi aichat ];
+          # ... existing env and startup config
+        };
+
+        # AI-heavy variant
+        devshells.ai-heavy = {
+          devshell.packages = with pkgs; [ pixi aichat aider-chat ];
+        };
+
+        # Full toolset
+        devshells.full = {
+          devshell.packages = with pkgs; [
+            pixi aichat aider-chat xdg-ninja
+          ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [ boxxy ];
+        };
+      };
+    };
 }
+```
+
+**Usage:**
+```bash
+nix develop              # default shell
+nix develop .#ai-heavy   # with aider
+nix develop .#full       # all tools
 ```
 
 ---
