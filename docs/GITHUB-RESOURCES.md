@@ -21,6 +21,32 @@ This document catalogs external GitHub resources evaluated for integration with 
 
 ---
 
+## ⚠️ Critical Conflicts Warning
+
+Before integrating any tools, be aware of these conflicts:
+
+| Tool | Conflict | Resolution |
+|------|----------|------------|
+| **Unsloth** | PyTorch version specificity (3.11 only) | Use Docker: `docker run -it unsloth/unsloth` |
+| **ComfyUI** | PyTorch/CUDA conflicts with ROS2 env | Use dedicated flake: `nix run github:utensils/comfyui-nix` |
+| **Agentic Flow** | Node.js ecosystem, not Python | ❌ **Not recommended** for ROS2 |
+| **AGiXT** | Requires Docker Compose | Docker only, no Nix integration |
+| **SQLx** | Requires database at compile time | Use `naersk` with prepared DB image |
+| **PyO3/maturin** | Complex Nix+Python builds | Use Pixi for builds, `naersk` for packaging |
+| **Trivy** | Limited NixOS filesystem scanning | Use `vulnix` for Nix packages instead |
+
+### Python Version Matrix
+
+| Tool | Required Python | ROS2 Humble (3.10) |
+|------|-----------------|-------------------|
+| AIOS/Cerebrum | 3.10/3.11 only | ✅ Compatible |
+| TruLens | 3.9+ | ✅ Compatible |
+| Memori | 3.10+ | ✅ Compatible |
+| ComfyUI | 3.12-3.13 | ❌ **Separate env required** |
+| Unsloth | 3.11-3.13 | ⚠️ Separate env recommended |
+
+---
+
 ## Table of Contents
 
 1. [AI Agent Platforms](#ai-agent-platforms)

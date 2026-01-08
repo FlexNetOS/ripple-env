@@ -115,6 +115,14 @@
             btop
             htop
 
+            # Infrastructure & Monitoring (from GitHub resources research)
+            # See docs/GITHUB-RESOURCES.md for full analysis
+            prometheus          # Metrics collection for ROS2 DDS
+            nats-server         # WAN/multi-site robot messaging
+            trippy              # Network diagnostics for DDS traffic
+            trivy               # Container/SBOM security scanning
+            opa                 # Policy enforcement for ROS2 topics
+
             # Shells
             zsh
             nushell
@@ -128,6 +136,10 @@
             # AI assistants
             aichat
             aider-chat
+
+            # AI inference (edge/local models)
+            # local-ai           # Uncomment when needed - large package (~2GB)
+                                 # Alternative: docker run -p 8080:8080 localai/localai
 
             # Audio (for aider voice features)
             portaudio
