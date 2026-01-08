@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ROS2 Humble Environment Configuration Schema",
+  "description": "Schema for validating project configuration",
+  "type": "object",
+  "properties": {
+    "environment": {
+      "type": "object",
+      "description": "Environment settings",
+      "properties": {
+        "rosDistro": {
+          "type": "string",
+          "default": "humble",
+          "enum": ["humble", "iron", "jazzy"],
+          "description": "ROS2 distribution"
+        },
+        "pythonVersion": {
+          "type": "string",
+          "default": "3.11",
+          "pattern": "^3\\.[0-9]+$",
+          "description": "Python version"
+        },
+        "nixChannel": {
+          "type": "string",
+          "default": "nixos-unstable",
+          "description": "Nix channel for packages"
+        }
+      }
+    },
+    "development": {
+      "type": "object",
+      "description": "Development tool settings",
+      "properties": {
+        "editor": {
+          "type": "string",
+          "enum": ["helix", "vim", "neovim", "vscode"],
+          "default": "helix",
+          "description": "Primary code editor"
+        },
+        "shell": {
+          "type": "string",
+          "enum": ["bash", "zsh", "nushell"],
+          "default": "bash",
+          "description": "Default shell"
+        },
+        "prompt": {
+          "type": "string",
+          "enum": ["starship", "powerlevel10k", "pure"],
+          "default": "starship",
+          "description": "Shell prompt"
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "description": "Build configuration",
+      "properties": {
+        "symlinkInstall": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use --symlink-install for development"
+        },
+        "parallelJobs": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 4,
+          "description": "Number of parallel build jobs"
+        },
+        "buildType": {
+          "type": "string",
+          "enum": ["Debug", "Release", "RelWithDebInfo"],
+          "default": "Debug",
+          "description": "CMake build type"
+        }
+      }
+    },
+    "agents": {
+      "type": "object",
+      "description": "Agent configuration",
+      "properties": {
+        "enabled": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["robotics", "devops", "nix", "coordinator"]
+          },
+          "default": ["robotics", "devops", "nix", "coordinator"],
+          "description": "Enabled agent types"
+        },
+        "defaultAgent": {
+          "type": "string",
+          "default": "coordinator",
+          "description": "Default agent for unrouted requests"
+        }
+      }
+    },
+    "platforms": {
+      "type": "object",
+      "description": "Platform-specific settings",
+      "properties": {
+        "linux": {
+          "type": "object",
+          "properties": {
+            "docker": { "type": "boolean", "default": true },
+            "udevRules": { "type": "boolean", "default": true }
+          }
+        },
+        "macos": {
+          "type": "object",
+          "properties": {
+            "homebrew": { "type": "boolean", "default": false },
+            "rosetta": { "type": "boolean", "default": true }
+          }
+        },
+        "wsl2": {
+          "type": "object",
+          "properties": {
+            "diskSizeGB": { "type": "integer", "default": 1024 },
+            "swapSizeGB": { "type": "integer", "default": 8 }
+          }
+        }
+      }
+    }
+  },
+  "required": ["environment"],
+  "additionalProperties": false
+}

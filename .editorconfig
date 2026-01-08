@@ -1,0 +1,64 @@
+# EditorConfig - Cross-editor consistency
+# https://editorconfig.org
+
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Nix files
+[*.nix]
+indent_size = 2
+
+# Python files
+[*.py]
+indent_size = 4
+max_line_length = 100
+
+# Shell scripts
+[*.{sh,bash}]
+indent_size = 2
+
+# PowerShell
+[*.{ps1,psm1,psd1}]
+indent_size = 4
+end_of_line = crlf
+
+# YAML/TOML configuration
+[*.{yaml,yml,toml}]
+indent_size = 2
+
+# JSON configuration
+[*.json]
+indent_size = 2
+
+# Markdown documentation
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 100
+
+# Makefile requires tabs
+[Makefile]
+indent_style = tab
+
+# CMake files
+[CMakeLists.txt]
+indent_size = 2
+
+[*.cmake]
+indent_size = 2
+
+# XML (ROS launch files, URDF, etc.)
+[*.{xml,xacro,urdf,launch}]
+indent_size = 2
+
+# Lock files - don't modify
+[{*.lock,flake.lock,pixi.lock}]
+indent_size = 2
+insert_final_newline = false

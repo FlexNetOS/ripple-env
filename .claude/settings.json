@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "ros2-humble-env",
+  "description": "ROS2 Humble development environment configuration",
+  "model": "claude-sonnet-4-20250514",
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(colcon *)",
+      "Bash(pixi *)",
+      "Bash(nix *)",
+      "Bash(nom *)",
+      "Bash(ros2 *)",
+      "Bash(direnv *)",
+      "Bash(gh *)",
+      "Bash(cmake *)",
+      "Bash(make *)",
+      "Bash(python *)",
+      "Bash(shellcheck *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(mkdir *)",
+      "Bash(rm -rf build install log)",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(sudo *)",
+      "Bash(chmod 777 *)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/.secrets/**)",
+      "Write(.env)",
+      "Write(.env.*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "matcher": ".*",
+        "command": [".claude/hooks/session-start.sh"],
+        "timeout": 30000
+      }
+    ]
+  },
+  "context": {
+    "include": [
+      ".claude/CLAUDE.md",
+      ".claude/AGENT.md",
+      ".claude/RULES.md",
+      "README.md",
+      "flake.nix"
+    ],
+    "exclude": [
+      "*.lock",
+      "node_modules/**",
+      ".pixi/**",
+      "build/**",
+      "install/**",
+      "log/**"
+    ]
+  }
+}

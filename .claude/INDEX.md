@@ -10,6 +10,15 @@
 | [RULES](./RULES.md) | Guidelines and coding standards |
 | [SKILL](./SKILL.md) | Available skills and tool reference |
 
+### Configuration
+
+| File | Description |
+|------|-------------|
+| [settings.json](./settings.json) | Permissions, hooks, and context configuration |
+| [.mcp.json](../.mcp.json) | MCP server configuration |
+| [.editorconfig](../.editorconfig) | Editor consistency settings |
+| [schema.json](./config/schema.json) | Configuration validation schema |
+
 ### Skills (Structured)
 
 | Skill | Description |
@@ -17,6 +26,15 @@
 | [ROS2 Development](./skills/ros2-development/README.md) | Building, testing, and running ROS2 packages |
 | [DevOps](./skills/devops/README.md) | CI/CD, GitHub workflows, automation |
 | [Nix Environment](./skills/nix-environment/README.md) | Flakes, home-manager, environment management |
+
+### Agent Roles
+
+| Agent | Description |
+|-------|-------------|
+| [Coordinator](./agents/coordinator.md) | Multi-agent task routing and orchestration |
+| [Robotics Agent](./agents/robotics-agent.md) | ROS2 development specialist |
+| [DevOps Agent](./agents/devops-agent.md) | CI/CD and infrastructure specialist |
+| [Nix Agent](./agents/nix-agent.md) | Environment configuration specialist |
 
 ### Slash Commands
 
@@ -37,18 +55,32 @@ ros2-humble-env/
 │   ├── CLAUDE.md                     # Claude Code instructions
 │   ├── RULES.md                      # Rules and guidelines
 │   ├── SKILL.md                      # Skills reference (summary)
+│   ├── settings.json                 # Permissions, hooks, context config
+│   ├── settings.local.json           # Local overrides (gitignored)
 │   ├── skills/                       # Structured skill definitions
-│   │   ├── ros2-development/         # ROS2 development expertise
+│   │   ├── ros2-development/
 │   │   │   └── README.md
-│   │   ├── devops/                   # DevOps and CI/CD
+│   │   ├── devops/
 │   │   │   └── README.md
-│   │   └── nix-environment/          # Nix and environment management
+│   │   └── nix-environment/
 │   │       └── README.md
-│   └── commands/                     # Slash command definitions
-│       ├── build.md                  # /build - colcon build
-│       ├── test.md                   # /test - colcon test
-│       ├── flake-check.md            # /flake-check - validate flake
-│       └── update-deps.md            # /update-deps - update dependencies
+│   ├── commands/                     # Slash command definitions
+│   │   ├── build.md
+│   │   ├── test.md
+│   │   ├── flake-check.md
+│   │   └── update-deps.md
+│   ├── agents/                       # Agent role definitions
+│   │   ├── coordinator.md            # Multi-agent orchestration
+│   │   ├── robotics-agent.md         # ROS2 specialist
+│   │   ├── devops-agent.md           # CI/CD specialist
+│   │   └── nix-agent.md              # Environment specialist
+│   ├── hooks/                        # Hook scripts
+│   │   └── session-start.sh          # Workspace initialization
+│   └── config/
+│       └── schema.json               # Configuration validation schema
+│
+├── .mcp.json                         # MCP server configuration
+├── .editorconfig                     # Editor consistency settings
 │
 ├── .github/
 │   ├── workflows/
