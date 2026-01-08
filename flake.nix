@@ -255,6 +255,68 @@
             '';
           };
 
+          # CUDA-enabled shell for GPU workloads
+          # Usage: nix develop .#cuda
+          # Requires: NVIDIA GPU with drivers installed
+          devShells.cuda = pkgs.mkShell {
+            packages = commonPackages ++ commandWrappers ++ linuxPackages ++ (with pkgs; [
+              # CUDA Toolkit 12.x (13.1 not yet in nixpkgs as of Jan 2025)
+              # Binary cache: https://cuda-maintainers.cachix.org
+              cudaPackages.cudatoolkit
+              cudaPackages.cudnn
+              cudaPackages.cutensor
+              cudaPackages.nccl
+
+              # GPU monitoring
+              nvtopPackages.full
+            ]);
+
+            COLCON_DEFAULTS_FILE = toString colconDefaults;
+            EDITOR = "hx";
+            VISUAL = "hx";
+
+            # CUDA environment variables
+            CUDA_PATH = "${pkgs.cudaPackages.cudatoolkit}";
+
+            shellHook = ''
+              # Initialize pixi environment with CUDA feature
+              if [ -f pixi.toml ]; then
+                eval "$(pixi shell-hook -e cuda 2>/dev/null || pixi shell-hook)"
+              fi
+
+              # Initialize direnv
+              eval "$(direnv hook bash)"
+
+              # Initialize zoxide
+              eval "$(zoxide init bash)"
+
+              # Initialize starship prompt
+              eval "$(starship init bash)"
+
+              # Verify CUDA availability
+              if command -v nvidia-smi &> /dev/null; then
+                echo ""
+                echo "🚀 ROS2 Humble + CUDA Development Environment"
+                echo "=============================================="
+                echo "  Platform: Linux (${system}) with NVIDIA GPU"
+                nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null | head -1 | while read line; do
+                  echo "  GPU: $line"
+                done
+                echo "  CUDA: ${pkgs.cudaPackages.cudatoolkit.version}"
+                echo ""
+                echo "PyTorch CUDA verification:"
+                echo "  python -c \"import torch; print(torch.cuda.is_available())\""
+                echo ""
+              else
+                echo ""
+                echo "⚠️  Warning: nvidia-smi not found"
+                echo "   CUDA toolkit is available but GPU drivers may not be installed."
+                echo "   Install NVIDIA drivers on your host system."
+                echo ""
+              fi
+            '';
+          };
+
           # Minimal shell for CI
           devShells.ci = pkgs.mkShell {
             packages = with pkgs; [
