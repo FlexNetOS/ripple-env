@@ -31,6 +31,7 @@ nom develop
 
 ## Goal
 
+### Bootstrap Environment
 - ✅ A single script run from Windows PowerShell that checks for Linux and WSL2 install, then installs and updates them as needed.
 - ✅ Creates the NixOS Distro, registers it, creates the ext4.vhdx hard disk image 1TB, and swap image.
 - ✅ Loads the nix flake and configurations per direnv
@@ -38,6 +39,19 @@ nom develop
 - ✅ Adds zsh and nushell (bash stays default with nix)
 - ✅ Uses nom instead of nix
 - ✅ Installs git and gh cli
+
+### Agentic System
+- 🔄 Agentic system that runs robotics, DevOps, user's personal life and work life
+- ✅ Modular and Portable - Configuration modules can be imported into any Nix flake
+- ✅ Built for Cross-platform Use - Linux, macOS, and Windows (WSL2) support
+- ✅ Clear Configs and Schema - Documented options with types and defaults
+
+### Documentation
+- ✅ [AGENT.md](.claude/AGENT.md) - Agent system architecture and capabilities
+- ✅ [CLAUDE.md](.claude/CLAUDE.md) - Claude Code specific instructions
+- ✅ [RULES.md](.claude/RULES.md) - Rules and contribution guidelines
+- ✅ [SKILL.md](.claude/SKILL.md) - Available skills and tool reference
+- ✅ [INDEX.md](.claude/INDEX.md) - Documentation navigation
 
 ## Overview
 

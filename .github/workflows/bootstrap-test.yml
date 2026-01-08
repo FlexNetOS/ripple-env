@@ -16,10 +16,13 @@ on:
   workflow_dispatch:
     inputs:
       run_windows_e2e:
-        description: 'Run Windows WSL2 end-to-end test'
+        description: 'Run Windows WSL2 end-to-end test (requires self-hosted runner)'
         required: false
         default: 'true'
-        type: boolean
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   bootstrap-linux:
@@ -211,8 +214,9 @@ jobs:
     name: Bootstrap Test (Windows WSL2 - E2E)
     runs-on: [self-hosted, Windows, WSL2]
     timeout-minutes: 90
-    # Only run on workflow_dispatch or if self-hosted runner is available
-    if: github.event_name == 'workflow_dispatch' || github.event.inputs.run_windows_e2e == 'true'
+    # Run unless explicitly disabled via workflow_dispatch
+    # For push/PR events: always attempt to run (will skip if no runner available)
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.run_windows_e2e != 'false'
     needs: bootstrap-windows-syntax  # Run syntax check first
 
     steps:
