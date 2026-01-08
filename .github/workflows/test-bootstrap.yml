@@ -140,8 +140,16 @@ jobs:
       - name: Test bootstrap.sh syntax in WSL
         shell: pwsh
         run: |
-          # Copy script to WSL and validate
-          wsl -- bash -n /mnt/c/Users/runneradmin/work/ros2-humble-env/ros2-humble-env/bootstrap.sh
+          $winPath = Join-Path $env:GITHUB_WORKSPACE 'bootstrap.sh'
+          $wslPath = (wsl -- wslpath -a "$winPath").Trim()
+
+          Write-Host "Validating bootstrap.sh syntax in WSL:" -ForegroundColor Cyan
+          Write-Host "  Windows: $winPath"
+          Write-Host "  WSL:     $wslPath"
+
+          wsl -- bash -n "$wslPath"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
           Write-Host "bootstrap.sh syntax is valid" -ForegroundColor Green
 
       - name: Test Nix installation in WSL
