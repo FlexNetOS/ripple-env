@@ -219,11 +219,26 @@ jobs:
       - name: Test Nix installation in WSL
         shell: pwsh
         run: |
-          # Install Nix in WSL Ubuntu
-          wsl -- bash -c "curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes" || true
+          Write-Host "Attempting Nix install inside WSL (best-effort)..."
 
-          # Source nix and verify
-          wsl -- bash -c "source ~/.nix-profile/etc/profile.d/nix.sh 2>/dev/null && nix --version" || echo "Nix installation test completed"
+          # Install Nix in WSL Ubuntu.
+          # Note: this is intentionally best-effort; some WSL environments lack kernel features Nix uses for sandboxing.
+          wsl -- bash -lc 'export NIX_CONFIG="sandbox = false"; curl -fsSL https://nixos.org/nix/install | sh -s -- --daemon --yes'
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Nix installer exited with code $LASTEXITCODE (continuing anyway)."
+          }
+
+          # Source nix and verify (try common locations across single-user and daemon installs)
+          wsl -- bash -lc '
+            set +e
+            . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null
+            . /nix/var/nix/profiles/default/etc/profile.d/nix.sh 2>/dev/null
+            . ~/.nix-profile/etc/profile.d/nix.sh 2>/dev/null
+            command -v nix >/dev/null 2>&1 && nix --version
+          '
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Nix does not appear to be available in WSL after install attempt."
+          }
 
       - name: Run Integration Tests
         shell: pwsh
