@@ -120,6 +120,14 @@
             htop
             prometheus
 
+            # Infrastructure & Monitoring (from GitHub resources research)
+            # See docs/GITHUB-RESOURCES.md for full analysis
+            prometheus          # Metrics collection for ROS2 DDS
+            nats-server         # WAN/multi-site robot messaging
+            trippy              # Network diagnostics for DDS traffic
+            trivy               # Container/SBOM security scanning
+            opa                 # Policy enforcement for ROS2 topics
+
             # Shells
             zsh
             nushell
@@ -133,6 +141,10 @@
             # AI assistants
             aichat
             aider-chat
+
+            # AI inference (edge/local models)
+            # local-ai           # Uncomment when needed - large package (~2GB)
+                                 # Alternative: docker run -p 8080:8080 localai/localai
 
             # Audio (for aider voice features)
             portaudio
@@ -257,73 +269,59 @@
               echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
               echo ""
             '';
-          devshells.default = {
-            env = [
-              {
-                name = "COLCON_DEFAULTS_FILE";
-                value = toString colconDefaults;
-              }
-              {
-                name = "EDITOR";
-                value = "hx";
-              }
-              {
-                name = "VISUAL";
-                value = "hx";
-              }
-            ] ++ optionals isLinux [
-              # Use mold as default linker (12x faster than lld, 50x faster than gold)
-              # Only on Linux - macOS uses its own linker
-              {
-                name = "LDFLAGS";
-                value = "-fuse-ld=mold";
-              }
-              {
-                name = "CMAKE_EXE_LINKER_FLAGS";
-                value = "-fuse-ld=mold";
-              }
-              {
-                name = "CMAKE_SHARED_LINKER_FLAGS";
-                value = "-fuse-ld=mold";
-              }
-              {
-                name = "CMAKE_MODULE_LINKER_FLAGS";
-                value = "-fuse-ld=mold";
-              }
-            ];
+          };
 
-            devshell = {
-              packages = commonPackages ++ linuxPackages ++ darwinPackages;
+          # CUDA-enabled shell for GPU workloads
+          # Usage: nix develop .#cuda
+          # Requires: NVIDIA GPU with drivers installed
+          devShells.cuda = pkgs.mkShell {
+            packages = commonPackages ++ commandWrappers ++ linuxPackages ++ (with pkgs; [
+              # CUDA Toolkit 12.x (13.1 not yet in nixpkgs as of Jan 2025)
+              # Binary cache: https://cuda-maintainers.cachix.org
+              cudaPackages.cudatoolkit
+              cudaPackages.cudnn
+              cudaPackages.cutensor
+              cudaPackages.nccl
 
-              startup.activate.text = ''
-                # Initialize pixi environment
-                if [ -f pixi.toml ]; then
-                  ${optionalString isDarwin ''
-                    export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
-                  ''}
-                  eval "$(pixi shell-hook)"
-                fi
+              # GPU monitoring
+              nvtopPackages.full
+            ]);
 
-                # Initialize direnv
-                eval "$(direnv hook bash)"
+            COLCON_DEFAULTS_FILE = toString colconDefaults;
+            EDITOR = "hx";
+            VISUAL = "hx";
 
-                # Initialize zoxide
-                eval "$(zoxide init bash)"
+            # CUDA environment variables
+            CUDA_PATH = "${pkgs.cudaPackages.cudatoolkit}";
 
-                # Initialize starship prompt
-                eval "$(starship init bash)"
+            shellHook = ''
+              # Initialize pixi environment with CUDA feature
+              if [ -f pixi.toml ]; then
+                eval "$(pixi shell-hook -e cuda 2>/dev/null || pixi shell-hook)"
+              fi
 
-                # ROS2 environment info
+              # Initialize direnv
+              eval "$(direnv hook bash)"
+
+              # Initialize zoxide
+              eval "$(zoxide init bash)"
+
+              # Initialize starship prompt
+              eval "$(starship init bash)"
+
+              # Verify CUDA availability
+              if command -v nvidia-smi &> /dev/null; then
                 echo ""
-                echo "🤖 ROS2 Humble Development Environment"
-                echo "======================================"
-                echo "  Platform: ${if isDarwin then "macOS" else "Linux"} (${system})"
-                echo "  Shell: bash (use 'zsh' or 'nu' for other shells)"
+                echo "🚀 ROS2 Humble + CUDA Development Environment"
+                echo "=============================================="
+                echo "  Platform: Linux (${system}) with NVIDIA GPU"
+                nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null | head -1 | while read line; do
+                  echo "  GPU: $line"
+                done
+                echo "  CUDA: ${pkgs.cudaPackages.cudatoolkit.version}"
                 echo ""
-                echo "Quick commands:"
-                echo "  cb     - colcon build --symlink-install"
-                echo "  ct     - colcon test"
-                echo "  pixi   - package manager"
+                echo "PyTorch CUDA verification:"
+                echo "  python -c \"import torch; print(torch.cuda.is_available())\""
                 echo ""
                 echo "AI assistants:"
                 echo "  ai        - AI chat (aichat, lightweight)"
@@ -378,6 +376,14 @@
                 command = "npx promptfoo@latest $@";
               }
             ];
+              else
+                echo ""
+                echo "⚠️  Warning: nvidia-smi not found"
+                echo "   CUDA toolkit is available but GPU drivers may not be installed."
+                echo "   Install NVIDIA drivers on your host system."
+                echo ""
+              fi
+            '';
           };
 
           # Minimal shell for CI

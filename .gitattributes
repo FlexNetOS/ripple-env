@@ -1,0 +1,3 @@
+# Ensure shell scripts remain LF so they run correctly in WSL/Linux even when
+# checked out on Windows systems with autocrlf enabled.
+*.sh text eol=lf

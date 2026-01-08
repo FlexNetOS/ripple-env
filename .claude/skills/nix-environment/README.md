@@ -33,6 +33,8 @@ direnv allow                          # Automatic via direnv
 | `ctr` | `colcon test-result --verbose` |
 | `ros2-env` | Show ROS2 environment variables |
 | `update-deps` | Run `pixi update` |
+| `ai` | AI chat assistant (aichat) |
+| `pair` | AI pair programming (aider) |
 
 ## Flake Operations
 

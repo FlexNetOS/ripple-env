@@ -126,6 +126,10 @@ ros2-humble-env/
 │   │   ├── direnv.nix                # direnv configuration
 │   │   ├── git.nix                   # Git configuration
 │   │   ├── packages.nix              # Common packages and aliases
+│   │   ├── ai/                       # AI-powered development tools
+│   │   │   ├── default.nix           # AI module aggregator
+│   │   │   ├── aichat.nix            # Provider-agnostic AI CLI
+│   │   │   └── aider.nix             # AI pair programming with Git
 │   │   ├── nix/
 │   │   │   └── default.nix           # Nix settings and caches
 │   │   ├── editor/
@@ -141,7 +145,7 @@ ros2-humble-env/
 │   ├── linux/                        # Linux-specific configurations
 │   │   ├── default.nix               # Linux module aggregator
 │   │   ├── packages.nix              # Linux packages (debug, serial)
-│   │   ├── docker.nix                # Docker/Podman setup
+│   │   ├── docker.nix                # Docker/container support
 │   │   ├── udev.nix                  # Device rules for robotics
 │   │   ├── users.nix                 # User configuration
 │   │   └── systemd.nix               # Systemd services
