@@ -14,6 +14,12 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      run_windows_e2e:
+        description: 'Run Windows WSL2 end-to-end test'
+        required: false
+        default: 'true'
+        type: boolean
 
 jobs:
   bootstrap-linux:
@@ -127,7 +133,7 @@ jobs:
           nix develop --command pixi run python --version
           nix develop --command pixi run cmake --version
 
-  bootstrap-windows:
+  bootstrap-windows-syntax:
     name: Bootstrap Test (Windows - Syntax Check)
     runs-on: windows-latest
     timeout-minutes: 10
@@ -197,6 +203,178 @@ jobs:
           $help.Parameters.Parameter | ForEach-Object {
             Write-Host "  -$($_.Name): $($_.Description.Text)"
           }
+
+  # End-to-end Windows WSL2 test on self-hosted runner
+  # Requires a self-hosted Windows runner with WSL2 enabled
+  # See: .github/docs/self-hosted-runner-setup.md
+  bootstrap-windows-e2e:
+    name: Bootstrap Test (Windows WSL2 - E2E)
+    runs-on: [self-hosted, Windows, WSL2]
+    timeout-minutes: 90
+    # Only run on workflow_dispatch or if self-hosted runner is available
+    if: github.event_name == 'workflow_dispatch' || github.event.inputs.run_windows_e2e == 'true'
+    needs: bootstrap-windows-syntax  # Run syntax check first
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify WSL2 is available
+        shell: pwsh
+        run: |
+          Write-Host "Checking WSL status..." -ForegroundColor Cyan
+          $wslStatus = wsl --status
+          Write-Host $wslStatus
+
+          # List existing distributions
+          Write-Host "`nExisting WSL distributions:" -ForegroundColor Cyan
+          wsl --list --verbose
+
+      - name: Clean up previous test distribution (if exists)
+        shell: pwsh
+        run: |
+          $distroName = "NixOS-ROS2-Test"
+
+          # Check if distro exists and remove it
+          $distros = wsl --list --quiet 2>$null
+          if ($distros -contains $distroName) {
+            Write-Host "Removing existing test distribution: $distroName" -ForegroundColor Yellow
+            wsl --unregister $distroName
+            Start-Sleep -Seconds 2
+          }
+
+          # Clean up test directory
+          $testPath = "$env:TEMP\WSL-Test\NixOS-ROS2-Test"
+          if (Test-Path $testPath) {
+            Write-Host "Cleaning up test directory: $testPath" -ForegroundColor Yellow
+            Remove-Item -Path $testPath -Recurse -Force
+          }
+
+      - name: Run bootstrap.ps1 end-to-end
+        shell: pwsh
+        run: |
+          # Run with test-specific parameters
+          .\bootstrap.ps1 `
+            -DistroName "NixOS-ROS2-Test" `
+            -InstallPath "$env:TEMP\WSL-Test\NixOS-ROS2-Test" `
+            -DiskSizeGB 64 `
+            -SwapSizeGB 4 `
+            -Force
+
+      - name: Verify NixOS distribution was created
+        shell: pwsh
+        run: |
+          Write-Host "Verifying distribution was created..." -ForegroundColor Cyan
+
+          $distros = wsl --list --quiet
+          if ($distros -notcontains "NixOS-ROS2-Test") {
+            Write-Host "ERROR: Distribution 'NixOS-ROS2-Test' not found!" -ForegroundColor Red
+            wsl --list --verbose
+            exit 1
+          }
+
+          Write-Host "Distribution 'NixOS-ROS2-Test' exists" -ForegroundColor Green
+
+          # Show distribution details
+          wsl --list --verbose
+
+      - name: Verify Nix is installed in WSL
+        shell: pwsh
+        run: |
+          Write-Host "Checking Nix installation..." -ForegroundColor Cyan
+
+          $result = wsl -d NixOS-ROS2-Test -- nix --version
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Nix not working in WSL!" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "Nix version: $result" -ForegroundColor Green
+
+      - name: Verify development tools are installed
+        shell: pwsh
+        run: |
+          Write-Host "Checking installed tools..." -ForegroundColor Cyan
+
+          # Check direnv
+          wsl -d NixOS-ROS2-Test -- direnv --version
+          if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: direnv not found" -ForegroundColor Yellow }
+
+          # Check nom
+          wsl -d NixOS-ROS2-Test -- nom --version
+          if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: nom not found" -ForegroundColor Yellow }
+
+          # Check git
+          wsl -d NixOS-ROS2-Test -- git --version
+          if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: git not found" -ForegroundColor Yellow }
+
+          # Check gh
+          wsl -d NixOS-ROS2-Test -- gh --version
+          if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: gh not found" -ForegroundColor Yellow }
+
+          Write-Host "Tool verification complete" -ForegroundColor Green
+
+      - name: Verify ros2-humble-env repository exists
+        shell: pwsh
+        run: |
+          Write-Host "Checking repository..." -ForegroundColor Cyan
+
+          $result = wsl -d NixOS-ROS2-Test -- bash -c "test -d ~/ros2-humble-env && echo 'exists'"
+          if ($result -ne "exists") {
+            Write-Host "ERROR: ros2-humble-env directory not found!" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "Repository exists in WSL" -ForegroundColor Green
+
+          # List contents
+          wsl -d NixOS-ROS2-Test -- ls -la ~/ros2-humble-env/
+
+      - name: Verify flake and development environment
+        shell: pwsh
+        run: |
+          Write-Host "Testing development environment..." -ForegroundColor Cyan
+
+          # Enter the dev shell and verify pixi
+          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop --command pixi --version"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Failed to enter dev shell or pixi not available!" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "Development environment verified" -ForegroundColor Green
+
+      - name: Test ROS2 availability
+        shell: pwsh
+        run: |
+          Write-Host "Testing ROS2..." -ForegroundColor Cyan
+
+          # Run pixi install and test ros2
+          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop --command pixi install"
+
+          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop --command pixi run ros2 --help" | Select-Object -First 20
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "WARNING: ROS2 command test had issues" -ForegroundColor Yellow
+          } else {
+            Write-Host "ROS2 is available" -ForegroundColor Green
+          }
+
+      - name: Cleanup test distribution
+        if: always()
+        shell: pwsh
+        run: |
+          Write-Host "Cleaning up test distribution..." -ForegroundColor Cyan
+
+          # Unregister test distribution
+          wsl --unregister NixOS-ROS2-Test 2>$null
+
+          # Remove test directory
+          $testPath = "$env:TEMP\WSL-Test\NixOS-ROS2-Test"
+          if (Test-Path $testPath) {
+            Remove-Item -Path $testPath -Recurse -Force
+          }
+
+          Write-Host "Cleanup complete" -ForegroundColor Green
 
   bootstrap-script-test:
     name: Bootstrap Script Test (Linux)
