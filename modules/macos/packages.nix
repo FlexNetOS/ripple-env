@@ -8,6 +8,9 @@
 }:
 let
   inherit (lib) mkDefault;
+  # Detect architecture: Apple Silicon uses /opt/homebrew, Intel uses /usr/local
+  isAarch64 = pkgs.stdenv.hostPlatform.isAarch64;
+  homebrewPrefix = if isAarch64 then "/opt/homebrew" else "/usr/local";
 in
 {
   home.packages = with pkgs; [
@@ -36,10 +39,10 @@ in
 
   # macOS-specific environment variables
   home.sessionVariables = {
-    # Use Homebrew OpenSSL
-    LDFLAGS = "-L/opt/homebrew/opt/openssl@3/lib";
-    CPPFLAGS = "-I/opt/homebrew/opt/openssl@3/include";
-    PKG_CONFIG_PATH = "/opt/homebrew/opt/openssl@3/lib/pkgconfig";
+    # Use Homebrew OpenSSL (path varies by architecture)
+    LDFLAGS = "-L${homebrewPrefix}/opt/openssl@3/lib";
+    CPPFLAGS = "-I${homebrewPrefix}/opt/openssl@3/include";
+    PKG_CONFIG_PATH = "${homebrewPrefix}/opt/openssl@3/lib/pkgconfig";
 
     # Fix for library loading on macOS
     DYLD_FALLBACK_LIBRARY_PATH = "$HOME/.nix-profile/lib:/usr/local/lib:/usr/lib";

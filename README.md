@@ -393,6 +393,134 @@ This configuration incorporates patterns and modules from:
 - [GustavoWidman/nix](https://github.com/GustavoWidman/nix) - Multi-machine Nix configuration
 - [RGBCube/ncc](https://github.com/RGBCube/ncc) - Comprehensive NixOS/Darwin configuration
 
+## Agentic Infrastructure Resources
+
+The following resources are being evaluated for integration into this agentic development platform:
+
+### AI Agent Platforms & Automation
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **AGiXT** | Dynamic AI Agent Automation Platform | [Josh-XT/AGiXT](https://github.com/Josh-XT/AGiXT) |
+| **AGiXT Rust SDK** | Rust SDK for AGiXT | [AGiXT/rust-sdk](https://github.com/AGiXT/rust-sdk) |
+| **LocalAI** | Distributed, P2P and decentralized inference | [mudler/LocalAI](https://github.com/mudler/LocalAI) |
+| **AIOS** | AI Agent Operating System | [agiresearch/AIOS](https://github.com/agiresearch/AIOS) |
+| **Cerebrum** | Agent SDK for AIOS | [agiresearch/Cerebrum](https://github.com/agiresearch/Cerebrum) |
+| **agentic-flow** | AI agent orchestration framework | [ruvnet/agentic-flow](https://github.com/ruvnet/agentic-flow) |
+| **devops** | Agentics DevOps toolkit | [agenticsorg/devops](https://github.com/agenticsorg/devops) |
+
+### Training & Machine Learning
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **unsloth** | Fast LLM fine-tuning | [unslothai/unsloth](https://github.com/unslothai/unsloth) |
+| **ComfyUI** | Modular stable diffusion GUI | [comfyanonymous/ComfyUI](https://github.com/comfyanonymous/ComfyUI) |
+
+### Memory & Context Systems
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **memobase** | User Profile-Based Long-Term Memory | [memodb-io/memobase](https://github.com/memodb-io/memobase) |
+| **Memori** | SQL Native Memory Layer | [MemoriLabs/Memori](https://github.com/MemoriLabs/Memori) |
+
+### Gateways & API Management
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **agentgateway** | AI Agent Gateway | [agentgateway/agentgateway](https://github.com/agentgateway/agentgateway) |
+| **Kong** | Cloud-Native API Gateway | [Kong/kong](https://github.com/Kong/kong) |
+
+### Distributed Systems & Networking
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **rust-libp2p** | Rust libp2p networking stack | [libp2p/rust-libp2p](https://github.com/libp2p/rust-libp2p) |
+| **holochain** | Distributed User Resources | [holochain/holochain](https://github.com/holochain/holochain) |
+| **noa-dynamo** | Org Datacenter Scale Distributed Inference | [FlexNetOS/dynamo](https://github.com/FlexNetOS/dynamo/tree/noa-dynamo) |
+| **temporal** | Workflow orchestration platform | [temporalio/temporal](https://github.com/temporalio/temporal) |
+| **NATS** | Cloud native messaging system | [nats-io/nats-server](https://github.com/nats-io/nats-server) |
+| **Kubo** | IPFS implementation in Go | [ipfs/kubo](https://github.com/ipfs/kubo) |
+
+### Databases & Storage
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **sqlx** | Rust SQL Toolkit | [launchbadge/sqlx](https://github.com/launchbadge/sqlx) |
+| **neon** | Serverless Postgres | [neondatabase/neon](https://github.com/neondatabase/neon) |
+| **vCache** | Distributed caching | [vcache-project/vCache](https://github.com/vcache-project/vCache) |
+
+### Monitoring & Observability
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **netdata** | Real-time infrastructure monitoring | [netdata/netdata](https://github.com/netdata/netdata) |
+| **umami** | Privacy-focused web analytics | [umami-software/umami](https://github.com/umami-software/umami) |
+| **prometheus** | Monitoring and alerting toolkit | [prometheus/prometheus](https://github.com/prometheus/prometheus) |
+| **OpenTelemetry** | Observability framework | [open-telemetry](https://github.com/open-telemetry) |
+| **trippy** | Network diagnostic tool | [fujiapple852/trippy](https://github.com/fujiapple852/trippy) |
+
+### Security & Secrets Management
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **trivy** | Security vulnerability scanner | [aquasecurity/trivy](https://github.com/aquasecurity/trivy) |
+| **vault** | Secrets management | [hashicorp/vault](https://github.com/hashicorp/vault) |
+| **vaultwarden** | Bitwarden-compatible server | [dani-garcia/vaultwarden](https://github.com/dani-garcia/vaultwarden) |
+| **keycloak** | Identity and access management | [keycloak/keycloak](https://github.com/keycloak/keycloak) |
+| **OPA** | Open Policy Agent | [open-policy-agent/opa](https://github.com/open-policy-agent/opa) |
+| **gvisor** | Container sandbox runtime | [githubfoam/gvisor-sandbox](https://github.com/githubfoam/gvisor-sandbox) |
+
+### DevOps & CI/CD
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **Argo CD** | GitOps continuous delivery | [FlexNetOS/argo-cd](https://github.com/FlexNetOS/argo-cd) |
+| **AppFlowy-Cloud** | Self-hosted Notion alternative backend | [AppFlowy-IO/AppFlowy-Cloud](https://github.com/AppFlowy-IO/AppFlowy-Cloud) |
+| **chirpstack** | LoRaWAN Network Server | [chirpstack/chirpstack](https://github.com/chirpstack/chirpstack) |
+
+### Rust Development Tools
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **RustCoder** | Rust MCP coding assistant | [cardea-mcp/RustCoder](https://github.com/cardea-mcp/RustCoder) |
+| **rusty-tags** | Ctags generator for Rust | [dan-t/rusty-tags](https://github.com/dan-t/rusty-tags) |
+| **syn** | Rust syntax parsing library | [dtolnay/syn](https://github.com/dtolnay/syn) |
+| **coreutils** | Rust implementation of GNU coreutils | [uutils/coreutils](https://github.com/uutils/coreutils) |
+| **swc** | Rust-based JS/TS compiler | [swc-project/swc](https://github.com/swc-project/swc) |
+| **kellnr** | Private Rust crate registry | [kellnr/kellnr](https://github.com/kellnr/kellnr) |
+
+### AI Evaluation & Testing
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **promptfoo** | LLM prompt testing framework | [promptfoo/promptfoo](https://github.com/promptfoo/promptfoo) |
+| **evals** | OpenAI evaluation framework | [openai/evals](https://github.com/openai/evals) |
+| **trulens** | LLM app evaluation & tracking | [truera/trulens](https://github.com/truera/trulens) |
+
+### Robotics & Vision
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **Josh-XT** | Vision-Driven Autonomous Robot Control | [Josh-XT](https://github.com/Josh-XT) |
+| **jj** | Git-compatible VCS | [jj-vcs/jj](https://github.com/jj-vcs/jj) |
+
+### Additional Resources
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **daa** | Distributed agent architecture | [ruvnet/daa](https://github.com/ruvnet/daa) |
+| **ruvector** | Vector operations library | [ruvnet/ruvector](https://github.com/ruvnet/ruvector) |
+| **qudag** | Quantum DAG implementation | [ruvnet/qudag](https://github.com/ruvnet/qudag) |
+| **API-mega-list** | Comprehensive API resource list | [cporter202/API-mega-list](https://github.com/cporter202/API-mega-list) |
+| **zcf** | Configuration framework | [UfoMiao/zcf](https://github.com/UfoMiao/zcf) |
+
+### Python/Rust Interop (for pixi)
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **RustPython** | Python interpreter in Rust | [RustPython/RustPython](https://github.com/RustPython/RustPython) |
+| **PyO3** | Rust bindings for Python | [PyO3/pyo3](https://github.com/PyO3/pyo3) |
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE). See the LICENSE file for details.
