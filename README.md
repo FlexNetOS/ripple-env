@@ -8,7 +8,7 @@ this repository provides a complete development setup for ros2 humble with all n
 
 - **nix flakes**: for reproducible, declarative environment setup
 - **pixi**: for python and ros package management via robostack
-- **direnv** (optional): for automatic environment activation
+- **direnv**: for automatic environment activation
 
 ## getting started
 
