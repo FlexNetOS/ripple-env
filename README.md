@@ -12,12 +12,17 @@ this repository provides a complete development setup for ros2 humble with all n
 
 ## getting started
 
-### prerequisites
+### check list
 
 - nix with flakes enabled
 - git
+- nom
+- pixi
+- nushell
+- zsh
+- bash (included by default nix)
 
-### installing nix (if not already installed)
+### installing nix
 
 personally, i like to use the [experimental nix install script](https://github.com/NixOS/experimental-nix-installer):
 
@@ -30,7 +35,7 @@ it installs nix with `flakes` and `nix-command` enabled by default. it also offe
 
 ### enter the development environment
 
-#### using direnv (recommended)
+#### using direnv
 
 if you have direnv installed, simply enter the directory:
 
@@ -42,20 +47,6 @@ direnv will automatically load the environment. on first run, you may need to:
 
 ```bash
 direnv allow
-```
-
-#### using nix develop
-
-alternatively, activate the environment manually:
-
-```bash
-nix develop
-```
-
-or with `nom` for better build output:
-
-```bash
-nom develop
 ```
 
 ## adding packages
@@ -75,13 +66,13 @@ nix shells default to bash, but you can use your preferred shell. if you want to
 ### manual approach
 
 ```bash
-nix develop -c env 'SHELL=<your-shell-path-here>' <your-shell-path-here>
+nom develop -c env 'SHELL=<your-shell-path-here>' <your-shell-path-here>
 ```
 
 for example, with nushell:
 
 ```bash
-nix develop -c env 'SHELL=/bin/nu' /bin/nu
+nom develop -c env 'SHELL=/bin/nu' /bin/nu
 ```
 
 ### create an alias
@@ -89,7 +80,7 @@ nix develop -c env 'SHELL=/bin/nu' /bin/nu
 add this alias to your shell configuration for easier access:
 
 ```bash
-alias devshell="nix develop -c env 'SHELL=/bin/bash' /bin/bash"
+alias devshell="nom develop -c env 'SHELL=/bin/bash' /bin/bash"
 ```
 
 ### nushell function
@@ -118,13 +109,6 @@ devshell() {
 
 this should do the same as the nushell function defined above but for bash users.
 
-### with nom
-
-if you use nom for better nix output, replace `nix` with `nom`:
-
-```bash
-nom develop -c env 'SHELL=/bin/nu' /bin/nu
-```
 
 ## environment details
 
@@ -164,7 +148,8 @@ pixi search *rosidl*
 pixi add ros-humble-<package-name>
 ```
 
-it's worth noting that it's also recommended to add python packages to pixi's env as well. let's say you need `pygame`, for example, then you'd add it by doing `pixi add pygame` (which would alter the `pixi.toml` and `pixi.lock` files).
+## Add all missing packages to pixi's env. e.g., python, cargo, and so one. 
+Example: let's say you need `pygame`, for example, then you'd add it by doing `pixi add pygame` (which would alter the `pixi.toml` and `pixi.lock` files).
 
 ## links
 
