@@ -5,10 +5,14 @@ icon: 🤖
 category: development
 tools:
   - aichat
+  - aider
   - ai
   - ai-code
   - ai-explain
   - ai-review
+  - pair
+  - pair-voice
+  - pair-watch
 ---
 
 # AI Assistants
@@ -119,14 +123,118 @@ cat src/robot_controller/robot_controller/controller.py | ai-review
 3. **Save sessions**: Use `aichat -s session-name` to continue conversations
 4. **Local models**: Use Ollama for private/offline work
 
-## Future: Aider Integration
+## Aider - AI Pair Programming
 
-Phase 2 will add **Aider** for Git-integrated AI pair programming:
+**Aider** is a Git-integrated AI pair programmer that edits code in your repo with automatic commits.
+
+### Quick Start
 
 ```bash
-# Coming soon
-aider src/my_package/  # AI-assisted editing with Git commits
+# Start aider in current directory
+pair
+
+# Work on specific files
+pair src/my_package/my_node.py
+
+# Voice-to-code mode (requires portaudio)
+pair-voice
+
+# Watch mode - auto-commit on file changes
+pair-watch
+
+# Use specific model
+aider --model claude-3-sonnet-20240229
+aider --model gpt-4-turbo
 ```
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Git Integration** | Auto-commits changes with descriptive messages |
+| **Repo Mapping** | Understands your entire codebase structure |
+| **Voice Mode** | Speak your coding requests |
+| **Watch Mode** | Monitors files and auto-commits changes |
+| **100+ Languages** | Python, C++, Rust, TypeScript, etc. |
+
+### Available Aliases
+
+| Alias | Command | Purpose |
+|-------|---------|---------|
+| `pair` | `aider` | Start AI pair programming |
+| `pair-voice` | `aider --voice` | Voice-to-code mode |
+| `pair-watch` | `aider --watch` | Auto-commit on changes |
+| `pair-claude` | `aider --model claude-3-sonnet-20240229` | Use Claude |
+| `pair-gpt4` | `aider --model gpt-4-turbo` | Use GPT-4 |
+
+### ROS2-Specific Usage
+
+```bash
+# Edit a ROS2 node
+pair src/my_robot/my_robot/controller.py
+> "Add a service server that accepts velocity commands"
+
+# Modify launch files
+pair src/my_robot/launch/robot.launch.py
+> "Add a parameter for robot_name"
+
+# Update CMakeLists.txt
+pair src/my_robot/CMakeLists.txt
+> "Add the new action interface dependency"
+```
+
+### Configuration
+
+Create `~/.aider.conf.yml`:
+
+```yaml
+# Default model
+model: claude-3-sonnet-20240229
+
+# Auto-commit settings
+auto-commits: true
+auto-lint: true
+
+# Editor integration
+edit-format: diff
+
+# Voice settings (if using --voice)
+voice-language: en
+
+# Dark mode for terminal
+dark-mode: true
+```
+
+### Environment Variables
+
+```bash
+# API keys (set in .envrc or shell profile)
+export ANTHROPIC_API_KEY="sk-ant-..."  # For Claude
+export OPENAI_API_KEY="sk-..."         # For GPT-4
+export DEEPSEEK_API_KEY="..."          # For DeepSeek
+```
+
+### Home-Manager Configuration
+
+```nix
+{
+  programs.aider = {
+    enable = true;
+    settings = {
+      model = "claude-3-sonnet-20240229";
+      auto-commits = true;
+      dark-mode = true;
+    };
+  };
+}
+```
+
+### Voice Mode Requirements
+
+Voice-to-code requires:
+- `portaudio` (included in devshell)
+- Microphone access
+- API key for speech-to-text (uses provider's audio API)
 
 ## Environment Variables
 

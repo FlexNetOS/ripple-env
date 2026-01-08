@@ -4,5 +4,6 @@
 {
   imports = [
     ./aichat.nix
+    ./aider.nix
   ];
 }

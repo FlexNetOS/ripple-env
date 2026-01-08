@@ -123,6 +123,10 @@
 
             # AI assistants
             aichat
+            aider-chat
+
+            # Audio (for aider voice features)
+            portaudio
           ];
 
           # Linux-specific packages
@@ -190,7 +194,10 @@
                 echo "  cb     - colcon build --symlink-install"
                 echo "  ct     - colcon test"
                 echo "  pixi   - package manager"
-                echo "  ai     - AI chat assistant (aichat)"
+                echo ""
+                echo "AI assistants:"
+                echo "  ai     - AI chat (aichat, lightweight)"
+                echo "  pair   - AI pair programming (aider, git-integrated)"
                 echo ""
               '';
 
@@ -228,6 +235,11 @@
                 name = "ai";
                 help = "AI chat assistant (provider-agnostic)";
                 command = "aichat $@";
+              }
+              {
+                name = "pair";
+                help = "AI pair programming with git integration (aider)";
+                command = "aider $@";
               }
             ];
           };

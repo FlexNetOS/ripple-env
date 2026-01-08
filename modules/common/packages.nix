@@ -56,6 +56,10 @@ in
 
     # AI assistants
     aichat             # Provider-agnostic AI CLI
+    aider-chat         # AI pair programming with git integration
+
+    # Audio (for aider voice features)
+    portaudio
   ] ++ optionals isLinux [
     # Linux-specific packages
     inotify-tools      # File watching
@@ -102,5 +106,10 @@ in
     "ai-code" = "aichat --role coder";
     "ai-explain" = "aichat --role explain";
     "ai-review" = "aichat --role reviewer";
+
+    # Aider (AI pair programming)
+    "pair" = "aider";
+    "pair-voice" = "aider --voice";
+    "pair-watch" = "aider --watch";
   };
 }
