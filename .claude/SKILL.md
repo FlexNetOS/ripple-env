@@ -138,11 +138,13 @@ Available inside `nix develop` / `nom develop`:
 
 | Command | Description | Definition |
 |---------|-------------|------------|
-| `cb` | `colcon build --symlink-install` | `flake.nix:201` |
-| `ct` | `colcon test` | `flake.nix:206` |
-| `ctr` | `colcon test-result --verbose` | `flake.nix:211` |
-| `ros2-env` | Show ROS2 environment variables | `flake.nix:216` |
-| `update-deps` | `pixi update` | `flake.nix:221` |
+| `cb` | `colcon build --symlink-install` | `flake.nix:232` |
+| `ct` | `colcon test` | `flake.nix:237` |
+| `ctr` | `colcon test-result --verbose` | `flake.nix:242` |
+| `ros2-env` | Show ROS2 environment variables | `flake.nix:247` |
+| `update-deps` | `pixi update` | `flake.nix:252` |
+| `ai` | AI chat assistant (aichat) | `flake.nix:257` |
+| `pair` | AI pair programming (aider) | `flake.nix:262` |
 
 ### Shell Aliases (modules/common/packages.nix)
 Available in all shells via home-manager:
@@ -165,6 +167,21 @@ Available in all shells via home-manager:
 | `cat` | `bat` (syntax highlighting) |
 | `grep` | `rg` (ripgrep) |
 | `find` | `fd` (modern find) |
+| `nrs` | `nom develop` |
+| `nrb` | `nom build` |
+
+### AI Assistant Aliases (modules/common/packages.nix)
+Available in all shells via home-manager:
+
+| Alias | Expands To |
+|-------|------------|
+| `ai` | `aichat` |
+| `ai-code` | `aichat --role coder` |
+| `ai-explain` | `aichat --role explain` |
+| `ai-review` | `aichat --role reviewer` |
+| `pair` | `aider` |
+| `pair-voice` | `aider --voice` |
+| `pair-watch` | `aider --watch` |
 
 ### Nix Commands (system-wide)
 Available after Nix installation:
@@ -193,6 +210,9 @@ Available after Nix installation:
 | Show ROS env | `ros2-env` | Devshell |
 | Git status | `gs` or `git status` | Alias/Git |
 | Create PR | `gh pr create` | GitHub CLI |
+| AI chat | `ai` or `aichat` | Devshell/Alias |
+| AI code generation | `ai-code` | Alias |
+| AI pair programming | `pair` or `aider` | Devshell/Alias |
 
 ## Skill Expansion
 
