@@ -162,13 +162,46 @@
             gawk
           ];
 
+          # Provide common helper commands as real executables (not shell functions), so they
+          # are available when CI uses `nix develop --command ...`.
+          commandWrappers = [
+            (pkgs.writeShellScriptBin "cb" ''
+              exec colcon build --symlink-install "$@"
+            '')
+            (pkgs.writeShellScriptBin "ct" ''
+              exec colcon test "$@"
+            '')
+            (pkgs.writeShellScriptBin "ctr" ''
+              exec colcon test-result --verbose
+            '')
+            (pkgs.writeShellScriptBin "ros2-env" ''
+              env | grep -E '^(ROS|RMW|AMENT|COLCON)' | sort
+            '')
+            (pkgs.writeShellScriptBin "update-deps" ''
+              exec pixi update
+            '')
+            (pkgs.writeShellScriptBin "ai" ''
+              exec aichat "$@"
+            '')
+            (pkgs.writeShellScriptBin "pair" ''
+              if command -v aider >/dev/null 2>&1; then
+                exec aider "$@"
+              elif command -v aider-chat >/dev/null 2>&1; then
+                exec aider-chat "$@"
+              else
+                echo "Neither 'aider' nor 'aider-chat' is available in PATH" >&2
+                exit 127
+              fi
+            '')
+          ];
+
         in
         {
           # Development shell (main entry point)
           # Use standard `devShells` (and avoid the devshell flake module) so `nix flake check`
           # stays warning-free on newer Nix.
           devShells.default = pkgs.mkShell {
-            packages = commonPackages ++ linuxPackages ++ darwinPackages;
+            packages = commonPackages ++ commandWrappers ++ linuxPackages ++ darwinPackages;
             COLCON_DEFAULTS_FILE = toString colconDefaults;
             EDITOR = "hx";
             VISUAL = "hx";
@@ -203,103 +236,11 @@
               echo "  ct     - colcon test"
               echo "  pixi   - package manager"
               echo ""
+              echo "AI assistants:"
+              echo "  ai     - AI chat (aichat, lightweight)"
+              echo "  pair   - AI pair programming (aider, git-integrated)"
+              echo ""
             '';
-          devshells.default = {
-            env = [
-              {
-                name = "COLCON_DEFAULTS_FILE";
-                value = toString colconDefaults;
-              }
-              {
-                name = "EDITOR";
-                value = "hx";
-              }
-              {
-                name = "VISUAL";
-                value = "hx";
-              }
-            ];
-
-            devshell = {
-              packages = commonPackages ++ linuxPackages ++ darwinPackages;
-
-              startup.activate.text = ''
-                # Initialize pixi environment
-                if [ -f pixi.toml ]; then
-                  ${optionalString isDarwin ''
-                    export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
-                  ''}
-                  eval "$(pixi shell-hook)"
-                fi
-
-                # Initialize direnv
-                eval "$(direnv hook bash)"
-
-                # Initialize zoxide
-                eval "$(zoxide init bash)"
-
-                # Initialize starship prompt
-                eval "$(starship init bash)"
-
-                # ROS2 environment info
-                echo ""
-                echo "🤖 ROS2 Humble Development Environment"
-                echo "======================================"
-                echo "  Platform: ${if isDarwin then "macOS" else "Linux"} (${system})"
-                echo "  Shell: bash (use 'zsh' or 'nu' for other shells)"
-                echo ""
-                echo "Quick commands:"
-                echo "  cb     - colcon build --symlink-install"
-                echo "  ct     - colcon test"
-                echo "  pixi   - package manager"
-                echo ""
-                echo "AI assistants:"
-                echo "  ai     - AI chat (aichat, lightweight)"
-                echo "  pair   - AI pair programming (aider, git-integrated)"
-                echo ""
-              '';
-
-              motd = "";
-            };
-
-            # Command aliases
-            commands = [
-              {
-                name = "cb";
-                help = "colcon build --symlink-install";
-                command = "colcon build --symlink-install $@";
-              }
-              {
-                name = "ct";
-                help = "colcon test";
-                command = "colcon test $@";
-              }
-              {
-                name = "ctr";
-                help = "colcon test-result --verbose";
-                command = "colcon test-result --verbose";
-              }
-              {
-                name = "ros2-env";
-                help = "Show ROS2 environment variables";
-                command = "env | grep -E '^(ROS|RMW|AMENT|COLCON)' | sort";
-              }
-              {
-                name = "update-deps";
-                help = "Update pixi dependencies";
-                command = "pixi update";
-              }
-              {
-                name = "ai";
-                help = "AI chat assistant (provider-agnostic)";
-                command = "aichat $@";
-              }
-              {
-                name = "pair";
-                help = "AI pair programming with git integration (aider)";
-                command = "aider $@";
-              }
-            ];
           };
 
           # Minimal shell for CI

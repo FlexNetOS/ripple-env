@@ -2,14 +2,14 @@ name: Verify AI Tools
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
     paths:
       - 'flake.nix'
       - 'modules/common/ai/**'
       - 'modules/common/packages.nix'
       - '.github/workflows/verify-ai-tools.yml'
   pull_request:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
