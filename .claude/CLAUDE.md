@@ -126,6 +126,96 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 2. Or add to appropriate module in `modules/`
 3. Update documentation if user-facing
 
+### Adding Skills
+
+Skills are structured knowledge for agents. Create in `.claude/skills/<name>/README.md`:
+
+```markdown
+---
+name: skill-name
+description: What this skill provides
+icon: 🔧
+category: development
+tools:
+  - tool1
+  - tool2
+---
+
+# Skill Title
+
+Documentation content...
+```
+
+### Adding Slash Commands
+
+Slash commands provide quick actions. Create in `.claude/commands/<name>.md`:
+
+```markdown
+---
+name: command-name
+description: Command help text
+---
+
+Instructions for the command...
+```
+
+## Flake Exports
+
+This flake exports modules for use in other projects:
+
+### Home Manager Modules
+
+```nix
+{
+  inputs.ros2-humble-env.url = "github:FlexNetOS/ros2-humble-env";
+
+  outputs = { ros2-humble-env, ... }: {
+    homeConfigurations.user = {
+      modules = [
+        # Auto-detects platform (Linux/macOS)
+        ros2-humble-env.homeManagerModules.default
+
+        # Or specific modules:
+        ros2-humble-env.homeManagerModules.common  # Cross-platform only
+        ros2-humble-env.homeManagerModules.linux   # Linux-specific
+        ros2-humble-env.homeManagerModules.macos   # macOS-specific
+      ];
+    };
+  };
+}
+```
+
+### NixOS/Darwin Modules
+
+```nix
+{
+  # For NixOS systems
+  nixosConfigurations.host = {
+    modules = [ ros2-humble-env.nixosModules.default ];
+  };
+
+  # For macOS with nix-darwin
+  darwinConfigurations.host = {
+    modules = [ ros2-humble-env.darwinModules.default ];
+  };
+}
+```
+
+### Library Functions
+
+```nix
+{
+  # Access utility functions
+  myLib = ros2-humble-env.lib;
+
+  # Available functions:
+  # - collectNixFiles: Collect .nix files from directory
+  # - isDarwin, isLinux: Platform detection
+  # - mkEnableOpt: Create enable option with defaults
+  # - deepMerge: Deep merge attribute sets
+}
+```
+
 ### Cross-Platform Considerations
 
 - Check `stdenv.isDarwin` and `stdenv.isLinux`

@@ -129,31 +129,101 @@
 - Error explanations
 - Recommendations
 
+## Command Types
+
+Commands are available from three sources - understand where they come from:
+
+### Devshell Commands (flake.nix)
+Available inside `nix develop` / `nom develop`:
+
+| Command | Description | Definition |
+|---------|-------------|------------|
+| `cb` | `colcon build --symlink-install` | `flake.nix:201` |
+| `ct` | `colcon test` | `flake.nix:206` |
+| `ctr` | `colcon test-result --verbose` | `flake.nix:211` |
+| `ros2-env` | Show ROS2 environment variables | `flake.nix:216` |
+| `update-deps` | `pixi update` | `flake.nix:221` |
+
+### Shell Aliases (modules/common/packages.nix)
+Available in all shells via home-manager:
+
+| Alias | Expands To |
+|-------|------------|
+| `gs` | `git status` |
+| `ga` | `git add` |
+| `gc` | `git commit` |
+| `gp` | `git push` |
+| `gl` | `git pull` |
+| `gd` | `git diff` |
+| `gco` | `git checkout` |
+| `gb` | `git branch` |
+| `glog` | `git log --oneline --graph --decorate` |
+| `ls` | `eza` (modern ls) |
+| `ll` | `eza -l` |
+| `la` | `eza -la` |
+| `lt` | `eza --tree` |
+| `cat` | `bat` (syntax highlighting) |
+| `grep` | `rg` (ripgrep) |
+| `find` | `fd` (modern find) |
+
+### Nix Commands (system-wide)
+Available after Nix installation:
+
+| Command | Description |
+|---------|-------------|
+| `nix develop` | Enter development shell |
+| `nom develop` | Enter shell with progress UI |
+| `nix flake check` | Validate flake |
+| `nix flake update` | Update dependencies |
+| `nix build .#output` | Build specific output |
+| `nix profile install` | Install package |
+
 ## Tool Quick Reference
 
-| Task | Command |
-|------|---------|
-| Enter dev shell | `nom develop` |
-| Build ROS packages | `cb` or `colcon build --symlink-install` |
-| Run tests | `ct` or `colcon test` |
-| Test results | `ctr` or `colcon test-result --verbose` |
-| Add ROS package | `pixi add ros-humble-<name>` |
-| Search packages | `pixi search <pattern>` |
-| Check flake | `nix flake check` |
-| Update deps | `nix flake update` |
-| Show ROS env | `ros2-env` |
-| Git status | `git status` |
-| Create PR | `gh pr create` |
+| Task | Command | Type |
+|------|---------|------|
+| Enter dev shell | `nom develop` | Nix |
+| Build ROS packages | `cb` | Devshell |
+| Run tests | `ct` | Devshell |
+| Test results | `ctr` | Devshell |
+| Add ROS package | `pixi add ros-humble-<name>` | Pixi |
+| Search packages | `pixi search <pattern>` | Pixi |
+| Check flake | `nix flake check` | Nix |
+| Update deps | `update-deps` or `nix flake update` | Devshell/Nix |
+| Show ROS env | `ros2-env` | Devshell |
+| Git status | `gs` or `git status` | Alias/Git |
+| Create PR | `gh pr create` | GitHub CLI |
 
 ## Skill Expansion
 
 New skills can be added by:
 
-1. **Nix packages**: Add to `flake.nix` or modules
-2. **Pixi packages**: Add via `pixi add`
-3. **Custom scripts**: Add to `scripts/` directory
-4. **Shell functions**: Add to shell configuration modules
-5. **Editor plugins**: Configure in editor module
+1. **Nix packages**: Add to `flake.nix` or `modules/common/packages.nix`
+2. **Pixi packages**: Add via `pixi add <package>`
+3. **Structured skills**: Add to `.claude/skills/<skill-name>/README.md`
+4. **Slash commands**: Add to `.claude/commands/<command>.md`
+5. **Shell aliases**: Add to `modules/common/packages.nix` shellAliases
+6. **Devshell commands**: Add to `flake.nix` devshells.default.commands
+7. **Editor plugins**: Configure in `modules/common/editor/default.nix`
+
+### Skill File Format
+
+Skills use YAML frontmatter for agent discovery:
+
+```markdown
+---
+name: skill-name
+description: What this skill does
+icon: 📦
+category: development
+tools:
+  - tool1
+  - tool2
+---
+
+# Skill Documentation
+...
+```
 
 ## Limitations
 

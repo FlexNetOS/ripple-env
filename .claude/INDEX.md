@@ -10,65 +10,97 @@
 | [RULES](./RULES.md) | Guidelines and coding standards |
 | [SKILL](./SKILL.md) | Available skills and tool reference |
 
+### Skills (Structured)
+
+| Skill | Description |
+|-------|-------------|
+| [ROS2 Development](./skills/ros2-development/README.md) | Building, testing, and running ROS2 packages |
+| [DevOps](./skills/devops/README.md) | CI/CD, GitHub workflows, automation |
+| [Nix Environment](./skills/nix-environment/README.md) | Flakes, home-manager, environment management |
+
+### Slash Commands
+
+| Command | Description |
+|---------|-------------|
+| [/build](./commands/build.md) | Build ROS2 packages with colcon |
+| [/test](./commands/test.md) | Run package tests |
+| [/flake-check](./commands/flake-check.md) | Validate Nix flake |
+| [/update-deps](./commands/update-deps.md) | Update project dependencies |
+
 ## Project Structure
 
 ```
 ros2-humble-env/
-├── .claude/                    # Agent configuration
-│   ├── INDEX.md               # This file
-│   ├── AGENT.md               # Agent system docs
-│   ├── CLAUDE.md              # Claude instructions
-│   ├── RULES.md               # Rules and guidelines
-│   └── SKILL.md               # Skills reference
+├── .claude/                          # Agent configuration
+│   ├── INDEX.md                      # This file - documentation navigation
+│   ├── AGENT.md                      # Agent system architecture
+│   ├── CLAUDE.md                     # Claude Code instructions
+│   ├── RULES.md                      # Rules and guidelines
+│   ├── SKILL.md                      # Skills reference (summary)
+│   ├── skills/                       # Structured skill definitions
+│   │   ├── ros2-development/         # ROS2 development expertise
+│   │   │   └── README.md
+│   │   ├── devops/                   # DevOps and CI/CD
+│   │   │   └── README.md
+│   │   └── nix-environment/          # Nix and environment management
+│   │       └── README.md
+│   └── commands/                     # Slash command definitions
+│       ├── build.md                  # /build - colcon build
+│       ├── test.md                   # /test - colcon test
+│       ├── flake-check.md            # /flake-check - validate flake
+│       └── update-deps.md            # /update-deps - update dependencies
 │
 ├── .github/
 │   ├── workflows/
-│   │   └── bootstrap-test.yml # CI workflow
+│   │   └── bootstrap-test.yml        # CI workflow
 │   └── docs/
 │       └── self-hosted-runner-setup.md
 │
-├── lib/                        # Nix library
-│   ├── default.nix            # Utility functions
-│   └── system.nix             # System helpers
+├── lib/                              # Nix library functions
+│   ├── default.nix                   # Utility functions
+│   └── system.nix                    # System builder helpers
 │
-├── modules/                    # Configuration modules
-│   ├── common/                # Cross-platform
-│   │   ├── default.nix        # Module aggregator
-│   │   ├── direnv.nix         # direnv config
-│   │   ├── git.nix            # Git config
-│   │   ├── packages.nix       # Common packages
-│   │   ├── nix/               # Nix settings
-│   │   ├── editor/            # Helix config
-│   │   └── shell/             # Shell configs
-│   │       ├── bash.nix
-│   │       ├── zsh.nix
-│   │       ├── nushell.nix
-│   │       ├── starship.nix
-│   │       └── zoxide.nix
+├── modules/                          # Home-manager configuration modules
+│   ├── common/                       # Cross-platform configurations
+│   │   ├── default.nix               # Module aggregator
+│   │   ├── direnv.nix                # direnv configuration
+│   │   ├── git.nix                   # Git configuration
+│   │   ├── packages.nix              # Common packages and aliases
+│   │   ├── nix/
+│   │   │   └── default.nix           # Nix settings and caches
+│   │   ├── editor/
+│   │   │   └── default.nix           # Helix editor with LSPs
+│   │   └── shell/
+│   │       ├── default.nix           # Shell module aggregator
+│   │       ├── bash.nix              # Bash configuration
+│   │       ├── zsh.nix               # Zsh configuration
+│   │       ├── nushell.nix           # Nushell configuration
+│   │       ├── starship.nix          # Starship prompt
+│   │       └── zoxide.nix            # Zoxide smart cd
 │   │
-│   ├── linux/                 # Linux-specific
-│   │   ├── default.nix
-│   │   ├── docker.nix
-│   │   ├── packages.nix
-│   │   ├── systemd.nix
-│   │   ├── udev.nix
-│   │   └── users.nix
+│   ├── linux/                        # Linux-specific configurations
+│   │   ├── default.nix               # Linux module aggregator
+│   │   ├── packages.nix              # Linux packages (debug, serial)
+│   │   ├── docker.nix                # Docker/Podman setup
+│   │   ├── udev.nix                  # Device rules for robotics
+│   │   ├── users.nix                 # User configuration
+│   │   └── systemd.nix               # Systemd services
 │   │
-│   └── macos/                 # macOS-specific
-│       ├── default.nix
-│       ├── homebrew.nix
-│       ├── packages.nix
-│       ├── shell.nix
-│       └── system.nix
+│   └── macos/                        # macOS-specific configurations
+│       ├── default.nix               # macOS module aggregator
+│       ├── packages.nix              # macOS packages (GNU tools)
+│       ├── homebrew.nix              # Homebrew integration
+│       ├── system.nix                # macOS system preferences
+│       └── shell.nix                 # macOS shell specifics
 │
-├── bootstrap.sh               # Linux/macOS setup
-├── bootstrap.ps1              # Windows setup
-├── flake.nix                  # Main Nix flake
-├── flake.lock                 # Locked dependencies
-├── pixi.toml                  # Pixi configuration
-├── pixi.lock                  # Pixi lock file
-├── .envrc                     # direnv configuration
-└── README.md                  # Main documentation
+├── bootstrap.sh                      # Linux/macOS setup script
+├── bootstrap.ps1                     # Windows PowerShell setup script
+├── flake.nix                         # Main Nix flake configuration
+├── flake.lock                        # Locked Nix dependencies
+├── pixi.toml                         # Pixi/Conda configuration
+├── pixi.lock                         # Locked Pixi dependencies
+├── .envrc                            # direnv configuration
+└── README.md                         # Main project documentation
 ```
 
 ## Getting Started
