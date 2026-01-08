@@ -314,13 +314,52 @@ Add to `flake.nix` in the `commonPackages` list.
 
 ## Links
 
-- [RoboStack ROS2-humble packages](https://robostack.github.io/humble.html)
-- [Pixi documentation](https://pixi.sh)
-- [Nix flakes documentation](https://nixos.wiki/wiki/Flakes)
+### ROS2 & Robotics
 - [ROS2 Humble documentation](https://docs.ros.org/en/humble/)
-- [NixOS-WSL](https://github.com/nix-community/NixOS-WSL)
-- [Flake-parts devshell documentation](https://flake.parts/options/devshell.html)
+- [ROS2 Tutorials](https://docs.ros.org/en/humble/Tutorials.html)
+- [RoboStack ROS2-humble packages](https://robostack.github.io/humble.html)
+- [ROS2 Design Documentation](https://design.ros2.org/)
+- [ROS2 Packages Index](https://index.ros.org/packages/)
+
+### Pixi & Package Management
+- [Pixi documentation](https://pixi.sh)
+- [Pixi Getting Started](https://pixi.sh/latest/getting_started/)
+- [RoboStack GitHub](https://github.com/RoboStack/ros-humble)
+- [Conda-forge](https://conda-forge.org/)
+
+### Nix Ecosystem
+- [Nix Manual](https://nixos.org/manual/nix/stable/)
+- [Nix flakes documentation](https://nixos.wiki/wiki/Flakes)
+- [NixOS Wiki](https://wiki.nixos.org/)
+- [Nix Pills (learning resource)](https://nixos.org/guides/nix-pills/)
+- [Zero to Nix](https://zero-to-nix.com/)
+- [Determinate Systems Nix Installer](https://github.com/DeterminateSystems/nix-installer)
+- [devenv.sh](https://devenv.sh/)
+- [Flake-parts documentation](https://flake.parts/)
+- [numtide devshell](https://github.com/numtide/devshell)
+
+### Home Manager
 - [Home-manager documentation](https://nix-community.github.io/home-manager/)
+- [Home-manager Options Search](https://home-manager-options.extranix.com/)
+- [Home-manager GitHub](https://github.com/nix-community/home-manager)
+
+### Windows / WSL2
+- [NixOS-WSL](https://github.com/nix-community/NixOS-WSL)
+- [WSL Documentation](https://learn.microsoft.com/en-us/windows/wsl/)
+- [WSL Best Practices](https://learn.microsoft.com/en-us/windows/wsl/setup/environment)
+- [WSL2 Networking](https://learn.microsoft.com/en-us/windows/wsl/networking)
+
+### Shells & Terminal
+- [Starship Prompt](https://starship.rs/)
+- [Nushell Documentation](https://www.nushell.sh/book/)
+- [Zsh Documentation](https://zsh.sourceforge.io/Doc/)
+- [direnv Documentation](https://direnv.net/)
+- [nix-direnv](https://github.com/nix-community/nix-direnv)
+
+### Editor
+- [Helix Editor](https://helix-editor.com/)
+- [Helix Documentation](https://docs.helix-editor.com/)
+- [Helix Language Support](https://docs.helix-editor.com/lang-support.html)
 
 ## Configuration Sources
 
