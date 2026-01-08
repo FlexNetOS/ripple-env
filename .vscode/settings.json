@@ -1,0 +1,22 @@
+{
+  // Keep the workspace consistent across Windows/macOS/Linux contributors
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  // Terminals
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.shellIntegration.enabled": true,
+  "terminal.integrated.scrollback": 10000,
+
+  // Nix
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "nil",
+  "nix.formatterPath": "nixfmt",
+
+  // direnv
+  "direnv.restart.automatic": true,
+
+  // Shell scripts
+  "shellcheck.enable": true
+}
