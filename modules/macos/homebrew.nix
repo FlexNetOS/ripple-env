@@ -9,23 +9,25 @@
 }:
 let
   inherit (lib) mkDefault;
+  # Detect architecture: Apple Silicon uses /opt/homebrew, Intel uses /usr/local
+  isAarch64 = pkgs.stdenv.hostPlatform.isAarch64;
+  homebrewPrefix = if isAarch64 then "/opt/homebrew" else "/usr/local";
 in
 {
   # Note: This module provides configuration for nix-darwin with nix-homebrew
   # For standalone home-manager, Homebrew must be managed separately
 
-  # Homebrew environment setup
+  # Homebrew environment setup (auto-detects Apple Silicon vs Intel)
   home.sessionVariables = {
-    # Homebrew paths (Apple Silicon)
-    HOMEBREW_PREFIX = "/opt/homebrew";
-    HOMEBREW_CELLAR = "/opt/homebrew/Cellar";
-    HOMEBREW_REPOSITORY = "/opt/homebrew";
+    HOMEBREW_PREFIX = homebrewPrefix;
+    HOMEBREW_CELLAR = "${homebrewPrefix}/Cellar";
+    HOMEBREW_REPOSITORY = homebrewPrefix;
   };
 
   # Add Homebrew to PATH
   home.sessionPath = [
-    "/opt/homebrew/bin"
-    "/opt/homebrew/sbin"
+    "${homebrewPrefix}/bin"
+    "${homebrewPrefix}/sbin"
   ];
 
   # Homebrew aliases
