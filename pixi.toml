@@ -14,6 +14,18 @@ pkg-config = ">=0.29.2,<0.30"
 make = ">=4.4.1,<5"
 ninja = ">=1.13.2,<2"
 
+# Compilation cache & fast linking
+ccache = ">=4.10,<5"
+sccache = ">=0.8,<1"
+
+# Archive/Network tools (for tree-sitter)
+tar = ">=1.34"
+curl = ">=8.0"
+
+# Node.js ecosystem (for LazyVim plugins like peek.nvim, live-preview.nvim)
+nodejs = ">=22.0,<23"    # LTS "Jod" - active until Apr 2027
+pnpm = ">=9.0"
+
 # ROS specific tools
 rosdep = ">=0.26.0,<0.27"
 colcon-common-extensions = ">=0.3.0,<0.4"

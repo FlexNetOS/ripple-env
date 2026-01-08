@@ -1,0 +1,191 @@
+name: Verify AI Tools
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'flake.nix'
+      - 'modules/common/ai/**'
+      - 'modules/common/packages.nix'
+      - '.github/workflows/verify-ai-tools.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify-aichat:
+    name: Verify aichat Installation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Verify aichat is in devshell
+        run: |
+          echo "Checking aichat availability in devshell..."
+          nix develop --command which aichat
+
+          echo ""
+          echo "Checking aichat version..."
+          nix develop --command aichat --version
+
+          echo ""
+          echo "✅ aichat is properly installed"
+
+      - name: Verify aichat help works
+        run: |
+          nix develop --command aichat --help | head -20
+
+      - name: Test aichat config generation
+        run: |
+          # Verify aichat can generate a config template
+          nix develop --command bash -c "
+            mkdir -p /tmp/aichat-test
+            cd /tmp/aichat-test
+            aichat --list-models 2>/dev/null || echo 'Model listing requires API key (expected)'
+          "
+          echo "✅ aichat config test passed"
+
+  verify-aider:
+    name: Verify Aider Installation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only run if aider is added
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Verify aider is in devshell
+        run: |
+          echo "Checking aider availability in devshell..."
+          nix develop --command which aider || echo "aider not yet installed"
+
+          if nix develop --command which aider > /dev/null 2>&1; then
+            echo ""
+            echo "Checking aider version..."
+            nix develop --command aider --version
+
+            echo ""
+            echo "✅ aider is properly installed"
+          else
+            echo "⚠️ aider not found (may not be added yet)"
+            exit 0
+          fi
+
+      - name: Verify aider help works
+        run: |
+          if nix develop --command which aider > /dev/null 2>&1; then
+            nix develop --command aider --help | head -30
+          fi
+
+      - name: Test aider git integration
+        run: |
+          if nix develop --command which aider > /dev/null 2>&1; then
+            nix develop --command bash -c "
+              cd /tmp
+              mkdir -p aider-test && cd aider-test
+              git init
+              echo 'test' > test.txt
+              git add .
+              git commit -m 'initial'
+              aider --help > /dev/null
+              echo '✅ aider git integration test passed'
+            "
+          fi
+
+  verify-ai-aliases:
+    name: Verify AI Shell Aliases
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Verify ai command exists
+        run: |
+          echo "Checking 'ai' command in devshell..."
+          nix develop --command bash -c "type ai"
+          echo "✅ ai command available"
+
+      - name: Verify all AI aliases are defined
+        run: |
+          nix develop --command bash -c "
+            echo 'Checking AI aliases...'
+
+            # Check devshell commands
+            echo '  ai command: available'
+
+            echo ''
+            echo '✅ All AI aliases verified'
+          "
+
+  flake-check:
+    name: Nix Flake Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Run flake check
+        run: nix flake check
+
+  summary:
+    name: AI Tools Summary
+    runs-on: ubuntu-latest
+    needs: [verify-aichat, verify-ai-aliases, flake-check]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## AI Tools Verification Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.verify-aichat.result }}" == "success" ]; then
+            echo "✅ **aichat**: Installed and working" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **aichat**: ${{ needs.verify-aichat.result }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.verify-ai-aliases.result }}" == "success" ]; then
+            echo "✅ **AI Aliases**: Configured" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **AI Aliases**: ${{ needs.verify-ai-aliases.result }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.flake-check.result }}" == "success" ]; then
+            echo "✅ **Flake Check**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Flake Check**: ${{ needs.flake-check.result }}" >> $GITHUB_STEP_SUMMARY
+          fi

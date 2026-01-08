@@ -102,6 +102,13 @@
             jq
             yq
 
+            # Archive/Network (explicit for tree-sitter)
+            gnutar
+            curl
+            wget
+            unzip
+            gzip
+
             # Directory navigation
             zoxide
             direnv
@@ -120,6 +127,28 @@
 
             # Prompt
             starship
+
+            # AI assistants
+            aichat
+            aider-chat
+
+            # Audio (for aider voice features)
+            portaudio
+
+            # Build tools & compilation cache
+            ccache              # Fast C/C++ compilation cache
+            sccache             # Distributed compilation cache (cloud support)
+            mold                # Fast modern linker (12x faster than lld)
+
+            # Tree-sitter (for LazyVim/Neovim)
+            tree-sitter
+
+            # Node.js ecosystem (for LazyVim plugins)
+            nodejs_22           # LTS "Jod" - active until Apr 2027
+            nodePackages.pnpm
+
+            # Git tools
+            lazygit             # Git TUI (integrates with LazyVim)
           ];
 
           # Linux-specific packages
@@ -188,6 +217,10 @@
                 echo "  ct     - colcon test"
                 echo "  pixi   - package manager"
                 echo ""
+                echo "AI assistants:"
+                echo "  ai     - AI chat (aichat, lightweight)"
+                echo "  pair   - AI pair programming (aider, git-integrated)"
+                echo ""
               '';
 
               motd = "";
@@ -219,6 +252,16 @@
                 name = "update-deps";
                 help = "Update pixi dependencies";
                 command = "pixi update";
+              }
+              {
+                name = "ai";
+                help = "AI chat assistant (provider-agnostic)";
+                command = "aichat $@";
+              }
+              {
+                name = "pair";
+                help = "AI pair programming with git integration (aider)";
+                command = "aider $@";
               }
             ];
           };

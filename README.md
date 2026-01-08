@@ -174,6 +174,7 @@ ros2-humble-env/
     │   ├── direnv.nix     # Enhanced direnv config
     │   ├── git.nix        # Git configuration
     │   ├── packages.nix   # Common packages
+    │   ├── ai/            # AI assistants (aichat)
     │   ├── nix/           # Nix settings
     │   ├── editor/        # Helix editor with ROS2 LSPs
     │   └── shell/         # Shell configurations
@@ -210,6 +211,7 @@ The workspace includes:
 ### Development Environment
 - **Shells**: bash, zsh, nushell (with starship prompt)
 - **Editor**: helix with LSPs for Python, C++, CMake, Nix, YAML, XML
+- **AI Assistants**: aichat (lightweight chat), aider (git-integrated pair programming)
 - **Navigation**: zoxide (smart cd), fzf (fuzzy finder)
 - **Utilities**: bat, eza, ripgrep, fd, jq, yq
 
@@ -238,6 +240,16 @@ ros2-env                    # Show ROS2 environment variables
 
 # Update dependencies
 update-deps                 # pixi update
+
+# AI assistance
+ai "explain ROS2 topics"    # Ask AI anything
+ai-code "write a publisher" # Generate code
+ai-review                   # Review code (pipe input)
+
+# AI pair programming (aider)
+pair                        # Start AI pair programming
+pair src/my_node.py         # Work on specific files
+pair-voice                  # Voice-to-code mode
 ```
 
 ## Using Different Shells

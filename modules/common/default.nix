@@ -3,6 +3,7 @@
 { pkgs, lib, ... }:
 {
   imports = [
+    ./ai
     ./direnv.nix
     ./git.nix
     ./packages.nix

@@ -42,7 +42,8 @@ in
     curl               # HTTP client
     wget               # Download tool
 
-    # Archive tools
+    # Archive tools (explicit for tree-sitter)
+    gnutar             # GNU tar
     unzip
     zip
     gzip
@@ -53,6 +54,28 @@ in
 
     # Build tools (supplementary to pixi)
     pkg-config
+    ccache             # Fast C/C++ compilation cache
+    sccache            # Distributed compilation cache
+
+    # Fast linker
+    mold               # Modern linker (12x faster than lld)
+
+    # Tree-sitter (for Neovim/LazyVim)
+    tree-sitter
+
+    # Node.js ecosystem (for LazyVim plugins)
+    nodejs_22          # LTS "Jod" - active until Apr 2027
+    nodePackages.pnpm
+
+    # Git tools
+    lazygit            # Git TUI (integrates with LazyVim)
+
+    # AI assistants
+    aichat             # Provider-agnostic AI CLI
+    aider-chat         # AI pair programming with git integration
+
+    # Audio (for aider voice features)
+    portaudio
   ] ++ optionals isLinux [
     # Linux-specific packages
     inotify-tools      # File watching
@@ -93,5 +116,16 @@ in
     "gco" = "git checkout";
     "gb" = "git branch";
     "glog" = "git log --oneline --graph --decorate";
+
+    # AI assistants
+    "ai" = "aichat";
+    "ai-code" = "aichat --role coder";
+    "ai-explain" = "aichat --role explain";
+    "ai-review" = "aichat --role reviewer";
+
+    # Aider (AI pair programming)
+    "pair" = "aider";
+    "pair-voice" = "aider --voice";
+    "pair-watch" = "aider --watch";
   };
 }
