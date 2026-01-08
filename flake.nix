@@ -120,6 +120,9 @@
 
             # Prompt
             starship
+
+            # AI assistants
+            aichat
           ];
 
           # Linux-specific packages
@@ -187,6 +190,7 @@
                 echo "  cb     - colcon build --symlink-install"
                 echo "  ct     - colcon test"
                 echo "  pixi   - package manager"
+                echo "  ai     - AI chat assistant (aichat)"
                 echo ""
               '';
 
@@ -219,6 +223,11 @@
                 name = "update-deps";
                 help = "Update pixi dependencies";
                 command = "pixi update";
+              }
+              {
+                name = "ai";
+                help = "AI chat assistant (provider-agnostic)";
+                command = "aichat $@";
               }
             ];
           };

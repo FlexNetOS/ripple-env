@@ -53,6 +53,9 @@ in
 
     # Build tools (supplementary to pixi)
     pkg-config
+
+    # AI assistants
+    aichat             # Provider-agnostic AI CLI
   ] ++ optionals isLinux [
     # Linux-specific packages
     inotify-tools      # File watching
@@ -93,5 +96,11 @@ in
     "gco" = "git checkout";
     "gb" = "git branch";
     "glog" = "git log --oneline --graph --decorate";
+
+    # AI assistants
+    "ai" = "aichat";
+    "ai-code" = "aichat --role coder";
+    "ai-explain" = "aichat --role explain";
+    "ai-review" = "aichat --role reviewer";
   };
 }
