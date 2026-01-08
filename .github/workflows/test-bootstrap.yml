@@ -2,14 +2,14 @@ name: Test Bootstrap Scripts
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
     paths:
       - 'bootstrap.ps1'
       - 'bootstrap.sh'
       - 'test/**'
       - '.github/workflows/test-bootstrap.yml'
   pull_request:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
     inputs:
       run_integration:
@@ -22,6 +22,47 @@ on:
           - 'false'
 
 jobs:
+  # ===========================================
+  # Security Scanning
+  # ===========================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner (filesystem)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          # Skip node_modules and other large directories
+          skip-dirs: 'node_modules,.pixi'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Trivy for table output (summary)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          skip-dirs: 'node_modules,.pixi'
+
   # ===========================================
   # Tier 1: Unit Tests (Fast, runs on every commit)
   # ===========================================

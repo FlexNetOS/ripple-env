@@ -227,39 +227,25 @@ Describe "Set-WSLConfig" {
         # Store original USERPROFILE
         $script:originalUserProfile = $env:USERPROFILE
         $env:USERPROFILE = $TestDrive
-
-        # Set SwapSizeGB variable that the function uses
-        $script:SwapSizeGB = 8
     }
 
     AfterAll {
         $env:USERPROFILE = $script:originalUserProfile
     }
 
-    It "Should create .wslconfig file" {
-        # Temporarily redefine Set-WSLConfig with a known SwapSizeGB value
-        $result = & {
-            $SwapSizeGB = 8
-            $wslConfigPath = "$env:USERPROFILE\.wslconfig"
+    It "Should create .wslconfig file using MemorySizeGB and SwapSizeGB" {
+        # Use distinct values so we can assert they are not accidentally tied together
+        $MemorySizeGB = 10
+        $SwapSizeGB = 2
 
-            $wslConfig = @"
-[wsl2]
-memory=${SwapSizeGB}GB
-swap=${SwapSizeGB}GB
-localhostForwarding=true
-
-[experimental]
-autoMemoryReclaim=gradual
-sparseVhd=true
-"@
-            Set-Content -Path $wslConfigPath -Value $wslConfig -Force
-            return $true
-        }
-
-        $result | Should -Be $true
+        { Set-WSLConfig } | Should -Not -Throw
 
         $configPath = Join-Path $TestDrive ".wslconfig"
         Test-Path $configPath | Should -Be $true
+
+        $content = Get-Content $configPath -Raw
+        $content | Should -Match "memory=10GB"
+        $content | Should -Match "swap=2GB"
     }
 
     It "Should contain correct memory configuration" {
@@ -383,9 +369,9 @@ Describe "URL Configuration" {
     }
 
     It "Should have valid repository URL" {
-        $url = "https://github.com/FlexNetOS/ros2-humble-env.git"
-        $url | Should -Match "^https://github.com"
-        $url | Should -Match "\.git$"
+        # Validate the script default rather than hard-coding a single fork.
+        $RepoURL | Should -Match "^https://github.com"
+        $RepoURL | Should -Match "\.git$"
     }
 }
 

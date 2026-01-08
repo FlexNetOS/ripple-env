@@ -8,6 +8,9 @@
 }:
 let
   inherit (lib) mkDefault;
+  # Detect architecture: Apple Silicon uses /opt/homebrew, Intel uses /usr/local
+  isAarch64 = pkgs.stdenv.hostPlatform.isAarch64;
+  homebrewPrefix = if isAarch64 then "/opt/homebrew" else "/usr/local";
 in
 {
   # macOS-specific shell configuration
@@ -17,10 +20,14 @@ in
     text = ''
       # macOS-specific Nushell configuration
 
-      # Homebrew path handling
+      # Homebrew path handling (supports both Apple Silicon and Intel)
+      # Apple Silicon: /opt/homebrew, Intel: /usr/local
       if ("/opt/homebrew/bin" | path exists) {
         $env.PATH = ($env.PATH | prepend "/opt/homebrew/bin")
         $env.PATH = ($env.PATH | prepend "/opt/homebrew/sbin")
+      } else if ("/usr/local/bin" | path exists) {
+        $env.PATH = ($env.PATH | prepend "/usr/local/bin")
+        $env.PATH = ($env.PATH | prepend "/usr/local/sbin")
       }
 
       # Fix for DYLD on macOS
@@ -54,9 +61,11 @@ in
   programs.zsh.initExtra = mkDefault ''
     # macOS-specific zsh configuration
 
-    # Homebrew completions
+    # Homebrew completions (supports both Apple Silicon and Intel)
     if [[ -d /opt/homebrew/share/zsh/site-functions ]]; then
       FPATH="/opt/homebrew/share/zsh/site-functions:$FPATH"
+    elif [[ -d /usr/local/share/zsh/site-functions ]]; then
+      FPATH="/usr/local/share/zsh/site-functions:$FPATH"
     fi
 
     # Fix for slow paste in zsh
@@ -72,9 +81,11 @@ in
   programs.bash.initExtra = mkDefault ''
     # macOS-specific bash configuration
 
-    # Homebrew completions
+    # Homebrew completions (supports both Apple Silicon and Intel)
     if [[ -r /opt/homebrew/etc/profile.d/bash_completion.sh ]]; then
       source /opt/homebrew/etc/profile.d/bash_completion.sh
+    elif [[ -r /usr/local/etc/profile.d/bash_completion.sh ]]; then
+      source /usr/local/etc/profile.d/bash_completion.sh
     fi
   '';
 }

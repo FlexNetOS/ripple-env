@@ -27,33 +27,30 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = import systems;
 
-      imports = [
-        devshell.flakeModule
-      ];
-
       # Flake-level outputs (not per-system)
       flake = {
         # Export library functions
-        lib = import ./lib { inherit (nixpkgs) lib; inherit inputs; };
+        lib = (import ./lib { inherit (nixpkgs) lib; inherit inputs; }) // {
+          # Home-manager modules are not a standard flake output; expose them under lib
+          # to avoid warnings like: "unknown flake output 'homeManagerModules'".
+          homeManagerModules = {
+            common = ./modules/common;
+            linux = ./modules/linux;
+            macos = ./modules/macos;
 
-        # Export modules for use in other flakes
-        homeManagerModules = {
-          common = ./modules/common;
-          linux = ./modules/linux;
-          macos = ./modules/macos;
-
-          # Combined module that auto-selects based on platform
-          default =
-            { config, lib, pkgs, ... }:
-            {
-              imports = [
-                ./modules/common
-              ] ++ lib.optionals pkgs.stdenv.isLinux [
-                ./modules/linux
-              ] ++ lib.optionals pkgs.stdenv.isDarwin [
-                ./modules/macos
-              ];
-            };
+            # Combined module that auto-selects based on platform
+            default =
+              { config, lib, pkgs, ... }:
+              {
+                imports = [
+                  ./modules/common
+                ] ++ lib.optionals pkgs.stdenv.isLinux [
+                  ./modules/linux
+                ] ++ lib.optionals pkgs.stdenv.isDarwin [
+                  ./modules/macos
+                ];
+              };
+          };
         };
 
         # Export NixOS/Darwin modules (for system-level configuration)
@@ -165,9 +162,85 @@
             gawk
           ];
 
+          # Provide common helper commands as real executables (not shell functions), so they
+          # are available when CI uses `nix develop --command ...`.
+          commandWrappers = [
+            (pkgs.writeShellScriptBin "cb" ''
+              exec colcon build --symlink-install "$@"
+            '')
+            (pkgs.writeShellScriptBin "ct" ''
+              exec colcon test "$@"
+            '')
+            (pkgs.writeShellScriptBin "ctr" ''
+              exec colcon test-result --verbose
+            '')
+            (pkgs.writeShellScriptBin "ros2-env" ''
+              env | grep -E '^(ROS|RMW|AMENT|COLCON)' | sort
+            '')
+            (pkgs.writeShellScriptBin "update-deps" ''
+              exec pixi update
+            '')
+            (pkgs.writeShellScriptBin "ai" ''
+              exec aichat "$@"
+            '')
+            (pkgs.writeShellScriptBin "pair" ''
+              if command -v aider >/dev/null 2>&1; then
+                exec aider "$@"
+              elif command -v aider-chat >/dev/null 2>&1; then
+                exec aider-chat "$@"
+              else
+                echo "Neither 'aider' nor 'aider-chat' is available in PATH" >&2
+                exit 127
+              fi
+            '')
+          ];
+
         in
         {
           # Development shell (main entry point)
+          # Use standard `devShells` (and avoid the devshell flake module) so `nix flake check`
+          # stays warning-free on newer Nix.
+          devShells.default = pkgs.mkShell {
+            packages = commonPackages ++ commandWrappers ++ linuxPackages ++ darwinPackages;
+            COLCON_DEFAULTS_FILE = toString colconDefaults;
+            EDITOR = "hx";
+            VISUAL = "hx";
+
+            shellHook = ''
+              # Initialize pixi environment
+              if [ -f pixi.toml ]; then
+                ${optionalString isDarwin ''
+                  export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
+                ''}
+                eval "$(pixi shell-hook)"
+              fi
+
+              # Initialize direnv
+              eval "$(direnv hook bash)"
+
+              # Initialize zoxide
+              eval "$(zoxide init bash)"
+
+              # Initialize starship prompt
+              eval "$(starship init bash)"
+
+              # ROS2 environment info
+              echo ""
+              echo "🤖 ROS2 Humble Development Environment"
+              echo "======================================"
+              echo "  Platform: ${if isDarwin then "macOS" else "Linux"} (${system})"
+              echo "  Shell: bash (use 'zsh' or 'nu' for other shells)"
+              echo ""
+              echo "Quick commands:"
+              echo "  cb     - colcon build --symlink-install"
+              echo "  ct     - colcon test"
+              echo "  pixi   - package manager"
+              echo ""
+              echo "AI assistants:"
+              echo "  ai     - AI chat (aichat, lightweight)"
+              echo "  pair   - AI pair programming (aider, git-integrated)"
+              echo ""
+            '';
           devshells.default = {
             env = [
               {
@@ -181,6 +254,25 @@
               {
                 name = "VISUAL";
                 value = "hx";
+              }
+            ] ++ optionals isLinux [
+              # Use mold as default linker (12x faster than lld, 50x faster than gold)
+              # Only on Linux - macOS uses its own linker
+              {
+                name = "LDFLAGS";
+                value = "-fuse-ld=mold";
+              }
+              {
+                name = "CMAKE_EXE_LINKER_FLAGS";
+                value = "-fuse-ld=mold";
+              }
+              {
+                name = "CMAKE_SHARED_LINKER_FLAGS";
+                value = "-fuse-ld=mold";
+              }
+              {
+                name = "CMAKE_MODULE_LINKER_FLAGS";
+                value = "-fuse-ld=mold";
               }
             ];
 
@@ -267,31 +359,21 @@
           };
 
           # Minimal shell for CI
-          devshells.ci = {
-            env = [
-              {
-                name = "COLCON_DEFAULTS_FILE";
-                value = toString colconDefaults;
-              }
+          devShells.ci = pkgs.mkShell {
+            packages = with pkgs; [
+              pixi
+              git
             ];
+            COLCON_DEFAULTS_FILE = toString colconDefaults;
 
-            devshell = {
-              packages = with pkgs; [
-                pixi
-                git
-              ];
-
-              startup.activate.text = ''
-                if [ -f pixi.toml ]; then
-                  ${optionalString isDarwin ''
-                    export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
-                  ''}
-                  eval "$(pixi shell-hook)"
-                fi
-              '';
-
-              motd = "";
-            };
+            shellHook = ''
+              if [ -f pixi.toml ]; then
+                ${optionalString isDarwin ''
+                  export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
+                ''}
+                eval "$(pixi shell-hook)"
+              fi
+            '';
           };
 
           # Formatter for nix files

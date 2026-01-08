@@ -20,8 +20,21 @@
 .PARAMETER DiskSizeGB
     Size of the ext4.vhdx disk in GB (default: 1024 = 1TB)
 
+.PARAMETER MemorySizeGB
+    Memory limit for WSL2 in GB written to .wslconfig (default: 8)
+
 .PARAMETER SwapSizeGB
     Size of swap in GB (default: 8)
+
+.PARAMETER RepoURL
+    Git URL to clone inside WSL (default: https://github.com/FlexNetOS/ros2-humble-env.git)
+
+.PARAMETER RepoFetchRef
+    Optional git ref/refspec to fetch inside WSL before running bootstrap.
+    Examples: refs/heads/main, refs/tags/v1.2.3, refs/pull/123/merge
+
+.PARAMETER SkipShells
+    Skip shell customization steps in bootstrap.sh (passes --skip-shells)
 
 .PARAMETER SkipWSLCheck
     Skip WSL installation check (for already configured systems)
@@ -42,7 +55,11 @@ param(
     [string]$DistroName = "NixOS-ROS2",
     [string]$InstallPath = "$env:USERPROFILE\WSL\NixOS-ROS2",
     [int]$DiskSizeGB = 1024,
+    [int]$MemorySizeGB = 8,
     [int]$SwapSizeGB = 8,
+    [string]$RepoURL = "https://github.com/FlexNetOS/ros2-humble-env.git",
+    [string]$RepoFetchRef = "",
+    [switch]$SkipShells,
     [switch]$SkipWSLCheck,
     [switch]$Force
 )
@@ -53,7 +70,6 @@ $ProgressPreference = "SilentlyContinue"
 
 # URLs and versions
 $NixOSWSLRelease = "https://github.com/nix-community/NixOS-WSL/releases/latest/download/nixos-wsl.tar.gz"
-$RepoURL = "https://github.com/FlexNetOS/ros2-humble-env.git"
 
 # Colors for output
 function Write-ColorOutput {
@@ -232,8 +248,9 @@ function Set-VirtualDiskSize {
         return $false
     }
 
-    # Resize the VHDX to specified size
-    $diskSizeBytes = [int64]$DiskSizeGB * 1024 * 1024 * 1024
+    # NOTE: diskpart's `expand vdisk maximum=` expects the maximum size in **MB**.
+    # We accept DiskSizeGB, so convert to MB.
+    $diskSizeMB = [int64]$DiskSizeGB * 1024
 
     Write-ColorOutput "Resizing virtual disk to ${DiskSizeGB}GB..." "Info"
 
@@ -245,7 +262,7 @@ function Set-VirtualDiskSize {
         # Use diskpart to resize
         $diskpartScript = @"
 select vdisk file="$vhdxPath"
-expand vdisk maximum=$DiskSizeGB
+expand vdisk maximum=$diskSizeMB
 "@
         $diskpartScript | diskpart | Out-Null
 
@@ -265,7 +282,7 @@ function Set-WSLConfig {
 
     $wslConfig = @"
 [wsl2]
-memory=${SwapSizeGB}GB
+memory=${MemorySizeGB}GB
 swap=${SwapSizeGB}GB
 localhostForwarding=true
 
@@ -321,24 +338,43 @@ function Install-ROS2Environment {
     # Clone the repository
     Write-ColorOutput "Cloning ros2-humble-env repository..." "Info"
 
-    $cloneScript = @"
-set -e
+    $cloneScript = @'
+set -euo pipefail
+
+repo_dir="${REPO_DIR:-ros2-humble-env}"
+repo_url="${REPO_URL:?REPO_URL is required}"
+repo_fetch_ref="${REPO_FETCH_REF:-}"
+
 cd ~
 
-if [ -d "ros2-humble-env" ]; then
-    echo "Repository already exists, pulling latest..."
-    cd ros2-humble-env
-    git pull
+if [ -d "$repo_dir/.git" ]; then
+    echo "Repository already exists, updating reminder: origin -> $repo_url"
+    cd "$repo_dir"
+    git remote set-url origin "$repo_url" || true
 else
     echo "Cloning repository..."
-    git clone $RepoURL
-    cd ros2-humble-env
+    git clone "$repo_url" "$repo_dir"
+    cd "$repo_dir"
+fi
+
+if [ -n "$repo_fetch_ref" ]; then
+    echo "Fetching ref: $repo_fetch_ref"
+    git fetch --prune origin "$repo_fetch_ref"
+    echo "Checking out fetched ref (detached HEAD)"
+    git checkout --detach FETCH_HEAD
+else
+    echo "No REPO_FETCH_REF provided; fetching default refs"
+    git fetch --prune origin
+    # If we're on a branch, try a fast-forward update (don't fail if not possible)
+    if git symbolic-ref -q HEAD >/dev/null; then
+        git pull --ff-only || true
+    fi
 fi
 
 echo "Repository ready"
-"@
+'@
 
-    wsl -d $DistroName -- bash -c $cloneScript
+    wsl -d $DistroName -- env "REPO_URL=$RepoURL" "REPO_FETCH_REF=$RepoFetchRef" "REPO_DIR=ros2-humble-env" bash -lc $cloneScript
 
     # Run the bootstrap script
     Write-ColorOutput "Running bootstrap script (this may take a while)..." "Info"
@@ -351,12 +387,17 @@ cd ~/ros2-humble-env
 chmod +x bootstrap.sh
 
 # Run bootstrap in CI mode (non-interactive)
-./bootstrap.sh --ci
+if [ "${SKIP_SHELLS:-}" = "1" ]; then
+    ./bootstrap.sh --ci --skip-shells
+else
+    ./bootstrap.sh --ci
+fi
 
 echo "Bootstrap complete!"
 '@
 
-    wsl -d $DistroName -- bash -c $bootstrapScript
+    $skipShellsEnv = if ($SkipShells) { "1" } else { "" }
+    wsl -d $DistroName -- env "SKIP_SHELLS=$skipShellsEnv" bash -lc $bootstrapScript
 
     if ($LASTEXITCODE -ne 0) {
         Write-ColorOutput "Bootstrap script encountered errors" "Error"
@@ -384,6 +425,7 @@ function Show-Summary {
     Write-Host "Distribution: $DistroName"
     Write-Host "Location: $InstallPath"
     Write-Host "Disk Size: ${DiskSizeGB}GB"
+    Write-Host "WSL Memory: ${MemorySizeGB}GB"
     Write-Host "Swap Size: ${SwapSizeGB}GB"
     Write-Host ""
     Write-Host "To enter the environment:" -ForegroundColor Cyan

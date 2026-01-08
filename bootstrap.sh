@@ -17,6 +17,15 @@
 
 set -euo pipefail
 
+# Some environments (including certain dotfiles) set TMPDIR to a path that may
+# not exist. The Determinate Systems Nix installer uses mktemp and will fail if
+# TMPDIR points to a missing directory.
+: "${TMPDIR:=/tmp}"
+if [ ! -d "$TMPDIR" ]; then
+    TMPDIR=/tmp
+fi
+export TMPDIR
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -69,6 +78,57 @@ check_command() {
     command -v "$1" &> /dev/null
 }
 
+source_nix_profile() {
+    # nix-daemon.sh guards itself with __ETC_PROFILE_NIX_SOURCED. In some
+    # environments that variable may already be set, which can prevent PATH
+    # updates and make `nix` appear "not found".
+    unset __ETC_PROFILE_NIX_SOURCED 2>/dev/null || true
+
+    if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    elif [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+        . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+    fi
+
+    # As a last resort, ensure the default profile bin path is available.
+    if ! check_command nix && [ -x /nix/var/nix/profiles/default/bin/nix ]; then
+        export PATH="/nix/var/nix/profiles/default/bin:$PATH"
+    fi
+}
+
+ensure_nix_daemon() {
+    # If Nix was installed in multi-user mode but the daemon isn't running (e.g.
+    # inside containers without systemd), nix commands will fail with permission
+    # errors or missing daemon socket.
+    if [ -S /nix/var/nix/daemon-socket/socket ]; then
+        return 0
+    fi
+
+    log_warn "Nix daemon socket not found; attempting to start nix-daemon"
+
+    # Try systemd first (if present).
+    if check_command systemctl; then
+        sudo systemctl start nix-daemon 2>/dev/null || true
+    fi
+
+    if [ -S /nix/var/nix/daemon-socket/socket ]; then
+        return 0
+    fi
+
+    # Fall back to starting the daemon directly.
+    sudo mkdir -p /nix/var/nix/daemon-socket
+    sudo chmod 755 /nix/var/nix/daemon-socket
+    (sudo /nix/var/nix/profiles/default/bin/nix-daemon --daemon >/tmp/nix-daemon.log 2>&1 &) || true
+    sleep 1
+
+    if [ -S /nix/var/nix/daemon-socket/socket ]; then
+        log_success "Nix daemon is running"
+        return 0
+    fi
+
+    log_warn "Failed to start nix-daemon automatically. If nix commands fail, check /tmp/nix-daemon.log"
+}
+
 # Detect OS and architecture
 detect_system() {
     log_info "Detecting system..."
@@ -116,12 +176,8 @@ install_nix() {
             sh -s -- install
     fi
 
-    # Source nix profile
-    if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
-        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-    elif [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-        . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-    fi
+    source_nix_profile
+    ensure_nix_daemon
 
     log_success "Nix installed successfully"
 }
@@ -278,9 +334,14 @@ verify_environment() {
         exit 1
     fi
 
-    # Verify flake
+    # Verify flake (fail hard if it doesn't evaluate)
     log_info "Checking flake..."
-    nix flake check --no-build 2>/dev/null || nix flake show
+    if ! nix flake check --no-build --all-systems; then
+        log_error "nix flake check failed"
+        log_info "flake output (for debugging):"
+        nix flake show || true
+        exit 1
+    fi
 
     # Build the devshell (this validates the configuration)
     log_info "Building development shell..."
@@ -353,11 +414,8 @@ main() {
     enable_flakes
 
     # Source nix again to ensure it's available
-    if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
-        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-    elif [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-        . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-    fi
+    source_nix_profile
+    ensure_nix_daemon
 
     # Install tools via nix
     install_direnv
@@ -368,7 +426,11 @@ main() {
     install_nushell
 
     # Setup shell integrations
-    setup_direnv_hooks
+    if [ "$CI_MODE" = true ]; then
+        log_info "CI mode: skipping shell rc modifications"
+    else
+        setup_direnv_hooks
+    fi
 
     # Verify environment
     verify_environment

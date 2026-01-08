@@ -57,8 +57,8 @@ Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.31
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD\actions-runner-win-x64.zip", "$PWD")
 
-# Configure the runner
-.\config.cmd --url https://github.com/FlexNetOS/ros2-humble-env --token YOUR_TOKEN_HERE
+# Configure the runner (use your repo URL)
+.\config.cmd --url https://github.com/<OWNER>/<REPO> --token YOUR_TOKEN_HERE
 ```
 
 ## Step 3: Add Required Labels
@@ -111,8 +111,13 @@ Run the workflow manually:
 
 1. Go to **Actions** → **Bootstrap End-to-End Test**
 2. Click **Run workflow**
-3. Enable "Run Windows WSL2 end-to-end test"
-4. Click **Run workflow**
+3. Set **run_windows_e2e** to `true`
+4. (Optional) Set **windows_e2e_repo_fetch_ref** if you want to test a specific ref inside WSL
+   - Examples:
+     - `refs/heads/main`
+     - `refs/tags/v1.2.3`
+     - `refs/pull/123/merge`
+5. Click **Run workflow**
 
 The `bootstrap-windows-e2e` job should now run on your self-hosted runner.
 
@@ -190,13 +195,19 @@ bootstrap-windows-e2e:
   name: Bootstrap Test (Windows WSL2 - E2E)
   runs-on: [self-hosted, Windows, WSL2]
   timeout-minutes: 90
-  if: github.event_name == 'workflow_dispatch' || github.event.inputs.run_windows_e2e == 'true'
+  if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_windows_e2e == 'true'
   needs: bootstrap-windows-syntax
 ```
 
 The job:
-1. Runs only on `workflow_dispatch` (manual trigger)
+1. Runs only when explicitly requested via `workflow_dispatch` (manual trigger)
 2. Requires the syntax check to pass first
 3. Uses labels `[self-hosted, Windows, WSL2]` to target the correct runner
 4. Has a 90-minute timeout for the full installation process
 5. Cleans up test distributions after completion
+
+### Why the E2E job is manual-only
+
+GitHub Actions cannot reliably "skip" a job that targets a self-hosted runner when no runner is online.
+If this job is enabled on `push`/`pull_request`, it can queue indefinitely. Keeping it manual-only
+prevents hanging CI when the Windows runner is offline.
