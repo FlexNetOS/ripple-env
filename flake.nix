@@ -182,6 +182,25 @@
                 name = "VISUAL";
                 value = "hx";
               }
+            ] ++ optionals isLinux [
+              # Use mold as default linker (12x faster than lld, 50x faster than gold)
+              # Only on Linux - macOS uses its own linker
+              {
+                name = "LDFLAGS";
+                value = "-fuse-ld=mold";
+              }
+              {
+                name = "CMAKE_EXE_LINKER_FLAGS";
+                value = "-fuse-ld=mold";
+              }
+              {
+                name = "CMAKE_SHARED_LINKER_FLAGS";
+                value = "-fuse-ld=mold";
+              }
+              {
+                name = "CMAKE_MODULE_LINKER_FLAGS";
+                value = "-fuse-ld=mold";
+              }
             ];
 
             devshell = {
