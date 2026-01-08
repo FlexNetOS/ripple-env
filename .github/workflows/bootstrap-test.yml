@@ -1,0 +1,177 @@
+name: Bootstrap End-to-End Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bootstrap.sh'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'pixi.toml'
+      - 'pixi.lock'
+      - '.github/workflows/bootstrap-test.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  bootstrap-linux:
+    name: Bootstrap Test (Linux x86_64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          df -h
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Verify Nix installation
+        run: |
+          nix --version
+          nix config show | grep experimental-features
+
+      - name: Install dependencies via Nix
+        run: |
+          nix profile install nixpkgs#direnv
+          nix profile install nixpkgs#nix-output-monitor
+          nix profile install nixpkgs#git
+          nix profile install nixpkgs#gh
+
+      - name: Verify flake
+        run: |
+          nix flake check --no-build
+          nix flake show
+
+      - name: Build development shell
+        run: |
+          nix develop --command echo "Development shell is working"
+
+      - name: Verify pixi is available
+        run: |
+          nix develop --command pixi --version
+
+      - name: Run pixi install
+        run: |
+          nix develop --command pixi install
+
+      - name: Verify ROS2 environment
+        run: |
+          nix develop --command pixi run python --version
+          nix develop --command pixi run cmake --version
+
+      - name: Test colcon availability
+        run: |
+          nix develop --command pixi run colcon --help | head -20
+
+      - name: Test ROS2 commands
+        run: |
+          nix develop --command pixi run ros2 --help | head -20
+
+  bootstrap-macos:
+    name: Bootstrap Test (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Verify Nix installation
+        run: |
+          nix --version
+          nix config show | grep experimental-features
+
+      - name: Install dependencies via Nix
+        run: |
+          nix profile install nixpkgs#direnv
+          nix profile install nixpkgs#nix-output-monitor
+
+      - name: Verify flake
+        run: |
+          nix flake check --no-build
+          nix flake show
+
+      - name: Build development shell
+        run: |
+          nix develop --command echo "Development shell is working"
+
+      - name: Verify pixi is available
+        run: |
+          nix develop --command pixi --version
+
+      - name: Run pixi install
+        run: |
+          nix develop --command pixi install
+
+      - name: Verify environment tools
+        run: |
+          nix develop --command pixi run python --version
+          nix develop --command pixi run cmake --version
+
+  bootstrap-script-test:
+    name: Bootstrap Script Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          df -h
+
+      - name: Make bootstrap script executable
+        run: chmod +x bootstrap.sh
+
+      - name: Run bootstrap script in CI mode
+        run: |
+          ./bootstrap.sh --ci --skip-shells
+        env:
+          # Suppress interactive prompts
+          NIX_INSTALLER_NO_CONFIRM: "true"
+
+      - name: Verify bootstrap completed successfully
+        run: |
+          # Source nix
+          if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+            . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+          fi
+
+          # Verify installed tools
+          nix --version
+          direnv --version
+          nom --version
+          git --version
+          gh --version
+
+      - name: Verify development environment works
+        run: |
+          # Source nix
+          if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+            . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+          fi
+
+          # Enter dev shell and verify
+          nix develop --command pixi run ros2 --help | head -10
