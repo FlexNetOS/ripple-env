@@ -26,6 +26,7 @@
 | [ROS2 Development](./skills/ros2-development/README.md) | Building, testing, and running ROS2 packages |
 | [DevOps](./skills/devops/README.md) | CI/CD, GitHub workflows, automation |
 | [Nix Environment](./skills/nix-environment/README.md) | Flakes, home-manager, environment management |
+| [AI Assistants](./skills/ai-assistants/README.md) | aichat, aider, AI-powered development tools |
 
 ### Agent Roles
 
@@ -62,7 +63,9 @@ ros2-humble-env/
 │   │   │   └── README.md
 │   │   ├── devops/
 │   │   │   └── README.md
-│   │   └── nix-environment/
+│   │   ├── nix-environment/
+│   │   │   └── README.md
+│   │   └── ai-assistants/
 │   │       └── README.md
 │   ├── commands/                     # Slash command definitions
 │   │   ├── build.md
@@ -98,6 +101,10 @@ ros2-humble-env/
 │   │   ├── direnv.nix                # direnv configuration
 │   │   ├── git.nix                   # Git configuration
 │   │   ├── packages.nix              # Common packages and aliases
+│   │   ├── ai/                       # AI-powered development tools
+│   │   │   ├── default.nix           # AI module aggregator
+│   │   │   ├── aichat.nix            # Provider-agnostic AI CLI
+│   │   │   └── aider.nix             # AI pair programming with Git
 │   │   ├── nix/
 │   │   │   └── default.nix           # Nix settings and caches
 │   │   ├── editor/
@@ -113,7 +120,7 @@ ros2-humble-env/
 │   ├── linux/                        # Linux-specific configurations
 │   │   ├── default.nix               # Linux module aggregator
 │   │   ├── packages.nix              # Linux packages (debug, serial)
-│   │   ├── docker.nix                # Docker/Podman setup
+│   │   ├── docker.nix                # Docker/container support
 │   │   ├── udev.nix                  # Device rules for robotics
 │   │   ├── users.nix                 # User configuration
 │   │   └── systemd.nix               # Systemd services
