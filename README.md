@@ -1,6 +1,19 @@
-# ros2-humble-env
+# Riple Enviroment and Bianry Creation
 
-a reproducible and declarative development environment for ros2 humble using nix flakes and pixi for cross-platform compatibility. this repository is meant to be used as a "template" repository for robotics projects to offer a easy starting environment with a working ros2 install.
+- Uses the orginal environment template setup from "ros2-humble-env" to create a wsl2 distro. 
+- a reproducible and declarative development environment for ros2 humble using nix flakes and pixi for cross-platform compatibility. 
+- this repository is meant to be used as a "template" repository for robotics projects to offer a easy starting environment with a working ros2 install.
+
+# Goal: 
+
+- A single script run from windows powershell that checks for linux and wsl2 install, then installs and updates them as needed.
+- Creates the NixOS Distro, reigisters it, Creates the ext4.vhxd hard disk image 1TB, and swap image. 
+- Loads the nix flake, and configurqations per direnv
+- sets up pixi package manager, tools, and packages
+- adds zsh and nushell (bash stays default with nix)
+- Uses nom instead of nix
+- installs git and gh cli
+- Add all configs/files from "https://github.com/GustavoWidman/nix" then search "https://github.com/RGBCube/ncc" and add what is still missing. 
 
 ## overview
 
@@ -15,7 +28,7 @@ this repository provides a complete development setup for ros2 humble with all n
 ### check list
 
 - nix with flakes enabled
-- git
+- Git >= 2.19.0
 - nom
 - pixi
 - nushell
@@ -120,7 +133,7 @@ the workspace includes:
 - **python**: 3.11.x with development headers
 - **platforms**: supports linux-64, linux-aarch64, osx-64, osx-arm64
 
-## workspace structure
+## workspace structure **Expand after adding configs/files from "https://github.com/GustavoWidman/nix" & "https://github.com/RGBCube/ncc"
 
 ```
 ros2-humble-env/
