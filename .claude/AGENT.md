@@ -13,10 +13,17 @@ This environment is designed as the foundation for an **agentic system** that ma
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         Agent Orchestrator                          │
+│                         Agent Coordinator                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                     Architecture & Analysis Layer                    │
+├─────────────────┬─────────────────┬─────────────────────────────────┤
+│   Architect     │   Pre-Verify    │     Cross-Analysis              │
+│   Agent         │   Agent         │     Agent                       │
+├─────────────────┴─────────────────┴─────────────────────────────────┤
+│                       Domain Agents Layer                            │
 ├─────────────────┬─────────────────┬─────────────────┬───────────────┤
-│   Robotics      │     DevOps      │   Personal      │     Work      │
-│   Agent         │     Agent       │   Agent         │     Agent     │
+│   Robotics      │     DevOps      │      Nix        │     Work      │
+│   Agent         │     Agent       │     Agent       │     Agent     │
 ├─────────────────┴─────────────────┴─────────────────┴───────────────┤
 │                    Shared Context & Memory                          │
 ├─────────────────────────────────────────────────────────────────────┤
@@ -26,28 +33,56 @@ This environment is designed as the foundation for an **agentic system** that ma
 
 ## Agent Types
 
-### Robotics Agent
+### Architecture & Analysis Agents
+
+#### Architect Agent
+- Full-stack system design and framework selection
+- Integration planning and scalability analysis
+- Technology roadmaps and ADRs (Architecture Decision Records)
+- Component diagrams and data flow design
+
+#### Pre-Verify Agent
+- Pre-implementation validation and compatibility checks
+- Dependency analysis and security review
+- Resource estimation and rollback strategy planning
+- Blocks risky changes before implementation
+
+#### Cross-Analysis Agent
+- Codebase search and pattern discovery
+- Impact analysis for proposed changes
+- Dependency mapping and data flow tracing
+- Technical debt identification
+
+### Domain Agents
+
+#### Robotics Agent
 - ROS2 package development and testing
 - Simulation environment management (Gazebo, RViz)
 - Hardware interface configuration
 - URDF/XACRO modeling
 - Navigation and perception pipelines
 
-### DevOps Agent
+#### DevOps Agent
 - GitHub Actions workflow management
 - Container image building (Docker, Podman)
 - Infrastructure as Code (Terraform, Pulumi, Nix)
 - Monitoring and observability setup
 - Secret management and security scanning
 
-### Personal Agent
+#### Nix Agent
+- Nix flakes and home-manager configuration
+- Package management and environment setup
+- Cross-platform compatibility (Linux, macOS, WSL2)
+- Module development and debugging
+
+#### Personal Agent
 - Calendar and scheduling integration
 - Task prioritization and tracking
 - Note-taking and knowledge management
 - Habit tracking and goal setting
 - Email and communication management
 
-### Work Agent
+#### Work Agent
 - Code review and PR management
 - Documentation generation
 - Meeting notes and action items

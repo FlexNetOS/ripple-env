@@ -106,6 +106,10 @@
             unzip
             gzip
 
+            # Messaging
+            natscli
+            nats-server
+
             # Directory navigation
             zoxide
             direnv
@@ -114,6 +118,7 @@
             # System monitoring
             btop
             htop
+            prometheus
 
             # Shells
             zsh
@@ -136,13 +141,18 @@
             ccache              # Fast C/C++ compilation cache
             sccache             # Distributed compilation cache (cloud support)
             mold                # Fast modern linker (12x faster than lld)
+            maturin             # Build tool for PyO3 Rust-Python bindings
+
+            # Database tools
+            sqlx-cli            # SQL database CLI for migrations and schema management
 
             # Tree-sitter (for LazyVim/Neovim)
             tree-sitter
 
-            # Node.js ecosystem (for LazyVim plugins)
+            # Node.js ecosystem (for LazyVim plugins & LLM testing)
             nodejs_22           # LTS "Jod" - active until Apr 2027
             nodePackages.pnpm
+            # Note: promptfoo (LLM eval/testing) not in nixpkgs - use 'npx promptfoo@latest'
 
             # Git tools
             lazygit             # Git TUI (integrates with LazyVim)
@@ -193,6 +203,11 @@
                 exit 127
               fi
             '')
+            (pkgs.writeShellScriptBin "promptfoo" ''
+              # Wrapper for promptfoo LLM testing tool
+              # Uses npx to run the latest version without global installation
+              exec npx promptfoo@latest "$@"
+            '')
           ];
 
         in
@@ -237,8 +252,9 @@
               echo "  pixi   - package manager"
               echo ""
               echo "AI assistants:"
-              echo "  ai     - AI chat (aichat, lightweight)"
-              echo "  pair   - AI pair programming (aider, git-integrated)"
+              echo "  ai        - AI chat (aichat, lightweight)"
+              echo "  pair      - AI pair programming (aider, git-integrated)"
+              echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
               echo ""
             '';
           devshells.default = {
@@ -310,8 +326,9 @@
                 echo "  pixi   - package manager"
                 echo ""
                 echo "AI assistants:"
-                echo "  ai     - AI chat (aichat, lightweight)"
-                echo "  pair   - AI pair programming (aider, git-integrated)"
+                echo "  ai        - AI chat (aichat, lightweight)"
+                echo "  pair      - AI pair programming (aider, git-integrated)"
+                echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
                 echo ""
               '';
 
@@ -354,6 +371,11 @@
                 name = "pair";
                 help = "AI pair programming with git integration (aider)";
                 command = "aider $@";
+              }
+              {
+                name = "promptfoo";
+                help = "LLM testing and evaluation framework";
+                command = "npx promptfoo@latest $@";
               }
             ];
           };

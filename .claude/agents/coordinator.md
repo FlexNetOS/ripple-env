@@ -15,11 +15,21 @@ The Coordinator manages task routing between specialized agents based on context
 
 ## Agent Registry
 
+### Core Domain Agents
+
 | Agent | Domain | Trigger Keywords |
 |-------|--------|------------------|
 | robotics-agent | ROS2, packages, nodes, topics | ros2, colcon, launch, topic, node, msg |
 | devops-agent | CI/CD, GitHub, deployment | workflow, actions, pr, issue, deploy |
 | nix-agent | Nix, environment, modules | flake, nix, module, home-manager, shell |
+
+### Architecture & Analysis Agents
+
+| Agent | Domain | Trigger Keywords |
+|-------|--------|------------------|
+| architect-agent | System design, frameworks, integration | design, architecture, framework, integrate, scale, plan |
+| pre-verify-agent | Validation, compatibility, pre-checks | verify, validate, check, compatible, dependency, security |
+| cross-analysis-agent | Code search, patterns, impact | analyze, search, find, pattern, impact, usage, trace |
 
 ## Routing Rules
 
@@ -34,6 +44,9 @@ User can specify agent with:
 - `@robotics` - Route to Robotics Agent
 - `@devops` - Route to DevOps Agent
 - `@nix` - Route to Nix Agent
+- `@architect` - Route to Architect Agent
+- `@verify` - Route to Pre-Verify Agent
+- `@analyze` - Route to Cross-Analysis Agent
 
 ### Multi-Agent Tasks
 For tasks spanning multiple domains:
@@ -41,6 +54,27 @@ For tasks spanning multiple domains:
 2. Identify secondary domains → queue supporting agents
 3. Execute in sequence, passing context
 4. Aggregate results
+
+### Parallel Execution
+For independent subtasks, execute agents in parallel:
+1. Decompose task into independent subtasks
+2. Assign each subtask to appropriate agent
+3. Launch all agents simultaneously
+4. Collect and merge results
+5. Resolve any conflicts
+
+### Architecture Workflow
+For design and implementation tasks:
+```
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│  Architect  │───>│  Pre-Verify  │───>│   Domain    │
+│    Agent    │    │    Agent     │    │   Agents    │
+└─────────────┘    └──────────────┘    └─────────────┘
+       │                  ^                    │
+       │                  │                    │
+       └──────────────────┴────────────────────┘
+              Cross-Analysis Agent
+```
 
 ## Handoff Protocol
 
