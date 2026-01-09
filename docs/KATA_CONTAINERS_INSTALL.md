@@ -62,12 +62,18 @@ sudo dnf install -y kata-containers
 ### Static Binary Installation (Any Linux)
 
 ```bash
-# Download and extract static binaries
-KATA_VERSION="3.2.0"  # Update to latest version
-ARCH="x86_64"
+# Get latest version from GitHub releases
+# Check: https://github.com/kata-containers/kata-containers/releases
+KATA_VERSION=$(curl -s https://api.github.com/repos/kata-containers/kata-containers/releases/latest | grep tag_name | cut -d '"' -f 4)
+echo "Installing Kata Containers $KATA_VERSION"
 
-curl -fsSL "https://github.com/kata-containers/kata-containers/releases/download/${KATA_VERSION}/kata-static-${KATA_VERSION}-${ARCH}.tar.xz" | \
+# Download and extract static binaries (amd64 architecture)
+curl -fsSL "https://github.com/kata-containers/kata-containers/releases/download/${KATA_VERSION}/kata-static-${KATA_VERSION}-amd64.tar.xz" | \
   sudo tar -C / -xJf -
+
+# For ARM64 systems, use:
+# curl -fsSL "https://github.com/kata-containers/kata-containers/releases/download/${KATA_VERSION}/kata-static-${KATA_VERSION}-arm64.tar.xz" | \
+#   sudo tar -C / -xJf -
 
 # Verify installation
 /opt/kata/bin/kata-runtime --version
