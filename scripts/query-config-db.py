@@ -232,8 +232,22 @@ def cmd_summary():
 
 
 def cmd_sql(query: str):
-    """Run arbitrary SQL query."""
-    conn = get_conn()
+    """Run read-only SQL query.
+    
+    WARNING: Only SELECT queries are allowed to prevent accidental data modification.
+    For write operations, use the populate-config-db.py script instead.
+    """
+    # Security: Restrict to read-only queries and use a read-only SQLite connection
+    query_stripped = query.strip().upper()
+    
+    # Check if query starts with SELECT (basic guard for this CLI)
+    if not query_stripped.startswith('SELECT'):
+        print(f"{Colors.RED}Error:{Colors.NC} Only SELECT queries are allowed for security reasons.")
+        print(f"  Use scripts/populate-config-db.py for database modifications.")
+        return
+    
+    # Open the database in read-only mode to enforce no writes at the DB level
+    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
     try:
         cursor = conn.execute(query)
         if cursor.description:
@@ -241,7 +255,6 @@ def cmd_sql(query: str):
             print_table(headers, cursor.fetchall())
         else:
             print(f"  Rows affected: {cursor.rowcount}")
-            conn.commit()
     except sqlite3.Error as e:
         print(f"{Colors.RED}SQL Error:{Colors.NC} {e}")
     finally:
@@ -312,12 +325,15 @@ Commands:
   issues-errors       Show only errors
   summary             Database summary
   validate            Run validation checks
-  sql "QUERY"         Run arbitrary SQL query
+  sql "QUERY"         Run read-only SQL query (SELECT only)
 
 Examples:
   python3 scripts/query-config-db.py summary
   python3 scripts/query-config-db.py jobs "verify"
   python3 scripts/query-config-db.py sql "SELECT * FROM flake_inputs"
+
+Note: The 'sql' command only allows SELECT queries for security.
+      Use scripts/populate-config-db.py for database modifications.
 """)
 
 
