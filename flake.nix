@@ -112,6 +112,10 @@
             unzip
             gzip
 
+            # Messaging
+            natscli
+            nats-server
+
             # Directory navigation
             zoxide
             direnv
@@ -120,6 +124,7 @@
             # System monitoring
             btop
             htop
+            prometheus
 
             # Infrastructure & Monitoring (from GitHub resources research)
             # See docs/GITHUB-RESOURCES.md for full analysis
@@ -154,13 +159,18 @@
             ccache              # Fast C/C++ compilation cache
             sccache             # Distributed compilation cache (cloud support)
             mold                # Fast modern linker (12x faster than lld)
+            maturin             # Build tool for PyO3 Rust-Python bindings
+
+            # Database tools
+            sqlx-cli            # SQL database CLI for migrations and schema management
 
             # Tree-sitter (for LazyVim/Neovim)
             tree-sitter
 
-            # Node.js ecosystem (for LazyVim plugins)
+            # Node.js ecosystem (for LazyVim plugins & LLM testing)
             nodejs_22           # LTS "Jod" - active until Apr 2027
             nodePackages.pnpm
+            # Note: promptfoo (LLM eval/testing) not in nixpkgs - use 'npx promptfoo@latest'
 
             # Git tools
             lazygit             # Git TUI (integrates with LazyVim)
@@ -211,6 +221,11 @@
                 exit 127
               fi
             '')
+            (pkgs.writeShellScriptBin "promptfoo" ''
+              # Wrapper for promptfoo LLM testing tool
+              # Uses npx to run the latest version without global installation
+              exec npx promptfoo@latest "$@"
+            '')
           ];
 
         in
@@ -257,8 +272,9 @@
               echo "  python3.13 - Nix Python for non-ROS tools"
               echo ""
               echo "AI assistants:"
-              echo "  ai     - AI chat (aichat)"
-              echo "  pair   - AI pair programming (aider)"
+              echo "  ai        - AI chat (aichat, lightweight)"
+              echo "  pair      - AI pair programming (aider, git-integrated)"
+              echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
               echo ""
             '';
           };
@@ -334,6 +350,59 @@
                 echo "PyTorch CUDA verification:"
                 echo "  python -c \"import torch; print(torch.cuda.is_available())\""
                 echo ""
+                echo "AI assistants:"
+                echo "  ai        - AI chat (aichat, lightweight)"
+                echo "  pair      - AI pair programming (aider, git-integrated)"
+                echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
+                echo ""
+              '';
+
+              motd = "";
+            };
+
+            # Command aliases
+            commands = [
+              {
+                name = "cb";
+                help = "colcon build --symlink-install";
+                command = "colcon build --symlink-install $@";
+              }
+              {
+                name = "ct";
+                help = "colcon test";
+                command = "colcon test $@";
+              }
+              {
+                name = "ctr";
+                help = "colcon test-result --verbose";
+                command = "colcon test-result --verbose";
+              }
+              {
+                name = "ros2-env";
+                help = "Show ROS2 environment variables";
+                command = "env | grep -E '^(ROS|RMW|AMENT|COLCON)' | sort";
+              }
+              {
+                name = "update-deps";
+                help = "Update pixi dependencies";
+                command = "pixi update";
+              }
+              {
+                name = "ai";
+                help = "AI chat assistant (provider-agnostic)";
+                command = "aichat $@";
+              }
+              {
+                name = "pair";
+                help = "AI pair programming with git integration (aider)";
+                command = "aider $@";
+              }
+              {
+                name = "promptfoo";
+                help = "LLM testing and evaluation framework";
+                command = "npx promptfoo@latest $@";
+              }
+            ];
               else
                 echo ""
                 echo "⚠️  Warning: nvidia-smi not found"
