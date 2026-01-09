@@ -14,7 +14,8 @@ This document catalogs external GitHub resources evaluated for integration with 
 | **AI Agents** | LocalAI, AIOS | ⚠️ Docker/Pixi | High |
 | **Monitoring** | Prometheus, Trivy, Trippy | ✅ **Integrated** | High |
 | **Messaging** | NATS Server + CLI | ✅ **Integrated** | High |
-| **Security** | OPA, Trivy | ✅ **Integrated** | High |
+| **Security** | OPA, Trivy, Vault, gVisor | ✅ **Integrated** | High |
+| **Identity** | Keycloak, Vaultwarden | ✅ **Integrated** (identity shell) | High |
 | **Evaluation** | Promptfoo | ✅ **Integrated** | High |
 | **Memory** | Memori, Memobase | ⚠️ Pixi | Medium |
 | **Rust** | maturin, sqlx-cli | ✅ **Integrated** | High |
@@ -361,52 +362,62 @@ commonPackages = with pkgs; [ local-ai ];
 
 **Nix Enhancement**: Use [nixidy](https://nixidy.dev/) for Nix-native Kubernetes configs
 
-### gVisor Sandbox
+### gVisor Sandbox ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [google/gvisor](https://github.com/google/gvisor) |
-| **Nix Package** | ❌ Build from source |
-| **Status** | ⚠️ Complex setup |
-| **Relevance** | Medium - Sandbox untrusted ROS2 packages |
+| **Nix Package** | ✅ `pkgs.gvisor` |
+| **Status** | ✅ **Integrated in devshell** (Linux only) |
+| **Relevance** | High - Sandbox untrusted ROS2 packages |
+
+**Integration Note**: gVisor (`runsc`) is included in the Linux devshell for container sandboxing. Usage: `docker run --runtime=runsc ...`. Performance overhead is 5-15% for network workloads. Not suitable for hard real-time control loops.
 
 ---
 
 ## Security & Identity
 
-### HashiCorp Vault ⭐ RECOMMENDED
+### HashiCorp Vault ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [hashicorp/vault](https://github.com/hashicorp/vault) |
 | **Nix Package** | ✅ `pkgs.vault` (BSL license) |
 | **NixOS Module** | ✅ `services.vault` |
-| **Status** | ⚠️ Unfree license |
+| **Status** | ✅ **Integrated in devshell** |
 | **Relevance** | **High** - DDS-Security PKI, API key management |
 
-### Keycloak - Identity Management ⭐ RECOMMENDED
+**Integration Note**: Vault CLI is included in the full devshell. Use `vault-dev` helper to start dev server (auto-unsealed, root token: `root`). Requires `NIXPKGS_ALLOW_UNFREE=1` due to BSL license. For production, use NixOS `services.vault` module.
+
+### Keycloak - Identity Management ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [keycloak/keycloak](https://github.com/keycloak/keycloak) |
 | **Nix Package** | ✅ `pkgs.keycloak` |
 | **NixOS Module** | ✅ `services.keycloak` (NixOS 25.05+) |
-| **Status** | ✅ Ready |
+| **Status** | ✅ **Integrated in identity devshell** |
 | **Relevance** | **High** - Robot fleet OAuth2/OIDC authentication |
 
-### Vaultwarden
+**Integration Note**: Keycloak is included in the `devShells.identity` shell (Linux only). Usage: `nix develop .#identity`. Requires Java 21 and PostgreSQL (both included). Start with: `keycloak start-dev --http-port=8080`.
+
+### Vaultwarden ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [dani-garcia/vaultwarden](https://github.com/dani-garcia/vaultwarden) |
 | **Nix Package** | ✅ `pkgs.vaultwarden` |
 | **NixOS Module** | ✅ `services.vaultwarden` |
-| **Status** | ✅ Ready |
+| **Status** | ✅ **Integrated in identity devshell** |
 | **Relevance** | Medium - Team password management |
 
-### Open Policy Agent (OPA)
+**Integration Note**: Vaultwarden is included in the `devShells.identity` shell (Linux only). Usage: `nix develop .#identity`. Supports SQLite (default) or PostgreSQL. Start with: `vaultwarden`.
+
+### Open Policy Agent (OPA) ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [open-policy-agent/opa](https://github.com/open-policy-agent/opa) |
 | **Nix Package** | ✅ `pkgs.opa` |
-| **Status** | ✅ Ready |
+| **Status** | ✅ **Integrated in devshell** |
 | **Relevance** | High - ROS2 topic access policies |
+
+**Integration Note**: OPA CLI is included in the full devshell. Use Rego policies for ROS2 topic/service access control. Run `opa run --server` for policy server mode. See OPA docs for DDS-Security integration patterns.
 
 ---
 
@@ -479,7 +490,12 @@ commonPackages = with pkgs; [ local-ai ];
 | Prometheus | Standard NixOS module |
 | Netdata | Standard NixOS module |
 | NATS Server | Standard Nix package, devenv support |
-| Vault/Keycloak | Standard NixOS modules |
+| Vault | ✅ Integrated - Go binary, BSL license (unfree) |
+| Keycloak | NixOS module - Java 17+, PostgreSQL backend |
+| Vaultwarden | NixOS module - Rust binary, SQLite/PostgreSQL |
+| OPA | ✅ Integrated - Go binary, no conflicts |
+| gVisor | ✅ Integrated - Linux only, Docker runtime |
+| Trivy | ✅ Integrated - Go binary, container scanning |
 | TruLens/Evals | Pure Python, Pixi managed |
 | Memori/Memobase | Pure Python, Pixi managed |
 
