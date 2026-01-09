@@ -35,7 +35,7 @@ jobs:
 
       - name: Install Syft
         run: |
-          nix develop --command syft version || {
+          nix develop .#default --command syft version || {
             curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
           }
 
@@ -43,8 +43,8 @@ jobs:
         run: |
           mkdir -p sbom
           # Generate SBOM for the Nix flake
-          nix develop --command syft packages dir:. -o spdx-json=sbom/nix-sbom.spdx.json
-          nix develop --command syft packages dir:. -o cyclonedx-json=sbom/nix-sbom.cdx.json
+          nix develop .#default --command syft packages dir:. -o spdx-json=sbom/nix-sbom.spdx.json
+          nix develop .#default --command syft packages dir:. -o cyclonedx-json=sbom/nix-sbom.cdx.json
 
       - name: Generate Docker SBOM
         run: |

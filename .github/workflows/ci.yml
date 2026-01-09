@@ -69,15 +69,15 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v8
 
       - name: Build development shell
-        run: nix develop --command echo "Shell ready"
+        run: nix develop .#default --command echo "Shell ready"
 
       - name: Install Pixi packages
-        run: nix develop --command pixi install
+        run: nix develop .#default --command pixi install
 
       - name: Verify ROS2 environment
         run: |
-          nix develop --command pixi run python --version
-          nix develop --command pixi run ros2 --help | head -10
+          nix develop .#default --command pixi run python --version
+          nix develop .#default --command pixi run ros2 --help | head -10
 
       - name: Check for ROS2 workspace
         id: check-workspace
@@ -91,21 +91,21 @@ jobs:
       - name: Build ROS2 packages
         if: steps.check-workspace.outputs.has_packages == 'true'
         run: |
-          nix develop --command pixi run colcon build --symlink-install
+          nix develop .#default --command pixi run colcon build --symlink-install
 
       - name: Run ROS2 tests
         if: steps.check-workspace.outputs.has_packages == 'true'
         run: |
-          nix develop --command pixi run colcon test
-          nix develop --command pixi run colcon test-result --verbose
+          nix develop .#default --command pixi run colcon test
+          nix develop .#default --command pixi run colcon test-result --verbose
 
       - name: Verify pytest installation
         run: |
-          nix develop --command pixi run pytest --version
+          nix develop .#default --command pixi run pytest --version
 
       - name: Verify PyTorch installation
         run: |
-          nix develop --command pixi run python -c "import torch; print(f'PyTorch {torch.__version__}')" || echo "PyTorch not yet installed (run pixi update)"
+          nix develop .#default --command pixi run python -c "import torch; print(f'PyTorch {torch.__version__}')" || echo "PyTorch not yet installed (run pixi update)"
 
   # ===========================================
   # macOS Build
@@ -128,7 +128,7 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v8
 
       - name: Build development shell
-        run: nix develop --command echo "Shell ready"
+        run: nix develop .#default --command echo "Shell ready"
 
       - name: Verify no CUDA shell on macOS
         run: |
@@ -141,7 +141,7 @@ jobs:
           fi
 
       - name: Install Pixi packages
-        run: nix develop --command pixi install
+        run: nix develop .#default --command pixi install
 
   # ===========================================
   # Security Scanning

@@ -76,28 +76,28 @@ jobs:
 
       - name: Build development shell
         run: |
-          nix develop --command echo "Development shell is working"
+          nix develop .#default --command echo "Development shell is working"
 
       - name: Verify pixi is available
         run: |
-          nix develop --command pixi --version
+          nix develop .#default --command pixi --version
 
       - name: Run pixi install
         run: |
-          nix develop --command pixi install
+          nix develop .#default --command pixi install
 
       - name: Verify ROS2 environment
         run: |
-          nix develop --command pixi run python --version
-          nix develop --command pixi run cmake --version
+          nix develop .#default --command pixi run python --version
+          nix develop .#default --command pixi run cmake --version
 
       - name: Test colcon availability
         run: |
-          nix develop --command pixi run colcon --help | head -20
+          nix develop .#default --command pixi run colcon --help | head -20
 
       - name: Test ROS2 commands
         run: |
-          nix develop --command pixi run ros2 --help | head -20
+          nix develop .#default --command pixi run ros2 --help | head -20
 
   bootstrap-macos:
     name: Bootstrap Test (macOS)
@@ -131,20 +131,20 @@ jobs:
 
       - name: Build development shell
         run: |
-          nix develop --command echo "Development shell is working"
+          nix develop .#default --command echo "Development shell is working"
 
       - name: Verify pixi is available
         run: |
-          nix develop --command pixi --version
+          nix develop .#default --command pixi --version
 
       - name: Run pixi install
         run: |
-          nix develop --command pixi install
+          nix develop .#default --command pixi install
 
       - name: Verify environment tools
         run: |
-          nix develop --command pixi run python --version
-          nix develop --command pixi run cmake --version
+          nix develop .#default --command pixi run python --version
+          nix develop .#default --command pixi run cmake --version
 
   bootstrap-windows-syntax:
     name: Bootstrap Test (Windows - Syntax Check)
@@ -354,7 +354,7 @@ jobs:
           Write-Host "Testing development environment..." -ForegroundColor Cyan
 
           # Enter the dev shell and verify pixi
-          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop --command pixi --version"
+          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop .#default --command pixi --version"
           if ($LASTEXITCODE -ne 0) {
             Write-Host "ERROR: Failed to enter dev shell or pixi not available!" -ForegroundColor Red
             exit 1
@@ -368,9 +368,9 @@ jobs:
           Write-Host "Testing ROS2..." -ForegroundColor Cyan
 
           # Run pixi install and test ros2
-          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop --command pixi install"
+          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop .#default --command pixi install"
 
-          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop --command pixi run ros2 --help" | Select-Object -First 20
+          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop .#default --command pixi run ros2 --help" | Select-Object -First 20
           if ($LASTEXITCODE -ne 0) {
             Write-Host "WARNING: ROS2 command test had issues" -ForegroundColor Yellow
           } else {
@@ -442,4 +442,4 @@ jobs:
           fi
 
           # Enter dev shell and verify
-          nix develop --command pixi run ros2 --help | head -10
+          nix develop .#default --command pixi run ros2 --help | head -10
