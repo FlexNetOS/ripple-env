@@ -26,11 +26,22 @@
 | [ROS2 Development](./skills/ros2-development/README.md) | Building, testing, and running ROS2 packages |
 | [DevOps](./skills/devops/README.md) | CI/CD, GitHub workflows, automation |
 | [Nix Environment](./skills/nix-environment/README.md) | Flakes, home-manager, environment management |
-| [AI Assistants](./skills/ai-assistants/README.md) | AI-powered development tools (aichat, aider) |
+| [AI Assistants](./skills/ai-assistants/README.md) | AI tools (aichat, aider, LocalAI, AGiXT) |
 | [Distributed Systems](./skills/distributed-systems/README.md) | NATS messaging, Temporal workflows |
-| [Rust Tooling](./skills/rust-tooling/README.md) | PyO3 bindings, sqlx database access |
+| [Rust Tooling](./skills/rust-tooling/README.md) | PyO3 bindings, sqlx, AGiXT Rust SDK |
 | [Observability](./skills/observability/README.md) | Prometheus, OpenTelemetry, monitoring |
 | [LLM Evaluation](./skills/llm-evaluation/README.md) | promptfoo, TruLens, LLM testing |
+
+### Architecture Decision Records
+
+| ADR | Title |
+|-----|-------|
+| [ADR-001](../docs/adr/adr-001-editor-strategy.md) | Editor Strategy (Helix) |
+| [ADR-002](../docs/adr/adr-002-ai-coding-assistants.md) | AI Coding Assistants |
+| [ADR-003](../docs/adr/adr-003-version-management.md) | Version Management |
+| [ADR-004](../docs/adr/adr-004-devpod.md) | DevPod Integration |
+| [ADR-005](../docs/adr/adr-005-xdg-compliance.md) | XDG Compliance |
+| [ADR-006](../docs/adr/adr-006-agixt-integration.md) | AGiXT Integration |
 
 ### Agent Roles
 
@@ -157,13 +168,32 @@ ros2-humble-env/
 │       ├── system.nix                # macOS system preferences
 │       └── shell.nix                 # macOS shell specifics
 │
+├── rust/                             # Rust workspace
+│   ├── Cargo.toml                    # Workspace configuration
+│   └── agixt-bridge/                 # AGiXT Rust SDK bridge
+│       ├── Cargo.toml
+│       ├── src/
+│       └── examples/
+│
+├── docs/
+│   └── adr/                          # Architecture Decision Records
+│       ├── README.md
+│       ├── adr-001-editor-strategy.md
+│       ├── adr-002-ai-coding-assistants.md
+│       ├── adr-003-version-management.md
+│       ├── adr-004-devpod.md
+│       ├── adr-005-xdg-compliance.md
+│       └── adr-006-agixt-integration.md
+│
 ├── bootstrap.sh                      # Linux/macOS setup script
 ├── bootstrap.ps1                     # Windows PowerShell setup script
+├── docker-compose.agixt.yml          # AGiXT Docker services
 ├── flake.nix                         # Main Nix flake configuration
 ├── flake.lock                        # Locked Nix dependencies
 ├── pixi.toml                         # Pixi/Conda configuration
 ├── pixi.lock                         # Locked Pixi dependencies
 ├── .envrc                            # direnv configuration
+├── .env.agixt.example                # AGiXT environment template
 └── README.md                         # Main project documentation
 ```
 
