@@ -15,10 +15,11 @@
 
     # Holochain overlay for P2P coordination (BUILDKIT_STARTER_SPEC.md L11)
     # Provides: holochain, hc, lair-keystore
-    holochain-nix = {
-      url = "github:spartan-holochain-counsel/nix-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # NOTE: Temporarily disabled - upstream repo unavailable
+    # holochain-nix = {
+    #   url = "github:spartan-holochain-counsel/nix-overlay";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
   };
 
   outputs =
