@@ -60,6 +60,86 @@ pytorch = { version = ">=2.5,<3", build = "*cuda*" }
 torchvision = { version = ">=0.20,<1", build = "*cuda*" }
 torchaudio = { version = ">=2.5,<3", build = "*cuda*" }
 
+# =============================================================================
+# AIOS Agent OS Feature
+# =============================================================================
+# AIOS (AI Agent Operating System) requires strict dependency pinning
+# to ensure compatibility with the agent kernel and Cerebrum SDK.
+# See: https://github.com/agiresearch/AIOS
+#      https://github.com/agiresearch/Cerebrum
+# Activate with: pixi run -e aios <command>
+
+[feature.aios]
+# AIOS requires Python 3.10-3.11 (no 3.12+ support)
+platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+
+[feature.aios.dependencies]
+# Core AIOS dependencies with strict pins for compatibility
+pydantic = "==2.7.0"
+numpy = "==1.24.3"
+
+# LLM & Embedding dependencies
+litellm = ">=1.0"
+transformers = ">=4.30"
+accelerate = ">=0.20"
+sentence-transformers = ">=2.0"
+
+# Vector database (AIOS default)
+chromadb = ">=0.4"
+
+# Cache & messaging
+redis-py = ">=4.5.1"
+
+# API server
+fastapi = ">=0.100"
+uvicorn = ">=0.20"
+
+# Utilities
+python-dotenv = ">=1.0"
+watchdog = ">=2.1.9"
+rich = ">=13.0"
+click = "==8.1.7"
+
+# NLP
+nltk = ">=3.8"
+
+# Cerebrum SDK dependencies
+requests = ">=2.28"
+platformdirs = ">=3.0"
+datasets = ">=2.14"
+
+# =============================================================================
+# AIOS + CUDA Feature
+# =============================================================================
+# AIOS with GPU acceleration via vLLM
+# Activate with: pixi run -e aios-cuda <command>
+
+[feature.aios-cuda]
+platforms = ["linux-64"]
+
+[feature.aios-cuda.dependencies]
+# Includes all AIOS dependencies plus vLLM
+pydantic = "==2.7.0"
+numpy = "==1.24.3"
+litellm = ">=1.0"
+transformers = ">=4.30"
+accelerate = ">=0.20"
+sentence-transformers = ">=2.0"
+chromadb = ">=0.4"
+redis-py = ">=4.5.1"
+fastapi = ">=0.100"
+uvicorn = ">=0.20"
+python-dotenv = ">=1.0"
+watchdog = ">=2.1.9"
+rich = ">=13.0"
+click = "==8.1.7"
+nltk = ">=3.8"
+requests = ">=2.28"
+platformdirs = ">=3.0"
+datasets = ">=2.14"
+
 [environments]
 default = { features = [], solve-group = "default" }
 cuda = { features = ["cuda"], solve-group = "cuda" }
+aios = { features = ["aios"], solve-group = "aios" }
+aios-cuda = { features = ["aios", "aios-cuda", "cuda"], solve-group = "aios-cuda" }
