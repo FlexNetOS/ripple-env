@@ -65,6 +65,13 @@ sentence-transformers = ">=3.3,<4"
 datasets = ">=3.2,<4"
 tokenizers = ">=0.21,<1"
 
+# Messaging & Orchestration (BUILDKIT_STARTER_SPEC.md Layer 6)
+nats-py = ">=2.9"           # NATS Python client for event bus
+temporalio = ">=1.7"        # Temporal Python SDK for durable workflows
+
+# Agent Frameworks (BUILDKIT_STARTER_SPEC.md Layer 8)
+agno = ">=0.1"              # Agent dev framework (agno-agi/agno)
+
 # Build tools (JavaScript/TypeScript)
 esbuild = ">=0.24,<1"
 
