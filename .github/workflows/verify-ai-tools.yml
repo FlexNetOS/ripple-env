@@ -219,7 +219,7 @@ jobs:
       - name: Verify pixi AIOS environment exists
         run: |
           echo "Checking pixi AIOS environment..."
-          nix develop --command pixi info | grep -E "aios|environments" || true
+          nix develop .#default --command pixi info | grep -E "aios|environments" || true
           echo "✅ Pixi configuration verified"
 
   flake-check:
