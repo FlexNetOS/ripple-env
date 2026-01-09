@@ -32,6 +32,16 @@ colcon-common-extensions = ">=0.3.0,<0.4"
 ros-humble-desktop = ">=0.10.0,<0.11"
 catkin_tools = ">=0.8.2,<0.10"
 
+# Testing & Code Quality
+pytest = ">=7.0,<9"
+pytest-cov = ">=4.0,<6"
+mypy = ">=1.0,<2"
+black = ">=24.0,<25"
+isort = ">=5.0,<6"
+
+# Scientific/ML dependencies (explicit)
+numpy = ">=1.24,<3"
+
 # PyTorch ML stack (CPU by default, CUDA via feature)
 # Using conda-forge for native performance and ROS2 compatibility
 # See docs/CONFLICTS.md for Python 3.14 and CUDA analysis
