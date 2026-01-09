@@ -1,14 +1,18 @@
 ---
 name: rust-tooling
-description: Rust development tools including PyO3 bindings, sqlx database access, and Rust-Python interop
+description: Rust development tools including PyO3 bindings, sqlx database access, AGiXT SDK, and Rust-Python interop
 icon: 🦀
 category: development
 tools:
   - cargo
   - rustc
+  - rust-analyzer
+  - rustfmt
+  - clippy
   - maturin
   - pyo3
   - sqlx-cli
+  - agixt_sdk
 ---
 
 # Rust Tooling Skills
@@ -370,8 +374,124 @@ async fn setup_local_db() -> Result<SqlitePool, sqlx::Error> {
 3. **Use connection pooling** in production
 4. **Prefer compile-time checked queries** (`query!` macro)
 
+## AGiXT Rust SDK
+
+The AGiXT Rust SDK enables Rust applications to communicate with AGiXT for AI-powered robotics.
+
+### Project Structure
+
+```
+rust/
+├── Cargo.toml                    # Workspace root
+└── agixt-bridge/
+    ├── Cargo.toml                # AGiXT bridge crate
+    ├── src/
+    │   ├── main.rs               # CLI entry point
+    │   ├── lib.rs                # Library exports
+    │   ├── client.rs             # AGiXT client wrapper
+    │   ├── commands.rs           # Robot command types
+    │   └── config.rs             # Configuration
+    └── examples/
+        ├── basic_chat.rs         # Basic AGiXT chat
+        └── robot_commands.rs     # Robot command processing
+```
+
+### Cargo.toml
+
+```toml
+[dependencies]
+agixt_sdk = "0.1"
+tokio = { version = "1.0", features = ["full"] }
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+```
+
+### Basic Usage
+
+```rust
+use agixt_sdk::AGiXTSDK;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let client = AGiXTSDK::new(
+        Some("http://localhost:7437".to_string()),
+        Some("agixt-dev-key".to_string()),
+        false,
+    );
+
+    // Get available providers
+    let providers = client.get_providers().await?;
+    println!("Providers: {:?}", providers);
+
+    // Create conversation
+    let conv = client.new_conversation("ros2-agent", None, None).await?;
+    println!("Conversation: {:?}", conv);
+
+    Ok(())
+}
+```
+
+### Build and Run
+
+```bash
+# Build the bridge
+cd rust/agixt-bridge
+cargo build
+
+# Run example
+cargo run --example basic_chat
+
+# Run with release optimizations
+cargo build --release
+```
+
+### ROS2 Integration Pattern
+
+```rust
+use agixt_sdk::AGiXTSDK;
+use std::sync::Arc;
+
+pub struct AGiXTROS2Bridge {
+    client: Arc<AGiXTSDK>,
+    agent_name: String,
+}
+
+impl AGiXTROS2Bridge {
+    pub fn new(url: &str, api_key: &str, agent: &str) -> Self {
+        let client = AGiXTSDK::new(
+            Some(url.to_string()),
+            Some(api_key.to_string()),
+            false,
+        );
+        Self {
+            client: Arc::new(client),
+            agent_name: agent.to_string(),
+        }
+    }
+
+    pub async fn process_command(&self, command: &str) -> anyhow::Result<String> {
+        // Send command to AGiXT for AI processing
+        // Return structured response for ROS2 action
+        todo!("Implement based on your robot's action interface")
+    }
+}
+```
+
+### Configuration
+
+Environment variables:
+- `AGIXT_URL` - AGiXT API URL (default: `http://localhost:7437`)
+- `AGIXT_API_KEY` - API key (default: `agixt-dev-key`)
+- `LOCALAI_URL` - LocalAI URL (default: `http://localhost:8080`)
+- `AGIXT_AGENT` - Default agent name (default: `ros2-agent`)
+
+See `rust/agixt-bridge/src/config.rs` for configuration details.
+
 ## Related Skills
 
 - [ROS2 Development](../ros2-development/README.md) - ROS2 integration
 - [Nix Environment](../nix-environment/README.md) - Package management
-- [AI Assistants](../ai-assistants/README.md) - Code generation
+- [AI Assistants](../ai-assistants/README.md) - LocalAI, AGiXT, aichat, aider
+- [Distributed Systems](../distributed-systems/README.md) - NATS messaging for multi-robot

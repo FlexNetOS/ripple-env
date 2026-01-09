@@ -13,6 +13,8 @@ tools:
   - pair
   - pair-voice
   - pair-watch
+  - localai
+  - agixt
 ---
 
 # AI Assistants
@@ -280,3 +282,162 @@ If using home-manager, enable the AI modules to get all aliases:
 - `modules/common/ai/aichat.nix` - aichat configuration
 - `modules/common/ai/aider.nix` - aider configuration
 - `modules/common/ai/default.nix` - AI module aggregator
+
+## LocalAI - Local LLM Inference
+
+**LocalAI** provides an OpenAI-compatible API server for running LLMs locally. It's the recommended inference backend for this environment.
+
+### Quick Start
+
+```bash
+# Start LocalAI server
+localai start
+
+# Check status
+localai status
+
+# List available models
+localai models
+
+# Stop server
+localai stop
+```
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **OpenAI API** | Drop-in replacement for OpenAI API |
+| **P2P Federation** | Distributed inference across multiple machines |
+| **Model Formats** | GGUF, GGML, Safetensors, HuggingFace |
+| **GPU Support** | CUDA, ROCm, Metal acceleration |
+| **No Internet** | Fully offline capable |
+
+### Configuration
+
+LocalAI uses the models directory at `~/.local/share/localai/models`.
+
+```bash
+# Set custom models path
+export LOCALAI_MODELS_PATH="/path/to/models"
+
+# Download a model (example)
+curl -L "https://huggingface.co/TheBloke/Mistral-7B-v0.1-GGUF/resolve/main/mistral-7b-v0.1.Q4_K_M.gguf" \
+  -o ~/.local/share/localai/models/mistral-7b.gguf
+```
+
+### Integration with Other Tools
+
+```bash
+# Use LocalAI with aichat
+export OPENAI_API_BASE="http://localhost:8080/v1"
+aichat --model local-model "Hello"
+
+# Use LocalAI with aider
+OPENAI_API_BASE=http://localhost:8080/v1 aider
+```
+
+### Port Configuration
+
+| Port | Service |
+|------|---------|
+| 8080 | LocalAI API |
+
+**Documentation**: See `docs/adr/adr-006-agixt-integration.md` for architecture decisions.
+
+## AGiXT - AI Agent Platform
+
+**AGiXT** is a powerful AI Agent Automation Platform that enables building and orchestrating complex AI workflows.
+
+### Quick Start
+
+```bash
+# Ensure LocalAI is running first
+localai start
+
+# Start AGiXT services
+agixt up
+
+# Check service status
+agixt status
+
+# View logs
+agixt logs
+
+# Stop services
+agixt down
+```
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    AGiXT Stack                               │
+├─────────────┬─────────────┬─────────────┬───────────────────┤
+│  AGiXT API  │  AGiXT UI   │ PostgreSQL  │      MinIO        │
+│   :7437     │   :3437     │   :5432     │    :9000/:9001    │
+└──────┬──────┴──────┬──────┴──────┬──────┴─────────┬─────────┘
+       │             │             │                │
+       └─────────────┴─────────────┴────────────────┘
+                            │
+                    ┌───────┴───────┐
+                    │   LocalAI     │
+                    │    :8080      │
+                    └───────────────┘
+```
+
+### Port Configuration
+
+| Port | Service |
+|------|---------|
+| 7437 | AGiXT API |
+| 3437 | AGiXT UI |
+| 5432 | PostgreSQL |
+| 9000 | MinIO API |
+| 9001 | MinIO Console |
+| 8080 | LocalAI (on host) |
+
+### Environment Variables
+
+```bash
+# .env.agixt or exported
+export AGIXT_URL="http://localhost:7437"
+export AGIXT_API_KEY="agixt-dev-key"
+export LOCALAI_URL="http://localhost:8080"
+```
+
+### Management Commands
+
+```bash
+# Full command reference
+agixt up      # Start all services
+agixt down    # Stop all services
+agixt logs    # Follow logs
+agixt status  # Show container status
+agixt shell   # Shell into AGiXT container
+```
+
+### ROS2 Integration
+
+The AGiXT Rust SDK bridge (`rust/agixt-bridge/`) enables ROS2 nodes to communicate with AGiXT:
+
+```bash
+# Build the bridge
+cd rust/agixt-bridge
+cargo build
+
+# Run example
+cargo run --example basic_chat
+```
+
+**Key files**:
+- `rust/agixt-bridge/` - Rust SDK integration
+- `docker-compose.agixt.yml` - Docker Compose configuration
+- `.env.agixt.example` - Environment template
+- `docs/adr/adr-006-agixt-integration.md` - Architecture decision record
+
+## Related Skills
+
+- [Distributed Systems](../distributed-systems/README.md) - NATS, Temporal
+- [Observability](../observability/README.md) - Monitoring AI services
+- [Rust Tooling](../rust-tooling/README.md) - AGiXT Rust SDK development
