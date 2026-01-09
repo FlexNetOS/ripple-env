@@ -1214,6 +1214,24 @@ PROMCFG
 
           # Workflow management command wrappers
           workflowCommandWrappers = [
+            # Shared helper function for opening URLs
+            (pkgs.writeShellScriptBin "open-url-helper" ''
+              # Helper to open URLs in the default browser
+              URL="$1"
+              if [ -z "$URL" ]; then
+                echo "Error: No URL provided" >&2
+                exit 1
+              fi
+              
+              echo "Opening: $URL"
+              if command -v xdg-open >/dev/null 2>&1; then
+                xdg-open "$URL"
+              elif command -v open >/dev/null 2>&1; then
+                open "$URL"
+              else
+                echo "Open in browser: $URL"
+              fi
+            '')
             # GitHub issues query tool
             (pkgs.writeShellScriptBin "gh-issues" ''
               # Query and manage GitHub issues
@@ -1230,6 +1248,19 @@ PROMCFG
                   # List issues with optional state filter
                   STATE="''${2:-open}"
                   LIMIT="''${3:-20}"
+                  
+                  # Validate STATE parameter
+                  if [[ ! "$STATE" =~ ^(open|closed|all)$ ]]; then
+                    echo "Error: STATE must be one of: open, closed, all" >&2
+                    exit 1
+                  fi
+                  
+                  # Validate LIMIT parameter
+                  if ! [[ "$LIMIT" =~ ^[0-9]+$ ]] || [ "$LIMIT" -lt 1 ]; then
+                    echo "Error: LIMIT must be a positive integer" >&2
+                    exit 1
+                  fi
+                  
                   echo "Issues ($STATE):"
                   gh issue list --state "$STATE" --limit "$LIMIT"
                   ;;
@@ -1310,9 +1341,11 @@ PROMCFG
                   echo "================"
                   echo ""
                   echo "Open issues:   $(gh issue list --state open --json number --jq 'length')"
-                  echo "Closed issues: $(gh issue list --state closed --limit 1000 --json number --jq 'length')"
+                  # Note: Using limit of 1000 for closed issues - counts may be inaccurate if more exist
+                  echo "Closed issues: $(gh issue list --state closed --limit 1000 --json number --jq 'length') (max 1000)"
                   echo ""
-                  echo "By label:"
+                  echo "By label: (this may take a while for repositories with many labels)"
+                  # Note: Queries GitHub for each label sequentially - performance scales with label count
                   gh label list --json name --jq '.[].name' | while read -r label; do
                     count=$(gh issue list --label "$label" --json number --jq 'length' 2>/dev/null || echo "0")
                     [ "$count" != "0" ] && echo "  $label: $count"
@@ -1359,9 +1392,12 @@ PROMCFG
                       psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"
                     fi
                   else
-                    # Execute query
+                    # Execute query - WARNING: For complex queries with special characters,
+                    # use interactive mode to avoid shell interpretation issues
                     shift 2
-                    psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "$*"
+                    # Use printf to properly quote the query
+                    QUERY="$*"
+                    psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "$QUERY"
                   fi
                   ;;
                 sqlite)
@@ -1378,9 +1414,12 @@ PROMCFG
                     echo "Opening SQLite database: $DB_FILE"
                     sqlite3 "$DB_FILE"
                   else
-                    # Execute query
+                    # Execute query - WARNING: For complex queries with special characters,
+                    # use interactive mode to avoid shell interpretation issues
                     shift 2
-                    sqlite3 "$DB_FILE" "$*"
+                    # Use variable to properly quote the query
+                    QUERY="$*"
+                    sqlite3 "$DB_FILE" "$QUERY"
                   fi
                   ;;
                 temporal)
@@ -1399,9 +1438,14 @@ PROMCFG
                   DB_HOST="''${N8N_DB_HOST:-localhost}"
                   DB_PORT="''${N8N_DB_PORT:-5432}"
                   DB_USER="''${N8N_DB_USER:-n8n}"
+                  
+                  if [ -z "$N8N_DB_PASSWORD" ]; then
+                    echo "Error: N8N_DB_PASSWORD environment variable must be set" >&2
+                    exit 1
+                  fi
 
                   echo "Connecting to n8n database..."
-                  PGPASSWORD="''${N8N_DB_PASSWORD:-n8n_secure_password}" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" "''${@:2}"
+                  PGPASSWORD="$N8N_DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" "''${@:2}"
                   ;;
                 tables)
                   # List tables in a database
@@ -1409,9 +1453,16 @@ PROMCFG
                   if [ "$1" = "pg" ]; then
                     DB_NAME="''${2:-postgres}"
                     DB_HOST="''${DB_HOST:-localhost}"
-                    psql -h "$DB_HOST" -U postgres -d "$DB_NAME" -c "\dt"
+                    DB_PORT="''${DB_PORT:-5432}"
+                    DB_USER="''${DB_USER:-postgres}"
+                    psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "\dt"
                   elif [ "$1" = "sqlite" ]; then
-                    sqlite3 "''${2:-database.db}" ".tables"
+                    DB_FILE="''${2:-database.db}"
+                    if [ ! -f "$DB_FILE" ]; then
+                      echo "Error: SQLite database not found: $DB_FILE" >&2
+                      exit 1
+                    fi
+                    sqlite3 "$DB_FILE" ".tables"
                   else
                     echo "Usage: db-query tables [pg|sqlite] <database>" >&2
                   fi
@@ -1429,6 +1480,12 @@ PROMCFG
                   echo "Environment variables:"
                   echo "  DB_HOST, DB_PORT, DB_USER - PostgreSQL connection"
                   echo "  TEMPORAL_DB_* / N8N_DB_*  - Service-specific settings"
+                  echo "  N8N_DB_PASSWORD           - Required for n8n database access"
+                  echo ""
+                  echo "Security Notes:"
+                  echo "  - Use interactive mode (no query argument) for sensitive queries"
+                  echo "  - Passwords in PGPASSWORD are visible in process listings"
+                  echo "  - Consider using ~/.pgpass for PostgreSQL authentication"
                   echo ""
                   echo "Examples:"
                   echo "  db-query pg mydb 'SELECT * FROM users'"
@@ -1442,9 +1499,35 @@ PROMCFG
               # Temporal workflow management
               # Usage: temporal-ctl [status|workflows|start|query]
 
+              # Validate environment variables
+              validate_host() {
+                if [[ ! "$1" =~ ^[a-zA-Z0-9.-]+:[0-9]+$ ]] && [[ ! "$1" =~ ^[a-zA-Z0-9.-]+$ ]]; then
+                  echo "Error: Invalid host format: $1" >&2
+                  exit 1
+                fi
+              }
+              
+              validate_url() {
+                if [[ ! "$1" =~ ^https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?$ ]]; then
+                  echo "Error: Invalid URL format: $1" >&2
+                  exit 1
+                fi
+              }
+              
+              validate_namespace() {
+                if [[ ! "$1" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+                  echo "Error: Invalid namespace format: $1 (must be alphanumeric with .-_)" >&2
+                  exit 1
+                fi
+              }
+
               TEMPORAL_ADDRESS="''${TEMPORAL_ADDRESS:-localhost:7233}"
               TEMPORAL_NAMESPACE="''${TEMPORAL_NAMESPACE:-default}"
               TEMPORAL_UI="''${TEMPORAL_UI:-http://localhost:8088}"
+              
+              validate_host "$TEMPORAL_ADDRESS"
+              validate_namespace "$TEMPORAL_NAMESPACE"
+              validate_url "$TEMPORAL_UI"
 
               case "''${1:-status}" in
                 status)
@@ -1476,14 +1559,29 @@ PROMCFG
                   ;;
                 running)
                   # List running workflows
+                  if ! command -v temporal >/dev/null 2>&1; then
+                    echo "Error: temporal CLI not found" >&2
+                    echo "Install from: https://docs.temporal.io/cli" >&2
+                    exit 1
+                  fi
                   temporal workflow list --namespace "$TEMPORAL_NAMESPACE" --address "$TEMPORAL_ADDRESS" --query "ExecutionStatus='Running'"
                   ;;
                 failed)
                   # List failed workflows
+                  if ! command -v temporal >/dev/null 2>&1; then
+                    echo "Error: temporal CLI not found" >&2
+                    echo "Install from: https://docs.temporal.io/cli" >&2
+                    exit 1
+                  fi
                   temporal workflow list --namespace "$TEMPORAL_NAMESPACE" --address "$TEMPORAL_ADDRESS" --query "ExecutionStatus='Failed'"
                   ;;
                 describe)
                   # Describe a workflow
+                  if ! command -v temporal >/dev/null 2>&1; then
+                    echo "Error: temporal CLI not found" >&2
+                    echo "Install from: https://docs.temporal.io/cli" >&2
+                    exit 1
+                  fi
                   if [ -z "$2" ]; then
                     echo "Usage: temporal-ctl describe <workflow-id>" >&2
                     exit 1
@@ -1492,6 +1590,11 @@ PROMCFG
                   ;;
                 history)
                   # Get workflow history
+                  if ! command -v temporal >/dev/null 2>&1; then
+                    echo "Error: temporal CLI not found" >&2
+                    echo "Install from: https://docs.temporal.io/cli" >&2
+                    exit 1
+                  fi
                   if [ -z "$2" ]; then
                     echo "Usage: temporal-ctl history <workflow-id>" >&2
                     exit 1
@@ -1500,6 +1603,11 @@ PROMCFG
                   ;;
                 terminate)
                   # Terminate a workflow
+                  if ! command -v temporal >/dev/null 2>&1; then
+                    echo "Error: temporal CLI not found" >&2
+                    echo "Install from: https://docs.temporal.io/cli" >&2
+                    exit 1
+                  fi
                   if [ -z "$2" ]; then
                     echo "Usage: temporal-ctl terminate <workflow-id> [reason]" >&2
                     exit 1
@@ -1509,18 +1617,16 @@ PROMCFG
                   ;;
                 namespaces)
                   # List namespaces
+                  if ! command -v temporal >/dev/null 2>&1; then
+                    echo "Error: temporal CLI not found" >&2
+                    echo "Install from: https://docs.temporal.io/cli" >&2
+                    exit 1
+                  fi
                   temporal operator namespace list --address "$TEMPORAL_ADDRESS"
                   ;;
                 ui)
                   # Open Temporal UI
-                  echo "Opening Temporal UI: $TEMPORAL_UI"
-                  if command -v xdg-open >/dev/null 2>&1; then
-                    xdg-open "$TEMPORAL_UI"
-                  elif command -v open >/dev/null 2>&1; then
-                    open "$TEMPORAL_UI"
-                  else
-                    echo "Open in browser: $TEMPORAL_UI"
-                  fi
+                  open-url-helper "$TEMPORAL_UI"
                   ;;
                 *)
                   echo "Usage: temporal-ctl <command> [args]"
@@ -1540,6 +1646,9 @@ PROMCFG
                   echo "  TEMPORAL_ADDRESS   - Server address (default: localhost:7233)"
                   echo "  TEMPORAL_NAMESPACE - Namespace (default: default)"
                   echo "  TEMPORAL_UI        - Web UI URL (default: http://localhost:8088)"
+                  echo ""
+                  echo "Security Note:"
+                  echo "  Use HTTPS URLs for TEMPORAL_UI in production environments"
                   ;;
               esac
             '')
@@ -1547,9 +1656,35 @@ PROMCFG
             (pkgs.writeShellScriptBin "n8n-ctl" ''
               # n8n workflow automation management
               # Usage: n8n-ctl [status|workflows|executions|start|stop]
+              
+              # Validate environment variables
+              validate_host() {
+                if [[ ! "$1" =~ ^[a-zA-Z0-9.-]+$ ]]; then
+                  echo "Error: Invalid host format: $1" >&2
+                  exit 1
+                fi
+              }
+              
+              validate_port() {
+                if ! [[ "$1" =~ ^[0-9]+$ ]] || [ "$1" -lt 1 ] || [ "$1" -gt 65535 ]; then
+                  echo "Error: Invalid port number: $1" >&2
+                  exit 1
+                fi
+              }
+              
+              validate_workflow_id() {
+                if [[ ! "$1" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+                  echo "Error: Invalid workflow ID format: $1" >&2
+                  exit 1
+                fi
+              }
 
               N8N_HOST="''${N8N_HOST:-localhost}"
               N8N_PORT="''${N8N_PORT:-5678}"
+              
+              validate_host "$N8N_HOST"
+              validate_port "$N8N_PORT"
+              
               N8N_URL="http://$N8N_HOST:$N8N_PORT"
               N8N_API_KEY="''${N8N_API_KEY:-}"
 
@@ -1561,12 +1696,32 @@ PROMCFG
                   curl -sf "$N8N_URL/api/v1$1"
                 fi
               }
+              
+              # API helper with method and data
+              n8n_api_request() {
+                local method="$1"
+                local path="$2"
+                local data="$3"
+                
+                if [ -n "$N8N_API_KEY" ]; then
+                  curl -sf -X "$method" -H "Content-Type: application/json" \
+                    -H "X-N8N-API-KEY: $N8N_API_KEY" \
+                    -d "$data" "$N8N_URL/api/v1$path"
+                else
+                  curl -sf -X "$method" -H "Content-Type: application/json" \
+                    -d "$data" "$N8N_URL/api/v1$path"
+                fi
+              }
 
               case "''${1:-status}" in
                 status)
                   echo "n8n Status"
                   echo "=========="
                   echo "  URL: $N8N_URL"
+                  echo ""
+                  echo "  Security Note: Use HTTPS URLs in production environments"
+                  echo "                 Set N8N_URL to https://... for encrypted communication"
+                  echo ""
                   if curl -sf "$N8N_URL/healthz" >/dev/null 2>&1; then
                     echo "  Status: HEALTHY"
                     echo ""
@@ -1584,6 +1739,13 @@ PROMCFG
                 executions)
                   # List recent executions
                   LIMIT="''${2:-10}"
+                  
+                  # Validate LIMIT parameter
+                  if ! [[ "$LIMIT" =~ ^[0-9]+$ ]] || [ "$LIMIT" -lt 1 ]; then
+                    echo "Error: LIMIT must be a positive integer" >&2
+                    exit 1
+                  fi
+                  
                   echo "Recent Executions (last $LIMIT):"
                   n8n_api "/executions?limit=$LIMIT" | jq -r '.data[] | "  [\(.status)] \(.id) - \(.workflowData.name // "Unknown") (\(.startedAt))"' 2>/dev/null || echo "Unable to list executions"
                   ;;
@@ -1598,9 +1760,10 @@ PROMCFG
                     echo "Usage: n8n-ctl activate <workflow-id>" >&2
                     exit 1
                   fi
-                  curl -sf -X PATCH -H "Content-Type: application/json" \
-                    -d '{"active": true}' \
-                    "$N8N_URL/api/v1/workflows/$2" | jq '.active'
+                  
+                  validate_workflow_id "$2"
+                  
+                  n8n_api_request "PATCH" "/workflows/$2" '{"active": true}' | jq '.active' 2>/dev/null
                   echo "Workflow $2 activated"
                   ;;
                 deactivate)
@@ -1609,21 +1772,15 @@ PROMCFG
                     echo "Usage: n8n-ctl deactivate <workflow-id>" >&2
                     exit 1
                   fi
-                  curl -sf -X PATCH -H "Content-Type: application/json" \
-                    -d '{"active": false}' \
-                    "$N8N_URL/api/v1/workflows/$2" | jq '.active'
+                  
+                  validate_workflow_id "$2"
+                  
+                  n8n_api_request "PATCH" "/workflows/$2" '{"active": false}' | jq '.active' 2>/dev/null
                   echo "Workflow $2 deactivated"
                   ;;
                 ui)
                   # Open n8n UI
-                  echo "Opening n8n UI: $N8N_URL"
-                  if command -v xdg-open >/dev/null 2>&1; then
-                    xdg-open "$N8N_URL"
-                  elif command -v open >/dev/null 2>&1; then
-                    open "$N8N_URL"
-                  else
-                    echo "Open in browser: $N8N_URL"
-                  fi
+                  open-url-helper "$N8N_URL"
                   ;;
                 *)
                   echo "Usage: n8n-ctl <command> [args]"
@@ -1641,6 +1798,10 @@ PROMCFG
                   echo "  N8N_HOST    - n8n host (default: localhost)"
                   echo "  N8N_PORT    - n8n port (default: 5678)"
                   echo "  N8N_API_KEY - API key for authentication"
+                  echo ""
+                  echo "Security Notes:"
+                  echo "  - Use HTTPS URLs in production (e.g., N8N_URL=https://...)"
+                  echo "  - Always set N8N_API_KEY for authenticated access"
                   ;;
               esac
             '')
