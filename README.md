@@ -583,6 +583,24 @@ The following resources are documented but require additional setup:
 | **RustPython** | Python interpreter in Rust | [RustPython/RustPython](https://github.com/RustPython/RustPython) |
 | **PyO3** | Rust bindings for Python | [PyO3/pyo3](https://github.com/PyO3/pyo3) |
 
+## Reference Sources
+
+| Project | Description | URL |
+|---------|-------------|-----|
+| **architecture-decision-record** | Architecture decision record (ADR) | [joelparkerhenderson/architecture-decision-record](https://github.com/joelparkerhenderson/architecture-decision-record) |
+| **shadcn-ui** | Front-end accessible components | [shadcn-ui](https://github.com/shadcn-ui) |
+| **ComfyUI** | Front-end modular diffusion model GUI, api and backend with a graph/nodes interface | [Comfy-Org/ComfyUI](https://github.com/Comfy-Org/ComfyUI) |
+| **dioxus** | Fullstack app framework for web, desktop, and mobile | [DioxusLabs/dioxus](https://github.com/DioxusLabs/dioxus) |
+| **open-lovable** | Front-end Clone and recreate any website as a modern React app | [firecrawl/open-lovable](https://github.com/firecrawl/open-lovable) |
+| **vibe-kanban** | Front-end Vibe Kanban | [BloopAI/vibe-kanban](https://github.com/BloopAI/vibe-kanban) |
+| **dashy** | A self-hostable personal dashboard | [Lissy93/dashy](https://github.com/Lissy93/dashy) |
+| **cc-switch** | A cross-platform desktop All-in-One assistant tool | [farion1231/cc-switch](https://github.com/farion1231/cc-switch) |
+| **Deep-Live-Cam** | Front-end real time face swap and one-click video deepfake | [hacksider/Deep-Live-Cam](https://github.com/hacksider/Deep-Live-Cam) |
+| **dynamic_widget** | A Backend-Driven UI toolkit, build your dynamic UI with json | [dengyin2000/dynamic_widget](https://github.com/dengyin2000/dynamic_widget) |
+| **openui** | OpenUI let's you describe UI using your imagination, then see it rendered live | [wandb/openui](https://github.com/wandb/openui) |
+| **MobileAgent** | Mobile-Agent: The Powerful GUI Agent Family | [X-PLUG/MobileAgent](https://github.com/X-PLUG/MobileAgent) |
+| **API-mega-list** | Capability Registry (CR) with 10,498 ready-to-use APIs | [cporter202/API-mega-list](https://github.com/cporter202/API-mega-list) |
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE). See the LICENSE file for details.

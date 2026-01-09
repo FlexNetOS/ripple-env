@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "Capability Registry",
+  "description": "Registry of 10,498 ready-to-use APIs for agent capabilities",
+  "version": "1.0.0",
+  "lastUpdated": "2025-12-09",
+  "source": {
+    "repository": "https://github.com/cporter202/API-mega-list",
+    "license": "Public",
+    "maintainer": "cporter202"
+  },
+  "statistics": {
+    "totalApis": 10498,
+    "totalCategories": 18,
+    "updateFrequency": "daily"
+  },
+  "categories": [
+    {
+      "id": "agents",
+      "name": "Agents",
+      "description": "AI agent tools and autonomous task execution APIs",
+      "count": 697,
+      "path": "agents-apis-697",
+      "useCases": ["autonomous-tasks", "workflow-agents", "ai-assistants"]
+    },
+    {
+      "id": "ai",
+      "name": "AI",
+      "description": "Artificial intelligence and machine learning APIs",
+      "count": 1208,
+      "path": "ai-apis-1208",
+      "useCases": ["nlp", "computer-vision", "content-generation", "model-inference"]
+    },
+    {
+      "id": "automation",
+      "name": "Automation",
+      "description": "Workflow automation and task orchestration APIs",
+      "count": 4825,
+      "path": "automation-apis-4825",
+      "useCases": ["workflow-automation", "task-scheduling", "process-automation"]
+    },
+    {
+      "id": "business",
+      "name": "Business",
+      "description": "Business operations and enterprise APIs",
+      "count": 2,
+      "path": "business-apis-2",
+      "useCases": ["enterprise-integration", "business-intelligence"]
+    },
+    {
+      "id": "developer-tools",
+      "name": "Developer Tools",
+      "description": "Development, testing, and DevOps APIs",
+      "count": 2652,
+      "path": "developer-tools-apis-2652",
+      "useCases": ["code-analysis", "ci-cd", "testing", "monitoring"]
+    },
+    {
+      "id": "ecommerce",
+      "name": "Ecommerce",
+      "description": "E-commerce, product, and marketplace APIs",
+      "count": 2440,
+      "path": "ecommerce-apis-2440",
+      "useCases": ["product-scraping", "price-monitoring", "marketplace-integration"]
+    },
+    {
+      "id": "integrations",
+      "name": "Integrations",
+      "description": "Third-party service integration APIs",
+      "count": 890,
+      "path": "integrations-apis-890",
+      "useCases": ["service-connectivity", "data-sync", "webhook-management"]
+    },
+    {
+      "id": "jobs",
+      "name": "Jobs",
+      "description": "Job listing and recruitment APIs",
+      "count": 848,
+      "path": "jobs-apis-848",
+      "useCases": ["job-aggregation", "recruitment", "talent-sourcing"]
+    },
+    {
+      "id": "lead-generation",
+      "name": "Lead Generation",
+      "description": "Contact discovery and lead enrichment APIs",
+      "count": 3452,
+      "path": "lead-generation-apis-3452",
+      "useCases": ["email-discovery", "contact-enrichment", "prospect-research"]
+    },
+    {
+      "id": "mcp-servers",
+      "name": "MCP Servers",
+      "description": "Model Context Protocol server implementations",
+      "count": 131,
+      "path": "mcp-servers-apis-131",
+      "useCases": ["llm-tools", "context-management", "ai-integration"]
+    },
+    {
+      "id": "news",
+      "name": "News",
+      "description": "News aggregation and media monitoring APIs",
+      "count": 590,
+      "path": "news-apis-590",
+      "useCases": ["news-aggregation", "media-monitoring", "content-curation"]
+    },
+    {
+      "id": "open-source",
+      "name": "Open Source",
+      "description": "Open source project and repository APIs",
+      "count": 768,
+      "path": "open-source-apis-768",
+      "useCases": ["repo-analysis", "dependency-tracking", "contribution-metrics"]
+    },
+    {
+      "id": "other",
+      "name": "Other",
+      "description": "Miscellaneous and uncategorized APIs",
+      "count": 1297,
+      "path": "other-apis-1297",
+      "useCases": ["general-purpose", "utility", "experimental"]
+    },
+    {
+      "id": "real-estate",
+      "name": "Real Estate",
+      "description": "Property and real estate data APIs",
+      "count": 851,
+      "path": "real-estate-apis-851",
+      "useCases": ["property-listings", "market-analysis", "valuation"]
+    },
+    {
+      "id": "seo-tools",
+      "name": "SEO Tools",
+      "description": "Search engine optimization and analytics APIs",
+      "count": 710,
+      "path": "seo-tools-apis-710",
+      "useCases": ["keyword-research", "rank-tracking", "backlink-analysis"]
+    },
+    {
+      "id": "social-media",
+      "name": "Social Media",
+      "description": "Social platform data extraction and management APIs",
+      "count": 3268,
+      "path": "social-media-apis-3268",
+      "useCases": ["content-scraping", "engagement-analytics", "profile-enrichment"]
+    },
+    {
+      "id": "travel",
+      "name": "Travel",
+      "description": "Travel, booking, and hospitality APIs",
+      "count": 397,
+      "path": "travel-apis-397",
+      "useCases": ["flight-search", "hotel-booking", "travel-planning"]
+    },
+    {
+      "id": "videos",
+      "name": "Videos",
+      "description": "Video platform and streaming APIs",
+      "count": 979,
+      "path": "videos-apis-979",
+      "useCases": ["video-scraping", "transcript-extraction", "channel-analytics"]
+    }
+  ],
+  "integration": {
+    "primaryPlatform": "Apify",
+    "authMethods": ["api-key", "oauth2"],
+    "pricingModel": "usage-based",
+    "documentation": "https://docs.apify.com"
+  },
+  "agentCapabilities": {
+    "dataCollection": {
+      "description": "Extract data from websites and platforms",
+      "categories": ["automation", "social-media", "ecommerce", "news"]
+    },
+    "leadGeneration": {
+      "description": "Find and enrich business contacts",
+      "categories": ["lead-generation", "jobs", "business"]
+    },
+    "contentProcessing": {
+      "description": "Process and analyze content",
+      "categories": ["ai", "videos", "seo-tools"]
+    },
+    "marketIntelligence": {
+      "description": "Gather competitive and market insights",
+      "categories": ["ecommerce", "real-estate", "travel"]
+    },
+    "developerTooling": {
+      "description": "Development and integration tools",
+      "categories": ["developer-tools", "integrations", "open-source", "mcp-servers"]
+    },
+    "agentOrchestration": {
+      "description": "Autonomous agent task execution",
+      "categories": ["agents", "automation"]
+    }
+  }
+}
