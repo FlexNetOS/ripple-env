@@ -1,45 +1,87 @@
-# Observability Stack - Grafana, Loki, Prometheus
-# BUILDKIT_STARTER_SPEC.md Layer 18: Observability
+# Observability Stack - Prometheus, Grafana, Loki, OTel, Netdata, Umami
+# BUILDKIT_STARTER_SPEC.md Layer 1.18: Observability
 #
 # Usage:
+#   docker network create agentic-network 2>/dev/null || true
 #   docker compose -f docker-compose.observability.yml up -d
-#   docker compose -f docker-compose.observability.yml logs -f
 #
 # Endpoints:
-#   Grafana:    http://localhost:3000 (admin/admin)
-#   Prometheus: http://localhost:9090
-#   Loki:       http://localhost:3100
+#   Prometheus:     http://localhost:9090
+#   Grafana:        http://localhost:3000 (admin/admin)
+#   Loki:           http://localhost:3100
+#   Alertmanager:   http://localhost:9093
+#   Node Exporter:  http://localhost:9100/metrics
+#   cAdvisor:       http://localhost:8080
+#   OTel Collector: http://localhost:4317 (gRPC), http://localhost:4318 (HTTP)
+#   Netdata:        http://localhost:19999
+#   Umami:          http://localhost:3001
 
 services:
-  # Prometheus - Metrics collection
+  # ---------------------------------------------------------------------------
+  # Prometheus - Metrics collection and alerting
+  # ---------------------------------------------------------------------------
   prometheus:
     image: prom/prometheus:v2.48.0
     container_name: prometheus
-    restart: unless-stopped
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
+      - '--web.enable-remote-write-receiver'
     ports:
       - "9090:9090"
     volumes:
       - ./manifests/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     networks:
-      - observability-network
+      - agentic-network
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Loki - Log aggregation
-  loki:
-    image: grafana/loki:2.9.2
-    container_name: loki
     restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Grafana - Visualization and dashboards
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./manifests/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Loki - Log aggregation
+  # ---------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: loki
     command: -config.file=/etc/loki/local-config.yaml
     ports:
       - "3100:3100"
@@ -47,97 +89,56 @@ services:
       - ./manifests/observability/loki.yml:/etc/loki/local-config.yaml:ro
       - loki-data:/loki
     networks:
-      - observability-network
+      - agentic-network
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3100/ready"]
-      - '--storage.tsdb.retention.time=30d'
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./config/prometheus/rules:/etc/prometheus/rules:ro
-      - prometheus-data:/prometheus
-    networks:
-      - agentic-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Promtail - Log shipper (ships logs to Loki)
-  promtail:
-    image: grafana/promtail:2.9.2
-    container_name: promtail
     restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Promtail - Log shipper for Loki
+  # ---------------------------------------------------------------------------
+  promtail:
+    image: grafana/promtail:3.3.2
+    container_name: promtail
     command: -config.file=/etc/promtail/config.yml
     volumes:
       - ./manifests/observability/promtail.yml:/etc/promtail/config.yml:ro
       - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - observability-network
     depends_on:
       - loki
-
-  # Grafana - Visualization & Dashboards
-  grafana:
-    image: grafana/grafana:10.2.2
-    container_name: grafana
-    restart: unless-stopped
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://localhost:3000
-      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./manifests/observability/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./manifests/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    networks:
-      - observability-network
-    depends_on:
-      - prometheus
-      - loki
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
-  # Grafana - Visualization and dashboards
-  grafana:
-    image: grafana/grafana:11.4.0
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://localhost:3000
-      - GF_AUTH_ANONYMOUS_ENABLED=false
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    depends_on:
-      - prometheus
     networks:
       - agentic-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
+  # ---------------------------------------------------------------------------
+  # Alertmanager - Alert routing and management
+  # ---------------------------------------------------------------------------
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./manifests/observability/alertmanager.yml:/etc/alertmanager/config.yml:ro
+      - alertmanager-data:/alertmanager
+    networks:
+      - agentic-network
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
   # Node Exporter - Host metrics
+  # ---------------------------------------------------------------------------
   node-exporter:
     image: prom/node-exporter:v1.8.2
     container_name: node-exporter
-    restart: unless-stopped
     command:
       - '--path.procfs=/host/proc'
       - '--path.rootfs=/rootfs'
@@ -149,16 +150,13 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
-    prometheus-data:
-    loki-data:
-    grafana-data:
     networks:
-    observability-network:
-    driver: bridge
       - agentic-network
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
   # cAdvisor - Container metrics
+  # ---------------------------------------------------------------------------
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.51.0
     container_name: cadvisor
@@ -177,54 +175,10 @@ services:
       - agentic-network
     restart: unless-stopped
 
-  # Alertmanager - Alert routing and management
-  alertmanager:
-    image: prom/alertmanager:v0.27.0
-    container_name: alertmanager
-    command:
-      - '--config.file=/etc/alertmanager/config.yml'
-      - '--storage.path=/alertmanager'
-    ports:
-      - "9093:9093"
-    volumes:
-      - ./config/alertmanager/config.yml:/etc/alertmanager/config.yml:ro
-      - alertmanager-data:/alertmanager
-    networks:
-      - agentic-network
-    restart: unless-stopped
-
-  # Loki - Log aggregation (optional)
-  loki:
-    image: grafana/loki:3.3.2
-    container_name: loki
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
-    volumes:
-      - ./config/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
-      - loki-data:/loki
-    networks:
-      - agentic-network
-    restart: unless-stopped
-
-  # Promtail - Log shipper for Loki (optional)
-  promtail:
-    image: grafana/promtail:3.3.2
-    container_name: promtail
-    command: -config.file=/etc/promtail/config.yml
-    volumes:
-      - ./config/promtail/config.yml:/etc/promtail/config.yml:ro
-      - /var/log:/var/log:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-    networks:
-      - agentic-network
-    restart: unless-stopped
-
   # ---------------------------------------------------------------------------
   # OpenTelemetry Collector - Unified telemetry pipeline
   # ---------------------------------------------------------------------------
   # https://github.com/open-telemetry/opentelemetry-collector-contrib
-  # Receives traces, metrics, logs from applications and exports to backends
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.115.0
     container_name: otel-collector
@@ -237,6 +191,9 @@ services:
       - "13133:13133" # Health check extension
     volumes:
       - ./manifests/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      - prometheus
+      - loki
     networks:
       - agentic-network
     healthcheck:
@@ -245,15 +202,11 @@ services:
       timeout: 10s
       retries: 3
     restart: unless-stopped
-    depends_on:
-      - prometheus
-      - loki
 
   # ---------------------------------------------------------------------------
   # Netdata - Real-time infrastructure monitoring
   # ---------------------------------------------------------------------------
   # https://github.com/netdata/netdata
-  # Per-second metrics for system, containers, applications
   netdata:
     image: netdata/netdata:v2.1.0
     container_name: netdata
@@ -278,8 +231,52 @@ services:
       - /var/log:/host/var/log:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
-      - NETDATA_CLAIM_TOKEN=
+      - NETDATA_CLAIM_TOKEN=${NETDATA_CLAIM_TOKEN:-}
       - NETDATA_CLAIM_URL=https://app.netdata.cloud
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Umami - Privacy-focused product analytics
+  # ---------------------------------------------------------------------------
+  # https://github.com/umami-software/umami
+  # BUILDKIT_STARTER_SPEC.md Layer 1.18: Product analytics (UI usage)
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    container_name: umami
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgresql://umami:umami@umami-db:5432/umami
+      DATABASE_TYPE: postgresql
+      APP_SECRET: ${UMAMI_APP_SECRET:-replace-me-with-a-random-string}
+    depends_on:
+      umami-db:
+        condition: service_healthy
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  umami-db:
+    image: postgres:17.2-alpine
+    container_name: umami-db
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: umami
+    volumes:
+      - umami-data:/var/lib/postgresql/data
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umami -d umami"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
 volumes:
@@ -290,111 +287,9 @@ volumes:
   netdata-config:
   netdata-lib:
   netdata-cache:
+  umami-data:
 
 networks:
   agentic-network:
     external: true
     name: agentic-network
-
-# Usage:
-# 1. Create configuration directories:
-#    mkdir -p config/{prometheus,grafana/provisioning/datasources,grafana/provisioning/dashboards,grafana/dashboards,alertmanager,loki,promtail}
-#
-# 2. Create Prometheus configuration (config/prometheus/prometheus.yml):
-#    global:
-#      scrape_interval: 15s
-#      evaluation_interval: 15s
-#    
-#    alerting:
-#      alertmanagers:
-#        - static_configs:
-#            - targets: ['alertmanager:9093']
-#    
-#    scrape_configs:
-#      - job_name: 'prometheus'
-#        static_configs:
-#          - targets: ['localhost:9090']
-#      
-#      - job_name: 'node-exporter'
-#        static_configs:
-#          - targets: ['node-exporter:9100']
-#      
-#      - job_name: 'cadvisor'
-#        static_configs:
-#          - targets: ['cadvisor:8080']
-#      
-#      - job_name: 'localai'
-#        static_configs:
-#          - targets: ['localai:8080']
-#      
-#      - job_name: 'kong'
-#        static_configs:
-#          - targets: ['kong:8001']
-#      
-#      - job_name: 'agentgateway'
-#        static_configs:
-#          - targets: ['agentgateway:8092']
-#
-# 3. Create Grafana datasource (config/grafana/provisioning/datasources/prometheus.yml):
-#    apiVersion: 1
-#    datasources:
-#      - name: Prometheus
-#        type: prometheus
-#        access: proxy
-#        url: http://prometheus:9090
-#        isDefault: true
-#        editable: true
-#      - name: Loki
-#        type: loki
-#        access: proxy
-#        url: http://loki:3100
-#        editable: true
-#
-# 4. Create Grafana dashboard provisioning (config/grafana/provisioning/dashboards/default.yml):
-#    apiVersion: 1
-#    providers:
-#      - name: 'Default'
-#        orgId: 1
-#        folder: ''
-#        type: file
-#        disableDeletion: false
-#        updateIntervalSeconds: 10
-#        allowUiUpdates: true
-#        options:
-#          path: /var/lib/grafana/dashboards
-#
-# 5. Create Alertmanager configuration (config/alertmanager/config.yml):
-#    global:
-#      resolve_timeout: 5m
-#    
-#    route:
-#      group_by: ['alertname', 'cluster', 'service']
-#      group_wait: 10s
-#      group_interval: 10s
-#      repeat_interval: 12h
-#      receiver: 'default'
-#    
-#    receivers:
-#      - name: 'default'
-#        # Add your notification channels here (email, slack, etc.)
-#
-# 6. Start observability stack:
-#    docker-compose -f docker-compose.observability.yml up -d
-#
-# 7. Access services:
-#    - Prometheus: http://localhost:9090
-#    - Grafana: http://localhost:3000 (admin/admin)
-#    - Alertmanager: http://localhost:9093
-#    - Node Exporter: http://localhost:9100/metrics
-#    - cAdvisor: http://localhost:8080
-#
-# 8. Import Grafana dashboards:
-#    - Node Exporter Full: Dashboard ID 1860
-#    - Docker Container & Host Metrics: Dashboard ID 179
-#    - Prometheus 2.0 Stats: Dashboard ID 3662
-#
-# ROS2 Integration:
-# - Add ROS2 node metrics exporter
-# - Monitor DDS traffic with custom exporters
-# - Track topic latency and throughput
-# - Alert on node failures or communication issues

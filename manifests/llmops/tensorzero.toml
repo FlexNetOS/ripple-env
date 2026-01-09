@@ -1,0 +1,128 @@
+# TensorZero Configuration
+# BUILDKIT_STARTER_SPEC.md Layer 1.16: LLMOps & Evaluation
+#
+# TensorZero is the primary LLMOps gateway for:
+# - Evals and experiments
+# - Telemetry control
+# - Model routing and fallbacks
+#
+# See: https://github.com/tensorzero/tensorzero
+
+# Gateway settings
+[gateway]
+bind_address = "0.0.0.0:3000"
+
+# ClickHouse observability backend
+[observability]
+enabled = true
+
+[observability.clickhouse]
+database_url = "http://tensorzero-clickhouse:8123"
+
+# Model providers configuration
+[models]
+
+# LocalAI - Primary local inference
+[models.localai]
+routing_weight = 1.0
+
+[models.localai.providers.localai]
+type = "openai"
+model_name = "gemma-3n-E2B-it"
+base_url = "http://localai:8080/v1"
+api_key_env_var = "LOCALAI_API_KEY"
+
+# LocalAI reasoning model
+[models.localai-reasoning]
+routing_weight = 1.2
+
+[models.localai-reasoning.providers.localai]
+type = "openai"
+model_name = "Phi-4-mini-reasoning"
+base_url = "http://localai:8080/v1"
+api_key_env_var = "LOCALAI_API_KEY"
+
+# LocalAI code model
+[models.localai-code]
+routing_weight = 1.1
+
+[models.localai-code.providers.localai]
+type = "openai"
+model_name = "DeepSeek-R1-Distill-Qwen-1.5B"
+base_url = "http://localai:8080/v1"
+api_key_env_var = "LOCALAI_API_KEY"
+
+# AGiXT - Agent orchestration
+[models.agixt]
+routing_weight = 0.8
+
+[models.agixt.providers.agixt]
+type = "openai"
+model_name = "default"
+base_url = "http://agixt:7437/v1"
+api_key_env_var = "AGIXT_API_KEY"
+
+# Functions (chat completions with tools)
+[functions]
+
+# General chat function
+[functions.chat]
+type = "chat"
+system_schema = "string"
+user_schema = "string"
+assistant_schema = "string"
+
+[functions.chat.variants.default]
+weight = 1.0
+model = "localai"
+
+[functions.chat.variants.reasoning]
+weight = 0.5
+model = "localai-reasoning"
+
+# Code generation function
+[functions.code]
+type = "chat"
+system_schema = "string"
+user_schema = "string"
+assistant_schema = "string"
+
+[functions.code.variants.default]
+weight = 1.0
+model = "localai-code"
+
+# JSON generation function
+[functions.json]
+type = "json"
+output_schema = "object"
+
+[functions.json.variants.default]
+weight = 1.0
+model = "localai"
+
+# Metrics and evaluation
+[metrics]
+
+# Track latency
+[metrics.latency]
+type = "float"
+level = "inference"
+optimize = "min"
+
+# Track token usage
+[metrics.tokens]
+type = "float"
+level = "inference"
+optimize = "min"
+
+# Track user satisfaction
+[metrics.satisfaction]
+type = "float"
+level = "episode"
+optimize = "max"
+
+# Track task completion
+[metrics.completion]
+type = "boolean"
+level = "episode"
+optimize = "max"
