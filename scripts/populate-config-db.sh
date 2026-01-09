@@ -316,8 +316,10 @@ run_validation() {
         WHERE s.id IS NULL AND (w.name LIKE '%test%' OR w.name LIKE '%deploy%')
     " | while read -r workflow; do
         [[ -z "$workflow" ]] && continue
+        # Escape single quotes to make workflow name safe for SQL string literal
+        local escaped_workflow=${workflow//\'/\'\'}
         sqlite3 "$DB_PATH" "INSERT INTO config_issues (source, severity, issue_type, description, file_path)
-            VALUES ('workflow', 'info', 'no_secrets', 'Workflow \"$workflow\" uses no secrets', '.github/workflows/');"
+            VALUES ('workflow', 'info', 'no_secrets', 'Workflow \"$escaped_workflow\" uses no secrets', '.github/workflows/');"
     done
 
     log_success "Validation complete"
