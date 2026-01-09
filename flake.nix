@@ -30,7 +30,6 @@
       devshell,
       home-manager,
       holochain-nix,
-      home-manager,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -99,13 +98,7 @@
             hc              # Holochain dev CLI (scaffold/package/run)
             lair-keystore   # Secure keystore for Holochain agent keys
           ];
-        { system, ... }:
-        let
-          # Configure nixpkgs with allowUnfree for packages like vault (BSL license)
-          pkgs = import nixpkgs {
-            inherit system;
-            config.allowUnfree = true;
-          };
+
           inherit (pkgs.lib) optionalString optionals optionalAttrs;
           isDarwin = pkgs.stdenv.isDarwin;
           isLinux = pkgs.stdenv.isLinux;
@@ -647,7 +640,6 @@
           # Binary cache: https://cache.nixos-cuda.org
           devShells.cuda = pkgs.mkShell {
             packages = basePackages ++ fullExtras ++ holochainPackages ++ coreCommandWrappers ++ aiCommandWrappers ++ linuxPackages ++ (with pkgs; [
-            packages = basePackages ++ fullExtras ++ coreCommandWrappers ++ aiCommandWrappers ++ linuxPackages ++ (with pkgs; [
               # CUDA Toolkit 13.x (or latest available)
               # See docs/CONFLICTS.md for version details
               cudaPkgs.cudatoolkit
@@ -703,10 +695,9 @@
 
               # Verify CUDA availability
               if command -v nvidia-smi &> /dev/null; then
-                echo "
+                echo ""
+                echo "ROS2 Humble + CUDA Development Environment"
                 echo "==========================================="
-                echo "🚀 ROS2 Humble + CUDA Development Environment"
-                echo "=============================================="
                 echo "  Platform: Linux (${system}) with NVIDIA GPU"
                 nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null | head -1 | while read line; do
                   echo "  GPU: $line"
@@ -737,6 +728,11 @@
           # Legacy devshell (for compatibility with existing workflows)
           devshells.default = {
             env = [
+              {
+                name = "COLCON_DEFAULTS_FILE";
+                value = toString colconDefaults;
+              }
+            ];
 
             # Command aliases
             commands = [
