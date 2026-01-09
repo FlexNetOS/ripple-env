@@ -77,9 +77,12 @@ impl AgixtClient {
 
     /// Create a new conversation
     pub async fn new_conversation(&self, agent: &str) -> Result<String> {
+        // agixt-sdk 0.1.0 API: new_conversation(agent_name, conversation_name, conversation_content)
+        // Generate a unique conversation name and pass None for conversation_content
+        let conversation_name = format!("ros2-{}", uuid::Uuid::new_v4());
         let result = self
             .sdk
-            .new_conversation(agent, None, None)
+            .new_conversation(agent, &conversation_name, None)
             .await
             .context("Failed to create conversation")?;
 

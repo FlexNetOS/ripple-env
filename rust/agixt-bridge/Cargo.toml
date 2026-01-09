@@ -10,7 +10,8 @@ repository = "https://github.com/FlexNetOS/ros2-humble-env"
 [dependencies]
 # AGiXT Rust SDK (Alpha - v0.1.0)
 # https://github.com/AGiXT/rust-sdk
-agixt_sdk = "0.1"
+# NOTE: Package is named agixt-sdk on crates.io (hyphen, not underscore)
+agixt-sdk = "0.1"
 
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }

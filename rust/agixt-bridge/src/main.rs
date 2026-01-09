@@ -117,9 +117,11 @@ impl AgixtBridge {
         info!("Processing command: {}", natural_language);
 
         // Create conversation with AGiXT
+        // API: new_conversation(agent_name, conversation_name, conversation_content)
+        let conversation_name = format!("ros2-cmd-{}", uuid::Uuid::new_v4());
         let conversation = self
             .sdk
-            .new_conversation(&self.config.default_agent, None, None)
+            .new_conversation(&self.config.default_agent, &conversation_name, None)
             .await
             .context("Failed to create conversation")?;
 

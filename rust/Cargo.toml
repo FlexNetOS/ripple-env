@@ -12,8 +12,8 @@ authors = ["FlexNetOS"]
 repository = "https://github.com/FlexNetOS/ros2-humble-env"
 
 [workspace.dependencies]
-# AGiXT SDK
-agixt_sdk = "0.1"
+# AGiXT SDK (package name on crates.io uses hyphen)
+agixt-sdk = "0.1"
 
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }
