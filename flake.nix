@@ -86,10 +86,11 @@
         let
           # Configure nixpkgs with allowUnfree for packages like vault (BSL license)
           # Define the holochain source
+          # Note: Using commit hash as the upstream repo has no tagged releases yet
           holochainSrc = inputs.nixpkgs.legacyPackages.${system}.fetchFromGitHub {
             owner = "spartan-holochain-counsel";
             repo = "nix-overlay";
-            rev = "2a321bc7d6d94f169c6071699d9a89acd55039bb";
+            rev = "2a321bc7d6d94f169c6071699d9a89acd55039bb";  # Latest commit as of 2026-01-09
             sha256 = "sha256-LZkgXdLY+C+1CxynKzsdtM0g4gC0NJjPP3d24pHPyIU=";
           };
 
@@ -98,7 +99,7 @@
             config.allowUnfree = true;
             overlays = [
               # Holochain overlay - import the overlay function from the repository
-              (import "${holochainSrc}/holochain-overlay")
+              (import "${holochainSrc}/holochain-overlay/default.nix")
             ];
           };
 
