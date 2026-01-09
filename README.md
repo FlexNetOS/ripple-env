@@ -266,6 +266,13 @@ ctr                         # colcon test-result --verbose
 pixi add <PACKAGE_NAME>     # Add a robostack package
 pixi search ros-humble-*    # Search for ROS2 packages
 
+- ros: ros-humble-desktop with all core ros packages
+- build tools: cmake, ninja, make, compilers, pkg-config
+- ros tools: colcon, rosdep, catkin_tools
+- python: 3.11.x with development headers
+- python modernization tools: ruff, pyupgrade, flynt (for upgrading legacy python code)
+- platforms: supports linux-64, linux-aarch64, osx-64, osx-arm64
+
 # Environment info
 ros2-env                    # Show ROS2 environment variables
 
@@ -343,6 +350,93 @@ The modules can be imported into other flakes:
 
 ## Adding Packages
 
+## python modernization tools
+
+this environment includes tools for upgrading legacy python code to modern syntax. these tools are particularly useful when working with ros packages that may use older python patterns.
+
+### ruff
+
+an extremely fast python linter and formatter (10-100x faster than flake8/black), written in rust. it includes pyupgrade rules built-in.
+
+```bash
+# lint python files
+ruff check .
+
+# auto-fix issues
+ruff check --fix .
+
+# format code (like black)
+ruff format .
+
+# upgrade python syntax (using UP rules)
+ruff check --select UP --fix .
+```
+
+### pyupgrade
+
+automatically upgrades python syntax to newer versions of the language.
+
+```bash
+# upgrade to python 3.11+ syntax
+find . -name "*.py" -exec pyupgrade --py311-plus {} +
+
+# examples of transformations:
+# - set([1, 2]) -> {1, 2}
+# - class Foo(object) -> class Foo
+# - super(Foo, self) -> super()
+# - Optional[int] -> int | None (3.10+)
+# - "{}".format(x) -> f"{x}"
+```
+
+### flynt
+
+converts old-style string formatting (% and .format()) to f-strings.
+
+```bash
+# convert a file
+flynt file.py
+
+# convert entire directory
+flynt src/
+
+# dry run (see changes without modifying)
+flynt --dry-run src/
+
+# also convert string concatenation
+flynt --transform-concats src/
+```
+
+### combined workflow
+
+for a complete modernization of a python codebase:
+
+```bash
+# step 1: run ruff to fix common issues
+ruff check --fix .
+
+# step 2: upgrade syntax with pyupgrade
+find . -name "*.py" -not -path "./.venv/*" -exec pyupgrade --py311-plus {} +
+
+# step 3: convert to f-strings with flynt
+flynt .
+
+# step 4: format with ruff
+ruff format .
+
+# step 5: final lint check
+ruff check .
+```
+
+## links
+
+- [robostack ros2-humble packages](https://robostack.github.io/humble.html)
+- [pixi documentation](https://pixi.sh)
+- [nix flakes documentation](https://nixos.wiki/wiki/Flakes)
+- [ros2 humble documentation](https://docs.ros.org/en/humble/)
+- [flake-parts devshell documentation](https://flake.parts/options/devshell.html)
+- [ruff documentation](https://docs.astral.sh/ruff/)
+- [pyupgrade repository](https://github.com/asottile/pyupgrade)
+- [flynt repository](https://github.com/ikamensh/flynt)
 ### ROS2 Packages (via pixi)
 ```bash
 pixi add ros-humble-<package-name>
