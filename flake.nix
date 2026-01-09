@@ -1916,32 +1916,40 @@ PROMCFG
             '')
             # Codebase database loader and query tool
             (pkgs.writeShellScriptBin "codebase-db" ''
-              # Load codebase files into SQLite database for querying
-              # Usage: codebase-db [init|load|query|search|files|stats]
+              # Load ALL codebase files into SQLite database for comprehensive querying
+              # Designed for configuration workspaces - indexes everything
+              # Usage: codebase-db [init|load|query|search|files|stats|configs|deps|envvars|...]
 
               DB_FILE="''${CODEBASE_DB:-./codebase.db}"
               CODEBASE_ROOT="''${CODEBASE_ROOT:-.}"
 
-              # File patterns to include (common source files)
-              INCLUDE_PATTERNS="*.nix *.py *.rs *.go *.js *.ts *.tsx *.jsx *.sh *.bash *.zsh *.yml *.yaml *.toml *.json *.md *.txt *.cmake CMakeLists.txt *.xml package.xml *.launch *.launch.py *.msg *.srv *.action Dockerfile *.dockerfile docker-compose*.yml *.rego"
+              # Directories to exclude (only truly non-content dirs)
+              EXCLUDE_DIRS=".git node_modules __pycache__ .cache .npm .cargo .mypy_cache .pytest_cache"
 
-              # Directories to exclude
-              EXCLUDE_DIRS=".git .pixi node_modules target build install log __pycache__ .cache .npm .cargo"
+              # Max file size to load (5MB - generous for config files)
+              MAX_FILE_SIZE=5242880
 
               init_db() {
                 echo "Initializing codebase database: $DB_FILE"
                 sqlite3 "$DB_FILE" << 'SCHEMA'
                   DROP TABLE IF EXISTS files;
                   DROP TABLE IF EXISTS file_lines;
+                  DROP TABLE IF EXISTS files_fts;
+                  DROP TABLE IF EXISTS metadata;
 
                   CREATE TABLE files (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     path TEXT UNIQUE NOT NULL,
+                    relative_path TEXT NOT NULL,
                     filename TEXT NOT NULL,
                     extension TEXT,
+                    directory TEXT NOT NULL,
                     size_bytes INTEGER,
                     line_count INTEGER,
                     content TEXT,
+                    file_type TEXT,
+                    is_config INTEGER DEFAULT 0,
+                    is_hidden INTEGER DEFAULT 0,
                     loaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                   );
 
@@ -1950,92 +1958,189 @@ PROMCFG
                     file_id INTEGER NOT NULL,
                     line_number INTEGER NOT NULL,
                     content TEXT,
+                    trimmed_content TEXT,
+                    indent_level INTEGER DEFAULT 0,
                     FOREIGN KEY (file_id) REFERENCES files(id)
                   );
 
-                  CREATE INDEX idx_files_path ON files(path);
-                  CREATE INDEX idx_files_filename ON files(filename);
-                  CREATE INDEX idx_files_extension ON files(extension);
-                  CREATE INDEX idx_file_lines_file_id ON file_lines(file_id);
-                  CREATE INDEX idx_file_lines_content ON file_lines(content);
-
-                  CREATE VIRTUAL TABLE IF NOT EXISTS files_fts USING fts5(
-                    path, filename, content, content='files', content_rowid='id'
+                  CREATE TABLE metadata (
+                    key TEXT PRIMARY KEY,
+                    value TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                   );
 
-                  CREATE TRIGGER files_ai AFTER INSERT ON files BEGIN
-                    INSERT INTO files_fts(rowid, path, filename, content)
-                    VALUES (new.id, new.path, new.filename, new.content);
-                  END;
+                  CREATE INDEX idx_files_path ON files(path);
+                  CREATE INDEX idx_files_relative_path ON files(relative_path);
+                  CREATE INDEX idx_files_filename ON files(filename);
+                  CREATE INDEX idx_files_extension ON files(extension);
+                  CREATE INDEX idx_files_directory ON files(directory);
+                  CREATE INDEX idx_files_file_type ON files(file_type);
+                  CREATE INDEX idx_files_is_config ON files(is_config);
+                  CREATE INDEX idx_file_lines_file_id ON file_lines(file_id);
+                  CREATE INDEX idx_file_lines_content ON file_lines(content);
+                  CREATE INDEX idx_file_lines_trimmed ON file_lines(trimmed_content);
+
+                  CREATE VIRTUAL TABLE files_fts USING fts5(
+                    path, filename, content, tokenize='porter unicode61'
+                  );
+
+                  CREATE VIRTUAL TABLE lines_fts USING fts5(
+                    content, tokenize='porter unicode61'
+                  );
 SCHEMA
-                echo "Database initialized."
+                echo "Database initialized with enhanced schema."
+              }
+
+              # Determine file type based on extension/name
+              get_file_type() {
+                local file="$1"
+                local ext="$2"
+                local name=$(basename "$file")
+                case "$name" in
+                  Dockerfile*|*.dockerfile) echo "dockerfile" ;;
+                  Makefile|GNUmakefile) echo "makefile" ;;
+                  CMakeLists.txt) echo "cmake" ;;
+                  *.nix) echo "nix" ;;
+                  *.py) echo "python" ;;
+                  *.sh|*.bash|*.zsh) echo "shell" ;;
+                  *.ps1|*.psm1) echo "powershell" ;;
+                  *.yml|*.yaml) echo "yaml" ;;
+                  *.json) echo "json" ;;
+                  *.toml) echo "toml" ;;
+                  *.xml) echo "xml" ;;
+                  *.md|*.markdown) echo "markdown" ;;
+                  *.rst) echo "rst" ;;
+                  *.txt) echo "text" ;;
+                  *.ini|*.cfg|*.conf) echo "ini" ;;
+                  *.env*|.env*) echo "env" ;;
+                  *.lock) echo "lockfile" ;;
+                  *.rs) echo "rust" ;;
+                  *.go) echo "go" ;;
+                  *.js|*.mjs|*.cjs) echo "javascript" ;;
+                  *.ts|*.tsx) echo "typescript" ;;
+                  *.lua) echo "lua" ;;
+                  *.vim) echo "vim" ;;
+                  *.css|*.scss|*.sass) echo "css" ;;
+                  *.html|*.htm) echo "html" ;;
+                  *.sql) echo "sql" ;;
+                  *.rego) echo "rego" ;;
+                  *.hcl|*.tf) echo "hcl" ;;
+                  *) echo "other" ;;
+                esac
+              }
+
+              # Check if file is a config file
+              is_config_file() {
+                local file="$1"
+                local name=$(basename "$file")
+                case "$name" in
+                  *.nix|*.toml|*.yaml|*.yml|*.json|*.ini|*.cfg|*.conf|*.env*|.env*|\
+                  *.xml|*.hcl|*.tf|flake.lock|Cargo.lock|package-lock.json|pixi.lock|\
+                  .gitignore|.gitattributes|.editorconfig|.envrc|.pre-commit*|\
+                  Dockerfile*|docker-compose*|Makefile|CMakeLists.txt|*.cmake|\
+                  tsconfig.json|jsconfig.json|*.config.js|*.config.ts|\
+                  pyproject.toml|setup.py|setup.cfg|requirements*.txt|\
+                  Gemfile|Rakefile|*.gemspec|Cargo.toml|go.mod|go.sum)
+                    echo 1 ;;
+                  *) echo 0 ;;
+                esac
               }
 
               load_files() {
-                echo "Loading files from: $CODEBASE_ROOT"
+                echo "Loading ALL files from: $CODEBASE_ROOT"
                 echo "Database: $DB_FILE"
+                echo "Max file size: $MAX_FILE_SIZE bytes"
                 echo ""
 
-                # Build find command with exclusions
+                # Record start time
+                start_time=$(date +%s)
+
+                # Build find exclusions
                 EXCLUDE_ARGS=""
                 for dir in $EXCLUDE_DIRS; do
                   EXCLUDE_ARGS="$EXCLUDE_ARGS -path '*/$dir' -prune -o -path '*/$dir/*' -prune -o"
                 done
 
-                # Build include patterns
-                INCLUDE_ARGS=""
-                first=1
-                for pattern in $INCLUDE_PATTERNS; do
-                  if [ $first -eq 1 ]; then
-                    INCLUDE_ARGS="-name '$pattern'"
-                    first=0
-                  else
-                    INCLUDE_ARGS="$INCLUDE_ARGS -o -name '$pattern'"
-                  fi
-                done
-
-                # Find and load files
+                # Find ALL files (no extension filtering)
                 count=0
-                eval "find '$CODEBASE_ROOT' $EXCLUDE_ARGS \\( $INCLUDE_ARGS \\) -type f -print" 2>/dev/null | while read -r filepath; do
-                  # Skip binary files
-                  if file "$filepath" | grep -q "binary"; then
+                skipped=0
+                binary=0
+
+                eval "find '$CODEBASE_ROOT' $EXCLUDE_ARGS -type f -print" 2>/dev/null | while read -r filepath; do
+                  filename=$(basename "$filepath")
+                  relative_path="''${filepath#$CODEBASE_ROOT/}"
+                  directory=$(dirname "$relative_path")
+                  extension="''${filename##*.}"
+                  [ "$extension" = "$filename" ] && extension=""
+                  is_hidden=0
+                  [[ "$filename" == .* ]] && is_hidden=1
+
+                  # Get file size
+                  size=$(stat -c%s "$filepath" 2>/dev/null || stat -f%z "$filepath" 2>/dev/null || echo 0)
+
+                  # Skip files that are too large
+                  if [ "$size" -gt "$MAX_FILE_SIZE" ]; then
+                    echo "  Skipped (>5MB): $relative_path"
+                    skipped=$((skipped + 1))
                     continue
                   fi
 
-                  # Get file info
-                  filename=$(basename "$filepath")
-                  extension="''${filename##*.}"
-                  [ "$extension" = "$filename" ] && extension=""
-                  size=$(stat -c%s "$filepath" 2>/dev/null || stat -f%z "$filepath" 2>/dev/null || echo 0)
-
-                  # Read content (limit to 1MB per file)
-                  if [ "$size" -lt 1048576 ]; then
-                    content=$(cat "$filepath" 2>/dev/null | sed "s/'/''/g")
-                    line_count=$(echo "$content" | wc -l)
-
-                    # Insert into database
-                    sqlite3 "$DB_FILE" "INSERT OR REPLACE INTO files (path, filename, extension, size_bytes, line_count, content) VALUES ('$filepath', '$filename', '$extension', $size, $line_count, '$content');"
-
-                    # Insert lines for detailed searching
-                    file_id=$(sqlite3 "$DB_FILE" "SELECT id FROM files WHERE path='$filepath';")
-                    sqlite3 "$DB_FILE" "DELETE FROM file_lines WHERE file_id=$file_id;"
-
-                    line_num=1
-                    echo "$content" | while IFS= read -r line; do
-                      escaped_line=$(echo "$line" | sed "s/'/''/g")
-                      sqlite3 "$DB_FILE" "INSERT INTO file_lines (file_id, line_number, content) VALUES ($file_id, $line_num, '$escaped_line');"
-                      line_num=$((line_num + 1))
-                    done
-
-                    count=$((count + 1))
-                    echo "  Loaded: $filepath ($line_count lines)"
-                  else
-                    echo "  Skipped (too large): $filepath"
+                  # Skip binary files
+                  if file "$filepath" 2>/dev/null | grep -qE "binary|executable|ELF|Mach-O|PE32|archive|compressed"; then
+                    binary=$((binary + 1))
+                    continue
                   fi
+
+                  # Get file type and config status
+                  file_type=$(get_file_type "$filepath" "$extension")
+                  is_config=$(is_config_file "$filepath")
+
+                  # Read content
+                  content=$(cat "$filepath" 2>/dev/null | sed "s/'/''/g" || echo "")
+                  line_count=$(echo "$content" | wc -l | tr -d ' ')
+
+                  # Insert file record
+                  sqlite3 "$DB_FILE" "INSERT OR REPLACE INTO files
+                    (path, relative_path, filename, extension, directory, size_bytes, line_count, content, file_type, is_config, is_hidden)
+                    VALUES ('$filepath', '$relative_path', '$filename', '$extension', '$directory', $size, $line_count, '$content', '$file_type', $is_config, $is_hidden);"
+
+                  # Get file ID and insert into FTS
+                  file_id=$(sqlite3 "$DB_FILE" "SELECT id FROM files WHERE path='$filepath';")
+                  sqlite3 "$DB_FILE" "INSERT INTO files_fts(rowid, path, filename, content) VALUES ($file_id, '$filepath', '$filename', '$content');"
+
+                  # Clear old lines and insert new
+                  sqlite3 "$DB_FILE" "DELETE FROM file_lines WHERE file_id=$file_id;"
+
+                  line_num=1
+                  echo "$content" | while IFS= read -r line; do
+                    escaped_line=$(echo "$line" | sed "s/'/''/g")
+                    trimmed=$(echo "$line" | sed 's/^[[:space:]]*//' | sed "s/'/''/g")
+                    indent=$(echo "$line" | sed 's/[^[:space:]].*//' | wc -c)
+                    indent=$((indent - 1))
+                    sqlite3 "$DB_FILE" "INSERT INTO file_lines (file_id, line_number, content, trimmed_content, indent_level)
+                      VALUES ($file_id, $line_num, '$escaped_line', '$trimmed', $indent);"
+                    line_num=$((line_num + 1))
+                  done
+
+                  # Insert lines into FTS
+                  sqlite3 "$DB_FILE" "INSERT INTO lines_fts(rowid, content)
+                    SELECT id, content FROM file_lines WHERE file_id=$file_id;"
+
+                  count=$((count + 1))
+                  echo "  [$file_type] $relative_path ($line_count lines)"
                 done
 
+                end_time=$(date +%s)
+                duration=$((end_time - start_time))
+
+                # Store metadata
+                sqlite3 "$DB_FILE" "INSERT OR REPLACE INTO metadata (key, value) VALUES
+                  ('root_path', '$CODEBASE_ROOT'),
+                  ('load_time', '$duration'),
+                  ('last_loaded', datetime('now'));"
+
                 echo ""
-                echo "Loading complete. Run 'codebase-db stats' to see summary."
+                echo "Loading complete in ''${duration}s. Run 'codebase-db stats' for summary."
               }
 
               case "''${1:-help}" in
@@ -2175,29 +2280,397 @@ SCHEMA
                      ORDER BY f.path, fl.line_number
                      LIMIT 100;"
                   ;;
+
+                # === CONFIGURATION QUERY TOOLS ===
+
+                configs)
+                  # List all configuration files
+                  echo "Configuration Files:"
+                  echo ""
+                  sqlite3 -header -column "$DB_FILE" \
+                    "SELECT relative_path, file_type, line_count, size_bytes
+                     FROM files WHERE is_config = 1
+                     ORDER BY file_type, relative_path;"
+                  ;;
+                dirs)
+                  # List directories with file counts
+                  echo "Directories:"
+                  echo ""
+                  sqlite3 -header -column "$DB_FILE" \
+                    "SELECT directory, COUNT(*) as files, SUM(line_count) as lines, SUM(size_bytes) as bytes
+                     FROM files
+                     GROUP BY directory
+                     ORDER BY files DESC;"
+                  ;;
+                types)
+                  # List files grouped by type
+                  TYPE="$2"
+                  if [ -n "$TYPE" ]; then
+                    echo "Files of type: $TYPE"
+                    sqlite3 -header -column "$DB_FILE" \
+                      "SELECT relative_path, line_count, size_bytes
+                       FROM files WHERE file_type = '$TYPE'
+                       ORDER BY relative_path;"
+                  else
+                    echo "File types:"
+                    sqlite3 -header -column "$DB_FILE" \
+                      "SELECT file_type, COUNT(*) as count, SUM(line_count) as lines
+                       FROM files GROUP BY file_type ORDER BY count DESC;"
+                  fi
+                  ;;
+                hidden)
+                  # List hidden files
+                  echo "Hidden Files:"
+                  echo ""
+                  sqlite3 -header -column "$DB_FILE" \
+                    "SELECT relative_path, file_type, line_count
+                     FROM files WHERE is_hidden = 1
+                     ORDER BY relative_path;"
+                  ;;
+                envvars)
+                  # Find environment variable definitions and usages
+                  echo "Environment Variables:"
+                  echo ""
+                  echo "=== Definitions (export VAR=) ==="
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 100)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE fl.content LIKE '%export %=%'
+                        OR fl.content LIKE '%ENV %=%'
+                        OR fl.content LIKE '%environment%=%'
+                     ORDER BY f.relative_path, fl.line_number
+                     LIMIT 100;"
+                  echo ""
+                  echo "=== Usages (\$VAR or \${VAR}) ==="
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 100)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE fl.content LIKE '%\$%' AND fl.content NOT LIKE '%#%\$%'
+                     ORDER BY f.relative_path, fl.line_number
+                     LIMIT 100;"
+                  ;;
+                secrets)
+                  # Find potential secrets (API keys, passwords, tokens)
+                  echo "Potential Secrets (REVIEW CAREFULLY):"
+                  echo ""
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 120)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE (fl.content LIKE '%password%' OR fl.content LIKE '%PASSWORD%'
+                        OR fl.content LIKE '%secret%' OR fl.content LIKE '%SECRET%'
+                        OR fl.content LIKE '%api_key%' OR fl.content LIKE '%API_KEY%'
+                        OR fl.content LIKE '%apikey%' OR fl.content LIKE '%APIKEY%'
+                        OR fl.content LIKE '%token%' OR fl.content LIKE '%TOKEN%'
+                        OR fl.content LIKE '%private_key%' OR fl.content LIKE '%PRIVATE_KEY%'
+                        OR fl.content LIKE '%credential%' OR fl.content LIKE '%CREDENTIAL%'
+                        OR fl.content LIKE '%aws_access%' OR fl.content LIKE '%AWS_ACCESS%')
+                       AND f.filename NOT LIKE '%.md'
+                       AND f.filename NOT LIKE '%.txt'
+                     ORDER BY f.relative_path, fl.line_number
+                     LIMIT 100;"
+                  ;;
+                imports)
+                  # Find import/require statements
+                  LANG="''${2:-all}"
+                  echo "Import statements ($LANG):"
+                  echo ""
+                  case "$LANG" in
+                    py|python)
+                      sqlite3 -column "$DB_FILE" \
+                        "SELECT f.relative_path || ':' || fl.line_number, fl.content
+                         FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                         WHERE f.extension = 'py' AND (fl.content LIKE 'import %' OR fl.content LIKE 'from %import%')
+                         ORDER BY f.relative_path, fl.line_number;"
+                      ;;
+                    nix)
+                      sqlite3 -column "$DB_FILE" \
+                        "SELECT f.relative_path || ':' || fl.line_number, fl.content
+                         FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                         WHERE f.extension = 'nix' AND (fl.content LIKE '%import %' OR fl.content LIKE '%inputs.%')
+                         ORDER BY f.relative_path, fl.line_number;"
+                      ;;
+                    js|ts|javascript|typescript)
+                      sqlite3 -column "$DB_FILE" \
+                        "SELECT f.relative_path || ':' || fl.line_number, fl.content
+                         FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                         WHERE f.extension IN ('js', 'ts', 'tsx', 'jsx')
+                           AND (fl.content LIKE '%import %' OR fl.content LIKE '%require(%')
+                         ORDER BY f.relative_path, fl.line_number;"
+                      ;;
+                    *)
+                      sqlite3 -column "$DB_FILE" \
+                        "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 100)
+                         FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                         WHERE fl.content LIKE '%import %' OR fl.content LIKE '%require(%' OR fl.content LIKE '%include %'
+                         ORDER BY f.relative_path, fl.line_number
+                         LIMIT 200;"
+                      ;;
+                  esac
+                  ;;
+                deps)
+                  # Find dependency definitions
+                  echo "Dependencies:"
+                  echo ""
+                  echo "=== Package definitions ==="
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 100)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE (f.filename IN ('package.json', 'Cargo.toml', 'go.mod', 'pyproject.toml', 'requirements.txt', 'Gemfile', 'pixi.toml', 'flake.nix')
+                        OR f.filename LIKE 'requirements%.txt')
+                       AND fl.trimmed_content != ''
+                     ORDER BY f.relative_path, fl.line_number
+                     LIMIT 200;"
+                  ;;
+                ports)
+                  # Find port numbers in configuration
+                  echo "Port Numbers:"
+                  echo ""
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 100)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE fl.content LIKE '%port%'
+                        OR fl.content LIKE '%PORT%'
+                        OR fl.content LIKE '%:80%'
+                        OR fl.content LIKE '%:443%'
+                        OR fl.content LIKE '%:8080%'
+                        OR fl.content LIKE '%:3000%'
+                        OR fl.content LIKE '%:5000%'
+                        OR fl.content LIKE '%:9090%'
+                     ORDER BY f.relative_path, fl.line_number
+                     LIMIT 100;"
+                  ;;
+                urls)
+                  # Find URLs and endpoints
+                  echo "URLs and Endpoints:"
+                  echo ""
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 150)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE fl.content LIKE '%http://%'
+                        OR fl.content LIKE '%https://%'
+                        OR fl.content LIKE '%localhost%'
+                        OR fl.content LIKE '%127.0.0.1%'
+                        OR fl.content LIKE '%0.0.0.0%'
+                     ORDER BY f.relative_path, fl.line_number
+                     LIMIT 150;"
+                  ;;
+                paths)
+                  # Find path definitions
+                  echo "Path Definitions:"
+                  echo ""
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 100)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE fl.content LIKE '%PATH%'
+                        OR fl.content LIKE '%path =%'
+                        OR fl.content LIKE '%path:%'
+                        OR fl.content LIKE '%/usr/%'
+                        OR fl.content LIKE '%/etc/%'
+                        OR fl.content LIKE '%/home/%'
+                        OR fl.content LIKE '%/var/%'
+                     ORDER BY f.relative_path, fl.line_number
+                     LIMIT 100;"
+                  ;;
+                services)
+                  # Find service definitions
+                  echo "Service Definitions:"
+                  echo ""
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 100)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE fl.content LIKE '%service%'
+                        OR fl.content LIKE '%Service%'
+                        OR fl.content LIKE '%systemd%'
+                        OR fl.content LIKE '%ExecStart%'
+                        OR fl.content LIKE '%container%'
+                        OR fl.content LIKE '%docker%'
+                        OR fl.content LIKE '%podman%'
+                     ORDER BY f.relative_path, fl.line_number
+                     LIMIT 100;"
+                  ;;
+                options)
+                  # Find option/setting definitions (especially for Nix)
+                  echo "Option/Setting Definitions:"
+                  echo ""
+                  echo "=== Nix Options ==="
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 100)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE f.extension = 'nix'
+                       AND (fl.content LIKE '%mkOption%' OR fl.content LIKE '%mkEnableOption%' OR fl.content LIKE '%options.%')
+                     ORDER BY f.relative_path, fl.line_number;"
+                  echo ""
+                  echo "=== General Settings ==="
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 100)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE fl.content LIKE '%enable%=%'
+                        OR fl.content LIKE '%enabled%:%'
+                        OR fl.content LIKE '%config.%=%'
+                     ORDER BY f.relative_path, fl.line_number
+                     LIMIT 100;"
+                  ;;
+                modules)
+                  # Find module definitions
+                  echo "Module Definitions:"
+                  echo ""
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT f.relative_path || ':' || fl.line_number, substr(fl.content, 1, 100)
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE fl.content LIKE '%module%'
+                        OR fl.content LIKE '%Module%'
+                        OR fl.content LIKE '%MODULE%'
+                        OR fl.content LIKE '%{ config,%'
+                        OR fl.content LIKE '%{ lib,%'
+                     ORDER BY f.relative_path, fl.line_number
+                     LIMIT 100;"
+                  ;;
+                fts)
+                  # Full-text search using FTS5 (more powerful)
+                  if [ -z "$2" ]; then
+                    echo "Usage: codebase-db fts <query>" >&2
+                    echo ""
+                    echo "FTS5 query syntax:"
+                    echo "  'word1 word2'     - Both words (AND)"
+                    echo "  'word1 OR word2'  - Either word"
+                    echo "  '\"exact phrase\"'  - Exact phrase"
+                    echo "  'word*'           - Prefix match"
+                    echo "  'word1 NOT word2' - Exclude word2"
+                    exit 1
+                  fi
+                  shift
+                  QUERY="$*"
+                  echo "FTS Search: $QUERY"
+                  echo ""
+                  sqlite3 -header -column "$DB_FILE" \
+                    "SELECT path, filename, snippet(files_fts, 2, '>>>', '<<<', '...', 50) as match
+                     FROM files_fts
+                     WHERE files_fts MATCH '$QUERY'
+                     ORDER BY rank
+                     LIMIT 50;"
+                  ;;
+                context)
+                  # Show context around a specific line
+                  if [ -z "$2" ] || [ -z "$3" ]; then
+                    echo "Usage: codebase-db context <file-pattern> <line-number> [context-lines]" >&2
+                    exit 1
+                  fi
+                  FILE_PATTERN="$2"
+                  LINE_NUM="$3"
+                  CTX="''${4:-5}"
+                  START=$((LINE_NUM - CTX))
+                  END=$((LINE_NUM + CTX))
+                  [ $START -lt 1 ] && START=1
+                  echo "Context for $FILE_PATTERN:$LINE_NUM (±$CTX lines):"
+                  echo ""
+                  sqlite3 -column "$DB_FILE" \
+                    "SELECT fl.line_number || ': ' || fl.content
+                     FROM file_lines fl JOIN files f ON fl.file_id = f.id
+                     WHERE f.relative_path LIKE '%$FILE_PATTERN%'
+                       AND fl.line_number BETWEEN $START AND $END
+                     ORDER BY fl.line_number;"
+                  ;;
+                diff)
+                  # Compare two files
+                  if [ -z "$2" ] || [ -z "$3" ]; then
+                    echo "Usage: codebase-db diff <file1-pattern> <file2-pattern>" >&2
+                    exit 1
+                  fi
+                  FILE1="$2"
+                  FILE2="$3"
+                  echo "Comparing files matching: $FILE1 vs $FILE2"
+                  echo ""
+                  sqlite3 "$DB_FILE" "SELECT content FROM files WHERE relative_path LIKE '%$FILE1%' LIMIT 1;" > /tmp/cdb_diff1.txt
+                  sqlite3 "$DB_FILE" "SELECT content FROM files WHERE relative_path LIKE '%$FILE2%' LIMIT 1;" > /tmp/cdb_diff2.txt
+                  diff -u /tmp/cdb_diff1.txt /tmp/cdb_diff2.txt || true
+                  rm -f /tmp/cdb_diff1.txt /tmp/cdb_diff2.txt
+                  ;;
+                duplicates)
+                  # Find duplicate content
+                  echo "Files with identical content:"
+                  echo ""
+                  sqlite3 -header -column "$DB_FILE" \
+                    "SELECT GROUP_CONCAT(relative_path, ', ') as files, line_count, size_bytes
+                     FROM files
+                     GROUP BY content
+                     HAVING COUNT(*) > 1
+                     ORDER BY size_bytes DESC
+                     LIMIT 20;"
+                  ;;
+                large)
+                  # Find largest files
+                  LIMIT="''${2:-20}"
+                  echo "Largest files (top $LIMIT):"
+                  echo ""
+                  sqlite3 -header -column "$DB_FILE" \
+                    "SELECT relative_path, file_type, line_count, size_bytes
+                     FROM files
+                     ORDER BY size_bytes DESC
+                     LIMIT $LIMIT;"
+                  ;;
+                recent)
+                  # Files loaded in current session (by ID, since we don't track mtime)
+                  LIMIT="''${2:-20}"
+                  echo "Recently loaded files (last $LIMIT):"
+                  echo ""
+                  sqlite3 -header -column "$DB_FILE" \
+                    "SELECT relative_path, file_type, line_count, loaded_at
+                     FROM files
+                     ORDER BY id DESC
+                     LIMIT $LIMIT;"
+                  ;;
+                tree)
+                  # Show directory tree structure
+                  echo "Directory Tree:"
+                  echo ""
+                  sqlite3 "$DB_FILE" \
+                    "SELECT DISTINCT directory FROM files ORDER BY directory;" | while read -r dir; do
+                    depth=$(echo "$dir" | tr -cd '/' | wc -c)
+                    indent=$(printf '%*s' $((depth * 2)) '')
+                    name=$(basename "$dir")
+                    count=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM files WHERE directory = '$dir';")
+                    echo "''${indent}📁 $name/ ($count files)"
+                  done
+                  ;;
+
                 stats)
-                  # Show database statistics
-                  echo "Codebase Database Statistics"
-                  echo "============================"
+                  # Show comprehensive database statistics
+                  echo "═══════════════════════════════════════════════════════"
+                  echo "           CODEBASE DATABASE STATISTICS"
+                  echo "═══════════════════════════════════════════════════════"
                   echo ""
                   echo "Database: $DB_FILE"
                   echo ""
+                  echo "── Overview ──────────────────────────────────────────"
                   sqlite3 "$DB_FILE" << 'STATS'
                     SELECT 'Total files:' as metric, COUNT(*) as value FROM files
-                    UNION ALL
-                    SELECT 'Total lines:', SUM(line_count) FROM files
-                    UNION ALL
-                    SELECT 'Total size (bytes):', SUM(size_bytes) FROM files;
+                    UNION ALL SELECT 'Config files:', COUNT(*) FROM files WHERE is_config = 1
+                    UNION ALL SELECT 'Hidden files:', COUNT(*) FROM files WHERE is_hidden = 1
+                    UNION ALL SELECT 'Total lines:', SUM(line_count) FROM files
+                    UNION ALL SELECT 'Total size (KB):', ROUND(SUM(size_bytes) / 1024.0, 2) FROM files
+                    UNION ALL SELECT 'Directories:', COUNT(DISTINCT directory) FROM files;
 STATS
                   echo ""
-                  echo "Files by extension:"
-                  sqlite3 -column "$DB_FILE" \
-                    "SELECT extension, COUNT(*) as count, SUM(line_count) as lines
-                     FROM files
-                     WHERE extension != ''
-                     GROUP BY extension
-                     ORDER BY count DESC
-                     LIMIT 20;"
+                  echo "── Files by Type ─────────────────────────────────────"
+                  sqlite3 -header -column "$DB_FILE" \
+                    "SELECT file_type as type, COUNT(*) as files, SUM(line_count) as lines, ROUND(SUM(size_bytes)/1024.0, 1) as kb
+                     FROM files GROUP BY file_type ORDER BY files DESC LIMIT 15;"
+                  echo ""
+                  echo "── Files by Extension ────────────────────────────────"
+                  sqlite3 -header -column "$DB_FILE" \
+                    "SELECT extension as ext, COUNT(*) as files, SUM(line_count) as lines
+                     FROM files WHERE extension != '' GROUP BY extension ORDER BY files DESC LIMIT 15;"
+                  echo ""
+                  echo "── Top Directories ───────────────────────────────────"
+                  sqlite3 -header -column "$DB_FILE" \
+                    "SELECT directory as dir, COUNT(*) as files, SUM(line_count) as lines
+                     FROM files GROUP BY directory ORDER BY files DESC LIMIT 10;"
+                  echo ""
+                  # Show metadata if available
+                  if sqlite3 "$DB_FILE" "SELECT 1 FROM metadata LIMIT 1;" 2>/dev/null | grep -q 1; then
+                    echo "── Load Metadata ─────────────────────────────────────"
+                    sqlite3 -column "$DB_FILE" "SELECT key, value FROM metadata;"
+                  fi
                   ;;
                 export)
                   # Export search results to file
@@ -2226,33 +2699,65 @@ STATS
                 *)
                   echo "Usage: codebase-db <command> [args]"
                   echo ""
-                  echo "Database Commands:"
+                  echo "Loads ALL files in the workspace into SQLite for comprehensive querying."
+                  echo ""
+                  echo "DATABASE COMMANDS:"
                   echo "  init              - Initialize empty database"
-                  echo "  load              - Load/update files into database"
+                  echo "  load              - Load ALL files into database"
                   echo "  reload            - Reinitialize and reload all files"
                   echo "  stats             - Show database statistics"
                   echo "  shell             - Open interactive SQLite shell"
                   echo ""
-                  echo "Search Commands:"
-                  echo "  search <pattern>  - Full-text search in file contents"
+                  echo "SEARCH COMMANDS:"
+                  echo "  search <pattern>  - Search in file contents (LIKE)"
+                  echo "  fts <query>       - Full-text search (FTS5 with ranking)"
                   echo "  grep <pattern>    - Search with file:line output"
                   echo "  query '<SQL>'     - Execute arbitrary SQL query"
-                  echo "  files [ext]       - List indexed files (optionally by extension)"
-                  echo "  functions [lang]  - Find function definitions"
-                  echo "  todos             - Find TODO/FIXME comments"
-                  echo "  issues            - Find potential error handling issues"
+                  echo "  context <f> <ln>  - Show context around a line"
                   echo "  export <p> <f>    - Export search results to file"
                   echo ""
-                  echo "Environment:"
+                  echo "FILE LISTING:"
+                  echo "  files [ext]       - List files (optionally by extension)"
+                  echo "  types [type]      - List files by type (nix, yaml, shell...)"
+                  echo "  configs           - List all configuration files"
+                  echo "  dirs              - List directories with file counts"
+                  echo "  hidden            - List hidden files"
+                  echo "  tree              - Show directory tree structure"
+                  echo "  large [n]         - Show largest files"
+                  echo "  recent [n]        - Show recently loaded files"
+                  echo "  duplicates        - Find files with identical content"
+                  echo ""
+                  echo "CODE ANALYSIS:"
+                  echo "  functions [lang]  - Find function definitions"
+                  echo "  imports [lang]    - Find import/require statements"
+                  echo "  modules           - Find module definitions"
+                  echo "  todos             - Find TODO/FIXME comments"
+                  echo "  issues            - Find error handling patterns"
+                  echo "  diff <f1> <f2>    - Compare two files"
+                  echo ""
+                  echo "CONFIGURATION ANALYSIS:"
+                  echo "  envvars           - Find environment variables"
+                  echo "  secrets           - Find potential secrets (passwords, keys)"
+                  echo "  deps              - Find dependency definitions"
+                  echo "  ports             - Find port numbers"
+                  echo "  urls              - Find URLs and endpoints"
+                  echo "  paths             - Find path definitions"
+                  echo "  services          - Find service definitions"
+                  echo "  options           - Find option definitions (Nix mkOption)"
+                  echo ""
+                  echo "ENVIRONMENT:"
                   echo "  CODEBASE_DB   - Database file (default: ./codebase.db)"
                   echo "  CODEBASE_ROOT - Root directory to scan (default: .)"
                   echo ""
-                  echo "Examples:"
-                  echo "  codebase-db load                    # Load all files"
-                  echo "  codebase-db search 'error handling' # Search for pattern"
-                  echo "  codebase-db files nix               # List all .nix files"
-                  echo "  codebase-db todos                   # Find all TODOs"
-                  echo "  codebase-db query 'SELECT * FROM files WHERE path LIKE \"%flake%\"'"
+                  echo "EXAMPLES:"
+                  echo "  codebase-db load                     # Load entire workspace"
+                  echo "  codebase-db fts 'error AND handling' # FTS5 boolean search"
+                  echo "  codebase-db configs                  # List all config files"
+                  echo "  codebase-db types nix                # List all Nix files"
+                  echo "  codebase-db envvars                  # Find env variables"
+                  echo "  codebase-db secrets                  # Audit for secrets"
+                  echo "  codebase-db context flake.nix 100 10 # Show lines 90-110"
+                  echo "  codebase-db query 'SELECT * FROM files WHERE is_config=1'"
                   ;;
               esac
             '')
