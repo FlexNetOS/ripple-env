@@ -19,3 +19,8 @@ rosdep = ">=0.26.0,<0.27"
 colcon-common-extensions = ">=0.3.0,<0.4"
 ros-humble-desktop = ">=0.10.0,<0.11"
 catkin_tools = ">=0.8.2,<0.10"
+
+# Python modernization tools (upgrade old Python syntax to modern versions)
+ruff = ">=0.8.0"
+pyupgrade = ">=3.19.0"
+flynt = ">=1.0.0"
