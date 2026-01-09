@@ -527,6 +527,102 @@
               echo ""
               echo "AgentGateway installed! Run with: agentgateway --help"
             '')
+            # P0: sandbox-runtime - Process sandbox for MCP/tool execution
+            # BUILDKIT_STARTER_SPEC.md Layer 3 (Isolation) and Layer 8 (Tool Execution)
+            (pkgs.writeShellScriptBin "sandbox-runtime" ''
+              # Sandbox-runtime wrapper
+              # Checks for installation, provides install instructions if missing
+              SANDBOX_BIN="''${SANDBOX_RUNTIME_PATH:-$HOME/.cargo/bin/sandbox-runtime}"
+
+              if [ -x "$SANDBOX_BIN" ]; then
+                exec "$SANDBOX_BIN" "$@"
+              elif command -v sandbox-runtime >/dev/null 2>&1; then
+                exec sandbox-runtime "$@"
+              else
+                echo "sandbox-runtime not found. Install with:" >&2
+                echo "" >&2
+                echo "  # Option 1: Build from source (recommended)" >&2
+                echo "  git clone https://github.com/anthropic-experimental/sandbox-runtime.git" >&2
+                echo "  cd sandbox-runtime && cargo build --release" >&2
+                echo "  cargo install --path ." >&2
+                echo "" >&2
+                echo "  # Option 2: Install via cargo" >&2
+                echo "  cargo install --git https://github.com/anthropic-experimental/sandbox-runtime" >&2
+                echo "" >&2
+                echo "See: docs/SANDBOX_RUNTIME_INSTALL.md" >&2
+                exit 127
+              fi
+            '')
+            # P0: Kata Containers management wrapper
+            # BUILDKIT_STARTER_SPEC.md Layer 3 (Isolation)
+            (pkgs.writeShellScriptBin "kata" ''
+              # Kata Containers wrapper
+              # Provides installation guidance and runtime management
+
+              case "''${1:-status}" in
+                install)
+                  echo "Installing Kata Containers..."
+                  echo ""
+                  echo "Kata Containers requires system-level installation."
+                  echo ""
+                  echo "# Ubuntu/Debian:"
+                  echo "  sudo apt-get install -y kata-containers"
+                  echo ""
+                  echo "# Fedora:"
+                  echo "  sudo dnf install -y kata-containers"
+                  echo ""
+                  echo "# From official releases:"
+                  echo "  curl -fsSL https://github.com/kata-containers/kata-containers/releases/latest/download/kata-static-3.x.x-x86_64.tar.xz | sudo tar -C / -xJf -"
+                  echo ""
+                  echo "# Configure Docker to use Kata:"
+                  echo "  sudo mkdir -p /etc/docker"
+                  echo "  cat <<EOF | sudo tee /etc/docker/daemon.json"
+                  echo '  {'
+                  echo '    "runtimes": {'
+                  echo '      "kata": {'
+                  echo '        "path": "/usr/bin/kata-runtime"'
+                  echo '      }'
+                  echo '    }'
+                  echo '  }'
+                  echo "  EOF"
+                  echo "  sudo systemctl restart docker"
+                  echo ""
+                  echo "See: docs/KATA_CONTAINERS_INSTALL.md"
+                  ;;
+                status)
+                  if command -v kata-runtime >/dev/null 2>&1; then
+                    echo "Kata Containers: INSTALLED"
+                    kata-runtime --version
+                    echo ""
+                    echo "Docker runtime check:"
+                    docker info 2>/dev/null | grep -i kata || echo "  Kata not configured as Docker runtime"
+                  else
+                    echo "Kata Containers: NOT INSTALLED"
+                    echo "Run 'kata install' for installation instructions."
+                  fi
+                  ;;
+                check)
+                  if command -v kata-runtime >/dev/null 2>&1; then
+                    echo "Running Kata check-config..."
+                    kata-runtime check
+                  else
+                    echo "kata-runtime not found"
+                    exit 1
+                  fi
+                  ;;
+                test)
+                  echo "Testing Kata runtime with Docker..."
+                  docker run --rm --runtime=kata alpine cat /etc/os-release
+                  ;;
+                *)
+                  echo "Usage: kata [install|status|check|test]"
+                  echo "  install - Show installation instructions"
+                  echo "  status  - Check if Kata is installed"
+                  echo "  check   - Run kata-runtime check-config"
+                  echo "  test    - Test Kata with Docker"
+                  ;;
+              esac
+            '')
           ];
 
           # CUDA 13.x package set (latest available in nixpkgs)

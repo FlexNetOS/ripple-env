@@ -42,3 +42,16 @@ uuid = { version = "1.4", features = ["v4"] }
 
 # Time
 chrono = "0.4"
+
+# Agent Runtime - Rust Orchestration (BUILDKIT_STARTER_SPEC.md Layer 7)
+# P1: arkflow - Rust streaming orchestration runtime
+# See: https://github.com/arkflow-rs/arkflow
+# arkflow = { git = "https://github.com/arkflow-rs/arkflow", branch = "main" }
+
+# Tool Execution - Rust utilities (BUILDKIT_STARTER_SPEC.md Layer 8)
+# P2: midstream - Streaming response analysis
+# midstream = { git = "https://github.com/ruvnet/midstream", branch = "main" }
+# P2: ruv-fann - Fast neural network utility
+# ruv-fann = { git = "https://github.com/ruvnet/ruv-FANN", branch = "main" }
+# P2: sublinear-time-solver - Fast solver tool
+# sublinear-time-solver = { git = "https://github.com/ruvnet/sublinear-time-solver", branch = "main" }
