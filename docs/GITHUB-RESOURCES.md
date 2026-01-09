@@ -9,15 +9,15 @@ This document catalogs external GitHub resources evaluated for integration with 
 
 ## Quick Reference - Integration Status
 
-| Category | Top Recommendations | Nix Support | Priority |
+| Category | Top Recommendations | Status | Priority |
 |----------|--------------------| ------------|----------|
-| **AI Agents** | LocalAI, AIOS | ✅/⚠️ | High |
-| **Monitoring** | Prometheus, Netdata | ✅ | High |
-| **Messaging** | NATS Server | ✅ | High |
-| **Security** | Vault, Keycloak | ✅ | High |
-| **Evaluation** | TruLens, OpenAI Evals | ⚠️ Pixi | Medium |
+| **AI Agents** | LocalAI, AIOS | ⚠️ Docker/Pixi | High |
+| **Monitoring** | Prometheus, Trivy, Trippy | ✅ **Integrated** | High |
+| **Messaging** | NATS Server + CLI | ✅ **Integrated** | High |
+| **Security** | OPA, Trivy | ✅ **Integrated** | High |
+| **Evaluation** | Promptfoo | ✅ **Integrated** | High |
 | **Memory** | Memori, Memobase | ⚠️ Pixi | Medium |
-| **Rust** | PyO3, rust-libp2p | ⚠️ Cargo | Medium |
+| **Rust** | maturin, sqlx-cli | ✅ **Integrated** | High |
 
 ---
 
@@ -198,16 +198,18 @@ commonPackages = with pkgs; [ local-ai ];
 
 ## Networking & P2P
 
-### NATS Server - Messaging ⭐ RECOMMENDED
+### NATS Server - Messaging ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [nats-io/nats-server](https://github.com/nats-io/nats-server) |
 | **Stars** | 18.9k |
 | **Version** | v2.12.3 |
-| **Nix Package** | ✅ `pkgs.nats-server` |
+| **Nix Package** | ✅ `pkgs.nats-server`, `pkgs.natscli` |
 | **Devenv Support** | ✅ `services.nats` |
-| **Status** | ✅ Ready for integration |
+| **Status** | ✅ **Integrated in devshell** |
 | **Relevance** | **High** - WAN/multi-site robot communication (complementary to DDS) |
+
+**Integration Note**: Both `nats-server` and `natscli` are included in the devshell for local development and testing.
 
 **Use Case**: DDS for in-robot, NATS for cross-network. Bridge via `nats-ros-connector`.
 
@@ -258,15 +260,17 @@ commonPackages = with pkgs; [ local-ai ];
 | **Status** | ✅ Ready via Pixi |
 | **Relevance** | High - User profile-based robot memory |
 
-### SQLx - Rust SQL Toolkit
+### SQLx - Rust SQL Toolkit ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [launchbadge/sqlx](https://github.com/launchbadge/sqlx) |
 | **Downloads** | 54.9M |
-| **Nix Package** | ✅ `pkgs.sqlx-cli` (CLI only) |
-| **Installation** | `cargo add sqlx` |
-| **Status** | ⚠️ Complex Nix builds (requires DB at compile time) |
+| **Nix Package** | ✅ `pkgs.sqlx-cli` |
+| **Installation** | `cargo add sqlx` (sqlx-cli available in devshell) |
+| **Status** | ✅ **CLI integrated in devshell** |
 | **Relevance** | High - Rust database access |
+
+**Integration Note**: `sqlx-cli` is included in the devshell for database migrations and schema management. For library builds requiring compile-time DB verification, use `naersk` with a prepared DB image.
 
 ### Neon - Serverless Postgres
 | Attribute | Value |
@@ -291,15 +295,17 @@ commonPackages = with pkgs; [ local-ai ];
 
 ## Rust Ecosystem Tools
 
-### PyO3 - Rust-Python Bindings ⭐ RECOMMENDED
+### PyO3 - Rust-Python Bindings ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [PyO3/pyo3](https://github.com/PyO3/pyo3) |
 | **Version** | 0.21 |
 | **Requires** | Rust 1.83+, maturin |
-| **Installation** | `cargo add pyo3`, `pixi add maturin` |
-| **Status** | ⚠️ Complex Nix integration (use maturin) |
+| **Installation** | `cargo add pyo3` (maturin available in devshell) |
+| **Status** | ✅ **maturin integrated in devshell** |
 | **Relevance** | **High** - ROS2 Python-Rust interop |
+
+**Integration Note**: `maturin` build tool is included in the devshell for building PyO3-based Python packages from Rust.
 
 ### RustCoder MCP - AI-Assisted Rust Dev
 | Attribute | Value |
@@ -423,14 +429,16 @@ commonPackages = with pkgs; [ local-ai ];
 | **Status** | ✅ Ready via Pixi |
 | **Relevance** | **High** - LLM benchmark evaluation |
 
-### Promptfoo
+### Promptfoo ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [promptfoo/promptfoo](https://github.com/promptfoo/promptfoo) |
 | **Language** | TypeScript/Node.js |
-| **Installation** | `npx promptfoo@latest` |
-| **Status** | ⚠️ Separate Node.js environment |
-| **Relevance** | High - Prompt security testing |
+| **Installation** | `promptfoo` (wrapper in devshell) or `npx promptfoo@latest` |
+| **Status** | ✅ **Integrated via wrapper** |
+| **Relevance** | High - LLM testing & robot command parsing evaluation |
+
+**Integration Note**: A `promptfoo` wrapper is included in the devshell that runs `npx promptfoo@latest` automatically. Node.js 22 is also available for direct npm usage.
 
 ### ComfyUI
 | Attribute | Value |
@@ -481,9 +489,9 @@ commonPackages = with pkgs; [ local-ai ];
 |------|----------|------------|
 | **Unsloth** | PyTorch version specificity | Use Docker container |
 | **ComfyUI** | PyTorch/CUDA conflicts | Use dedicated Nix flake |
-| **Promptfoo** | Node.js ecosystem | Run in separate directory |
-| **SQLx** | Requires DB at compile time | Use naersk + prepared DB |
-| **PyO3/maturin** | Complex Nix + Python build | Use Pixi for build, naersk for packaging |
+| **Promptfoo** | Node.js ecosystem | ✅ Resolved: wrapper in devshell |
+| **SQLx** | Requires DB at compile time | ✅ CLI integrated; use naersk for builds |
+| **PyO3/maturin** | Complex Nix + Python build | ✅ maturin integrated in devshell |
 | **AGiXT** | Requires Docker | Docker Compose only |
 
 ### Python Version Requirements
