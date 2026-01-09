@@ -1,0 +1,445 @@
+name: Bootstrap End-to-End Test
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'bootstrap.sh'
+      - 'bootstrap.ps1'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'pixi.toml'
+      - 'pixi.lock'
+      - '.github/workflows/bootstrap-test.yml'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      run_windows_e2e:
+        description: 'Run Windows WSL2 end-to-end test (requires self-hosted runner)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+      windows_e2e_repo_fetch_ref:
+        description: 'Git ref to fetch inside WSL for the E2E run (e.g. refs/heads/main, refs/tags/v1.2.3, refs/pull/123/merge). Defaults to the workflow ref.'
+        required: false
+        default: ''
+        type: string
+
+env:
+  # Allow unfree packages (vault uses BSL license)
+  NIXPKGS_ALLOW_UNFREE: "1"
+
+jobs:
+  bootstrap-linux:
+    name: Bootstrap Test (Linux x86_64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          df -h
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Verify Nix installation
+        run: |
+          nix --version
+          nix config show | grep experimental-features
+
+      - name: Install dependencies via Nix
+        run: |
+          nix profile install nixpkgs#direnv
+          nix profile install nixpkgs#nix-output-monitor
+          nix profile install nixpkgs#git
+          nix profile install nixpkgs#gh
+
+      - name: Verify flake
+        run: |
+          nix flake check --no-build --all-systems
+          nix flake show
+
+      - name: Build development shell
+        run: |
+          nix develop --command echo "Development shell is working"
+
+      - name: Verify pixi is available
+        run: |
+          nix develop --command pixi --version
+
+      - name: Run pixi install
+        run: |
+          nix develop --command pixi install
+
+      - name: Verify ROS2 environment
+        run: |
+          nix develop --command pixi run python --version
+          nix develop --command pixi run cmake --version
+
+      - name: Test colcon availability
+        run: |
+          nix develop --command pixi run colcon --help | head -20
+
+      - name: Test ROS2 commands
+        run: |
+          nix develop --command pixi run ros2 --help | head -20
+
+  bootstrap-macos:
+    name: Bootstrap Test (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Verify Nix installation
+        run: |
+          nix --version
+          nix config show | grep experimental-features
+
+      - name: Install dependencies via Nix
+        run: |
+          nix profile install nixpkgs#direnv
+          nix profile install nixpkgs#nix-output-monitor
+
+      - name: Verify flake
+        run: |
+          nix flake check --no-build --all-systems
+          nix flake show
+
+      - name: Build development shell
+        run: |
+          nix develop --command echo "Development shell is working"
+
+      - name: Verify pixi is available
+        run: |
+          nix develop --command pixi --version
+
+      - name: Run pixi install
+        run: |
+          nix develop --command pixi install
+
+      - name: Verify environment tools
+        run: |
+          nix develop --command pixi run python --version
+          nix develop --command pixi run cmake --version
+
+  bootstrap-windows-syntax:
+    name: Bootstrap Test (Windows - Syntax Check)
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate PowerShell script syntax
+        shell: pwsh
+        run: |
+          $errors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            "$env:GITHUB_WORKSPACE\bootstrap.ps1",
+            [ref]$null,
+            [ref]$errors
+          )
+
+          if ($errors.Count -gt 0) {
+            Write-Host "PowerShell syntax errors found:" -ForegroundColor Red
+            $errors | ForEach-Object { Write-Host $_.Message -ForegroundColor Red }
+            exit 1
+          }
+
+          Write-Host "PowerShell script syntax is valid" -ForegroundColor Green
+
+      - name: Check PowerShell best practices
+        shell: pwsh
+        run: |
+          # Install PSScriptAnalyzer if not present
+          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+            Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+          }
+
+          # Run analysis
+          $results = Invoke-ScriptAnalyzer -Path bootstrap.ps1 -Severity Error,Warning
+
+          if ($results) {
+            Write-Host "PSScriptAnalyzer findings:" -ForegroundColor Yellow
+            $results | Format-Table -AutoSize
+
+            # Only fail on errors, not warnings
+            $errorCount = ($results | Where-Object { $_.Severity -eq 'Error' }).Count
+            if ($errorCount -gt 0) {
+              Write-Host "Found $errorCount error(s)" -ForegroundColor Red
+              exit 1
+            }
+          }
+
+          Write-Host "PowerShell script analysis passed" -ForegroundColor Green
+
+      - name: Verify script help documentation
+        shell: pwsh
+        run: |
+          # Check that help documentation exists
+          $help = Get-Help .\bootstrap.ps1 -Full
+
+          if (-not $help.Synopsis) {
+            Write-Host "Warning: Script missing synopsis" -ForegroundColor Yellow
+          }
+
+          if (-not $help.Description) {
+            Write-Host "Warning: Script missing description" -ForegroundColor Yellow
+          }
+
+          Write-Host "Script parameters:" -ForegroundColor Cyan
+          $help.Parameters.Parameter | ForEach-Object {
+            Write-Host "  -$($_.Name): $($_.Description.Text)"
+          }
+
+  # End-to-end Windows WSL2 test on self-hosted runner
+  # Requires a self-hosted Windows runner with WSL2 enabled
+  # See: .github/docs/self-hosted-runner-setup.md
+  bootstrap-windows-e2e:
+    name: Bootstrap Test (Windows WSL2 - E2E)
+    runs-on: [self-hosted, Windows, WSL2]
+    timeout-minutes: 90
+    # IMPORTANT: This job targets a self-hosted runner. If no runner is online, GitHub Actions will
+    # queue this job indefinitely. Therefore we only run it when explicitly requested.
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_windows_e2e == 'true'
+    needs: bootstrap-windows-syntax  # Run syntax check first
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify WSL2 is available
+        shell: pwsh
+        run: |
+          Write-Host "Checking WSL status..." -ForegroundColor Cyan
+          $wslStatus = wsl --status
+          Write-Host $wslStatus
+
+          # List existing distributions
+          Write-Host "`nExisting WSL distributions:" -ForegroundColor Cyan
+          wsl --list --verbose
+
+      - name: Clean up previous test distribution (if exists)
+        shell: pwsh
+        run: |
+          $distroName = "NixOS-ROS2-Test"
+
+          # Check if distro exists and remove it
+          $distros = wsl --list --quiet 2>$null
+          if ($distros -contains $distroName) {
+            Write-Host "Removing existing test distribution: $distroName" -ForegroundColor Yellow
+            wsl --unregister $distroName
+            Start-Sleep -Seconds 2
+          }
+
+          # Clean up test directory
+          $testPath = "$env:TEMP\WSL-Test\NixOS-ROS2-Test"
+          if (Test-Path $testPath) {
+            Write-Host "Cleaning up test directory: $testPath" -ForegroundColor Yellow
+            Remove-Item -Path $testPath -Recurse -Force
+          }
+
+      - name: Run bootstrap.ps1 end-to-end
+        shell: pwsh
+        run: |
+          # Run with test-specific parameters
+          .\bootstrap.ps1 `
+            -DistroName "NixOS-ROS2-Test" `
+            -InstallPath "$env:TEMP\WSL-Test\NixOS-ROS2-Test" `
+            -DiskSizeGB 64 `
+            -MemorySizeGB 12 `
+            -SwapSizeGB 4 `
+            -RepoURL "https://github.com/${{ github.repository }}.git" `
+            -RepoFetchRef "${{ github.event.inputs.windows_e2e_repo_fetch_ref != '' && github.event.inputs.windows_e2e_repo_fetch_ref || github.ref }}" `
+            -SkipShells `
+            -Force
+
+      - name: Verify NixOS distribution was created
+        shell: pwsh
+        run: |
+          Write-Host "Verifying distribution was created..." -ForegroundColor Cyan
+
+          $distros = wsl --list --quiet
+          if ($distros -notcontains "NixOS-ROS2-Test") {
+            Write-Host "ERROR: Distribution 'NixOS-ROS2-Test' not found!" -ForegroundColor Red
+            wsl --list --verbose
+            exit 1
+          }
+
+          Write-Host "Distribution 'NixOS-ROS2-Test' exists" -ForegroundColor Green
+
+          # Show distribution details
+          wsl --list --verbose
+
+      - name: Verify Nix is installed in WSL
+        shell: pwsh
+        run: |
+          Write-Host "Checking Nix installation..." -ForegroundColor Cyan
+
+          $result = wsl -d NixOS-ROS2-Test -- nix --version
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Nix not working in WSL!" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "Nix version: $result" -ForegroundColor Green
+
+      - name: Verify development tools are installed
+        shell: pwsh
+        run: |
+          Write-Host "Checking installed tools..." -ForegroundColor Cyan
+
+          # Check direnv
+          wsl -d NixOS-ROS2-Test -- direnv --version
+          if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: direnv not found" -ForegroundColor Yellow }
+
+          # Check nom
+          wsl -d NixOS-ROS2-Test -- nom --version
+          if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: nom not found" -ForegroundColor Yellow }
+
+          # Check git
+          wsl -d NixOS-ROS2-Test -- git --version
+          if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: git not found" -ForegroundColor Yellow }
+
+          # Check gh
+          wsl -d NixOS-ROS2-Test -- gh --version
+          if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: gh not found" -ForegroundColor Yellow }
+
+          Write-Host "Tool verification complete" -ForegroundColor Green
+
+      - name: Verify ros2-humble-env repository exists
+        shell: pwsh
+        run: |
+          Write-Host "Checking repository..." -ForegroundColor Cyan
+
+          $result = wsl -d NixOS-ROS2-Test -- bash -c "test -d ~/ros2-humble-env && echo 'exists'"
+          if ($result -ne "exists") {
+            Write-Host "ERROR: ros2-humble-env directory not found!" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "Repository exists in WSL" -ForegroundColor Green
+
+          # List contents
+          wsl -d NixOS-ROS2-Test -- ls -la ~/ros2-humble-env/
+
+      - name: Verify flake and development environment
+        shell: pwsh
+        run: |
+          Write-Host "Testing development environment..." -ForegroundColor Cyan
+
+          # Enter the dev shell and verify pixi
+          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop --command pixi --version"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Failed to enter dev shell or pixi not available!" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "Development environment verified" -ForegroundColor Green
+
+      - name: Test ROS2 availability
+        shell: pwsh
+        run: |
+          Write-Host "Testing ROS2..." -ForegroundColor Cyan
+
+          # Run pixi install and test ros2
+          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop --command pixi install"
+
+          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop --command pixi run ros2 --help" | Select-Object -First 20
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "WARNING: ROS2 command test had issues" -ForegroundColor Yellow
+          } else {
+            Write-Host "ROS2 is available" -ForegroundColor Green
+          }
+
+      - name: Cleanup test distribution
+        if: always()
+        shell: pwsh
+        run: |
+          Write-Host "Cleaning up test distribution..." -ForegroundColor Cyan
+
+          # Unregister test distribution
+          wsl --unregister NixOS-ROS2-Test 2>$null
+
+          # Remove test directory
+          $testPath = "$env:TEMP\WSL-Test\NixOS-ROS2-Test"
+          if (Test-Path $testPath) {
+            Remove-Item -Path $testPath -Recurse -Force
+          }
+
+          Write-Host "Cleanup complete" -ForegroundColor Green
+
+  bootstrap-script-test:
+    name: Bootstrap Script Test (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          df -h
+
+      - name: Make bootstrap script executable
+        run: chmod +x bootstrap.sh
+
+      - name: Run bootstrap script in CI mode
+        run: |
+          ./bootstrap.sh --ci --skip-shells
+        env:
+          # Suppress interactive prompts
+          NIX_INSTALLER_NO_CONFIRM: "true"
+
+      - name: Verify bootstrap completed successfully
+        run: |
+          # Source nix
+          if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+            . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+          fi
+
+          # Verify installed tools
+          nix --version
+          direnv --version
+          nom --version
+          git --version
+          gh --version
+
+      - name: Verify development environment works
+        run: |
+          # Source nix
+          if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+            . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+          fi
+
+          # Enter dev shell and verify
+          nix develop --command pixi run ros2 --help | head -10

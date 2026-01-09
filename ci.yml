@@ -1,0 +1,264 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+# Ensure only one CI run per branch/PR at a time
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Allow unfree packages (vault uses BSL license)
+  NIXPKGS_ALLOW_UNFREE: "1"
+
+jobs:
+  # ===========================================
+  # Nix Flake Validation
+  # ===========================================
+  flake-check:
+    name: Nix Flake Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Check flake
+        run: nix flake check --no-build --all-systems
+
+      - name: Show flake outputs
+        run: nix flake show
+
+  # ===========================================
+  # ROS2 Build & Test
+  # ===========================================
+  ros2-build:
+    name: ROS2 Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          df -h
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Build development shell
+        run: nix develop --command echo "Shell ready"
+
+      - name: Install Pixi packages
+        run: nix develop --command pixi install
+
+      - name: Verify ROS2 environment
+        run: |
+          nix develop --command pixi run python --version
+          nix develop --command pixi run ros2 --help | head -10
+
+      - name: Check for ROS2 workspace
+        id: check-workspace
+        run: |
+          if [ -d "src" ] && find src -name "package.xml" | head -1 | grep -q .; then
+            echo "has_packages=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_packages=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build ROS2 packages
+        if: steps.check-workspace.outputs.has_packages == 'true'
+        run: |
+          nix develop --command pixi run colcon build --symlink-install
+
+      - name: Run ROS2 tests
+        if: steps.check-workspace.outputs.has_packages == 'true'
+        run: |
+          nix develop --command pixi run colcon test
+          nix develop --command pixi run colcon test-result --verbose
+
+      - name: Verify pytest installation
+        run: |
+          nix develop --command pixi run pytest --version
+
+      - name: Verify PyTorch installation
+        run: |
+          nix develop --command pixi run python -c "import torch; print(f'PyTorch {torch.__version__}')" || echo "PyTorch not yet installed (run pixi update)"
+
+  # ===========================================
+  # macOS Build
+  # ===========================================
+  macos-build:
+    name: macOS Build
+    runs-on: macos-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Build development shell
+        run: nix develop --command echo "Shell ready"
+
+      - name: Verify no CUDA shell on macOS
+        run: |
+          # CUDA shell should not exist on macOS
+          if nix develop .#cuda --command echo "CUDA available" 2>/dev/null; then
+            echo "ERROR: CUDA shell should not be available on macOS"
+            exit 1
+          else
+            echo "OK: CUDA shell correctly unavailable on macOS"
+          fi
+
+      - name: Install Pixi packages
+        run: nix develop --command pixi install
+
+  # ===========================================
+  # Security Scanning
+  # ===========================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          skip-dirs: 'node_modules,.pixi,result'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Trivy summary
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          skip-dirs: 'node_modules,.pixi,result'
+
+  # ===========================================
+  # Pre-commit Hooks
+  # ===========================================
+  pre-commit:
+    name: Pre-commit Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit on all files
+        run: pre-commit run --all-files --show-diff-on-failure
+        continue-on-error: true
+
+  # ===========================================
+  # Summary
+  # ===========================================
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [flake-check, ros2-build, macos-build, security, pre-commit]
+    if: always()
+    permissions:
+      contents: read
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # GitHub Actions doesn't support dynamic context access (needs[var].result)
+          # Must use explicit references for each job
+          declare -A results
+          results[flake-check]="${{ needs.flake-check.result }}"
+          results[ros2-build]="${{ needs.ros2-build.result }}"
+          results[macos-build]="${{ needs.macos-build.result }}"
+          results[security]="${{ needs.security.result }}"
+          results[pre-commit]="${{ needs.pre-commit.result }}"
+
+          for job in flake-check ros2-build macos-build security pre-commit; do
+            result="${results[$job]}"
+            if [ "$result" == "success" ]; then
+              echo "| $job | ✅ |" >> $GITHUB_STEP_SUMMARY
+            elif [ "$result" == "skipped" ]; then
+              echo "| $job | ⏭️ |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| $job | ❌ |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+      - name: Check for failures
+        run: |
+          # Required checks that must pass for CI to succeed
+          if [ "${{ needs.flake-check.result }}" != "success" ] || \
+             [ "${{ needs.ros2-build.result }}" != "success" ] || \
+             [ "${{ needs.security.result }}" != "success" ]; then
+            echo "One or more required checks failed"
+            exit 1
+          fi
+
+          # Pre-commit failures are warnings (continue-on-error: true)
+          if [ "${{ needs.pre-commit.result }}" != "success" ]; then
+            echo "::warning::Pre-commit checks failed - please review code style"
+          fi

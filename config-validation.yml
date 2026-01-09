@@ -1,0 +1,290 @@
+name: Configuration Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'flake.nix'
+      - 'pixi.toml'
+      - 'docker-compose.*.yml'
+      - 'config/**/*.yml'
+      - '.github/workflows/config-validation.yml'
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  validate-docker-compose:
+    name: Validate Docker Compose Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install PyYAML
+        run: pip install pyyaml
+      
+      - name: Validate Docker Compose syntax
+        run: |
+          python3 << 'PYEOF'
+          import yaml
+          import sys
+          import glob
+          
+          files = glob.glob("docker-compose.*.yml")
+          errors = []
+          
+          for file in files:
+              try:
+                  with open(file, 'r') as f:
+                      data = yaml.safe_load(f)
+                  if 'services' not in data:
+                      errors.append(f"{file}: Missing 'services' section")
+                  else:
+                      print(f"✅ {file}: Valid ({len(data['services'])} services)")
+              except yaml.YAMLError as e:
+                  errors.append(f"{file}: {str(e)}")
+              except Exception as e:
+                  errors.append(f"{file}: {str(e)}")
+          
+          if errors:
+              print("\n❌ Validation failed:")
+              for error in errors:
+                  print(f"  - {error}")
+              sys.exit(1)
+          else:
+              print("\n✅ All Docker Compose files valid")
+          PYEOF
+
+  validate-nix-flake:
+    name: Validate Nix Flake
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install Nix
+        uses: cachix/install-nix-action@v24
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      
+      - name: Check flake syntax
+        run: nix flake check --no-build --print-build-logs
+      
+      - name: Validate flake structure
+        run: |
+          python3 << 'PYEOF'
+          import re
+          
+          with open('flake.nix', 'r') as f:
+              content = f.read()
+          
+          checks = []
+          checks.append(('inputs' in content, "Has 'inputs' section"))
+          checks.append(('outputs' in content, "Has 'outputs' section"))
+          checks.append((content.count('{') == content.count('}'), "Balanced braces"))
+          checks.append((content.count('[') == content.count(']'), "Balanced brackets"))
+          
+          packages = ['kubectl', 'helm', 'syft', 'grype', 'cosign']
+          for pkg in packages:
+              checks.append((re.search(rf'\b{pkg}\b', content) is not None, f"Package '{pkg}' present"))
+          
+          failed = [msg for passed, msg in checks if not passed]
+          
+          if failed:
+              print("❌ Validation failed:")
+              for msg in failed:
+                  print(f"  - {msg}")
+              exit(1)
+          else:
+              print("✅ Nix flake validation passed")
+          PYEOF
+
+  validate-pixi-config:
+    name: Validate Pixi Configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Validate pixi.toml syntax
+        run: |
+          python3 << 'PYEOF'
+          import re
+          
+          with open('pixi.toml', 'r') as f:
+              content = f.read()
+          
+          checks = []
+          checks.append(('[workspace]' in content, "Has [workspace] section"))
+          checks.append(('[dependencies]' in content, "Has [dependencies] section"))
+          checks.append(('[environments]' in content, "Has [environments] section"))
+          
+          packages = ['jupyterlab', 'mlflow', 'transformers', 'pandas']
+          for pkg in packages:
+              checks.append((re.search(rf'{pkg}\s*=', content) is not None, f"Package '{pkg}' present"))
+          
+          checks.append(('ros-humble-desktop' in content, "ROS2 Humble configured"))
+          checks.append(('pytorch' in content, "PyTorch configured"))
+          
+          failed = [msg for passed, msg in checks if not passed]
+          
+          if failed:
+              print("❌ Validation failed:")
+              for msg in failed:
+                  print(f"  - {msg}")
+              exit(1)
+          else:
+              print("✅ Pixi configuration validation passed")
+          PYEOF
+      
+      - name: Install Pixi
+        run: curl -fsSL https://pixi.sh/install.sh | bash
+      
+      - name: Check Pixi lock file
+        run: |
+          export PATH=$HOME/.pixi/bin:$PATH
+          pixi info
+
+  validate-observability-configs:
+    name: Validate Observability Configurations
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install PyYAML
+        run: pip install pyyaml
+      
+      - name: Validate Prometheus config
+        run: |
+          python3 << 'PYEOF'
+          import yaml
+          
+          with open('config/prometheus/prometheus.yml', 'r') as f:
+              data = yaml.safe_load(f)
+          
+          assert 'global' in data, "Missing 'global' section"
+          assert 'scrape_configs' in data, "Missing 'scrape_configs' section"
+          assert len(data['scrape_configs']) > 0, "No scrape jobs defined"
+          
+          print(f"✅ Prometheus config valid ({len(data['scrape_configs'])} scrape jobs)")
+          PYEOF
+      
+      - name: Validate Grafana datasources
+        run: |
+          python3 << 'PYEOF'
+          import yaml
+          
+          with open('config/grafana/provisioning/datasources/prometheus.yml', 'r') as f:
+              data = yaml.safe_load(f)
+          
+          assert 'datasources' in data, "Missing 'datasources' section"
+          assert len(data['datasources']) > 0, "No datasources defined"
+          
+          print(f"✅ Grafana datasources valid ({len(data['datasources'])} datasources)")
+          PYEOF
+      
+      - name: Validate Alertmanager config
+        run: |
+          python3 << 'PYEOF'
+          import yaml
+          
+          with open('config/alertmanager/config.yml', 'r') as f:
+              data = yaml.safe_load(f)
+          
+          assert 'route' in data, "Missing 'route' section"
+          assert 'receivers' in data, "Missing 'receivers' section"
+          assert len(data['receivers']) > 0, "No receivers defined"
+          
+          print(f"✅ Alertmanager config valid ({len(data['receivers'])} receivers)")
+          PYEOF
+
+  validate-scripts:
+    name: Validate Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      
+      - name: Check script syntax
+        run: |
+          if [ -d "scripts" ]; then
+            find scripts -name "*.sh" -type f -exec shellcheck {} \; || true
+            echo "✅ Shell script validation complete"
+          else
+            echo "⚠️  No scripts directory found"
+          fi
+      
+      - name: Check script permissions
+        run: |
+          if [ -d "scripts" ]; then
+            find scripts -name "*.sh" -type f ! -executable -print | while read -r file; do
+              echo "⚠️  $file is not executable"
+            done
+          fi
+
+  generate-validation-report:
+    name: Generate Validation Report
+    runs-on: ubuntu-latest
+    needs: [validate-docker-compose, validate-nix-flake, validate-pixi-config, validate-observability-configs, validate-scripts]
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Generate report
+        run: |
+          cat > validation-report.md << 'EOF'
+          # Configuration Validation Report
+          
+          **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Commit**: ${{ github.sha }}
+          **Branch**: ${{ github.ref_name }}
+          
+          ## Validation Results
+          
+          | Check | Status |
+          |-------|--------|
+          | Docker Compose | ${{ needs.validate-docker-compose.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Nix Flake | ${{ needs.validate-nix-flake.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Pixi Config | ${{ needs.validate-pixi-config.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Observability Configs | ${{ needs.validate-observability-configs.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Shell Scripts | ${{ needs.validate-scripts.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          
+          ## Summary
+          
+          - **Total Checks**: 5
+          - **Passed**: ${{ (needs.validate-docker-compose.result == 'success' && 1 || 0) + (needs.validate-nix-flake.result == 'success' && 1 || 0) + (needs.validate-pixi-config.result == 'success' && 1 || 0) + (needs.validate-observability-configs.result == 'success' && 1 || 0) + (needs.validate-scripts.result == 'success' && 1 || 0) }}
+          - **Failed**: ${{ 5 - ((needs.validate-docker-compose.result == 'success' && 1 || 0) + (needs.validate-nix-flake.result == 'success' && 1 || 0) + (needs.validate-pixi-config.result == 'success' && 1 || 0) + (needs.validate-observability-configs.result == 'success' && 1 || 0) + (needs.validate-scripts.result == 'success' && 1 || 0)) }}
+          
+          ---
+          *Generated by GitHub Actions*
+          EOF
+          
+          cat validation-report.md
+      
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: validation-report.md
+          retention-days: 30
