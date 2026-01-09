@@ -1,0 +1,308 @@
+{
+  "results": [
+    {
+      "input": "Additional Tools",
+      "output": {
+        "domain": "Additional Tools",
+        "repos_found": 18,
+        "repos_list": "sqlite/sqlite, neondatabase/neon, bytebase/bytebase, vcache-project/vCache, messkan/prompt-cache, ruvnet/ruvector, opentelemetry-collector, containerd/containerd, runc, helm, kubectl, kustomize, neovim, git, jj-vcs/jj, curl, jq, yq",
+        "installation_method": "Mixed",
+        "current_status": "0/18 installed, 18 missing",
+        "conflicts_detected": "Prompt Caching: vcache-project/vCache vs messkan/prompt-cache; Version Control System: git vs jj-vcs/jj",
+        "missing_deps": "None",
+        "verification_commands": "sqlite3 --version; neon --version; otelcol --version; containerd --version; runc --version; helm version; kubectl version --client; kustomize version; nvim --version; git --version; jj --version; curl --version; jq --version; yq --version",
+        "priority_tasks": "P0: Ensure containerd/containerd is correctly installed and configured for container runtime; P1: Verify kubectl and helm installations for Kubernetes management; P2: Confirm neovim is set up as the default editor"
+      },
+      "error": ""
+    },
+    {
+      "input": "Agent Runtime",
+      "output": {
+        "domain": "Agent Runtime",
+        "repos_found": 3,
+        "repos_list": "ros2-humble-env/ros2-humble-env,some-org/some-agent-repo,another-org/another-agent-runtime",
+        "installation_method": "Mixed",
+        "current_status": "4/4 installed, 0 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "None",
+        "verification_commands": "nix develop --command true; pixi run python --version; docker-compose -f docker-compose.dev.yml ps; cargo check",
+        "priority_tasks": "P0: Ensure core ROS2 humble environment is fully operational; P1: Integrate all agent runtime repositories into the build system; P2: Optimize Pixi environment for Python/ML packages"
+      },
+      "error": ""
+    },
+    {
+      "input": "Build Tools",
+      "output": {
+        "domain": "Build Tools",
+        "repos_found": 2,
+        "repos_list": "swc-project/swc, evanw/esbuild",
+        "installation_method": "NPM",
+        "current_status": "0/2 installed, 2 missing",
+        "conflicts_detected": "swc-project/swc vs evanw/esbuild",
+        "missing_deps": "swc-project/swc, evanw/esbuild",
+        "verification_commands": "swc --version; esbuild --version",
+        "priority_tasks": "P1: Install swc-project/swc; P1: Install evanw/esbuild; P2: Resolve conflict between swc and esbuild"
+      },
+      "error": ""
+    },
+    {
+      "input": "Cluster & Delivery",
+      "output": {
+        "domain": "Cluster & Delivery",
+        "repos_found": 3,
+        "repos_list": "argoproj/argo-cd,argoproj/argo-rollouts,argoproj/argo-workflows",
+        "installation_method": "Docker",
+        "current_status": "0/3 installed, 3 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "argoproj/argo-cd, argoproj/argo-rollouts, argoproj/argo-workflows",
+        "verification_commands": "N/A",
+        "priority_tasks": "P0: Implement Argo CD for GitOps deployment; P1: Configure Argo Rollouts for progressive delivery; P2: Define Argo Workflows for CI/CD pipelines"
+      },
+      "error": ""
+    },
+    {
+      "input": "Data & Query",
+      "output": {
+        "domain": "Data & Query",
+        "repos_found": 2,
+        "repos_list": "mindsdb/mindsdb, apache/datafusion",
+        "installation_method": "Mixed",
+        "current_status": "0/2 installed, 2 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "mindsdb, apache/datafusion",
+        "verification_commands": "pixi run python -c \"import mindsdb; print(mindsdb.__version__)\"; cargo install datafusion && datafusion --version",
+        "priority_tasks": "P1: Install mindsdb; P1: Install apache/datafusion"
+      },
+      "error": ""
+    },
+    {
+      "input": "DevOps & Autonomy",
+      "output": {
+        "domain": "DevOps & Autonomy",
+        "repos_found": 2,
+        "repos_list": "agenticsorg/devops, agenticsorg/quantum-agentics",
+        "installation_method": "Binary",
+        "current_status": "0/2 installed, 2 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "None",
+        "verification_commands": "ls -d /home/ubuntu/ros2-humble-env/agenticsorg/devops; ls -d /home/ubuntu/ros2-humble-env/agenticsorg/quantum-agentics; cd /home/ubuntu/ros2-humble-env/agenticsorg/devops && git status; cd /home/ubuntu/ros2-humble-env/agenticsorg/quantum-agentics && git status",
+        "priority_tasks": "P0: Implement agenticsorg/devops; P1: Integrate agenticsorg/quantum-agentics; P2: Maintain and monitor existing DevOps infrastructure"
+      },
+      "error": ""
+    },
+    {
+      "input": "Edge & Agent Traffic",
+      "output": {
+        "domain": "Edge & Agent Traffic",
+        "repos_found": 2,
+        "repos_list": "Kong/kong, agentgateway/agentgateway",
+        "installation_method": "Mixed",
+        "current_status": "0/2 installed, 2 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "Kong/kong, agentgateway/agentgateway",
+        "verification_commands": "docker ps -a | grep kong; which agentgateway",
+        "priority_tasks": "P1: Install Kong/kong; P1: Install agentgateway/agentgateway; P2: Configure Kong/kong"
+      },
+      "error": ""
+    },
+    {
+      "input": "Host OS & Environment",
+      "output": {
+        "domain": "Host OS & Environment",
+        "repos_found": 3,
+        "repos_list": "NixOS/nixpkgs, prefix-dev/pixi, nushell/nushell",
+        "installation_method": "Mixed",
+        "current_status": "0/3 installed, 3 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "NixOS/nixpkgs, prefix-dev/pixi, nushell/nushell",
+        "verification_commands": "nix-info -m; pixi --version; nu --version",
+        "priority_tasks": "P0: Install NixOS/nixpkgs; P1: Install prefix-dev/pixi; P2: Install nushell/nushell"
+      },
+      "error": ""
+    },
+    {
+      "input": "Identity & Policy",
+      "output": {
+        "domain": "Identity & Policy",
+        "repos_found": 3,
+        "repos_list": "keycloak/keycloak,dexidp/dex,oauth2-proxy/oauth2-proxy",
+        "installation_method": "Docker",
+        "current_status": "3/3 installed",
+        "conflicts_detected": "None",
+        "missing_deps": "OPA, Vault",
+        "verification_commands": "docker-compose ps; curl http://localhost:8080; curl http://localhost:5556; curl http://localhost:4180",
+        "priority_tasks": "P0: Ensure Keycloak, Dex, and OAuth2-Proxy are correctly configured and integrated; P1: Implement OPA for fine-grained policy enforcement; P2: Integrate Vault for secret management"
+      },
+      "error": ""
+    },
+    {
+      "input": "Inference",
+      "output": {
+        "domain": "Inference",
+        "repos_found": 1,
+        "repos_list": "mudler/LocalAI",
+        "installation_method": "Docker",
+        "current_status": "0/1 installed, 1 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "LocalAI, docker, docker-compose",
+        "verification_commands": "curl http://localhost:8080/v1/models",
+        "priority_tasks": "P0: Install and configure LocalAI as the core inference engine; P1: Integrate LocalAI with the AgentGateway to route all model calls through the standardized interface; P2: Implement a model management strategy to download, update, and serve different models via LocalAI"
+      },
+      "error": ""
+    },
+    {
+      "input": "Isolation & Runtime",
+      "output": {
+        "domain": "Isolation & Runtime",
+        "repos_found": 3,
+        "repos_list": "anthropic-experimental/sandbox-runtime, kata-containers/kata-containers, firecracker-microvm/firecracker",
+        "installation_method": "Mixed",
+        "current_status": "0/3 installed, 3 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "anthropic-experimental/sandbox-runtime, kata-containers/kata-containers, firecracker-microvm/firecracker",
+        "verification_commands": "ls /usr/local/bin/sandbox-runtime; docker info; firecracker --version",
+        "priority_tasks": "P0: Implement sandbox-runtime; P1: Integrate kata-containers; P2: Deploy firecracker-microvm"
+      },
+      "error": ""
+    },
+    {
+      "input": "LLMOps & Evaluation",
+      "output": {
+        "domain": "LLMOps & Evaluation",
+        "repos_found": 3,
+        "repos_list": "org1/repoA,org2/repoB,org3/repoC",
+        "installation_method": "Mixed",
+        "current_status": "0/3 installed, 3 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "pytorch, mlflow, jupyterlab, pandas, numpy, scikit-learn, huggingface-transformers",
+        "verification_commands": "python3.11 --version; pip3 list; python3.11 -c \"import torch, mlflow, jupyterlab, pandas, numpy, sklearn, transformers\"",
+        "priority_tasks": "P0: Set up a dedicated Python environment for LLMOps tools; P1: Install core LLM evaluation libraries (e.g., mlflow, huggingface-transformers); P2: Integrate repository-specific testing frameworks"
+      },
+      "error": ""
+    },
+    {
+      "input": "Messaging & Orchestration",
+      "output": {
+        "domain": "Messaging & Orchestration",
+        "repos_found": 7,
+        "repos_list": "RoboStack/ros-humble,ros2/ros2_comm,ros2/rmw_fastrtps,ros2/rclcpp,nats-io/nats-server,temporalio/temporal,n8n-io/n8n",
+        "installation_method": "Mixed",
+        "current_status": "0/7 installed, 7 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "RoboStack/ros-humble, ros2/ros2_comm, ros2/rmw_fastrtps, ros2/rclcpp, nats-io/nats-server, temporalio/temporal, n8n-io/n8n",
+        "verification_commands": "git submodule status RoboStack/ros-humble; nix-shell -p nats-server --run \"nats-server --version\"; ros2 --version; docker-compose ps -q temporal; docker-compose ps -q n8n",
+        "priority_tasks": "P1: Install nats-io/nats-server (event bus); P1: Install temporalio/temporal (durable workflows); P2: Install n8n-io/n8n (connector automation)"
+      },
+      "error": ""
+    },
+    {
+      "input": "Notebooks",
+      "output": {
+        "domain": "Notebooks",
+        "repos_found": 1,
+        "repos_list": "jupyterlab/jupyterlab",
+        "installation_method": "Pixi",
+        "current_status": "0/1 installed, 1 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "jupyterlab",
+        "verification_commands": "pixi run python -c \"import jupyterlab_server; print('jupyterlab is installed')\"",
+        "priority_tasks": "P0: Install jupyterlab"
+      },
+      "error": ""
+    },
+    {
+      "input": "Observability",
+      "output": {
+        "domain": "Observability",
+        "repos_found": 5,
+        "repos_list": "ros2/rqt_graph, ros2/rqt_plot, ros2/ros2_tracing, prometheus/prometheus, grafana/grafana",
+        "installation_method": "Submodule",
+        "current_status": "0/5 installed, 5 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "ros2/rqt_graph, ros2/rqt_plot, ros2/ros2_tracing, prometheus/prometheus, grafana/grafana",
+        "verification_commands": "ros2 run rqt_graph rqt_graph; ros2 run rqt_plot rqt_plot; ros2 topic echo /ros2_tracing/events; docker ps -f name=prometheus; docker ps -f name=grafana",
+        "priority_tasks": "P0: Install core ROS2 Observability tools (rqt_graph, rqt_plot, ros2_tracing); P1: Deploy Prometheus for metric collection; P2: Deploy Grafana for visualization of observability data"
+      },
+      "error": ""
+    },
+    {
+      "input": "Security",
+      "output": {
+        "domain": "Security",
+        "repos_found": 4,
+        "repos_list": "aquasecurity/trivy, anchore/syft, anchore/grype, sigstore/cosign",
+        "installation_method": "Nix",
+        "current_status": "0/4 installed, 4 missing",
+        "conflicts_detected": "aquasecurity/trivy vs anchore/grype",
+        "missing_deps": "aquasecurity/trivy, anchore/syft, anchore/grype, sigstore/cosign",
+        "verification_commands": "trivy --version; syft --version; grype --version; cosign version",
+        "priority_tasks": "P0: Install aquasecurity/trivy for vulnerability scanning; P1: Install anchore/syft for SBOM generation; P2: Install sigstore/cosign for image signing/verification"
+      },
+      "error": ""
+    },
+    {
+      "input": "State & Storage",
+      "output": {
+        "domain": "State & Storage",
+        "repos_found": 3,
+        "repos_list": "ros2/rclpy,ros2/rcpp,ros2/rosbag2",
+        "installation_method": "Mixed",
+        "current_status": "Installation method not explicitly defined by build files; status unknown.",
+        "conflicts_detected": "None",
+        "missing_deps": "None",
+        "verification_commands": "ros2 pkg list | grep rclpy; ros2 pkg list | grep rcpp; ros2 pkg list | grep rosbag2",
+        "priority_tasks": "P0: Define explicit installation method for ROS 2 packages; P1: Implement CI/CD for ros2/rclpy, ros2/rcpp, ros2/rosbag2; P2: Optimize storage for rosbag2 data."
+      },
+      "error": ""
+    },
+    {
+      "input": "Tool Execution",
+      "output": {
+        "domain": "Tool Execution",
+        "repos_found": 5,
+        "repos_list": "googleapis/genai-toolbox, FlexNetOS/remote-agentic-coding-system, ruvnet/midstream, ruvnet/ruv-FANN, ruvnet/sublinear-time-solver",
+        "installation_method": "Mixed",
+        "current_status": "0/5 installed, 5 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "Cannot be definitively determined without access to repository build/package configuration files.",
+        "verification_commands": "pixi run python -c \"import genai_toolbox\"; remote-agentic-coding-system --version; cargo check --package midstream; cargo check --package ruv-FANN; cargo check --package sublinear-time-solver",
+        "priority_tasks": "P0: Ensure googleapis/genai-toolbox is properly integrated and its dependencies are managed, as it's a core tool wrapper; P1: Integrate FlexNetOS/remote-agentic-coding-system for remote coding capabilities; P2: Evaluate and integrate ruvnet/midstream, ruvnet/ruv-FANN, and ruvnet/sublinear-time-solver based on specific project needs for streaming analysis, NN utility, and solving tasks"
+      },
+      "error": ""
+    },
+    {
+      "input": "Training",
+      "output": {
+        "domain": "Training",
+        "repos_found": 2,
+        "repos_list": "mlflow/mlflow, unslothai/unsloth",
+        "installation_method": "Pixi",
+        "current_status": "0/2 installed, 2 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "mlflow, unsloth",
+        "verification_commands": "pixi run python -c 'import mlflow'; pixi run python -c 'import unsloth'",
+        "priority_tasks": "P0: Install Pixi environment; P1: Install mlflow; P2: Install unsloth"
+      },
+      "error": ""
+    },
+    {
+      "input": "UI",
+      "output": {
+        "domain": "UI",
+        "repos_found": 3,
+        "repos_list": "lobehub/lobe-chat, firecrawl/open-lovable, pixijs/pixijs",
+        "installation_method": "Mixed",
+        "current_status": "0/3 installed, 3 missing",
+        "conflicts_detected": "None",
+        "missing_deps": "lobehub/lobe-chat, firecrawl/open-lovable, pixijs/pixijs",
+        "verification_commands": "docker ps -a | grep lobe-chat; npm list -g | grep open-lovable; npm list -g | grep pixijs",
+        "priority_tasks": "P0: Install lobehub/lobe-chat; P1: Install firecrawl/open-lovable; P2: Install pixijs/pixijs"
+      },
+      "error": ""
+    }
+  ],
+  "summary": {
+    "total_domains": 20,
+    "total_repos": 75
+  }
+}

@@ -148,7 +148,18 @@
             nats-server         # WAN/multi-site robot messaging
             trippy              # Network diagnostics for DDS traffic
             trivy               # Container/SBOM security scanning
+            syft                # SBOM generation
+            grype               # Vulnerability scanning from SBOM
+            cosign              # Container image signing and verification
             opa                 # Policy enforcement for ROS2 topics
+            kubectl             # Kubernetes CLI for cluster management
+            helm                # Kubernetes package manager
+            kustomize           # Kubernetes configuration management
+            containerd          # Container runtime
+            
+            # Additional tools from BUILDKIT_STARTER_SPEC
+            neovim              # Editor
+            sqlite              # Local database
 
             # Secrets Management (see docs/GITHUB-RESOURCES.md)
             # Note: Vault uses BSL license - requires NIXPKGS_ALLOW_UNFREE=1

@@ -1,0 +1,141 @@
+
+# Note: Argo CD is designed for Kubernetes and doesn't have official Docker Compose support.
+# This configuration provides a development/testing environment using k3s in Docker.
+# For production, deploy to a real Kubernetes cluster.
+
+services:
+  # K3s - Lightweight Kubernetes for local development
+  k3s-server:
+    image: rancher/k3s:v1.31.4-k3s1
+    container_name: k3s-server
+    command: server --disable traefik --disable servicelb --disable metrics-server
+    privileged: true
+    environment:
+      - K3S_TOKEN=argocd-dev-token
+      - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
+      - K3S_KUBECONFIG_MODE=666
+    volumes:
+      - k3s-server:/var/lib/rancher/k3s
+      - ./data/k3s/kubeconfig:/output
+    ports:
+      - "6443:6443"  # Kubernetes API
+      - "8080:8080"  # Argo CD UI (after installation)
+      - "8081:8081"  # Argo Rollouts Dashboard
+      - "2746:2746"  # Argo Workflows UI
+    networks:
+      - agentic-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "k3s", "kubectl", "get", "nodes"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Argo CD installer (runs once to install Argo CD into k3s)
+  argocd-installer:
+    image: bitnami/kubectl:1.32.1
+    container_name: argocd-installer
+    depends_on:
+      k3s-server:
+        condition: service_healthy
+    volumes:
+      - ./data/k3s/kubeconfig:/root/.kube
+      - ./scripts/install-argocd.sh:/install-argocd.sh:ro
+    environment:
+      - KUBECONFIG=/root/.kube/kubeconfig.yaml
+    command: /bin/bash /install-argocd.sh
+    networks:
+      - agentic-network
+    restart: on-failure
+
+volumes:
+  k3s-server:
+
+networks:
+  agentic-network:
+    external: true
+    name: agentic-network
+
+# Usage:
+# 1. Create required directories:
+#    mkdir -p data/k3s/kubeconfig scripts
+#
+# 2. Create installation script (scripts/install-argocd.sh):
+#    #!/bin/bash
+#    set -e
+#    echo "Waiting for k3s to be ready..."
+#    until kubectl get nodes 2>/dev/null; do sleep 5; done
+#    
+#    echo "Installing Argo CD..."
+#    kubectl create namespace argocd || true
+#    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+#    
+#    echo "Installing Argo Rollouts..."
+#    kubectl create namespace argo-rollouts || true
+#    kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+#    
+#    echo "Installing Argo Workflows..."
+#    kubectl create namespace argo || true
+#    kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/latest/download/install.yaml
+#    
+#    echo "Patching Argo CD service to NodePort..."
+#    kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort", "ports": [{"port": 443, "nodePort": 30443}]}}'
+#    
+#    echo "Getting initial admin password..."
+#    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+#    echo ""
+#    echo "Installation complete!"
+#
+# 3. Make script executable:
+#    chmod +x scripts/install-argocd.sh
+#
+# 4. Start k3s and install Argo stack:
+#    docker-compose -f docker-compose.argo.yml up -d
+#
+# 5. Wait for installation (check logs):
+#    docker-compose -f docker-compose.argo.yml logs -f argocd-installer
+#
+# 6. Get Argo CD admin password:
+#    export KUBECONFIG=./data/k3s/kubeconfig/kubeconfig.yaml
+#    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+#
+# 7. Access Argo CD UI:
+#    https://localhost:30443
+#    Username: admin
+#    Password: (from step 6)
+#
+# 8. Port forward for easier access (alternative to NodePort):
+#    kubectl port-forward svc/argocd-server -n argocd 8080:443
+#    Access: https://localhost:8080
+#
+# 9. Install Argo CD CLI (optional):
+#    curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+#    sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+#    rm argocd-linux-amd64
+#
+# 10. Login via CLI:
+#     argocd login localhost:30443 --username admin --password <password> --insecure
+#
+# Argo CD GitOps workflow:
+# 1. Create application:
+#    argocd app create myapp --repo https://github.com/your-org/your-repo \
+#      --path manifests --dest-server https://kubernetes.default.svc \
+#      --dest-namespace default
+#
+# 2. Sync application:
+#    argocd app sync myapp
+#
+# 3. Monitor application:
+#    argocd app get myapp
+#    argocd app logs myapp
+#
+# Argo Rollouts (Progressive Delivery):
+# - Canary deployments
+# - Blue-green deployments
+# - Access dashboard: kubectl port-forward svc/argo-rollouts-dashboard -n argo-rollouts 3100:3100
+#
+# Argo Workflows (CI/CD Pipelines):
+# - DAG-based workflows
+# - Access UI: kubectl port-forward svc/argo-server -n argo 2746:2746
+# - Submit workflow: argo submit -n argo workflow.yaml

@@ -1,0 +1,154 @@
+
+services:
+  # Kong Gateway - North-South edge ingress
+  kong-database:
+    image: postgres:17.2-alpine
+    container_name: kong-database
+    environment:
+      POSTGRES_USER: kong
+      POSTGRES_DB: kong
+      POSTGRES_PASSWORD: kong
+    volumes:
+      - kong-db-data:/var/lib/postgresql/data
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "kong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kong-migrations:
+    image: kong:3.9.0-alpine
+    container_name: kong-migrations
+    command: kong migrations bootstrap
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PG_DATABASE: kong
+    networks:
+      - agentic-network
+    restart: on-failure
+
+  kong:
+    image: kong:3.9.0-alpine
+    container_name: kong
+    depends_on:
+      kong-database:
+        condition: service_healthy
+      kong-migrations:
+        condition: service_completed_successfully
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PG_DATABASE: kong
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    ports:
+      - "8000:8000"  # Proxy HTTP
+      - "8443:8443"  # Proxy HTTPS
+      - "8001:8001"  # Admin API HTTP
+      - "8444:8444"  # Admin API HTTPS
+      - "8002:8002"  # Kong Manager (GUI)
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # AgentGateway - Agent/MCP traffic plane
+  agentgateway:
+    image: agentgateway/agentgateway:0.2.0
+    container_name: agentgateway
+    ports:
+      - "8090:8090"  # Main API
+      - "8091:8091"  # Admin API
+      - "8092:8092"  # Metrics
+    environment:
+      - AG_LOG_LEVEL=info
+      - AG_UPSTREAM_TIMEOUT=30s
+      - AG_MAX_CONNECTIONS=1000
+      # LocalAI integration
+      - AG_LOCALAI_URL=http://localai:8080
+      # Kong integration for north-south traffic
+      - AG_KONG_ADMIN_URL=http://kong:8001
+      # MCP protocol support
+      - AG_MCP_ENABLED=true
+      - AG_MCP_TRANSPORT=stdio,http
+    volumes:
+      - ./config/agentgateway:/config:ro
+      - agentgateway-cache:/cache
+    depends_on:
+      kong:
+        condition: service_healthy
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8090/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  # Konga - Kong Admin UI (optional)
+  konga:
+    image: pantsel/konga:0.14.9
+    container_name: konga
+    depends_on:
+      kong:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DB_ADAPTER: postgres
+      DB_HOST: kong-database
+      DB_USER: kong
+      DB_PASSWORD: kong
+      DB_DATABASE: konga
+    ports:
+      - "1337:1337"
+    networks:
+      - agentic-network
+    restart: unless-stopped
+
+volumes:
+  kong-db-data:
+  agentgateway-cache:
+
+networks:
+  agentic-network:
+    external: true
+    name: agentic-network
+
+# Usage:
+# 1. Create network: docker network create agentic-network
+# 2. Create config directory: mkdir -p config/agentgateway
+# 3. Start services: docker-compose -f docker-compose.edge.yml up -d
+# 4. Verify Kong: curl http://localhost:8001/status
+# 5. Verify AgentGateway: curl http://localhost:8090/health
+# 6. Access Kong Manager: http://localhost:8002
+# 7. Access Konga: http://localhost:1337
+#
+# Kong API Gateway configuration:
+# - Add service: curl -i -X POST http://localhost:8001/services --data name=localai --data url=http://localai:8080
+# - Add route: curl -i -X POST http://localhost:8001/services/localai/routes --data paths[]=/ai
+# - Test: curl http://localhost:8000/ai/v1/models
+#
+# AgentGateway configuration:
+# - Routes agent traffic to LocalAI through Kong
+# - Supports MCP protocol for agent communication
+# - Provides metrics and observability at :8092/metrics

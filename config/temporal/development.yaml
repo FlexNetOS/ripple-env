@@ -1,0 +1,38 @@
+# Temporal Dynamic Configuration
+# =============================================================================
+# Development settings for local workflow orchestration
+# =============================================================================
+
+system.forceSearchAttributesCacheRefreshOnRead:
+  - value: true
+    constraints: {}
+
+limit.maxIDLength:
+  - value: 1000
+    constraints: {}
+
+history.maximumSignalNameLength:
+  - value: 1000
+    constraints: {}
+
+frontend.enableClientVersionCheck:
+  - value: false
+    constraints: {}
+
+# Workflow execution limits
+limit.historyCount:
+  - value: 50000
+    constraints: {}
+
+limit.historySize:
+  - value: 52428800  # 50MB
+    constraints: {}
+
+# Task queue settings
+matching.numTaskqueueReadPartitions:
+  - value: 5
+    constraints: {}
+
+matching.numTaskqueueWritePartitions:
+  - value: 5
+    constraints: {}

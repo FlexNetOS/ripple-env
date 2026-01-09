@@ -104,7 +104,7 @@ services:
 
   # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17.2-alpine
     container_name: agixt-postgres
     restart: unless-stopped
     ports:
@@ -125,7 +125,7 @@ services:
 
   # MinIO S3-compatible Storage
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
     container_name: agixt-minio
     restart: unless-stopped
     ports:
@@ -147,7 +147,7 @@ services:
 
   # MinIO setup - creates the agixt bucket on first run
   minio-setup:
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2024-12-18T15-11-58Z
     container_name: agixt-minio-setup
     depends_on:
       minio:
