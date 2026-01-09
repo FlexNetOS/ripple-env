@@ -344,10 +344,71 @@ deploy:
 3. **Rate Limiting**: Configure TensorZero rate limits for cloud providers
 4. **Audit Logging**: Enable TensorZero ClickHouse logging
 
+## Refact AI (Self-Hosted Coding Agent)
+
+Refact AI provides a self-hosted coding assistant with code completion, chat, and refactoring features.
+
+### Quick Start
+
+```bash
+# Create data directories
+mkdir -p data/refact/perm_storage data/refact/workdir
+
+# Create network (if not exists)
+docker network create agentic-network
+
+# Start Refact
+docker compose -f docker-compose.refact.yml up -d
+
+# Access Web UI
+open http://localhost:8008
+```
+
+### Features
+
+- **Code Completion**: AI-powered autocomplete for multiple languages
+- **Chat Interface**: Ask questions about code, get explanations
+- **Refactoring**: AI-suggested code improvements
+- **Multi-Model**: Support for local and cloud models
+- **Privacy-First**: All processing can be completely local
+
+### IDE Integration
+
+| IDE | Plugin | Configuration |
+|-----|--------|---------------|
+| VSCode | [Refact.ai](https://marketplace.visualstudio.com/items?itemName=smallcloud.refact) | Set server to http://localhost:8008 |
+| JetBrains | [Refact.ai](https://plugins.jetbrains.com/plugin/20647-refact-ai) | Set server to http://localhost:8008 |
+| Vim/Neovim | [refact.nvim](https://github.com/smallcloudai/refact.nvim) | Configure endpoint |
+
+### GPU Acceleration
+
+For GPU support, uncomment the `refact-gpu` service in `docker-compose.refact.yml`:
+
+```yaml
+deploy:
+  resources:
+    reservations:
+      devices:
+        - driver: nvidia
+          count: 1
+          capabilities: [gpu]
+```
+
+### Verification
+
+```bash
+# Check Refact status
+curl http://localhost:8008/
+
+# View logs
+docker compose -f docker-compose.refact.yml logs refact
+```
+
 ## Related Documentation
 
 - [BUILDKIT_STARTER_SPEC.md §1.12](../BUILDKIT_STARTER_SPEC.md) - Inference Plane specification
 - [docker-compose.inference.yml](../docker-compose.inference.yml) - LocalAI Docker config
+- [docker-compose.refact.yml](../docker-compose.refact.yml) - Refact AI Docker config
 - [manifests/distributed/inference_policy.yaml](../manifests/distributed/inference_policy.yaml) - MOE policy
 - [manifests/llmops/tensorzero.toml](../manifests/llmops/tensorzero.toml) - TensorZero config
 - [scripts/download-models.sh](../scripts/download-models.sh) - Model download script
