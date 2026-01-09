@@ -165,10 +165,30 @@ ros2-humble-env/
 ├── pixi.lock              # Pixi locked dependencies
 ├── bootstrap.sh           # Linux/macOS bootstrap script
 ├── bootstrap.ps1          # Windows PowerShell bootstrap script
+├── docker-compose.agixt.yml  # AGiXT Docker services
 ├── .envrc                 # Direnv configuration
+├── .env.agixt.example     # AGiXT environment template
+├── BUILDKIT_STARTER_SPEC.md  # Stack specification (SSoT)
 ├── .github/
 │   └── workflows/
 │       └── bootstrap-test.yml  # CI workflow
+├── .claude/               # Agent configuration
+│   ├── AGENT.md           # Agent system architecture
+│   ├── CLAUDE.md          # Claude Code instructions
+│   ├── RULES.md           # Rules and guidelines
+│   ├── SKILL.md           # Skills reference
+│   ├── INDEX.md           # Documentation navigation
+│   ├── settings.json      # Permissions and hooks
+│   ├── agents/            # Agent role definitions
+│   ├── skills/            # Structured skill definitions
+│   └── commands/          # Slash commands
+├── rust/                  # Rust workspace
+│   ├── Cargo.toml         # Workspace configuration
+│   └── agixt-bridge/      # AGiXT Rust SDK bridge
+├── docs/
+│   └── adr/               # Architecture Decision Records
+│       ├── README.md
+│       └── adr-001..006   # ADR documents
 ├── lib/
 │   ├── default.nix        # Library utilities
 │   └── system.nix         # System builder helpers
@@ -178,10 +198,17 @@ ros2-humble-env/
     │   ├── direnv.nix     # Enhanced direnv config
     │   ├── git.nix        # Git configuration
     │   ├── packages.nix   # Common packages
-    │   ├── ai/            # AI assistants (aichat)
+    │   ├── xdg.nix        # XDG Base Directory support
+    │   ├── ai/            # AI assistants
+    │   │   ├── default.nix
+    │   │   ├── aichat.nix # Provider-agnostic chat
+    │   │   └── aider.nix  # AI pair programming
     │   ├── nix/           # Nix settings
-    │   ├── editor/        # Helix editor with ROS2 LSPs
+    │   ├── editor/        # Editors with LSPs
+    │   │   ├── default.nix
+    │   │   └── neovim.nix # Neovim configuration
     │   └── shell/         # Shell configurations
+    │       ├── default.nix
     │       ├── nushell.nix
     │       ├── zsh.nix
     │       ├── bash.nix
@@ -254,6 +281,22 @@ ai-review                   # Review code (pipe input)
 pair                        # Start AI pair programming
 pair src/my_node.py         # Work on specific files
 pair-voice                  # Voice-to-code mode
+
+# Local AI inference (requires devshell.full)
+localai start               # Start LocalAI server
+localai status              # Check server status
+localai models              # List available models
+
+# AGiXT agent platform (requires Docker)
+agixt up                    # Start AGiXT services
+agixt status                # Check service status
+agixt logs                  # View logs
+
+# LLM evaluation
+promptfoo eval              # Run prompt tests
+
+# Development tools
+vault-dev                   # Start Vault in dev mode
 ```
 
 ## Using Different Shells
@@ -399,19 +442,34 @@ This configuration incorporates patterns and modules from:
 
 ## Agentic Infrastructure Resources
 
-The following resources are being evaluated for integration into this agentic development platform:
+### Integrated Tools
 
-### AI Agent Platforms & Automation
+The following tools are **integrated and available** in this environment:
+
+| Tool | Description | Command/Usage |
+|------|-------------|---------------|
+| **LocalAI** | OpenAI-compatible local inference | `localai start` |
+| **AGiXT** | AI Agent Automation Platform (Docker) | `agixt up` |
+| **AGiXT Rust SDK** | Rust SDK for AGiXT | `rust/agixt-bridge/` |
+| **Prometheus** | Metrics and monitoring | In flake.nix |
+| **NATS** | Event bus messaging | `natscli`, `nats-server` |
+| **Trivy** | Security vulnerability scanning | `trivy` |
+| **OPA** | Policy-as-code decisions | `opa` |
+| **Vault** | Secrets management | `vault-dev` |
+| **promptfoo** | LLM prompt testing | `promptfoo eval` |
+| **sqlx-cli** | Type-safe SQL migrations | `sqlx` |
+| **maturin** | PyO3/Rust-Python bindings | `maturin` |
+| **AIOS** | AI Agent Operating System (kernel) | `aios start` |
+| **Cerebrum** | Agent SDK for AIOS | `pixi run -e aios ...` |
+
+### Evaluated / Planned
+
+The following resources are documented but require additional setup:
 
 | Project | Description | URL |
 |---------|-------------|-----|
-| **AGiXT** | Dynamic AI Agent Automation Platform | [Josh-XT/AGiXT](https://github.com/Josh-XT/AGiXT) |
-| **AGiXT Rust SDK** | Rust SDK for AGiXT | [AGiXT/rust-sdk](https://github.com/AGiXT/rust-sdk) |
-| **LocalAI** | Distributed, P2P and decentralized inference | [mudler/LocalAI](https://github.com/mudler/LocalAI) |
-| **AIOS** | AI Agent Operating System | [agiresearch/AIOS](https://github.com/agiresearch/AIOS) |
-| **Cerebrum** | Agent SDK for AIOS | [agiresearch/Cerebrum](https://github.com/agiresearch/Cerebrum) |
-| **agentic-flow** | AI agent orchestration framework | [ruvnet/agentic-flow](https://github.com/ruvnet/agentic-flow) |
-| **devops** | Agentics DevOps toolkit | [agenticsorg/devops](https://github.com/agenticsorg/devops) |
+| **Temporal** | Durable workflows | [temporalio/temporal](https://github.com/temporalio/temporal) |
+| **OpenTelemetry** | Observability framework | [open-telemetry](https://github.com/open-telemetry) |
 
 ### Training & Machine Learning
 

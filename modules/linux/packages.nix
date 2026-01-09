@@ -31,6 +31,10 @@ in
     minicom            # Serial terminal
     can-utils          # CAN bus utilities
     picocom            # Minimal serial terminal
+
+    # XDG compliance tools (Linux-only)
+    boxxy              # Sandbox apps to force XDG compliance
+    shadow             # Provides newuidmap for boxxy
   ];
 
   # Linux-specific environment variables

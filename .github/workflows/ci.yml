@@ -12,6 +12,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Allow unfree packages (vault uses BSL license)
+  NIXPKGS_ALLOW_UNFREE: "1"
+
 jobs:
   # ===========================================
   # Nix Flake Validation
@@ -155,7 +159,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -171,7 +175,7 @@ jobs:
           sarif_file: 'trivy-results.sarif'
 
       - name: Trivy summary
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -224,8 +228,17 @@ jobs:
           echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
 
+          # GitHub Actions doesn't support dynamic context access (needs[var].result)
+          # Must use explicit references for each job
+          declare -A results
+          results[flake-check]="${{ needs.flake-check.result }}"
+          results[ros2-build]="${{ needs.ros2-build.result }}"
+          results[macos-build]="${{ needs.macos-build.result }}"
+          results[security]="${{ needs.security.result }}"
+          results[pre-commit]="${{ needs.pre-commit.result }}"
+
           for job in flake-check ros2-build macos-build security pre-commit; do
-            result="${{ needs[job].result }}" 2>/dev/null || result="skipped"
+            result="${results[$job]}"
             if [ "$result" == "success" ]; then
               echo "| $job | ✅ |" >> $GITHUB_STEP_SUMMARY
             elif [ "$result" == "skipped" ]; then
@@ -237,9 +250,15 @@ jobs:
 
       - name: Check for failures
         run: |
+          # Required checks that must pass for CI to succeed
           if [ "${{ needs.flake-check.result }}" != "success" ] || \
              [ "${{ needs.ros2-build.result }}" != "success" ] || \
              [ "${{ needs.security.result }}" != "success" ]; then
             echo "One or more required checks failed"
             exit 1
+          fi
+
+          # Pre-commit failures are warnings (continue-on-error: true)
+          if [ "${{ needs.pre-commit.result }}" != "success" ]; then
+            echo "::warning::Pre-commit checks failed - please review code style"
           fi

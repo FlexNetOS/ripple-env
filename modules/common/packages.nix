@@ -101,8 +101,8 @@ in
     "find" = "fd";
 
     # ROS2 shortcuts
-    "cb" = "colcon build";
-    "cbs" = "colcon build --symlink-install";
+    "cb" = "colcon build --symlink-install";
+    "cbs" = "colcon build --symlink-install";  # alias for cb
     "ct" = "colcon test";
     "ctr" = "colcon test-result --verbose";
 

@@ -43,6 +43,14 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!.env.agixt.example
+
+# AGiXT data directories (Docker volumes)
+agixt-data/
+
+# Rust build artifacts
+rust/target/
+Cargo.lock
 
 # Claude Code local settings (user-specific)
 .claude/settings.local.json

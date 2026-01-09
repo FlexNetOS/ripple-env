@@ -21,11 +21,12 @@ This environment is designed as the foundation for an **agentic system** that ma
 │   Agent         │   Agent         │     Agent                       │
 ├─────────────────┴─────────────────┴─────────────────────────────────┤
 │                       Domain Agents Layer                            │
-├─────────────────┬─────────────────┬─────────────────┬───────────────┤
-│   Robotics      │     DevOps      │      Nix        │     Work      │
-│   Agent         │     Agent       │     Agent       │     Agent     │
-├─────────────────┴─────────────────┴─────────────────┴───────────────┤
+├─────────────────────┬─────────────────────┬─────────────────────────┤
+│   Robotics Agent    │   DevOps Agent      │   Nix Agent             │
+├─────────────────────┴─────────────────────┴─────────────────────────┤
 │                    Shared Context & Memory                          │
+├─────────────────────────────────────────────────────────────────────┤
+│              AI Infrastructure (LocalAI + AGiXT)                    │
 ├─────────────────────────────────────────────────────────────────────┤
 │                    Environment (Nix + Pixi)                         │
 └─────────────────────────────────────────────────────────────────────┘
@@ -75,14 +76,18 @@ This environment is designed as the foundation for an **agentic system** that ma
 - Cross-platform compatibility (Linux, macOS, WSL2)
 - Module development and debugging
 
-#### Personal Agent
+### Future Domain Agents (Planned)
+
+> **Note**: These agents are planned but not yet implemented. Agent definition files will be added to `.claude/agents/` when ready.
+
+#### Personal Agent (planned)
 - Calendar and scheduling integration
 - Task prioritization and tracking
 - Note-taking and knowledge management
 - Habit tracking and goal setting
 - Email and communication management
 
-#### Work Agent
+#### Work Agent (planned)
 - Code review and PR management
 - Documentation generation
 - Meeting notes and action items
@@ -99,10 +104,12 @@ This environment is designed as the foundation for an **agentic system** that ma
 
 ### Tool Integration
 - **Version Control**: git, gh (GitHub CLI)
-- **Build Systems**: colcon, cmake, ninja
+- **Build Systems**: colcon, cmake, ninja, cargo
 - **Languages**: Python, C++, Rust, Bash, Nushell
 - **Editors**: Helix with LSP support
 - **Shells**: bash, zsh, nushell with starship prompt
+- **AI Infrastructure**: LocalAI (local inference), AGiXT (agent platform)
+- **Containers**: Docker, Docker Compose
 
 ### Memory & Context
 - Session persistence across conversations
@@ -156,10 +163,22 @@ New agents can be added by:
 3. Creating tool integrations as Nix modules
 4. Registering with the orchestrator
 
-## Future Roadmap
+## Roadmap
 
-- [ ] MCP (Model Context Protocol) server integration
+### Completed
+- [x] LocalAI integration for local LLM inference
+- [x] AGiXT platform integration via Docker
+- [x] AGiXT Rust SDK bridge for ROS2 integration
+- [x] XDG Base Directory compliance
+- [x] DevPod cloud development support
+
+### In Progress
+- [ ] Personal Agent implementation
+- [ ] Work Agent implementation
 - [ ] Multi-agent collaboration patterns
+
+### Future
+- [ ] MCP (Model Context Protocol) server integration
 - [ ] Voice interface support
 - [ ] Mobile companion app
 - [ ] Self-improvement through feedback loops

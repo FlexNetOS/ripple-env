@@ -9,15 +9,20 @@ This document catalogs external GitHub resources evaluated for integration with 
 
 ## Quick Reference - Integration Status
 
-| Category | Top Recommendations | Nix Support | Priority |
+| Category | Top Recommendations | Status | Priority |
 |----------|--------------------| ------------|----------|
-| **AI Agents** | LocalAI, AIOS | ✅/⚠️ | High |
-| **Monitoring** | Prometheus, Netdata | ✅ | High |
-| **Messaging** | NATS Server | ✅ | High |
-| **Security** | Vault, Keycloak | ✅ | High |
-| **Evaluation** | TruLens, OpenAI Evals | ⚠️ Pixi | Medium |
+| **AI Agents** | LocalAI, AIOS | ⚠️ Docker/Pixi | High |
+| **AI Gateway** | AgentGateway | ✅ **Integrated** (install helper) | High |
+| **Monitoring** | Prometheus, Trivy, Trippy | ✅ **Integrated** | High |
+| **Messaging** | NATS Server + CLI | ✅ **Integrated** | High |
+| **Security** | OPA, Trivy, Vault, gVisor | ✅ **Integrated** | High |
+| **Identity** | Keycloak, Vaultwarden | ✅ **Integrated** (identity shell) | High |
+| **Database** | SQLx, Neon, PostgreSQL | ✅ **Integrated** | High |
+| **Vector DB** | ruvector | ⚠️ Rust crate | Medium |
+| **Evaluation** | Promptfoo | ✅ **Integrated** | High |
+| **LLM Cache** | vCache | ⚠️ Python pip | Medium |
 | **Memory** | Memori, Memobase | ⚠️ Pixi | Medium |
-| **Rust** | PyO3, rust-libp2p | ⚠️ Cargo | Medium |
+| **Rust** | maturin, sqlx-cli | ✅ **Integrated** | High |
 
 ---
 
@@ -120,14 +125,44 @@ commonPackages = with pkgs; [ local-ai ];
 | **Status** | ❌ Not recommended for ROS2 |
 | **Relevance** | Low - Node.js ecosystem conflicts |
 
-### Agent Gateway
+### Agent Gateway ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [agentgateway/agentgateway](https://github.com/agentgateway/agentgateway) |
-| **Stars** | 1,384 |
+| **Stars** | 1,384+ |
 | **Language** | Rust (74.6%) |
-| **Status** | ⚠️ Infrastructure layer |
-| **Relevance** | Medium - Multi-robot routing (advanced use) |
+| **Organization** | Linux Foundation AI & Data |
+| **Protocols** | MCP, A2A, OpenAI, Anthropic |
+| **Installation** | `agentgateway-install` helper in devshell |
+| **Status** | ✅ **Install helper integrated** |
+| **Relevance** | **High** - Multi-protocol AI agent routing |
+
+**Integration Note**: The `agentgateway-install` helper is included in the full devshell. It installs AgentGateway via cargo from source. Requires Rust toolchain.
+
+**Features**:
+- Model Context Protocol (MCP) support
+- Agent-to-Agent (A2A) protocol
+- OpenAI/Anthropic API compatibility
+- Rate limiting and authentication
+- Multi-backend routing
+
+**Installation**:
+```bash
+# Use the devshell helper
+agentgateway-install
+
+# Or manually with cargo
+cargo install --git https://github.com/agentgateway/agentgateway agentgateway
+```
+
+**Usage**:
+```bash
+# Start the gateway
+agentgateway --config config.yaml
+
+# Example config supports multiple backends
+agentgateway --help
+```
 
 ---
 
@@ -198,16 +233,18 @@ commonPackages = with pkgs; [ local-ai ];
 
 ## Networking & P2P
 
-### NATS Server - Messaging ⭐ RECOMMENDED
+### NATS Server - Messaging ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [nats-io/nats-server](https://github.com/nats-io/nats-server) |
 | **Stars** | 18.9k |
 | **Version** | v2.12.3 |
-| **Nix Package** | ✅ `pkgs.nats-server` |
+| **Nix Package** | ✅ `pkgs.nats-server`, `pkgs.natscli` |
 | **Devenv Support** | ✅ `services.nats` |
-| **Status** | ✅ Ready for integration |
+| **Status** | ✅ **Integrated in devshell** |
 | **Relevance** | **High** - WAN/multi-site robot communication (complementary to DDS) |
+
+**Integration Note**: Both `nats-server` and `natscli` are included in the devshell for local development and testing.
 
 **Use Case**: DDS for in-robot, NATS for cross-network. Bridge via `nats-ros-connector`.
 
@@ -258,22 +295,79 @@ commonPackages = with pkgs; [ local-ai ];
 | **Status** | ✅ Ready via Pixi |
 | **Relevance** | High - User profile-based robot memory |
 
-### SQLx - Rust SQL Toolkit
+### SQLx - Rust SQL Toolkit ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [launchbadge/sqlx](https://github.com/launchbadge/sqlx) |
 | **Downloads** | 54.9M |
-| **Nix Package** | ✅ `pkgs.sqlx-cli` (CLI only) |
-| **Installation** | `cargo add sqlx` |
-| **Status** | ⚠️ Complex Nix builds (requires DB at compile time) |
+| **Nix Package** | ✅ `pkgs.sqlx-cli` |
+| **Installation** | `cargo add sqlx` (sqlx-cli available in devshell) |
+| **Status** | ✅ **CLI integrated in devshell** |
 | **Relevance** | High - Rust database access |
 
-### Neon - Serverless Postgres
+**Integration Note**: `sqlx-cli` is included in the devshell for database migrations and schema management. For library builds requiring compile-time DB verification, use `naersk` with a prepared DB image.
+
+### Neon - Serverless Postgres ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [neondatabase/neon](https://github.com/neondatabase/neon) |
-| **Status** | 🔬 Cloud service |
-| **Relevance** | Low - Development databases (prefer local PostgreSQL) |
+| **Stars** | 17k+ |
+| **Type** | Cloud PostgreSQL service |
+| **CLI Package** | `neonctl` (npm-based) |
+| **Installation** | `neonctl` wrapper in devshell |
+| **Status** | ✅ **CLI integrated in devshell** |
+| **Relevance** | Medium - Serverless Postgres for cloud deployments |
+
+**Integration Note**: The `neonctl` CLI wrapper is included in the full devshell. It uses `npx neonctl@latest` automatically. For local development, use the existing PostgreSQL tools (`postgresql_15`, `pgcli`, `sqlx-cli`) in the identity shell.
+
+**Usage**:
+```bash
+# Authenticate with Neon
+neonctl auth
+
+# Create a project
+neonctl projects create --name my-project
+
+# Connect to database
+neonctl connection-string
+```
+
+### vCache - LLM Semantic Caching
+| Attribute | Value |
+|-----------|-------|
+| **Repository** | [vcache-project/vCache](https://github.com/vcache-project/vCache) |
+| **Type** | Python library |
+| **Installation** | `pip install vcache` or `pixi add vcache` |
+| **Status** | ⚠️ Available via pip |
+| **Relevance** | Medium - Semantic prompt caching for LLM cost reduction |
+
+**Note**: vCache is a Python library for semantic caching of LLM prompts, NOT a distributed cache like Redis. It reduces LLM API costs by caching semantically similar queries.
+
+**Usage**:
+```python
+from vcache import VCache
+cache = VCache()
+# Cache semantically similar prompts
+response = cache.get_or_call(prompt, llm_function)
+```
+
+### ruvector - Rust Vector Database
+| Attribute | Value |
+|-----------|-------|
+| **Repository** | [ruvnet/ruvector](https://github.com/ruvnet/ruvector) |
+| **Type** | Rust library (crate) |
+| **Crate** | `ruvector` |
+| **Installation** | `cargo add ruvector` |
+| **Status** | ⚠️ Rust crate (not standalone tool) |
+| **Relevance** | Medium - Vector database for embeddings |
+
+**Note**: ruvector is a Rust library for vector similarity search with self-learning Graph Neural Networks (GNNs) and HNSW indexing. Include in Rust projects as a crate dependency.
+
+**Cargo.toml**:
+```toml
+[dependencies]
+ruvector = "*"
+```
 
 ---
 
@@ -291,15 +385,17 @@ commonPackages = with pkgs; [ local-ai ];
 
 ## Rust Ecosystem Tools
 
-### PyO3 - Rust-Python Bindings ⭐ RECOMMENDED
+### PyO3 - Rust-Python Bindings ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [PyO3/pyo3](https://github.com/PyO3/pyo3) |
 | **Version** | 0.21 |
 | **Requires** | Rust 1.83+, maturin |
-| **Installation** | `cargo add pyo3`, `pixi add maturin` |
-| **Status** | ⚠️ Complex Nix integration (use maturin) |
+| **Installation** | `cargo add pyo3` (maturin available in devshell) |
+| **Status** | ✅ **maturin integrated in devshell** |
 | **Relevance** | **High** - ROS2 Python-Rust interop |
+
+**Integration Note**: `maturin` build tool is included in the devshell for building PyO3-based Python packages from Rust.
 
 ### RustCoder MCP - AI-Assisted Rust Dev
 | Attribute | Value |
@@ -355,52 +451,62 @@ commonPackages = with pkgs; [ local-ai ];
 
 **Nix Enhancement**: Use [nixidy](https://nixidy.dev/) for Nix-native Kubernetes configs
 
-### gVisor Sandbox
+### gVisor Sandbox ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [google/gvisor](https://github.com/google/gvisor) |
-| **Nix Package** | ❌ Build from source |
-| **Status** | ⚠️ Complex setup |
-| **Relevance** | Medium - Sandbox untrusted ROS2 packages |
+| **Nix Package** | ✅ `pkgs.gvisor` |
+| **Status** | ✅ **Integrated in devshell** (Linux only) |
+| **Relevance** | High - Sandbox untrusted ROS2 packages |
+
+**Integration Note**: gVisor (`runsc`) is included in the Linux devshell for container sandboxing. Usage: `docker run --runtime=runsc ...`. Performance overhead is 5-15% for network workloads. Not suitable for hard real-time control loops.
 
 ---
 
 ## Security & Identity
 
-### HashiCorp Vault ⭐ RECOMMENDED
+### HashiCorp Vault ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [hashicorp/vault](https://github.com/hashicorp/vault) |
 | **Nix Package** | ✅ `pkgs.vault` (BSL license) |
 | **NixOS Module** | ✅ `services.vault` |
-| **Status** | ⚠️ Unfree license |
+| **Status** | ✅ **Integrated in devshell** |
 | **Relevance** | **High** - DDS-Security PKI, API key management |
 
-### Keycloak - Identity Management ⭐ RECOMMENDED
+**Integration Note**: Vault CLI is included in the full devshell. Use `vault-dev` helper to start dev server (auto-unsealed, root token: `root`). Requires `NIXPKGS_ALLOW_UNFREE=1` due to BSL license. For production, use NixOS `services.vault` module.
+
+### Keycloak - Identity Management ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [keycloak/keycloak](https://github.com/keycloak/keycloak) |
 | **Nix Package** | ✅ `pkgs.keycloak` |
 | **NixOS Module** | ✅ `services.keycloak` (NixOS 25.05+) |
-| **Status** | ✅ Ready |
+| **Status** | ✅ **Integrated in identity devshell** |
 | **Relevance** | **High** - Robot fleet OAuth2/OIDC authentication |
 
-### Vaultwarden
+**Integration Note**: Keycloak is included in the `devShells.identity` shell (Linux only). Usage: `nix develop .#identity`. Requires Java 21 and PostgreSQL (both included). Start with: `keycloak start-dev --http-port=8080`.
+
+### Vaultwarden ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [dani-garcia/vaultwarden](https://github.com/dani-garcia/vaultwarden) |
 | **Nix Package** | ✅ `pkgs.vaultwarden` |
 | **NixOS Module** | ✅ `services.vaultwarden` |
-| **Status** | ✅ Ready |
+| **Status** | ✅ **Integrated in identity devshell** |
 | **Relevance** | Medium - Team password management |
 
-### Open Policy Agent (OPA)
+**Integration Note**: Vaultwarden is included in the `devShells.identity` shell (Linux only). Usage: `nix develop .#identity`. Supports SQLite (default) or PostgreSQL. Start with: `vaultwarden`.
+
+### Open Policy Agent (OPA) ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [open-policy-agent/opa](https://github.com/open-policy-agent/opa) |
 | **Nix Package** | ✅ `pkgs.opa` |
-| **Status** | ✅ Ready |
+| **Status** | ✅ **Integrated in devshell** |
 | **Relevance** | High - ROS2 topic access policies |
+
+**Integration Note**: OPA CLI is included in the full devshell. Use Rego policies for ROS2 topic/service access control. Run `opa run --server` for policy server mode. See OPA docs for DDS-Security integration patterns.
 
 ---
 
@@ -423,14 +529,16 @@ commonPackages = with pkgs; [ local-ai ];
 | **Status** | ✅ Ready via Pixi |
 | **Relevance** | **High** - LLM benchmark evaluation |
 
-### Promptfoo
+### Promptfoo ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [promptfoo/promptfoo](https://github.com/promptfoo/promptfoo) |
 | **Language** | TypeScript/Node.js |
-| **Installation** | `npx promptfoo@latest` |
-| **Status** | ⚠️ Separate Node.js environment |
-| **Relevance** | High - Prompt security testing |
+| **Installation** | `promptfoo` (wrapper in devshell) or `npx promptfoo@latest` |
+| **Status** | ✅ **Integrated via wrapper** |
+| **Relevance** | High - LLM testing & robot command parsing evaluation |
+
+**Integration Note**: A `promptfoo` wrapper is included in the devshell that runs `npx promptfoo@latest` automatically. Node.js 22 is also available for direct npm usage.
 
 ### ComfyUI
 | Attribute | Value |
@@ -471,7 +579,12 @@ commonPackages = with pkgs; [ local-ai ];
 | Prometheus | Standard NixOS module |
 | Netdata | Standard NixOS module |
 | NATS Server | Standard Nix package, devenv support |
-| Vault/Keycloak | Standard NixOS modules |
+| Vault | ✅ Integrated - Go binary, BSL license (unfree) |
+| Keycloak | NixOS module - Java 17+, PostgreSQL backend |
+| Vaultwarden | NixOS module - Rust binary, SQLite/PostgreSQL |
+| OPA | ✅ Integrated - Go binary, no conflicts |
+| gVisor | ✅ Integrated - Linux only, Docker runtime |
+| Trivy | ✅ Integrated - Go binary, container scanning |
 | TruLens/Evals | Pure Python, Pixi managed |
 | Memori/Memobase | Pure Python, Pixi managed |
 
@@ -481,9 +594,9 @@ commonPackages = with pkgs; [ local-ai ];
 |------|----------|------------|
 | **Unsloth** | PyTorch version specificity | Use Docker container |
 | **ComfyUI** | PyTorch/CUDA conflicts | Use dedicated Nix flake |
-| **Promptfoo** | Node.js ecosystem | Run in separate directory |
-| **SQLx** | Requires DB at compile time | Use naersk + prepared DB |
-| **PyO3/maturin** | Complex Nix + Python build | Use Pixi for build, naersk for packaging |
+| **Promptfoo** | Node.js ecosystem | ✅ Resolved: wrapper in devshell |
+| **SQLx** | Requires DB at compile time | ✅ CLI integrated; use naersk for builds |
+| **PyO3/maturin** | Complex Nix + Python build | ✅ maturin integrated in devshell |
 | **AGiXT** | Requires Docker | Docker Compose only |
 
 ### Python Version Requirements

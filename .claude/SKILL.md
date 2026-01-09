@@ -67,6 +67,51 @@
 - Release optimization
 - Static analysis with clang-tidy
 
+### Rust Projects
+- Package management with `cargo`
+- Build: `cargo build` / `cargo build --release`
+- Test: `cargo test`
+- Format: `cargo fmt`
+- Lint: `cargo clippy`
+- LSP support via `rust-analyzer`
+
+## AI/Inference Skills
+
+### LocalAI (Local LLM Inference)
+- OpenAI-compatible API server
+- Start: `localai start`
+- Stop: `localai stop`
+- Check: `localai status`
+- List models: `localai models`
+- Default port: 8080
+
+### AGiXT (AI Agent Platform)
+- Docker-based agent automation
+- Start: `agixt up`
+- Stop: `agixt down`
+- Logs: `agixt logs`
+- Status: `agixt status`
+- Shell: `agixt shell`
+- API port: 7437, UI port: 3437
+
+### AIOS (Agent Operating System)
+- User-space agent kernel with syscalls
+- Install: `aios install`
+- Start: `aios start`
+- Stop: `aios stop`
+- Status: `aios status`
+- Config: `aios config`
+- Default port: 8000
+- Pixi environment: `pixi run -e aios ...`
+
+### Cerebrum (Agent SDK)
+- SDK for building AIOS agents
+- Install: `pip install aios-agent-sdk`
+- Run agent: `run-agent --mode local --agent_path ./my_agent --task "..."`
+- List agents: `list-agenthub-agents`
+- Download agent: `download-agent`
+- Upload agent: `upload-agents`
+
 ## DevOps Skills
 
 ### CI/CD
@@ -138,13 +183,18 @@ Available inside `nix develop` / `nom develop`:
 
 | Command | Description | Definition |
 |---------|-------------|------------|
-| `cb` | `colcon build --symlink-install` | `flake.nix:232` |
-| `ct` | `colcon test` | `flake.nix:237` |
-| `ctr` | `colcon test-result --verbose` | `flake.nix:242` |
-| `ros2-env` | Show ROS2 environment variables | `flake.nix:247` |
-| `update-deps` | `pixi update` | `flake.nix:252` |
-| `ai` | AI chat assistant (aichat) | `flake.nix:257` |
-| `pair` | AI pair programming (aider) | `flake.nix:262` |
+| `cb` | `colcon build --symlink-install` | `flake.nix:219` |
+| `ct` | `colcon test` | `flake.nix:222` |
+| `ctr` | `colcon test-result --verbose` | `flake.nix:225` |
+| `ros2-env` | Show ROS2 environment variables | `flake.nix:228` |
+| `update-deps` | `pixi update` | `flake.nix:231` |
+| `ai` | AI chat assistant (aichat) | `flake.nix:237` |
+| `pair` | AI pair programming (aider) | `flake.nix:240` |
+| `promptfoo` | LLM testing (npx wrapper) | `flake.nix:250` |
+| `localai` | LocalAI server management | `flake.nix:256` |
+| `agixt` | AGiXT Docker management | `flake.nix:293` |
+| `aios` | AIOS Agent Kernel management | `flake.nix:340` |
+| `vault-dev` | Vault dev server | `flake.nix:412` |
 
 ### Shell Aliases (modules/common/packages.nix)
 Available in all shells via home-manager:
@@ -213,6 +263,13 @@ Available after Nix installation:
 | AI chat | `ai` or `aichat` | Devshell/Alias |
 | AI code generation | `ai-code` | Alias |
 | AI pair programming | `pair` or `aider` | Devshell/Alias |
+| Start LocalAI | `localai start` | Devshell |
+| Start AGiXT | `agixt up` | Devshell |
+| Start AIOS | `aios start` | Devshell |
+| Install AIOS | `aios install` | Devshell |
+| Run AIOS agent | `pixi run -e aios run-agent ...` | Pixi/AIOS |
+| Build Rust | `cargo build` | Rust |
+| Test Rust | `cargo test` | Rust |
 
 ## Skill Expansion
 

@@ -7,8 +7,10 @@
     ./direnv.nix
     ./git.nix
     ./packages.nix
+    ./xdg.nix
     ./nix
     ./editor
+    ./editor/neovim.nix
     ./shell
   ];
 }
