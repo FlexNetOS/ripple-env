@@ -94,6 +94,24 @@
 - Shell: `agixt shell`
 - API port: 7437, UI port: 3437
 
+### AIOS (Agent Operating System)
+- User-space agent kernel with syscalls
+- Install: `aios install`
+- Start: `aios start`
+- Stop: `aios stop`
+- Status: `aios status`
+- Config: `aios config`
+- Default port: 8000
+- Pixi environment: `pixi run -e aios ...`
+
+### Cerebrum (Agent SDK)
+- SDK for building AIOS agents
+- Install: `pip install aios-agent-sdk`
+- Run agent: `run-agent --mode local --agent_path ./my_agent --task "..."`
+- List agents: `list-agenthub-agents`
+- Download agent: `download-agent`
+- Upload agent: `upload-agents`
+
 ## DevOps Skills
 
 ### CI/CD
@@ -175,7 +193,8 @@ Available inside `nix develop` / `nom develop`:
 | `promptfoo` | LLM testing (npx wrapper) | `flake.nix:250` |
 | `localai` | LocalAI server management | `flake.nix:256` |
 | `agixt` | AGiXT Docker management | `flake.nix:293` |
-| `vault-dev` | Vault dev server | `flake.nix:335` |
+| `aios` | AIOS Agent Kernel management | `flake.nix:340` |
+| `vault-dev` | Vault dev server | `flake.nix:412` |
 
 ### Shell Aliases (modules/common/packages.nix)
 Available in all shells via home-manager:
@@ -246,6 +265,9 @@ Available after Nix installation:
 | AI pair programming | `pair` or `aider` | Devshell/Alias |
 | Start LocalAI | `localai start` | Devshell |
 | Start AGiXT | `agixt up` | Devshell |
+| Start AIOS | `aios start` | Devshell |
+| Install AIOS | `aios install` | Devshell |
+| Run AIOS agent | `pixi run -e aios run-agent ...` | Pixi/AIOS |
 | Build Rust | `cargo build` | Rust |
 | Test Rust | `cargo test` | Rust |
 

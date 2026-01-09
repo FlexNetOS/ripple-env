@@ -459,6 +459,8 @@ The following tools are **integrated and available** in this environment:
 | **promptfoo** | LLM prompt testing | `promptfoo eval` |
 | **sqlx-cli** | Type-safe SQL migrations | `sqlx` |
 | **maturin** | PyO3/Rust-Python bindings | `maturin` |
+| **AIOS** | AI Agent Operating System (kernel) | `aios start` |
+| **Cerebrum** | Agent SDK for AIOS | `pixi run -e aios ...` |
 
 ### Evaluated / Planned
 
@@ -466,8 +468,6 @@ The following resources are documented but require additional setup:
 
 | Project | Description | URL |
 |---------|-------------|-----|
-| **AIOS** | AI Agent Operating System | [agiresearch/AIOS](https://github.com/agiresearch/AIOS) |
-| **Cerebrum** | Agent SDK for AIOS | [agiresearch/Cerebrum](https://github.com/agiresearch/Cerebrum) |
 | **Temporal** | Durable workflows | [temporalio/temporal](https://github.com/temporalio/temporal) |
 | **OpenTelemetry** | Observability framework | [open-telemetry](https://github.com/open-telemetry) |
 

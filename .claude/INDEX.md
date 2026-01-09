@@ -27,6 +27,7 @@
 | [DevOps](./skills/devops/README.md) | CI/CD, GitHub workflows, automation |
 | [Nix Environment](./skills/nix-environment/README.md) | Flakes, home-manager, environment management |
 | [AI Assistants](./skills/ai-assistants/README.md) | AI tools (aichat, aider, LocalAI, AGiXT) |
+| [AIOS & Cerebrum](./skills/aios-cerebrum/README.md) | Agent OS kernel and SDK for building AI agents |
 | [Distributed Systems](./skills/distributed-systems/README.md) | NATS messaging, Temporal workflows |
 | [Rust Tooling](./skills/rust-tooling/README.md) | PyO3 bindings, sqlx, AGiXT Rust SDK |
 | [Observability](./skills/observability/README.md) | Prometheus, OpenTelemetry, monitoring |

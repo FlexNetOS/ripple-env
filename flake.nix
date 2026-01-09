@@ -335,6 +335,83 @@
                   echo "  shell  - Open shell in AGiXT container"
                   ;;
               esac
+            '')
+            # AIOS Agent OS kernel management
+            # Usage: aios [start|stop|status|install]
+            # AIOS runs as a FastAPI server on port 8000
+            # See: https://github.com/agiresearch/AIOS
+            (pkgs.writeShellScriptBin "aios" ''
+              # AIOS Agent Kernel management
+              # Requires: pixi run -e aios ...
+              AIOS_DIR="''${AIOS_DIR:-$HOME/.local/share/aios}"
+              AIOS_CONFIG="''${AIOS_CONFIG:-$AIOS_DIR/config/config.yaml}"
+              AIOS_PORT="''${AIOS_PORT:-8000}"
+
+              case "''${1:-status}" in
+                install)
+                  echo "Installing AIOS Agent Kernel..."
+                  mkdir -p "$AIOS_DIR"
+                  if [ ! -d "$AIOS_DIR/AIOS" ]; then
+                    git clone https://github.com/agiresearch/AIOS.git "$AIOS_DIR/AIOS"
+                  else
+                    echo "AIOS already installed at $AIOS_DIR/AIOS"
+                    echo "To update: cd $AIOS_DIR/AIOS && git pull"
+                  fi
+                  echo ""
+                  echo "Install Cerebrum SDK:"
+                  echo "  pip install aios-agent-sdk"
+                  echo ""
+                  echo "Configure API keys in: $AIOS_DIR/AIOS/aios/config/config.yaml"
+                  ;;
+                start)
+                  echo "Starting AIOS Kernel on port $AIOS_PORT..."
+                  if [ ! -d "$AIOS_DIR/AIOS" ]; then
+                    echo "AIOS not installed. Run: aios install"
+                    exit 1
+                  fi
+                  cd "$AIOS_DIR/AIOS"
+                  echo "Using pixi AIOS environment..."
+                  pixi run -e aios python -m uvicorn runtime.launch:app --host 0.0.0.0 --port "$AIOS_PORT" "''${@:2}"
+                  ;;
+                stop)
+                  pkill -f "uvicorn runtime.launch:app" && echo "AIOS Kernel stopped" || echo "AIOS Kernel not running"
+                  ;;
+                status)
+                  if pgrep -f "uvicorn runtime.launch:app" > /dev/null; then
+                    echo "AIOS Kernel is running on port $AIOS_PORT"
+                    curl -s "http://localhost:$AIOS_PORT/docs" > /dev/null && echo "  API ready: http://localhost:$AIOS_PORT/docs"
+                  else
+                    echo "AIOS Kernel is not running"
+                    echo "  Install: aios install"
+                    echo "  Start:   aios start"
+                  fi
+                  ;;
+                config)
+                  echo "AIOS Configuration:"
+                  echo "  Directory: $AIOS_DIR"
+                  echo "  Config:    $AIOS_CONFIG"
+                  echo "  Port:      $AIOS_PORT"
+                  if [ -f "$AIOS_CONFIG" ]; then
+                    echo ""
+                    cat "$AIOS_CONFIG"
+                  fi
+                  ;;
+                *)
+                  echo "Usage: aios [install|start|stop|status|config]"
+                  echo "  install - Clone AIOS repository and setup"
+                  echo "  start   - Start AIOS Kernel server (port $AIOS_PORT)"
+                  echo "  stop    - Stop AIOS Kernel server"
+                  echo "  status  - Check if AIOS is running"
+                  echo "  config  - Show AIOS configuration"
+                  echo ""
+                  echo "Environment variables:"
+                  echo "  AIOS_DIR    - Installation directory (default: ~/.local/share/aios)"
+                  echo "  AIOS_PORT   - Server port (default: 8000)"
+                  echo ""
+                  echo "Requires pixi AIOS environment: pixi run -e aios ..."
+                  ;;
+              esac
+            '')
             (pkgs.writeShellScriptBin "vault-dev" ''
               # Start HashiCorp Vault in development mode
               # - Auto-unsealed, in-memory storage
@@ -453,6 +530,7 @@
               echo "AI infrastructure:"
               echo "  localai   - LocalAI server management (start|stop|status|models)"
               echo "  agixt     - AGiXT platform via Docker (up|down|logs|status)"
+              echo "  aios      - AIOS Agent Kernel management (install|start|stop|status)"
               echo ""
               echo "Rust (AGiXT SDK):"
               echo "  cargo build -p agixt-bridge  # Build AGiXT-ROS2 bridge"
