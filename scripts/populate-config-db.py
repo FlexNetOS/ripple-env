@@ -277,6 +277,9 @@ def run_validation(conn):
     """Run validation checks."""
     log_info("Running validation checks...")
     flake_file = REPO_ROOT / "flake.nix"
+    if not flake_file.exists():
+        log_warn("flake.nix not found; skipping validation checks")
+        return
     content = flake_file.read_text()
 
     conn.commit()
