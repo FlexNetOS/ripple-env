@@ -238,7 +238,7 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v8
 
       - name: Run flake check
-        run: nix flake check --no-build
+        run: nix flake check --no-build --all-systems
 
       - name: Show flake outputs
         run: nix flake show

@@ -99,7 +99,7 @@
             git
             gh
 
-            # Python 3.14.2 - Latest stable (for non-ROS2 tools)
+            # Python 3.13.x - Latest stable (for non-ROS2 tools)
             # ROS2 uses Python 3.11 via Pixi/RoboStack (separate environment)
             python313
             python313Packages.pip
