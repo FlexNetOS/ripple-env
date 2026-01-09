@@ -117,21 +117,17 @@
             unzip
             gzip
 
-            # Messaging
-            natscli
-            nats-server
-
             # Directory navigation
             zoxide
 
             # System monitoring
             btop
             htop
-            prometheus
 
             # Infrastructure & Monitoring (from GitHub resources research)
             # See docs/GITHUB-RESOURCES.md for full analysis
             prometheus          # Metrics collection for ROS2 DDS
+            natscli             # NATS CLI for messaging
             nats-server         # WAN/multi-site robot messaging
             trippy              # Network diagnostics for DDS traffic
             trivy               # Container/SBOM security scanning
@@ -418,54 +414,6 @@
                 echo "  pair      - AI pair programming (aider, git-integrated)"
                 echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
                 echo ""
-              '';
-
-              motd = "";
-            };
-
-            # Command aliases
-            commands = [
-              {
-                name = "cb";
-                help = "colcon build --symlink-install";
-                command = "colcon build --symlink-install $@";
-              }
-              {
-                name = "ct";
-                help = "colcon test";
-                command = "colcon test $@";
-              }
-              {
-                name = "ctr";
-                help = "colcon test-result --verbose";
-                command = "colcon test-result --verbose";
-              }
-              {
-                name = "ros2-env";
-                help = "Show ROS2 environment variables";
-                command = "env | grep -E '^(ROS|RMW|AMENT|COLCON)' | sort";
-              }
-              {
-                name = "update-deps";
-                help = "Update pixi dependencies";
-                command = "pixi update";
-              }
-              {
-                name = "ai";
-                help = "AI chat assistant (provider-agnostic)";
-                command = "aichat $@";
-              }
-              {
-                name = "pair";
-                help = "AI pair programming with git integration (aider)";
-                command = "aider $@";
-              }
-              {
-                name = "promptfoo";
-                help = "LLM testing and evaluation framework";
-                command = "npx promptfoo@latest $@";
-              }
-            ];
               else
                 echo ""
                 echo "⚠️  Warning: nvidia-smi not found"
