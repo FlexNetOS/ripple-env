@@ -15,11 +15,10 @@
 
     # Holochain overlay for P2P coordination (BUILDKIT_STARTER_SPEC.md L11)
     # Provides: holochain, hc, lair-keystore
-    # NOTE: Temporarily disabled - upstream repo unavailable
-    # holochain-nix = {
-    #   url = "github:spartan-holochain-counsel/nix-overlay";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    # };
+    holochain-nix = {
+      url = "github:spartan-holochain-counsel/nix-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -30,7 +29,7 @@
       systems,
       devshell,
       home-manager,
-      # holochain-nix,  # Temporarily disabled - upstream unavailable
+      holochain-nix,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -84,22 +83,21 @@
         { pkgs, system, ... }:
         let
           # Configure nixpkgs with allowUnfree for packages like vault (BSL license)
+          # Apply Holochain overlay for P2P coordination
           pkgs = import inputs.nixpkgs {
             inherit system;
             config.allowUnfree = true;
-            # Holochain overlay temporarily disabled - upstream repo unavailable
-            # overlays = [
-            #   holochain-nix.overlays.default
-            # ];
+            overlays = [
+              holochain-nix.overlays.default
+            ];
           };
 
           # Holochain packages from overlay (P0 - MANDATORY per BUILDKIT_STARTER_SPEC.md)
-          # NOTE: Temporarily disabled - upstream repo unavailable
-          # holochainPackages = with pkgs; [
-          #   holochain       # Holochain conductor (agent-centric P2P)
-          #   hc              # Holochain dev CLI (scaffold/package/run)
-          #   lair-keystore   # Secure keystore for Holochain agent keys
-          # ];
+          holochainPackages = with pkgs; [
+            holochain       # Holochain conductor (agent-centric P2P)
+            hc              # Holochain dev CLI (scaffold/package/run)
+            lair-keystore   # Secure keystore for Holochain agent keys
+          ];
 
           inherit (pkgs.lib) optionalString optionals optionalAttrs;
           isDarwin = pkgs.stdenv.isDarwin;
@@ -566,7 +564,7 @@
             packages =
               basePackages
               ++ fullExtras
-              # ++ holochainPackages  # P0: Holochain coordination layer (temporarily disabled)
+              ++ holochainPackages  # P0: Holochain coordination layer
               ++ coreCommandWrappers
               ++ aiCommandWrappers
               ++ linuxPackages
@@ -626,11 +624,10 @@
               echo "  agixt     - AGiXT platform via Docker (up|down|logs|status)"
               echo "  aios      - AIOS Agent Kernel management (install|start|stop|status)"
               echo ""
-              # Holochain temporarily disabled - upstream repo unavailable
-              # echo "Holochain (P2P coordination):"
-              # echo "  holochain - Holochain conductor"
-              # echo "  hc        - Holochain dev CLI"
-              # echo ""
+              echo "Holochain (P2P coordination):"
+              echo "  holochain - Holochain conductor"
+              echo "  hc        - Holochain dev CLI"
+              echo ""
               echo "Rust (AGiXT SDK):"
               echo "  cargo build -p agixt-bridge  # Build AGiXT-ROS2 bridge"
               echo ""
@@ -642,8 +639,7 @@
           # Requires: NVIDIA GPU with drivers installed
           # Binary cache: https://cache.nixos-cuda.org
           devShells.cuda = pkgs.mkShell {
-            packages = basePackages ++ fullExtras ++ coreCommandWrappers ++ aiCommandWrappers ++ linuxPackages ++ (with pkgs; [
-              # holochainPackages temporarily disabled - upstream unavailable
+            packages = basePackages ++ fullExtras ++ holochainPackages ++ coreCommandWrappers ++ aiCommandWrappers ++ linuxPackages ++ (with pkgs; [
               # CUDA Toolkit 13.x (or latest available)
               # See docs/CONFLICTS.md for version details
               cudaPkgs.cudatoolkit
