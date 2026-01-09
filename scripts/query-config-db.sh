@@ -48,10 +48,12 @@ cmd_workflows() {
 cmd_workflow_jobs() {
     local workflow="${1:-}"
     if [[ -n "$workflow" ]]; then
+        # Escape single quotes to safely embed the workflow name in an SQL string literal
+        local safe_workflow="${workflow//\'/\'\'}"
         echo -e "${CYAN}=== Jobs in '$workflow' ===${NC}"
         query "SELECT j.name, j.runs_on FROM workflow_jobs j
                JOIN workflows w ON j.workflow_id = w.id
-               WHERE w.name LIKE '%$workflow%' OR w.file_path LIKE '%$workflow%';"
+               WHERE w.name LIKE '%$safe_workflow%' OR w.file_path LIKE '%$safe_workflow%';"
     else
         echo -e "${CYAN}=== All Workflow Jobs ===${NC}"
         query "SELECT w.name as workflow, j.name as job, j.runs_on
