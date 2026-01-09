@@ -1,0 +1,13 @@
+{
+  "name": "ros2-humble-env",
+  "version": "1.0.0",
+  "description": "ROS2 Humble development environment with ARIA orchestrator commands",
+  "author": {
+    "name": "FlexNetOS"
+  },
+  "license": "MIT",
+  "keywords": ["ros2", "aria", "audit", "nix", "devops"],
+  "commands": "./.claude/commands/",
+  "agents": "./.claude/agents/",
+  "skills": "./.claude/skills/"
+}
