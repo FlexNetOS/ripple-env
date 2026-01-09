@@ -40,7 +40,7 @@ LazyVim uses icons that require Nerd Fonts. Options:
 nerdfonts
 
 # Or specific fonts (recommended)
-(nerdfonts.override { fonts = [ "JetBrainsMono" "FiraCode" ]; })
+(nerdfonts.override { fonts = [ "JetBrainsMono" "FiraCode" "Hack" ]; })
 ```
 
 **Alternative**: User installs fonts separately (document in README).
@@ -120,7 +120,7 @@ in
       gcc
 
       # Fonts (user should install separately, but we provide)
-      (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+      (nerdfonts.override { fonts = [ "JetBrainsMono" "FiraCode" "Hack" ]; })
 
       # Additional tools
       lazygit
@@ -216,7 +216,7 @@ pnpm = ">=9.0"
 
 # Fonts (optional, large package - ~500MB for single font)
 # User should install Nerd Fonts manually or add:
-(nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+(nerdfonts.override { fonts = [ "JetBrainsMono" "FiraCode" "Hack" ]; })
 ```
 
 **Note:** lazygit is now included in the devshell.
