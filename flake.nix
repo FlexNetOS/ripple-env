@@ -58,8 +58,13 @@
 
       # Per-system outputs
       perSystem =
-        { pkgs, system, ... }:
+        { system, ... }:
         let
+          # Configure nixpkgs with allowUnfree for packages like vault (BSL license)
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+          };
           inherit (pkgs.lib) optionalString optionals optionalAttrs;
           isDarwin = pkgs.stdenv.isDarwin;
           isLinux = pkgs.stdenv.isLinux;

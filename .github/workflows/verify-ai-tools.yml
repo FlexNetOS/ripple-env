@@ -187,8 +187,8 @@ jobs:
       - name: Verify LocalAI binary is available
         run: |
           echo "Checking local-ai binary..."
-          nix develop .#full --command which local-ai || echo "local-ai binary found"
-          echo "✅ LocalAI is available"
+          nix develop .#full --command which local-ai && echo "local-ai binary found" || echo "local-ai not found (may be named differently)"
+          echo "✅ LocalAI check completed"
 
   verify-aios:
     name: Verify AIOS Integration
