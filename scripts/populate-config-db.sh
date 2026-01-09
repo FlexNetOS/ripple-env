@@ -302,10 +302,10 @@ run_validation() {
         # Count references (excluding the input definition itself)
         local ref_count=$(grep -c "$input_name" "$flake_file" 2>/dev/null || echo "0")
 
-        if [[ $ref_count -lt 3 ]]; then
+        if [[ $ref_count -eq 0 ]]; then
             sqlite3 "$DB_PATH" "INSERT INTO config_issues (source, severity, issue_type, description, file_path)
-                VALUES ('flake', 'warning', 'possibly_unused', 'Input \"$input_name\" may be unused (only $ref_count references)', 'flake.nix');"
-            log_warn "  Possibly unused input: $input_name"
+                VALUES ('flake', 'warning', 'possibly_unused', 'Input \"$input_name\" may be unused (no references found)', 'flake.nix');"
+            log_warn "  Possibly unused input (no references found): $input_name"
         fi
     done
 
