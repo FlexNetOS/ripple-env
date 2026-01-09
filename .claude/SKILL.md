@@ -165,15 +165,17 @@ Available inside `nix develop` / `nom develop`:
 
 | Command | Description | Definition |
 |---------|-------------|------------|
-| `cb` | `colcon build --symlink-install` | `flake.nix:209` |
-| `ct` | `colcon test` | `flake.nix:212` |
-| `ctr` | `colcon test-result --verbose` | `flake.nix:215` |
-| `ros2-env` | Show ROS2 environment variables | `flake.nix:218` |
-| `update-deps` | `pixi update` | `flake.nix:221` |
-| `ai` | AI chat assistant (aichat) | `flake.nix:227` |
-| `pair` | AI pair programming (aider) | `flake.nix:230` |
-| `localai` | LocalAI server management | `flake.nix:246` |
-| `agixt` | AGiXT Docker management | `flake.nix:283` |
+| `cb` | `colcon build --symlink-install` | `flake.nix:219` |
+| `ct` | `colcon test` | `flake.nix:222` |
+| `ctr` | `colcon test-result --verbose` | `flake.nix:225` |
+| `ros2-env` | Show ROS2 environment variables | `flake.nix:228` |
+| `update-deps` | `pixi update` | `flake.nix:231` |
+| `ai` | AI chat assistant (aichat) | `flake.nix:237` |
+| `pair` | AI pair programming (aider) | `flake.nix:240` |
+| `promptfoo` | LLM testing (npx wrapper) | `flake.nix:250` |
+| `localai` | LocalAI server management | `flake.nix:256` |
+| `agixt` | AGiXT Docker management | `flake.nix:293` |
+| `vault-dev` | Vault dev server | `flake.nix:335` |
 
 ### Shell Aliases (modules/common/packages.nix)
 Available in all shells via home-manager:
