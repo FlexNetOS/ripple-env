@@ -12,6 +12,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Allow unfree packages (vault uses BSL license)
+  NIXPKGS_ALLOW_UNFREE: "1"
+
 jobs:
   # ===========================================
   # Nix Flake Validation

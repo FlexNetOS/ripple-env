@@ -30,6 +30,10 @@ on:
         default: ''
         type: string
 
+env:
+  # Allow unfree packages (vault uses BSL license)
+  NIXPKGS_ALLOW_UNFREE: "1"
+
 jobs:
   bootstrap-linux:
     name: Bootstrap Test (Linux x86_64)
