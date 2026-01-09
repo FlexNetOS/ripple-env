@@ -368,7 +368,7 @@
         # Binary cache: https://cache.nixos-cuda.org
         // optionalAttrs isLinux {
           devShells.cuda = pkgs.mkShell {
-            packages = commonPackages ++ commandWrappers ++ linuxPackages ++ (with pkgs; [
+            packages = basePackages ++ fullExtras ++ coreCommandWrappers ++ aiCommandWrappers ++ linuxPackages ++ (with pkgs; [
               # CUDA Toolkit 13.x (or latest available)
               # See docs/CONFLICTS.md for version details
               cudaPkgs.cudatoolkit
@@ -430,11 +430,6 @@
                 echo "PyTorch CUDA verification:"
                 echo "  python -c \"import torch; print(torch.cuda.is_available())\""
                 echo ""
-                echo "AI assistants:"
-                echo "  ai        - AI chat (aichat, lightweight)"
-                echo "  pair      - AI pair programming (aider, git-integrated)"
-                echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
-                echo ""
               else
                 echo ""
                 echo "⚠️  Warning: nvidia-smi not found"
@@ -445,31 +440,61 @@
             '';
           };
 
-          # Minimal shell for CI
-          devShells.ci = pkgs.mkShell {
-            packages = with pkgs; [
-              pixi
-              git
-            ];
+          # Identity & Auth shell for Keycloak/Vaultwarden development (Linux only)
+          # Usage: nix develop .#identity
+          # Heavy dependencies: Java 21, PostgreSQL
+          devShells.identity = pkgs.mkShell {
+            packages = basePackages ++ coreCommandWrappers ++ linuxPackages ++ (with pkgs; [
+              # Identity & Access Management
+              keycloak             # OAuth2/OIDC identity provider (Java 21)
+              vaultwarden          # Bitwarden-compatible password manager (Rust)
+
+              # Database backends
+              postgresql_15        # PostgreSQL for Keycloak/Vaultwarden
+              sqlite               # SQLite for lightweight Vaultwarden
+
+              # Java runtime (required by Keycloak)
+              jdk21_headless       # Java 21 LTS (headless for servers)
+
+              # Database tools
+              pgcli                # PostgreSQL CLI with autocomplete
+            ]);
+
             COLCON_DEFAULTS_FILE = toString colconDefaults;
+            EDITOR = "hx";
+            VISUAL = "hx";
+
+            # Java environment
+            JAVA_HOME = "${pkgs.jdk21_headless}";
 
             shellHook = ''
+              # Initialize pixi environment
               if [ -f pixi.toml ]; then
-                ${optionalString isDarwin ''
-                  export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
-                ''}
                 eval "$(pixi shell-hook)"
               fi
+
+              echo ""
+              echo "🔐 Identity & Auth Development Environment"
+              echo "=========================================="
+              echo "  Platform: Linux (${system})"
+              echo "  Java: $(java -version 2>&1 | head -1)"
+              echo "  PostgreSQL: ${pkgs.postgresql_15.version}"
+              echo ""
+              echo "Available services:"
+              echo "  keycloak        - OAuth2/OIDC identity provider"
+              echo "  vaultwarden     - Bitwarden-compatible password manager"
+              echo ""
+              echo "Quick start:"
+              echo "  # Start PostgreSQL (for Keycloak)"
+              echo "  initdb -D ./pgdata && pg_ctl -D ./pgdata start"
+              echo ""
+              echo "  # Start Keycloak in dev mode"
+              echo "  keycloak start-dev --http-port=8080"
+              echo ""
+              echo "  # Start Vaultwarden (SQLite)"
+              echo "  vaultwarden"
+              echo ""
             '';
-          };
-
-          # Formatter for nix files
-          formatter = pkgs.nixfmt-rfc-style;
-
-          # Check flake
-          checks = {
-            # Verify the devshell builds
-            devshell = self.devShells.${system}.ci;
           };
         };
     };

@@ -15,7 +15,7 @@ This document catalogs external GitHub resources evaluated for integration with 
 | **Monitoring** | Prometheus, Trivy, Trippy | ✅ **Integrated** | High |
 | **Messaging** | NATS Server + CLI | ✅ **Integrated** | High |
 | **Security** | OPA, Trivy, Vault, gVisor | ✅ **Integrated** | High |
-| **Identity** | Keycloak, Vaultwarden | ⚠️ NixOS Service | High |
+| **Identity** | Keycloak, Vaultwarden | ✅ **Integrated** (identity shell) | High |
 | **Evaluation** | Promptfoo | ✅ **Integrated** | High |
 | **Memory** | Memori, Memobase | ⚠️ Pixi | Medium |
 | **Rust** | maturin, sqlx-cli | ✅ **Integrated** | High |
@@ -387,23 +387,27 @@ commonPackages = with pkgs; [ local-ai ];
 
 **Integration Note**: Vault CLI is included in the full devshell. Use `vault-dev` helper to start dev server (auto-unsealed, root token: `root`). Requires `NIXPKGS_ALLOW_UNFREE=1` due to BSL license. For production, use NixOS `services.vault` module.
 
-### Keycloak - Identity Management ⭐ RECOMMENDED
+### Keycloak - Identity Management ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [keycloak/keycloak](https://github.com/keycloak/keycloak) |
 | **Nix Package** | ✅ `pkgs.keycloak` |
 | **NixOS Module** | ✅ `services.keycloak` (NixOS 25.05+) |
-| **Status** | ✅ Ready |
+| **Status** | ✅ **Integrated in identity devshell** |
 | **Relevance** | **High** - Robot fleet OAuth2/OIDC authentication |
 
-### Vaultwarden
+**Integration Note**: Keycloak is included in the `devShells.identity` shell (Linux only). Usage: `nix develop .#identity`. Requires Java 21 and PostgreSQL (both included). Start with: `keycloak start-dev --http-port=8080`.
+
+### Vaultwarden ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [dani-garcia/vaultwarden](https://github.com/dani-garcia/vaultwarden) |
 | **Nix Package** | ✅ `pkgs.vaultwarden` |
 | **NixOS Module** | ✅ `services.vaultwarden` |
-| **Status** | ✅ Ready |
+| **Status** | ✅ **Integrated in identity devshell** |
 | **Relevance** | Medium - Team password management |
+
+**Integration Note**: Vaultwarden is included in the `devShells.identity` shell (Linux only). Usage: `nix develop .#identity`. Supports SQLite (default) or PostgreSQL. Start with: `vaultwarden`.
 
 ### Open Policy Agent (OPA) ⭐ INTEGRATED
 | Attribute | Value |
