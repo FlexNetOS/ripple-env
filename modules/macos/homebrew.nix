@@ -93,6 +93,7 @@ in
       # Fonts
       cask "font-fira-code-nerd-font"
       cask "font-jetbrains-mono-nerd-font"
+      cask "font-hack-nerd-font"
 
       # Terminal
       cask "ghostty"
