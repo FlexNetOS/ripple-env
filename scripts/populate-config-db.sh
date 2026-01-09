@@ -21,6 +21,25 @@ log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# Safely escape a value for use in SQL string literal
+# Escapes single quotes properly for SQLite (SQL standard)
+sql_escape() {
+    local value="$1"
+    # SQLite uses SQL standard escaping: single quotes are escaped by doubling them
+    # Backslashes do NOT need escaping in SQLite as they are not special characters
+    printf '%s' "$value" | sed "s/'/''/g"
+}
+
+# Safely quote a value for SQL - returns 'escaped_value' or NULL
+sql_quote() {
+    local value="$1"
+    if [[ -z "$value" ]]; then
+        echo "NULL"
+    else
+        printf "'%s'" "$(sql_escape "$value")"
+    fi
+}
+
 # Initialize database
 init_db() {
     log_info "Initializing database at $DB_PATH"
@@ -88,8 +107,11 @@ parse_flake_inputs() {
             current_input="${BASH_REMATCH[1]}"
             current_url="${BASH_REMATCH[2]}"
 
+            local name_quoted=$(sql_quote "$current_input")
+            local url_quoted=$(sql_quote "$current_url")
+
             sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO flake_inputs (name, url, is_active)
-                VALUES ('$current_input', '$current_url', 1);"
+                VALUES ($name_quoted, $url_quoted, 1);"
             log_success "  Found input: $current_input -> $current_url"
         fi
 
@@ -112,8 +134,12 @@ parse_flake_inputs() {
 
         # End of block input
         if [[ -n "$current_input" ]] && [[ -n "$current_url" ]] && [[ "$line" =~ \}[[:space:]]*\; ]]; then
+            local name_quoted=$(sql_quote "$current_input")
+            local url_quoted=$(sql_quote "$current_url")
+            local follows_quoted=$(sql_quote "$current_follows")
+
             sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO flake_inputs (name, url, follows, is_active)
-                VALUES ('$current_input', '$current_url', $([ -n "$current_follows" ] && echo "'$current_follows'" || echo "NULL"), 1);"
+                VALUES ($name_quoted, $url_quoted, $follows_quoted, 1);"
             log_success "  Found input: $current_input -> $current_url (follows: ${current_follows:-none})"
             current_input=""
             current_url=""
@@ -147,7 +173,12 @@ parse_flake_lock() {
             if [[ "$lastmod" =~ ^[0-9]+$ ]]; then
                 lastmod=$(date -d "@$lastmod" '+%Y-%m-%d' 2>/dev/null || echo "$lastmod")
             fi
-            sqlite3 "$DB_PATH" "UPDATE flake_inputs SET locked_rev='$rev', locked_date='$lastmod' WHERE name='$name';" 2>/dev/null || true
+
+            local rev_quoted=$(sql_quote "$rev")
+            local lastmod_quoted=$(sql_quote "$lastmod")
+            local name_quoted=$(sql_quote "$name")
+
+            sqlite3 "$DB_PATH" "UPDATE flake_inputs SET locked_rev=$rev_quoted, locked_date=$lastmod_quoted WHERE name=$name_quoted;" 2>/dev/null || true
         done
         log_success "  Lock info updated via jq"
     else
@@ -181,8 +212,12 @@ parse_workflows() {
             sed 's/[[:space:]]*//g; s/://g' | tr '\n' ',' | sed 's/,$//' || echo "")
 
         # Insert workflow
+        local name_quoted=$(sql_quote "$workflow_name")
+        local file_path_quoted=$(sql_quote ".github/workflows/$filename")
+        local triggers_quoted=$(sql_quote "[$triggers]")
+
         sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO workflows (name, file_path, trigger_events, is_active)
-            VALUES ('$workflow_name', '.github/workflows/$filename', '[$triggers]', 1);"
+            VALUES ($name_quoted, $file_path_quoted, $triggers_quoted, 1);"
 
         log_success "  Found workflow: $workflow_name ($filename)"
 
@@ -202,12 +237,12 @@ parse_workflows() {
 
             [[ -z "$job_name" ]] && continue
 
-            # Escape single quotes for safe SQL insertion
-            local job_name_escaped=${job_name//\'/\'\'}
-            local runs_on_escaped=${runs_on//\'/\'\'}
+            # Use safe SQL quoting
+            local job_name_quoted=$(sql_quote "$job_name")
+            local runs_on_quoted=$(sql_quote "$runs_on")
 
             sqlite3 "$DB_PATH" "INSERT OR IGNORE INTO workflow_jobs (workflow_id, name, runs_on)
-                VALUES ($workflow_id, '$job_name_escaped', '$runs_on_escaped');" 2>/dev/null || true
+                VALUES ($workflow_id, $job_name_quoted, $runs_on_quoted);" 2>/dev/null || true
         done
 
         # Extract secrets
@@ -215,10 +250,10 @@ parse_workflows() {
             sed 's/.*secrets\.//' | sort -u | \
         while read -r secret; do
             [[ -z "$secret" ]] && continue
-            # Escape single quotes for safe SQL insertion
-            local escaped_secret=${secret//\'/\'\'}
+            # Use safe SQL quoting
+            local secret_quoted=$(sql_quote "$secret")
             sqlite3 "$DB_PATH" "INSERT OR IGNORE INTO workflow_secrets (workflow_id, secret_name)
-                VALUES ($workflow_id, '$escaped_secret');" 2>/dev/null || true
+                VALUES ($workflow_id, $secret_quoted);" 2>/dev/null || true
         done
 
     done
@@ -249,11 +284,14 @@ parse_references() {
             local desc="${BASH_REMATCH[2]}"
             local url="${BASH_REMATCH[4]}"
 
-            # Escape single quotes
-            desc="${desc//\'/\'\'}"
+            # Use safe SQL quoting
+            local name_quoted=$(sql_quote "$name")
+            local desc_quoted=$(sql_quote "$desc")
+            local url_quoted=$(sql_quote "$url")
+            local section_quoted=$(sql_quote "$current_section")
 
             sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO reference_sources (name, description, url, category)
-                VALUES ('$name', '$desc', '$url', '$current_section');"
+                VALUES ($name_quoted, $desc_quoted, $url_quoted, $section_quoted);"
         fi
 
     done < "$readme_file"
@@ -279,10 +317,15 @@ parse_capability_registry() {
 
     jq -r '.categories[] | "\(.id)|\(.name)|\(.description)|\(.count)|\(.path)|\(.useCases | join(","))"' "$registry_file" | \
     while IFS='|' read -r id name desc count path usecases; do
-        desc="${desc//\'/\'\'}"
+        local id_quoted=$(sql_quote "$id")
+        local name_quoted=$(sql_quote "$name")
+        local desc_quoted=$(sql_quote "$desc")
+        local path_quoted=$(sql_quote "$path")
+        local usecases_quoted=$(sql_quote "[$usecases]")
+
         sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO capability_categories
             (category_id, name, description, api_count, path, use_cases)
-            VALUES ('$id', '$name', '$desc', $count, '$path', '[$usecases]');"
+            VALUES ($id_quoted, $name_quoted, $desc_quoted, $count, $path_quoted, $usecases_quoted);"
     done
 
     local total=$(sqlite3 "$DB_PATH" "SELECT SUM(api_count) FROM capability_categories;")
@@ -303,8 +346,14 @@ run_validation() {
         local ref_count=$(grep -c "$input_name" "$flake_file" 2>/dev/null || echo "0")
 
         if [[ $ref_count -eq 0 ]]; then
+            local source_quoted=$(sql_quote "flake")
+            local severity_quoted=$(sql_quote "warning")
+            local issue_type_quoted=$(sql_quote "possibly_unused")
+            local desc_quoted=$(sql_quote "Input \"$input_name\" may be unused (no references found)")
+            local file_path_quoted=$(sql_quote "flake.nix")
+
             sqlite3 "$DB_PATH" "INSERT INTO config_issues (source, severity, issue_type, description, file_path)
-                VALUES ('flake', 'warning', 'possibly_unused', 'Input \"$input_name\" may be unused (no references found)', 'flake.nix');"
+                VALUES ($source_quoted, $severity_quoted, $issue_type_quoted, $desc_quoted, $file_path_quoted);"
             log_warn "  Possibly unused input (no references found): $input_name"
         fi
     done
@@ -316,10 +365,15 @@ run_validation() {
         WHERE s.id IS NULL AND (w.name LIKE '%test%' OR w.name LIKE '%deploy%')
     " | while read -r workflow; do
         [[ -z "$workflow" ]] && continue
-        # Escape single quotes to make workflow name safe for SQL string literal
-        local escaped_workflow=${workflow//\'/\'\'}
+
+        local source_quoted=$(sql_quote "workflow")
+        local severity_quoted=$(sql_quote "info")
+        local issue_type_quoted=$(sql_quote "no_secrets")
+        local desc_quoted=$(sql_quote "Workflow \"$workflow\" uses no secrets")
+        local file_path_quoted=$(sql_quote ".github/workflows/")
+
         sqlite3 "$DB_PATH" "INSERT INTO config_issues (source, severity, issue_type, description, file_path)
-            VALUES ('workflow', 'info', 'no_secrets', 'Workflow \"$escaped_workflow\" uses no secrets', '.github/workflows/');"
+            VALUES ($source_quoted, $severity_quoted, $issue_type_quoted, $desc_quoted, $file_path_quoted);"
     done
 
     log_success "Validation complete"
