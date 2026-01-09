@@ -30,7 +30,20 @@ init_db() {
         rm -f "$DB_PATH"
     fi
 
-    sqlite3 "$DB_PATH" < "$SCHEMA_PATH"
+    if [[ ! -f "$SCHEMA_PATH" ]]; then
+        log_error "Schema file not found at $SCHEMA_PATH"
+        return 1
+    fi
+
+    if [[ ! -r "$SCHEMA_PATH" ]]; then
+        log_error "Schema file at $SCHEMA_PATH is not readable"
+        return 1
+    fi
+
+    if ! sqlite3 "$DB_PATH" < "$SCHEMA_PATH"; then
+        log_error "Failed to apply database schema from $SCHEMA_PATH"
+        return 1
+    fi
     log_success "Database schema applied"
 }
 
