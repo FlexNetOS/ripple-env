@@ -237,23 +237,17 @@ def cmd_sql(query: str):
     WARNING: Only SELECT queries are allowed to prevent accidental data modification.
     For write operations, use the populate-config-db.py script instead.
     """
-    # Security: Restrict to read-only queries to prevent SQL injection attacks
+    # Security: Restrict to read-only queries and use a read-only SQLite connection
     query_stripped = query.strip().upper()
     
-    # Check if query starts with SELECT (allowing for comments and whitespace)
+    # Check if query starts with SELECT (basic guard for this CLI)
     if not query_stripped.startswith('SELECT'):
         print(f"{Colors.RED}Error:{Colors.NC} Only SELECT queries are allowed for security reasons.")
         print(f"  Use scripts/populate-config-db.py for database modifications.")
         return
     
-    # Additional check: ensure no write operations are present
-    write_keywords = ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER', 'REPLACE']
-    if any(keyword in query_stripped for keyword in write_keywords):
-        print(f"{Colors.RED}Error:{Colors.NC} Write operations (INSERT/UPDATE/DELETE/DROP/CREATE/ALTER/REPLACE) are not allowed.")
-        print(f"  Use scripts/populate-config-db.py for database modifications.")
-        return
-    
-    conn = get_conn()
+    # Open the database in read-only mode to enforce no writes at the DB level
+    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
     try:
         cursor = conn.execute(query)
         if cursor.description:
