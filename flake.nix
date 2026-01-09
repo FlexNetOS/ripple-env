@@ -72,7 +72,7 @@
       perSystem =
         { pkgs, system, ... }:
         let
-          inherit (pkgs.lib) optionalString optionals;
+          inherit (pkgs.lib) optionalString optionals optionalAttrs;
           isDarwin = pkgs.stdenv.isDarwin;
           isLinux = pkgs.stdenv.isLinux;
 
