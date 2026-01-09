@@ -340,7 +340,8 @@ If sandbox-runtime is not suitable, consider:
 - [x] Configuration documented
 - [x] Integration examples provided
 - [x] Security considerations outlined
-- [ ] Actual installation completed
+- [x] Nix wrapper added to flake.nix
+- [ ] Actual installation completed (requires `cargo install`)
 - [ ] Verification tests passed
 - [ ] Integration with agent runtime tested
 
