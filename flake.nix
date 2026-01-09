@@ -625,6 +625,596 @@
             '')
           ];
 
+          # ROS2-specific command wrappers
+          ros2CommandWrappers = [
+            # Clean ROS2 build artifacts
+            (pkgs.writeShellScriptBin "ros2-clean" ''
+              # Clean ROS2/colcon build artifacts
+              # Usage: ros2-clean [--all]
+              set -e
+
+              if [ "$1" = "--all" ] || [ "$1" = "-a" ]; then
+                echo "[ros2-clean] Removing all build artifacts..."
+                rm -rf build/ install/ log/ .colcon_build_status
+                echo "[ros2-clean] Cleaned: build/, install/, log/"
+              else
+                echo "[ros2-clean] Removing build and install directories..."
+                rm -rf build/ install/
+                echo "[ros2-clean] Cleaned: build/, install/"
+                echo "[ros2-clean] Use --all to also remove log/"
+              fi
+            '')
+            # Show ROS2 workspace information
+            (pkgs.writeShellScriptBin "ros2-ws" ''
+              # Display ROS2 workspace information
+              echo "ROS2 Workspace Information"
+              echo "=========================="
+              echo ""
+
+              # ROS2 environment
+              echo "Environment:"
+              if [ -n "$ROS_DISTRO" ]; then
+                echo "  ROS_DISTRO: $ROS_DISTRO"
+              else
+                echo "  ROS_DISTRO: (not set)"
+              fi
+              if [ -n "$RMW_IMPLEMENTATION" ]; then
+                echo "  RMW_IMPLEMENTATION: $RMW_IMPLEMENTATION"
+              fi
+              if [ -n "$ROS_DOMAIN_ID" ]; then
+                echo "  ROS_DOMAIN_ID: $ROS_DOMAIN_ID"
+              fi
+              echo ""
+
+              # Packages
+              echo "Packages:"
+              if [ -d "src" ]; then
+                pkg_count=$(find src -name "package.xml" 2>/dev/null | wc -l)
+                echo "  Source packages: $pkg_count"
+                if [ "$pkg_count" -gt 0 ] && [ "$pkg_count" -le 20 ]; then
+                  find src -name "package.xml" -exec dirname {} \; | sed 's|.*/||' | sort | sed 's/^/    - /'
+                fi
+              else
+                echo "  No src/ directory found"
+              fi
+              echo ""
+
+              # Build status
+              echo "Build Status:"
+              if [ -d "build" ]; then
+                built_count=$(ls -1 build/ 2>/dev/null | wc -l)
+                echo "  Built packages: $built_count"
+              else
+                echo "  Not built yet (run 'cb' to build)"
+              fi
+              if [ -d "install" ]; then
+                echo "  Install directory: exists"
+              fi
+              echo ""
+
+              # Pixi environment
+              echo "Pixi Environment:"
+              if [ -f "pixi.toml" ]; then
+                echo "  pixi.toml: found"
+                if [ -d ".pixi/envs/default" ]; then
+                  echo "  Environment: initialized"
+                else
+                  echo "  Environment: not initialized (run 'pixi install')"
+                fi
+              else
+                echo "  pixi.toml: not found"
+              fi
+            '')
+            # List ROS2 topics with filtering
+            (pkgs.writeShellScriptBin "ros2-topics" ''
+              # List ROS2 topics with optional filtering
+              # Usage: ros2-topics [filter]
+              if ! command -v ros2 >/dev/null 2>&1; then
+                echo "Error: ros2 command not found" >&2
+                echo "Make sure ROS2 environment is sourced" >&2
+                exit 1
+              fi
+
+              if [ -n "$1" ]; then
+                echo "ROS2 Topics matching '$1':"
+                ros2 topic list | grep -i "$1" || echo "  (no matches)"
+              else
+                echo "ROS2 Topics:"
+                ros2 topic list
+              fi
+            '')
+            # Quick ROS2 node inspection
+            (pkgs.writeShellScriptBin "ros2-nodes" ''
+              # List ROS2 nodes with optional filtering
+              # Usage: ros2-nodes [filter]
+              if ! command -v ros2 >/dev/null 2>&1; then
+                echo "Error: ros2 command not found" >&2
+                echo "Make sure ROS2 environment is sourced" >&2
+                exit 1
+              fi
+
+              if [ -n "$1" ]; then
+                echo "ROS2 Nodes matching '$1':"
+                ros2 node list | grep -i "$1" || echo "  (no matches)"
+              else
+                echo "ROS2 Nodes:"
+                ros2 node list
+              fi
+            '')
+          ];
+
+          # Infrastructure command wrappers (IPFS, NATS, Prometheus)
+          infraCommandWrappers = [
+            # IPFS (kubo) management
+            (pkgs.writeShellScriptBin "ipfs-ctl" ''
+              # IPFS node management via kubo
+              # Usage: ipfs-ctl [init|start|stop|status|id]
+              IPFS_PATH="''${IPFS_PATH:-$HOME/.ipfs}"
+
+              case "''${1:-status}" in
+                init)
+                  if [ -d "$IPFS_PATH" ]; then
+                    echo "IPFS already initialized at $IPFS_PATH"
+                  else
+                    echo "Initializing IPFS node..."
+                    ipfs init
+                    echo ""
+                    echo "IPFS initialized. Start with: ipfs-ctl start"
+                  fi
+                  ;;
+                start)
+                  if [ ! -d "$IPFS_PATH" ]; then
+                    echo "IPFS not initialized. Run: ipfs-ctl init" >&2
+                    exit 1
+                  fi
+                  echo "Starting IPFS daemon..."
+                  echo "  API: http://127.0.0.1:5001"
+                  echo "  Gateway: http://127.0.0.1:8080"
+                  exec ipfs daemon "''${@:2}"
+                  ;;
+                stop)
+                  if pkill -f "ipfs daemon"; then
+                    echo "IPFS daemon stopped"
+                  else
+                    echo "IPFS daemon not running"
+                  fi
+                  ;;
+                status)
+                  if pgrep -f "ipfs daemon" > /dev/null; then
+                    echo "IPFS daemon is running"
+                    ipfs id 2>/dev/null | head -5
+                  else
+                    echo "IPFS daemon is not running"
+                    [ -d "$IPFS_PATH" ] && echo "  Node initialized at: $IPFS_PATH"
+                  fi
+                  ;;
+                id)
+                  ipfs id
+                  ;;
+                *)
+                  echo "Usage: ipfs-ctl [init|start|stop|status|id]"
+                  echo "  init   - Initialize IPFS node"
+                  echo "  start  - Start IPFS daemon"
+                  echo "  stop   - Stop IPFS daemon"
+                  echo "  status - Check daemon status"
+                  echo "  id     - Show node identity"
+                  ;;
+              esac
+            '')
+            # NATS server management
+            (pkgs.writeShellScriptBin "nats-ctl" ''
+              # NATS server management
+              # Usage: nats-ctl [start|stop|status|pub|sub]
+              NATS_PORT="''${NATS_PORT:-4222}"
+              NATS_HTTP_PORT="''${NATS_HTTP_PORT:-8222}"
+
+              case "''${1:-status}" in
+                start)
+                  echo "Starting NATS server..."
+                  echo "  Client: nats://127.0.0.1:$NATS_PORT"
+                  echo "  HTTP:   http://127.0.0.1:$NATS_HTTP_PORT"
+                  exec nats-server -p "$NATS_PORT" -m "$NATS_HTTP_PORT" "''${@:2}"
+                  ;;
+                stop)
+                  if pkill -f "nats-server"; then
+                    echo "NATS server stopped"
+                  else
+                    echo "NATS server not running"
+                  fi
+                  ;;
+                status)
+                  if pgrep -f "nats-server" > /dev/null; then
+                    echo "NATS server is running"
+                    curl -s "http://127.0.0.1:$NATS_HTTP_PORT/varz" 2>/dev/null | jq -r '.server_id // "Connected"' || echo "  (monitoring endpoint unavailable)"
+                  else
+                    echo "NATS server is not running"
+                  fi
+                  ;;
+                pub)
+                  # Publish a message: nats-ctl pub <subject> <message>
+                  if [ -z "$2" ] || [ -z "$3" ]; then
+                    echo "Usage: nats-ctl pub <subject> <message>" >&2
+                    exit 1
+                  fi
+                  nats pub "$2" "$3"
+                  ;;
+                sub)
+                  # Subscribe to a subject: nats-ctl sub <subject>
+                  if [ -z "$2" ]; then
+                    echo "Usage: nats-ctl sub <subject>" >&2
+                    exit 1
+                  fi
+                  nats sub "$2"
+                  ;;
+                *)
+                  echo "Usage: nats-ctl [start|stop|status|pub|sub]"
+                  echo "  start        - Start NATS server"
+                  echo "  stop         - Stop NATS server"
+                  echo "  status       - Check server status"
+                  echo "  pub <s> <m>  - Publish message to subject"
+                  echo "  sub <s>      - Subscribe to subject"
+                  echo ""
+                  echo "Environment:"
+                  echo "  NATS_PORT      - Client port (default: 4222)"
+                  echo "  NATS_HTTP_PORT - Monitoring port (default: 8222)"
+                  ;;
+              esac
+            '')
+            # Prometheus management
+            (pkgs.writeShellScriptBin "prom-ctl" ''
+              # Prometheus server management
+              # Usage: prom-ctl [start|stop|status|config]
+              PROM_PORT="''${PROM_PORT:-9090}"
+              PROM_CONFIG="''${PROM_CONFIG:-prometheus.yml}"
+              PROM_DATA="''${PROM_DATA:-./prometheus-data}"
+
+              case "''${1:-status}" in
+                start)
+                  if [ ! -f "$PROM_CONFIG" ]; then
+                    echo "Creating default prometheus.yml..."
+                    cat > "$PROM_CONFIG" << 'PROMCFG'
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ROS2 metrics (if ros2_prometheus_exporter is running)
+  # - job_name: 'ros2'
+  #   static_configs:
+  #     - targets: ['localhost:9100']
+PROMCFG
+                    echo "Created $PROM_CONFIG"
+                  fi
+                  mkdir -p "$PROM_DATA"
+                  echo "Starting Prometheus..."
+                  echo "  Web UI: http://127.0.0.1:$PROM_PORT"
+                  echo "  Config: $PROM_CONFIG"
+                  exec prometheus --config.file="$PROM_CONFIG" --storage.tsdb.path="$PROM_DATA" --web.listen-address=":$PROM_PORT" "''${@:2}"
+                  ;;
+                stop)
+                  if pkill -f "prometheus.*--config.file"; then
+                    echo "Prometheus stopped"
+                  else
+                    echo "Prometheus not running"
+                  fi
+                  ;;
+                status)
+                  if pgrep -f "prometheus.*--config.file" > /dev/null; then
+                    echo "Prometheus is running"
+                    curl -s "http://127.0.0.1:$PROM_PORT/-/ready" && echo " - Ready"
+                  else
+                    echo "Prometheus is not running"
+                  fi
+                  ;;
+                config)
+                  if [ -f "$PROM_CONFIG" ]; then
+                    cat "$PROM_CONFIG"
+                  else
+                    echo "Config file not found: $PROM_CONFIG"
+                    echo "Run 'prom-ctl start' to create a default config"
+                  fi
+                  ;;
+                *)
+                  echo "Usage: prom-ctl [start|stop|status|config]"
+                  echo "  start  - Start Prometheus server"
+                  echo "  stop   - Stop Prometheus server"
+                  echo "  status - Check server status"
+                  echo "  config - Show configuration"
+                  echo ""
+                  echo "Environment:"
+                  echo "  PROM_PORT   - Web UI port (default: 9090)"
+                  echo "  PROM_CONFIG - Config file (default: prometheus.yml)"
+                  echo "  PROM_DATA   - Data directory (default: ./prometheus-data)"
+                  ;;
+              esac
+            '')
+          ];
+
+          # Security command wrappers (SBOM, vulnerability scanning, signing)
+          securityCommandWrappers = [
+            # Generate SBOM (Software Bill of Materials)
+            (pkgs.writeShellScriptBin "sbom" ''
+              # Generate SBOM using syft
+              # Usage: sbom [target] [--format <format>]
+              # Formats: json, spdx-json, cyclonedx-json, table (default)
+              set -e
+
+              TARGET="''${1:-.}"
+              FORMAT="''${2:-table}"
+
+              if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+                echo "Usage: sbom [target] [format]"
+                echo ""
+                echo "Generate Software Bill of Materials using syft"
+                echo ""
+                echo "Arguments:"
+                echo "  target  - Directory, container image, or archive (default: .)"
+                echo "  format  - Output format: table, json, spdx-json, cyclonedx-json"
+                echo ""
+                echo "Examples:"
+                echo "  sbom                      # Scan current directory"
+                echo "  sbom ./src json           # Scan src/ as JSON"
+                echo "  sbom alpine:latest        # Scan container image"
+                echo "  sbom . cyclonedx-json     # CycloneDX format for compliance"
+                exit 0
+              fi
+
+              echo "Generating SBOM for: $TARGET" >&2
+              echo "Format: $FORMAT" >&2
+              echo "" >&2
+
+              syft "$TARGET" -o "$FORMAT"
+            '')
+            # Vulnerability scanning
+            (pkgs.writeShellScriptBin "vuln-scan" ''
+              # Scan for vulnerabilities using grype or trivy
+              # Usage: vuln-scan [target] [--tool <grype|trivy>]
+              set -e
+
+              TARGET="''${1:-.}"
+              TOOL="''${2:-grype}"
+
+              if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+                echo "Usage: vuln-scan [target] [tool]"
+                echo ""
+                echo "Scan for vulnerabilities in code, containers, or SBOMs"
+                echo ""
+                echo "Arguments:"
+                echo "  target  - Directory, container image, or SBOM file (default: .)"
+                echo "  tool    - Scanner to use: grype (default) or trivy"
+                echo ""
+                echo "Examples:"
+                echo "  vuln-scan                     # Scan current directory with grype"
+                echo "  vuln-scan . trivy             # Scan with trivy"
+                echo "  vuln-scan alpine:latest       # Scan container image"
+                echo "  vuln-scan sbom.json grype     # Scan from SBOM"
+                exit 0
+              fi
+
+              echo "Scanning: $TARGET" >&2
+              echo "Tool: $TOOL" >&2
+              echo "" >&2
+
+              case "$TOOL" in
+                grype)
+                  grype "$TARGET"
+                  ;;
+                trivy)
+                  trivy fs "$TARGET"
+                  ;;
+                *)
+                  echo "Unknown tool: $TOOL (use grype or trivy)" >&2
+                  exit 1
+                  ;;
+              esac
+            '')
+            # Sign artifacts with cosign
+            (pkgs.writeShellScriptBin "sign-artifact" ''
+              # Sign container images or blobs with cosign
+              # Usage: sign-artifact <image|file> [--key <key>]
+              set -e
+
+              if [ -z "$1" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+                echo "Usage: sign-artifact <target> [--key <keyfile>]"
+                echo ""
+                echo "Sign container images or files using cosign (sigstore)"
+                echo ""
+                echo "Arguments:"
+                echo "  target  - Container image or file to sign"
+                echo "  --key   - Private key file (optional, uses keyless by default)"
+                echo ""
+                echo "Examples:"
+                echo "  sign-artifact myregistry/myimage:v1.0     # Keyless signing"
+                echo "  sign-artifact myimage --key cosign.key    # Key-based signing"
+                echo "  sign-artifact artifact.tar.gz             # Sign a file"
+                echo ""
+                echo "Verify with:"
+                echo "  cosign verify <image>"
+                echo "  cosign verify-blob --signature <sig> <file>"
+                exit 0
+              fi
+
+              TARGET="$1"
+              shift
+
+              if [ "$1" = "--key" ] && [ -n "$2" ]; then
+                echo "Signing with key: $2" >&2
+                cosign sign --key "$2" "$TARGET"
+              else
+                echo "Using keyless signing (OIDC)" >&2
+                echo "You will be prompted to authenticate via browser" >&2
+                cosign sign "$TARGET"
+              fi
+            '')
+            # PKI certificate generation with step-cli
+            (pkgs.writeShellScriptBin "pki-cert" ''
+              # Generate certificates using step-cli
+              # Usage: pki-cert <command> [args]
+              case "''${1:-help}" in
+                ca-init)
+                  # Initialize a local CA
+                  echo "Initializing local Certificate Authority..."
+                  step ca init --name "ROS2-Dev-CA" --provisioner admin --dns localhost --address ":9000"
+                  ;;
+                create)
+                  # Create a certificate: pki-cert create <name> <san>
+                  if [ -z "$2" ]; then
+                    echo "Usage: pki-cert create <name> [san...]" >&2
+                    exit 1
+                  fi
+                  NAME="$2"
+                  shift 2
+                  echo "Creating certificate for: $NAME"
+                  step certificate create "$NAME" "$NAME.crt" "$NAME.key" --san "$NAME" "$@"
+                  echo ""
+                  echo "Created: $NAME.crt, $NAME.key"
+                  ;;
+                inspect)
+                  # Inspect a certificate
+                  if [ -z "$2" ]; then
+                    echo "Usage: pki-cert inspect <cert-file>" >&2
+                    exit 1
+                  fi
+                  step certificate inspect "$2"
+                  ;;
+                *)
+                  echo "Usage: pki-cert <command> [args]"
+                  echo ""
+                  echo "Commands:"
+                  echo "  ca-init           - Initialize a local Certificate Authority"
+                  echo "  create <n> [san]  - Create certificate for name with SANs"
+                  echo "  inspect <cert>    - Inspect a certificate file"
+                  echo ""
+                  echo "Examples:"
+                  echo "  pki-cert ca-init"
+                  echo "  pki-cert create robot1 --san robot1.local --san 192.168.1.10"
+                  echo "  pki-cert inspect robot1.crt"
+                  ;;
+              esac
+            '')
+          ];
+
+          # Development workflow command wrappers
+          devCommandWrappers = [
+            # Format all Nix files
+            (pkgs.writeShellScriptBin "fmt-nix" ''
+              # Format all Nix files in the repository
+              echo "Formatting Nix files..."
+              find . -name "*.nix" -type f ! -path "./.git/*" -exec nixfmt {} +
+              echo "Done."
+            '')
+            # Run all checks
+            (pkgs.writeShellScriptBin "dev-check" ''
+              # Run all development checks
+              # Usage: dev-check [--fix]
+              set -e
+              FIX=""
+              [ "$1" = "--fix" ] && FIX="1"
+
+              echo "Running development checks..."
+              echo "=============================="
+              FAILED=0
+
+              # Nix formatting
+              echo ""
+              echo "[1/4] Checking Nix formatting..."
+              if [ -n "$FIX" ]; then
+                find . -name "*.nix" -type f ! -path "./.git/*" -exec nixfmt {} + && echo "  Formatted."
+              else
+                if find . -name "*.nix" -type f ! -path "./.git/*" -exec nixfmt --check {} + 2>/dev/null; then
+                  echo "  OK"
+                else
+                  echo "  FAIL - Run with --fix to auto-format"
+                  FAILED=1
+                fi
+              fi
+
+              # Nix flake check
+              echo ""
+              echo "[2/4] Checking Nix flake..."
+              if command -v nix >/dev/null 2>&1; then
+                if nix flake check --no-build 2>&1 | head -20; then
+                  echo "  OK"
+                else
+                  echo "  FAIL"
+                  FAILED=1
+                fi
+              else
+                echo "  SKIP (nix not available)"
+              fi
+
+              # Pixi lock check
+              echo ""
+              echo "[3/4] Checking pixi.lock..."
+              if [ -f pixi.toml ]; then
+                if [ -f pixi.lock ]; then
+                  echo "  OK (lock file exists)"
+                else
+                  echo "  FAIL - Run 'pixi install' to create lock file"
+                  FAILED=1
+                fi
+              else
+                echo "  SKIP (no pixi.toml)"
+              fi
+
+              # ROS2 build check
+              echo ""
+              echo "[4/4] Checking ROS2 packages..."
+              if [ -d "src" ] && command -v colcon >/dev/null 2>&1; then
+                if colcon build --packages-select-build-failed 2>&1 | grep -q "No packages"; then
+                  echo "  OK (all packages build)"
+                else
+                  echo "  WARN - Some packages may have build issues"
+                fi
+              else
+                echo "  SKIP (no src/ or colcon unavailable)"
+              fi
+
+              echo ""
+              echo "=============================="
+              if [ "$FAILED" -eq 0 ]; then
+                echo "All checks passed!"
+              else
+                echo "Some checks failed. Run with --fix to auto-fix where possible."
+                exit 1
+              fi
+            '')
+            # Git pre-commit helper
+            (pkgs.writeShellScriptBin "pre-commit" ''
+              # Run pre-commit checks
+              # Install as git hook: ln -sf $(which pre-commit) .git/hooks/pre-commit
+              echo "Running pre-commit checks..."
+
+              # Check for large files
+              LARGE_FILES=$(git diff --cached --name-only | xargs -I{} sh -c 'test -f "{}" && du -k "{}" | awk "\$1 > 1024 {print \$2}"' 2>/dev/null)
+              if [ -n "$LARGE_FILES" ]; then
+                echo "Warning: Large files (>1MB) staged for commit:" >&2
+                echo "$LARGE_FILES" | sed 's/^/  /' >&2
+                echo "Consider using Git LFS for large files." >&2
+              fi
+
+              # Check for secrets patterns
+              if git diff --cached | grep -E "(password|secret|api_key|private_key)\s*[:=]" >/dev/null 2>&1; then
+                echo "Warning: Possible secrets detected in staged changes" >&2
+                echo "Please review before committing." >&2
+              fi
+
+              # Format staged Nix files
+              STAGED_NIX=$(git diff --cached --name-only --diff-filter=ACM | grep '\.nix$' || true)
+              if [ -n "$STAGED_NIX" ]; then
+                echo "Formatting staged Nix files..."
+                echo "$STAGED_NIX" | xargs nixfmt
+                echo "$STAGED_NIX" | xargs git add
+              fi
+
+              echo "Pre-commit checks complete."
+            '')
+          ];
+
           # CUDA 13.x package set (latest available in nixpkgs)
           # Falls back to default cudaPackages if 13.1 unavailable
           cudaPkgs = pkgs.cudaPackages_13_1 or pkgs.cudaPackages_13 or pkgs.cudaPackages;
@@ -679,12 +1269,23 @@
                   ''}
 
                   # Generate and execute pixi shell-hook
-                  local pixi_hook
-                  if ! pixi_hook=$(pixi shell-hook 2>&1); then
+                  # Note: Only capture stdout for eval; let stderr pass through for warnings
+                  # Use a temp file to capture stderr for error reporting if command fails
+                  local pixi_hook pixi_stderr_file
+                  pixi_stderr_file=$(mktemp)
+                  if ! pixi_hook=$(pixi shell-hook 2>"$pixi_stderr_file"); then
                     echo "[ros2-env] ERROR: Failed to generate pixi shell-hook" >&2
-                    echo "[ros2-env] pixi output: $pixi_hook" >&2
+                    if [ -s "$pixi_stderr_file" ]; then
+                      echo "[ros2-env] pixi error: $(cat "$pixi_stderr_file")" >&2
+                    fi
+                    rm -f "$pixi_stderr_file"
                     return 1
                   fi
+                  # Show any pixi warnings but don't include them in eval
+                  if [ -s "$pixi_stderr_file" ]; then
+                    cat "$pixi_stderr_file" >&2
+                  fi
+                  rm -f "$pixi_stderr_file"
 
                   # Validate shell-hook output is not empty
                   if [ -z "$pixi_hook" ]; then
@@ -724,7 +1325,7 @@
           # stays warning-free on newer Nix.
           devShells.default = pkgs.mkShell {
             # Include Holochain in default shell - P2P coordination is mandatory
-            packages = basePackages ++ holochainPackages ++ coreCommandWrappers ++ linuxPackages ++ darwinPackages;
+            packages = basePackages ++ holochainPackages ++ coreCommandWrappers ++ ros2CommandWrappers ++ devCommandWrappers ++ linuxPackages ++ darwinPackages;
             COLCON_DEFAULTS_FILE = toString colconDefaults;
             EDITOR = "hx";
             VISUAL = "hx";
@@ -766,6 +1367,10 @@
               ++ fullExtras
               ++ holochainPackages  # P0: Holochain coordination layer
               ++ coreCommandWrappers
+              ++ ros2CommandWrappers
+              ++ infraCommandWrappers
+              ++ securityCommandWrappers
+              ++ devCommandWrappers
               ++ aiCommandWrappers
               ++ linuxPackages
               ++ darwinPackages;
@@ -809,27 +1414,43 @@
               echo "  Python (ROS2): 3.11.x via Pixi/RoboStack"
               echo ""
               echo "Quick commands:"
-              echo "  cb     - colcon build --symlink-install"
-              echo "  ct     - colcon test"
-              echo "  pixi   - package manager (ROS2 Python env)"
-              echo "  python3.13 - Nix Python for non-ROS tools"
+              echo "  cb          - colcon build --symlink-install"
+              echo "  ct          - colcon test"
+              echo "  ros2-clean  - Clean build artifacts (--all for logs too)"
+              echo "  ros2-ws     - Show workspace info"
+              echo "  ros2-topics - List ROS2 topics"
+              echo "  ros2-nodes  - List ROS2 nodes"
+              echo ""
+              echo "Development:"
+              echo "  dev-check   - Run all checks (--fix to auto-fix)"
+              echo "  fmt-nix     - Format all Nix files"
+              echo "  pre-commit  - Git pre-commit checks"
               echo ""
               echo "AI assistants:"
-              echo "  ai        - AI chat (aichat, lightweight)"
-              echo "  pair      - AI pair programming (aider, git-integrated)"
-              echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
+              echo "  ai          - AI chat (aichat, lightweight)"
+              echo "  pair        - AI pair programming (aider, git-integrated)"
+              echo "  promptfoo   - LLM testing & evaluation"
               echo ""
               echo "AI infrastructure:"
-              echo "  localai   - LocalAI server management (start|stop|status|models)"
-              echo "  agixt     - AGiXT platform via Docker (up|down|logs|status)"
-              echo "  aios      - AIOS Agent Kernel management (install|start|stop|status)"
+              echo "  localai     - LocalAI server (start|stop|status|models)"
+              echo "  agixt       - AGiXT platform (up|down|logs|status)"
+              echo "  aios        - AIOS Kernel (install|start|stop|status)"
               echo ""
-              echo "Holochain (P2P coordination):"
-              echo "  holochain - Holochain conductor"
-              echo "  hc        - Holochain dev CLI"
+              echo "Infrastructure:"
+              echo "  ipfs-ctl    - IPFS node (init|start|stop|status)"
+              echo "  nats-ctl    - NATS server (start|stop|pub|sub)"
+              echo "  prom-ctl    - Prometheus (start|stop|config)"
+              echo "  vault-dev   - HashiCorp Vault dev mode"
               echo ""
-              echo "Rust (AGiXT SDK):"
-              echo "  cargo build -p agixt-bridge  # Build AGiXT-ROS2 bridge"
+              echo "Security:"
+              echo "  sbom        - Generate SBOM (syft)"
+              echo "  vuln-scan   - Vulnerability scan (grype/trivy)"
+              echo "  sign-artifact - Sign with cosign"
+              echo "  pki-cert    - PKI certificates (step-cli)"
+              echo ""
+              echo "Holochain (P2P):"
+              echo "  holochain   - Holochain conductor"
+              echo "  hc          - Holochain dev CLI"
               echo ""
             '';
           };
@@ -839,7 +1460,7 @@
           # Requires: NVIDIA GPU with drivers installed
           # Binary cache: https://cache.nixos-cuda.org
           devShells.cuda = pkgs.mkShell {
-            packages = basePackages ++ fullExtras ++ holochainPackages ++ coreCommandWrappers ++ aiCommandWrappers ++ linuxPackages ++ (with pkgs; [
+            packages = basePackages ++ fullExtras ++ holochainPackages ++ coreCommandWrappers ++ ros2CommandWrappers ++ infraCommandWrappers ++ securityCommandWrappers ++ devCommandWrappers ++ aiCommandWrappers ++ linuxPackages ++ (with pkgs; [
               # CUDA Toolkit 13.x (or latest available)
               # See docs/CONFLICTS.md for version details
               cudaPkgs.cudatoolkit
