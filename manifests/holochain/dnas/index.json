@@ -7,7 +7,8 @@
       "name": "agent_registry",
       "description": "Node capability advertisement and discovery",
       "hash": "uhCkk_placeholder_agent_registry",
-      "status": "planned",
+      "status": "scaffolding",
+      "manifest": "dnas/agent_registry/dna.yaml",
       "zomes": ["capabilities", "heartbeat", "discovery"],
       "purpose": "Tracks all FlexStack nodes, their capabilities (compute, storage, inference), and availability status"
     },
@@ -15,7 +16,8 @@
       "name": "resource_mesh",
       "description": "Compute/storage/inference allocation and scheduling",
       "hash": "uhCkk_placeholder_resource_mesh",
-      "status": "planned",
+      "status": "scaffolding",
+      "manifest": "dnas/resource_mesh/dna.yaml",
       "zomes": ["resources", "scheduling", "accounting"],
       "purpose": "Manages distributed resource allocation across the agent mesh"
     },
@@ -23,7 +25,8 @@
       "name": "policy_store",
       "description": "Distributed OPA policy cache and decisions",
       "hash": "uhCkk_placeholder_policy_store",
-      "status": "planned",
+      "status": "scaffolding",
+      "manifest": "dnas/policy_store/dna.yaml",
       "zomes": ["policies", "decisions", "audit"],
       "purpose": "Stores and distributes OPA policies for decentralized enforcement"
     },
@@ -31,7 +34,8 @@
       "name": "artifact_index",
       "description": "IPFS CID registry and provenance tracking",
       "hash": "uhCkk_placeholder_artifact_index",
-      "status": "planned",
+      "status": "scaffolding",
+      "manifest": "dnas/artifact_index/dna.yaml",
       "zomes": ["artifacts", "provenance", "replication"],
       "purpose": "Indexes content-addressed artifacts and tracks their provenance"
     },
@@ -39,7 +43,8 @@
       "name": "memory_shards",
       "description": "Vector DB partition coordination",
       "hash": "uhCkk_placeholder_memory_shards",
-      "status": "planned",
+      "status": "scaffolding",
+      "manifest": "dnas/memory_shards/dna.yaml",
       "zomes": ["shards", "routing", "sync"],
       "purpose": "Coordinates distributed vector memory across nodes"
     }

@@ -69,22 +69,39 @@ tokenizers = ">=0.21,<1"
 nats-py = ">=2.9"           # NATS Python client for event bus
 temporalio = ">=1.7"        # Temporal Python SDK for durable workflows
 
-# Agent Frameworks (BUILDKIT_STARTER_SPEC.md Layer 8)
-agno = ">=0.1"              # Agent dev framework (agno-agi/agno)
-agentic-flow = ">=0.1"      # Agent dev to deploy flow (ruvnet/agentic-flow)
-claude-flow = ">=0.1"       # Swarm orchestration (ruvnet/claude-flow)
+# =============================================================================
+# Agent Runtime Packages (BUILDKIT_STARTER_SPEC.md Layer 7: P2-001 to P2-005)
+# =============================================================================
+# P2-001: agno-agi/agno - Multi-agent framework, runtime, and control plane
+# Available on PyPI: https://pypi.org/project/agno/
+agno = ">=0.1"              # Latest: 2.3.24, Requires Python >=3.7,<4
 
-# Additional agent frameworks via pypi (not in conda-forge)
-# P1: Required per BUILDKIT_STARTER_SPEC.md Layer 7
+# P2-002: ruvnet/agentic-flow - CANNOT BE INSTALLED VIA PIXI
+# This is a Node.js/TypeScript package, not a Python package
+# Repository: https://github.com/ruvnet/agentic-flow
+# Install via npm: npm install agentic-flow@alpha
+
+# P2-003: ruvnet/claude-flow - CANNOT BE INSTALLED VIA PIXI
+# This is a Node.js/TypeScript package, not a Python package
+# Repository: https://github.com/ruvnet/claude-flow
+# Install via npm: npm install -g claude-flow@alpha
 
 [pypi-dependencies]
-# Distributed agent mesh (ruvnet/Synaptic-Mesh)
-synaptic-mesh = ">=0.1"
-# Distributed agent architecture (ruvnet/daa)
-daa = ">=0.1"
-# Tool wrappers for GenAI (googleapis/genai-toolbox)
-# Note: Install via pip if package name differs
-# genai-toolbox = ">=0.1"
+# P2-004: ruvnet/Synaptic-Mesh - CANNOT BE INSTALLED VIA PIP
+# This is a Rust/TypeScript/WASM project, not a Python package
+# Repository: https://github.com/ruvnet/Synaptic-Mesh
+# Multi-language project with Rust core, TypeScript CLI, WebAssembly compilation
+# Install via: npx synaptic-mesh init (after cloning and building)
+
+# P2-005: ruvnet/daa - CANNOT BE INSTALLED VIA PIP
+# This is a Rust SDK with Node.js bindings (NAPI), not a Python package
+# Repository: https://github.com/ruvnet/daa
+# Decentralized Autonomous Applications SDK written in Rust
+# Use the Rust crates directly or Node.js bindings
+
+# =============================================================================
+# Additional PyPI-only dependencies
+# =============================================================================
 
 # Build tools (JavaScript/TypeScript)
 esbuild = ">=0.24,<1"
@@ -92,9 +109,6 @@ esbuild = ">=0.24,<1"
 # Data processing
 datafusion = ">=44.0"
 polars = ">=1.18"
-
-# LLM Fine-tuning
-unsloth = { version = ">=2024.0", channel = "conda-forge" }
 
 # PyTorch ML stack (CPU by default, CUDA via feature)
 # Using conda-forge for native performance and ROS2 compatibility
@@ -234,9 +248,101 @@ pandas = ">=2.0"
 scipy = ">=1.10"
 scikit-learn = ">=1.3"
 
+# =============================================================================
+# Finetuning Feature - LLM Training & Optimization (P2-010)
+# =============================================================================
+# Unsloth for fast LLM finetuning: 2x faster training with 80% less memory
+# BUILDKIT_STARTER_SPEC.md Layer 12: LLMOps & Evaluation
+# Activate with: pixi run -e finetuning <command>
+#
+# GPU REQUIREMENTS:
+# - NVIDIA GPU with CUDA support (CUDA 11.8+ or 12.1+)
+# - Minimum 8GB VRAM recommended (varies by model size)
+# - For production: 16GB+ VRAM (e.g., RTX 4090, A100, H100)
+# - CPU-only mode available but defeats the performance benefits
+#
+# CONDA-FORGE AVAILABILITY:
+# - Unsloth is NOT available on conda-forge
+# - Must be installed via PyPI (pip)
+# - Dependencies (PyTorch, transformers, accelerate) are in base environment
+#
+# USAGE:
+# - Combine with CUDA feature for GPU acceleration:
+#   pixi run -e finetuning-cuda python train.py
+# - Or use default (CPU-only, not recommended):
+#   pixi run -e finetuning python train.py
+
+[feature.finetuning]
+platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+
+[feature.finetuning.dependencies]
+# Core dependencies for finetuning (already in base, but explicit for clarity)
+pytorch = ">=2.5,<3"
+transformers = ">=4.47,<5"
+accelerate = ">=1.2,<2"
+datasets = ">=3.2,<4"
+tokenizers = ">=0.21,<1"
+
+# Training utilities
+tqdm = ">=4.66"
+peft = ">=0.8"        # Parameter-Efficient Fine-Tuning
+bitsandbytes = ">=0.44"  # 8-bit optimizers
+
+[feature.finetuning.pypi-dependencies]
+# Unsloth - Fast LLM finetuning (PyPI-only, not on conda-forge)
+# See: https://github.com/unslothai/unsloth
+unsloth = ">=2024.0"
+
+# =============================================================================
+# Caching Feature - LLM Prompt & Response Caching (P3-001, P3-002)
+# =============================================================================
+# Semantic caching solutions for AI/LLM workloads to reduce latency and costs
+# BUILDKIT_STARTER_SPEC.md Layer 10: State & Storage
+# Activate with: pixi run -e caching <command>
+#
+# P3-001: vCache - Semantic prompt caching with guaranteed error bounds
+# P3-002: prompt-cache - LLM proxy for semantic caching (Go binary in flake.nix)
+
+[feature.caching]
+platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+
+[feature.caching.dependencies]
+# Core dependencies for caching operations
+python = ">=3.11,<3.13"
+redis-py = ">=4.5.1"         # Redis client for cache backend
+
+# OpenAI for embedding and inference (vCache default)
+openai = ">=1.0"
+
+# Vector database support
+numpy = ">=1.24,<3"
+
+[feature.caching.pypi-dependencies]
+# P3-001: vCache - Semantic Prompt Cache with Error Bounds
+# See: https://github.com/vcache-project/vCache
+# Description: First semantic prompt cache that guarantees user-defined error rate bounds
+# Features:
+#   - Reduces LLM latency by up to 100x and costs by up to 10x
+#   - Online-learned, embedding-specific decision boundaries
+#   - Supports FIFO, LRU, MRU, and custom SCU eviction policies
+#   - Modular: configurable inference engines, embeddings, vector DBs
+# Installation: pip install -e . (from cloned repo - not yet on PyPI)
+# Usage:
+#   from vcache import VCache, VerifiedDecisionPolicy
+#   policy = VerifiedDecisionPolicy(delta=0.01)
+#   vcache = VCache(policy=policy)
+#   response = vcache.infer("Is the sky blue?")
+# NOTE: Requires OpenAI API key via environment variable
+# NOTE: Not yet available on PyPI - install from source:
+#   git clone https://github.com/vcache-project/vCache.git
+#   cd vCache && pip install -e .
+
 [environments]
 default = { features = [], solve-group = "default" }
 cuda = { features = ["cuda"], solve-group = "cuda" }
 aios = { features = ["aios"], solve-group = "aios" }
 aios-cuda = { features = ["aios", "aios-cuda", "cuda"], solve-group = "aios-cuda" }
 llmops = { features = ["llmops"], solve-group = "llmops" }
+finetuning = { features = ["finetuning"], solve-group = "finetuning" }
+finetuning-cuda = { features = ["finetuning", "cuda"], solve-group = "finetuning-cuda" }
+caching = { features = ["caching"], solve-group = "caching" }

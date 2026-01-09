@@ -47,8 +47,8 @@ services:
     environment:
       - DB=postgresql
       - DB_PORT=5432
-      - POSTGRES_USER=temporal
-      - POSTGRES_PWD=temporal_password
+      - POSTGRES_USER=${TEMPORAL_DB_USER:-temporal}
+      - POSTGRES_PWD=${TEMPORAL_DB_PASSWORD:-changeme}
       - POSTGRES_SEEDS=temporal-db
       - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development.yaml
     depends_on:
@@ -70,15 +70,15 @@ services:
     image: postgres:17.2-alpine
     container_name: temporal-db
     environment:
-      POSTGRES_USER: temporal
-      POSTGRES_PASSWORD: temporal_password
-      POSTGRES_DB: temporal
+      POSTGRES_USER: ${TEMPORAL_DB_USER:-temporal}
+      POSTGRES_PASSWORD: ${TEMPORAL_DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${TEMPORAL_DB_NAME:-temporal}
     volumes:
       - temporal_db_data:/var/lib/postgresql/data
     networks:
       - agentic-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      test: ["CMD-SHELL", "pg_isready -U ${TEMPORAL_DB_USER:-temporal}"]
       interval: 10s
       timeout: 5s
       retries: 5

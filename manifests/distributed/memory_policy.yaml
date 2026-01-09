@@ -1,0 +1,764 @@
+# Distributed Memory Policy Configuration
+# BUILDKIT_STARTER_SPEC.md Section 10.6: Distributed Memory Management
+# ARIA Priority: P3-010 (Distributed Memory Policy)
+#
+# This policy governs how memory resources are allocated, managed,
+# and optimized across the ARIA distributed platform.
+#
+# Requirements per spec:
+# - Multi-tier memory: System RAM, Shared Memory, GPU Memory, Persistent Memory
+# - Dynamic allocation: Per-agent memory limits with auto-scaling
+# - Memory pooling: Efficient memory pool management
+# - OOM protection: Graceful handling of out-of-memory conditions
+#
+# Feature Flag Integration:
+# - Controlled by: manifests/feature_flags.yaml::memory.DISTRIBUTED_MEMORY_ENABLED
+# - Memory limit: feature_flags.yaml::memory.DEFAULT_AGENT_MEMORY_MB
+# - OOM protection: feature_flags.yaml::memory.OOM_PROTECTION_ENABLED
+#
+# Version: 1.0.0
+# Last Updated: 2026-01-09
+
+memory_policy:
+  name: flexstack-distributed-memory
+  version: "1.0.0"
+  description: "Distributed memory management and allocation policy"
+
+  # Feature flag integration
+  feature_flags_source: "../feature_flags.yaml"
+  enabled_by: "memory.DISTRIBUTED_MEMORY_ENABLED"
+
+  # Memory tier configuration
+  tiers:
+    # System RAM: Primary memory tier
+    system_ram:
+      name: "system-ram"
+      description: "Primary system RAM for active processes and agents"
+      total_available_gb: "${SYSTEM_RAM_GB:-64}"
+      reserved_system_gb: 8
+      allocatable_gb: 56
+
+      allocation:
+        strategy: "dynamic"  # static, dynamic, elastic
+        overcommit_ratio: 1.2
+        min_free_gb: 4
+        swap_enabled: false
+
+      # Memory zones
+      zones:
+        - name: "kernel"
+          size_gb: 4
+          priority: "critical"
+          locked: true
+
+        - name: "system_services"
+          size_gb: 4
+          priority: "high"
+          locked: false
+
+        - name: "agents"
+          size_gb: 40
+          priority: "normal"
+          elastic: true
+
+        - name: "cache"
+          size_gb: 8
+          priority: "low"
+          evictable: true
+
+    # Shared memory: Inter-process communication
+    shared_memory:
+      name: "shared-mem"
+      description: "Shared memory for inter-process communication"
+      max_size_gb: 16
+
+      segments:
+        - name: "agent_ipc"
+          size_mb: 4096
+          permissions: "0666"
+          purpose: "agent-to-agent communication"
+
+        - name: "model_cache"
+          size_mb: 8192
+          permissions: "0644"
+          purpose: "shared model weights"
+
+        - name: "vector_store"
+          size_mb: 2048
+          permissions: "0644"
+          purpose: "embedding cache"
+
+    # GPU memory: CUDA/ROCm memory management
+    gpu_memory:
+      name: "gpu-mem"
+      description: "GPU memory for accelerated inference"
+      enabled: "${GPU_ENABLED:-false}"
+
+      devices:
+        - id: 0
+          name: "GPU-0"
+          total_gb: 16
+          reserved_gb: 2
+          allocatable_gb: 14
+
+          allocation:
+            strategy: "priority_based"
+            fragmentation_threshold: 0.3
+            defrag_enabled: true
+
+          workloads:
+            - name: "local_inference"
+              max_memory_gb: 8
+              priority: 1
+
+            - name: "training"
+              max_memory_gb: 12
+              priority: 2
+
+        - id: 1
+          name: "GPU-1"
+          total_gb: 16
+          reserved_gb: 2
+          allocatable_gb: 14
+
+    # Persistent memory: Non-volatile memory tier
+    persistent_memory:
+      name: "pmem"
+      description: "Persistent memory for fast state recovery"
+      enabled: "${PMEM_ENABLED:-false}"
+      total_gb: 256
+      mode: "app-direct"  # app-direct, memory-mode
+
+      use_cases:
+        - agent_state_checkpointing
+        - temporal_workflow_state
+        - distributed_cache
+        - fast_restart_data
+
+  # Per-agent memory allocation
+  agent_memory:
+    # Default limits
+    default_limits:
+      min_memory_mb: 256
+      max_memory_mb: "${DEFAULT_AGENT_MEMORY_MB:-2048}"
+      default_memory_mb: 512
+
+    # Memory request/limit model (Kubernetes-style)
+    resource_model:
+      requests:
+        memory_mb: 512
+        description: "Guaranteed memory allocation"
+
+      limits:
+        memory_mb: 2048
+        description: "Maximum memory before OOM kill"
+
+    # QoS classes
+    qos_classes:
+      - name: "guaranteed"
+        description: "Critical agents with guaranteed resources"
+        requests_equal_limits: true
+        oom_score_adj: -999
+        priority: 1
+
+        agent_types:
+          - system_agents
+          - critical_inference
+
+      - name: "burstable"
+        description: "Normal agents with burstable memory"
+        requests_less_than_limits: true
+        oom_score_adj: 0
+        priority: 2
+
+        agent_types:
+          - user_agents
+          - batch_processing
+
+      - name: "best_effort"
+        description: "Low-priority agents with no guarantees"
+        no_requests_or_limits: true
+        oom_score_adj: 1000
+        priority: 3
+
+        agent_types:
+          - background_tasks
+          - experimental_agents
+
+    # Auto-scaling
+    auto_scaling:
+      enabled: true
+
+      scale_up:
+        trigger_percent: 80
+        increment_mb: 256
+        max_memory_mb: 8192
+        cooldown_seconds: 60
+
+      scale_down:
+        trigger_percent: 40
+        decrement_mb: 256
+        min_memory_mb: 256
+        cooldown_seconds: 300
+
+  # Memory pooling
+  memory_pools:
+    enabled: true
+
+    pools:
+      # Small object pool
+      - name: "small_objects"
+        object_size_kb: 4
+        pool_size_mb: 64
+        allocation_strategy: "slab"
+        thread_safe: true
+
+      # Medium object pool
+      - name: "medium_objects"
+        object_size_kb: 64
+        pool_size_mb: 256
+        allocation_strategy: "buddy"
+        thread_safe: true
+
+      # Large object pool
+      - name: "large_objects"
+        object_size_kb: 1024
+        pool_size_mb: 1024
+        allocation_strategy: "first_fit"
+        thread_safe: true
+
+      # Huge pages pool
+      - name: "huge_pages"
+        page_size_mb: 2
+        pool_count: 512
+        allocation_strategy: "transparent"
+        numa_aware: true
+
+  # Out-of-Memory (OOM) protection
+  oom_protection:
+    enabled: "${OOM_PROTECTION_ENABLED:-true}"
+
+    # Early warning system
+    early_warning:
+      enabled: true
+      threshold_percent: 85
+      check_interval_seconds: 5
+
+      actions:
+        - trigger_memory_reclaim
+        - alert_monitoring
+        - scale_down_best_effort_agents
+
+    # Memory pressure handling
+    memory_pressure:
+      levels:
+        - name: "low"
+          threshold_percent: 70
+          actions:
+            - reclaim_page_cache
+            - compact_memory
+
+        - name: "medium"
+          threshold_percent: 85
+          actions:
+            - evict_caches
+            - kill_best_effort_pods
+            - trigger_emergency_gc
+
+        - name: "critical"
+          threshold_percent: 95
+          actions:
+            - kill_burstable_pods
+            - invoke_oom_killer
+            - alert_critical
+
+    # OOM killer configuration
+    oom_killer:
+      enabled: true
+      strategy: "priority_based"  # priority_based, size_based, age_based
+
+      # Victim selection order (higher score = more likely to be killed)
+      scoring:
+        - factor: "memory_usage_percent"
+          weight: 0.4
+        - factor: "qos_class"
+          weight: 0.3
+        - factor: "age_seconds"
+          weight: 0.2
+        - factor: "priority"
+          weight: 0.1
+
+      # Protected processes (never kill)
+      protected:
+        - system_critical
+        - guaranteed_qos
+        - holochain_conductor
+        - temporal_worker
+
+  # Memory reclamation
+  reclamation:
+    enabled: true
+
+    # Garbage collection tuning
+    garbage_collection:
+      strategy: "generational"
+      young_gen_size_mb: 512
+      old_gen_size_mb: 2048
+      gc_threads: 4
+
+      triggers:
+        - name: "periodic"
+          interval_seconds: 300
+        - name: "pressure"
+          memory_threshold_percent: 80
+        - name: "allocation_failure"
+          immediate: true
+
+    # Page cache management
+    page_cache:
+      enabled: true
+      max_size_gb: 8
+      eviction_policy: "lru"
+      writeback_enabled: true
+      writeback_interval_seconds: 30
+
+    # Slab cache reclamation
+    slab_reclaim:
+      enabled: true
+      threshold_percent: 85
+      aggressive_mode: false
+
+  # Memory compression
+  compression:
+    enabled: true
+
+    # ZRAM (compressed RAM)
+    zram:
+      enabled: true
+      size_gb: 4
+      algorithm: "zstd"
+      compression_ratio_target: 3.0
+      priority: 5
+
+    # ZSWAP (compressed swap)
+    zswap:
+      enabled: false
+      size_gb: 8
+      algorithm: "lz4"
+      max_pool_percent: 20
+
+  # NUMA (Non-Uniform Memory Access) optimization
+  numa:
+    enabled: true
+    topology_aware: true
+
+    # NUMA policy
+    policy:
+      default: "preferred"  # default, bind, interleave, preferred
+      strict: false
+
+      # Per-workload NUMA preferences
+      workload_affinity:
+        - workload: "inference"
+          policy: "bind"
+          nodes: [0, 1]
+
+        - workload: "storage"
+          policy: "interleave"
+          nodes: [0, 1, 2, 3]
+
+    # NUMA balancing
+    balancing:
+      enabled: true
+      scan_delay_ms: 1000
+      scan_period_max_ms: 60000
+
+# =============================================================================
+# MEMORY QUOTAS & LIMITS
+# Resource allocation and enforcement per namespace/agent
+# =============================================================================
+quotas:
+  # Global platform limits
+  platform:
+    max_total_memory_gb: 64
+    max_agent_memory_gb: 48
+    max_cache_memory_gb: 8
+    max_shared_memory_gb: 8
+
+  # Per-namespace quotas
+  namespace:
+    default_quota_gb: 8
+    max_quota_gb: 32
+
+    quotas:
+      - namespace: "production"
+        memory_gb: 32
+        agent_count: 50
+        avg_per_agent_mb: 640
+
+      - namespace: "staging"
+        memory_gb: 16
+        agent_count: 20
+        avg_per_agent_mb: 800
+
+      - namespace: "development"
+        memory_gb: 8
+        agent_count: 10
+        avg_per_agent_mb: 800
+
+  # Per-agent quotas by type
+  agent_quotas:
+    - type: "inference_agent"
+      min_mb: 512
+      max_mb: 4096
+      default_mb: 1024
+
+    - type: "storage_agent"
+      min_mb: 256
+      max_mb: 2048
+      default_mb: 512
+
+    - type: "orchestrator_agent"
+      min_mb: 1024
+      max_mb: 8192
+      default_mb: 2048
+
+    - type: "worker_agent"
+      min_mb: 256
+      max_mb: 1024
+      default_mb: 512
+
+  # Enforcement
+  enforcement:
+    enabled: true
+    action: "throttle"  # throttle, kill, reject
+    grace_period_seconds: 30
+    alert_threshold_percent: 90
+
+# =============================================================================
+# MONITORING & OBSERVABILITY
+# Track memory usage and performance
+# =============================================================================
+monitoring:
+  enabled: true
+
+  # Key metrics
+  metrics:
+    - name: "memory_usage_percent"
+      target: 70
+      warning_threshold: 80
+      critical_threshold: 90
+
+    - name: "memory_available_gb"
+      target: 8
+      warning_threshold: 4
+      critical_threshold: 2
+
+    - name: "page_faults_per_second"
+      target: 100
+      warning_threshold: 1000
+      critical_threshold: 5000
+
+    - name: "swap_usage_mb"
+      target: 0
+      warning_threshold: 1024
+      critical_threshold: 4096
+
+    - name: "cache_hit_rate_percent"
+      target: 90
+      warning_threshold: 70
+      critical_threshold: 50
+
+    - name: "oom_kills_per_hour"
+      target: 0
+      warning_threshold: 1
+      critical_threshold: 5
+
+  # Memory profiling
+  profiling:
+    enabled: true
+    sampling_rate_seconds: 60
+
+    profiles:
+      - name: "heap_profile"
+        enabled: true
+        interval_seconds: 300
+
+      - name: "allocation_profile"
+        enabled: true
+        interval_seconds: 600
+
+      - name: "leak_detection"
+        enabled: true
+        interval_seconds: 3600
+
+  # Alerts
+  alerts:
+    - name: "high_memory_usage"
+      condition: "memory_usage_percent > 85"
+      severity: "warning"
+      notification_channel: "slack://aria-alerts"
+
+    - name: "critical_memory_pressure"
+      condition: "memory_available_gb < 2"
+      severity: "critical"
+      notification_channel: "pagerduty://aria-critical"
+
+    - name: "oom_kill_detected"
+      condition: "oom_kills_per_hour > 0"
+      severity: "error"
+      notification_channel: "slack://aria-ops"
+
+    - name: "memory_leak_suspected"
+      condition: "memory_growth_rate_mb_per_hour > 100"
+      severity: "warning"
+      notification_channel: "slack://aria-dev"
+
+# =============================================================================
+# PERFORMANCE OPTIMIZATION
+# Memory performance tuning
+# =============================================================================
+optimization:
+  # Transparent Huge Pages (THP)
+  huge_pages:
+    enabled: true
+    mode: "madvise"  # always, madvise, never
+    defrag: "defer+madvise"
+    khugepaged_enabled: true
+
+  # Memory prefetching
+  prefetching:
+    enabled: true
+    aggressive: false
+    readahead_kb: 128
+
+  # Memory compaction
+  compaction:
+    enabled: true
+    proactive: false
+    interval_seconds: 300
+
+  # Kernel memory tuning
+  kernel_tuning:
+    swappiness: 10  # 0-100 (lower = prefer RAM)
+    vfs_cache_pressure: 50  # 0-100 (lower = retain cache)
+    dirty_ratio: 10  # 0-100
+    dirty_background_ratio: 5  # 0-100
+    overcommit_memory: 1  # 0=heuristic, 1=always, 2=never
+
+# =============================================================================
+# INTEGRATION WITH ARIA COMPONENTS
+# Connect with other platform services
+# =============================================================================
+integrations:
+  # Holochain state synchronization
+  holochain:
+    enabled: "${USE_HOLOCHAIN_STATE:-true}"
+    sync_memory_metrics: true
+    store_in_dna: "memory_metrics"
+    replicate_across_peers: true
+
+  # NATS event streaming
+  nats:
+    enabled: "${NATS_ENABLED:-true}"
+    publish_memory_events: true
+    subject_prefix: "aria.memory"
+    stream_name: "MEMORY_EVENTS"
+
+    event_types:
+      - memory_allocated
+      - memory_released
+      - oom_warning
+      - oom_kill
+      - memory_pressure_changed
+      - quota_exceeded
+
+  # Temporal workflow coordination
+  temporal:
+    enabled: "${TEMPORAL_ENABLED:-true}"
+    workflow_name: "MemoryManagementWorkflow"
+    task_queue: "memory-management"
+
+  # OpenTelemetry observability
+  opentelemetry:
+    enabled: "${OTEL_ENABLED:-true}"
+    trace_allocations: false  # High overhead
+    trace_major_operations: true
+    custom_attributes:
+      service_name: "aria-distributed-memory"
+      team: "configuration-domain"
+
+  # Kubernetes integration
+  kubernetes:
+    enabled: true
+    memory_metrics_api: true
+    vpa_enabled: true  # Vertical Pod Autoscaler
+    pod_disruption_budget: true
+
+  # cgroups (control groups)
+  cgroups:
+    enabled: true
+    version: "v2"
+    hierarchy: "/sys/fs/cgroup"
+
+    limits:
+      memory_limit_enforcement: true
+      memory_swap_limit: false
+      oom_control: true
+
+# =============================================================================
+# FAILOVER & RECOVERY
+# Handle memory failures gracefully
+# =============================================================================
+failover:
+  enabled: true
+
+  # Memory error handling
+  error_handling:
+    # Hardware memory errors (ECC)
+    hardware_errors:
+      enabled: true
+      action: "isolate_page"
+      notify: true
+
+      thresholds:
+        correctable_errors_per_hour: 10
+        uncorrectable_errors_per_hour: 1
+
+    # Software memory errors
+    software_errors:
+      enabled: true
+      action: "restart_agent"
+      core_dump: true
+
+  # Checkpoint and restart
+  checkpoint_restart:
+    enabled: true
+    checkpoint_interval_seconds: 300
+    checkpoint_storage: "persistent_memory"
+
+    triggers:
+      - memory_pressure_critical
+      - agent_memory_leak_detected
+      - planned_maintenance
+
+  # Memory migration
+  migration:
+    enabled: true
+    live_migration: true
+
+    triggers:
+      - numa_imbalance
+      - node_memory_pressure
+      - hardware_failure_predicted
+
+# =============================================================================
+# SECURITY & ISOLATION
+# Memory security and isolation policies
+# =============================================================================
+security:
+  # Memory encryption
+  encryption:
+    enabled: false
+    tme_enabled: "${TME_ENABLED:-false}"  # Total Memory Encryption
+    mktme_enabled: "${MKTME_ENABLED:-false}"  # Multi-Key TME
+
+  # Memory isolation
+  isolation:
+    enabled: true
+    aslr_enabled: true  # Address Space Layout Randomization
+    dep_enabled: true  # Data Execution Prevention
+    kaslr_enabled: true  # Kernel ASLR
+
+    # Memory namespaces
+    namespaces:
+      enabled: true
+      per_agent: true
+      copy_on_write: true
+
+  # Memory protection
+  protection:
+    stack_canaries: true
+    heap_randomization: true
+    guard_pages: true
+
+    # Memory sanitizers (development only)
+    sanitizers:
+      asan_enabled: false  # AddressSanitizer
+      msan_enabled: false  # MemorySanitizer
+      tsan_enabled: false  # ThreadSanitizer
+
+  # Access control
+  access_control:
+    enabled: true
+    enforce_permissions: true
+
+    # Memory access policies
+    policies:
+      - name: "agent_isolation"
+        description: "Isolate agent memory spaces"
+        enforce: true
+
+      - name: "shared_memory_acl"
+        description: "Control shared memory access"
+        enforce: true
+
+      - name: "kernel_memory_protection"
+        description: "Protect kernel memory from user space"
+        enforce: true
+
+# =============================================================================
+# COST MANAGEMENT
+# Track and optimize memory costs
+# =============================================================================
+cost_management:
+  enabled: true
+  currency: "USD"
+
+  # Cost per GB per hour
+  memory_cost:
+    system_ram_per_gb_hour: 0.005
+    persistent_memory_per_gb_hour: 0.020
+    gpu_memory_per_gb_hour: 0.030
+
+  # Cost optimization
+  optimization:
+    right_size_agents: true
+    use_memory_compression: true
+    enable_memory_pooling: true
+    aggressive_reclamation: true
+
+  # Budget alerts
+  budgets:
+    daily_limit: 10.00
+    monthly_limit: 300.00
+    alert_threshold_percent: 85
+
+# =============================================================================
+# BENCHMARKING & TESTING
+# Memory performance benchmarking
+# =============================================================================
+benchmarking:
+  enabled: true
+
+  # Benchmark suites
+  suites:
+    - name: "allocation_latency"
+      frequency: "daily"
+      test_sizes: [4096, 65536, 1048576, 16777216]  # bytes
+      iterations: 10000
+
+    - name: "throughput"
+      frequency: "daily"
+      concurrent_agents: 100
+      duration_seconds: 300
+
+    - name: "stress_test"
+      frequency: "weekly"
+      memory_pressure: "high"
+      duration_seconds: 3600
+
+    - name: "leak_detection"
+      frequency: "daily"
+      duration_hours: 24
+      growth_threshold_mb: 100

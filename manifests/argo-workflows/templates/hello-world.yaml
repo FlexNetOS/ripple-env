@@ -1,0 +1,15 @@
+# Basic Hello World Workflow
+# This is a simple example to verify Argo Workflows is working correctly
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: hello-world-
+  namespace: argo
+spec:
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    container:
+      image: docker/whalesay:latest
+      command: [cowsay]
+      args: ["Hello ARIA! Argo Workflows is running successfully."]

@@ -1,0 +1,48 @@
+---
+# Agent Registry DNA
+# Purpose: Node capability advertisement and discovery
+# Status: Initial scaffolding (P0-006)
+
+manifest_version: "1"
+name: agent_registry
+uid: "00000000-0000-0000-0000-000000000001"
+properties: ~
+
+# Zome definitions
+zomes:
+  # Integrity zome - Defines data structures and validation rules
+  - name: capabilities_integrity
+    bundled: zomes/capabilities_integrity.wasm
+
+  - name: heartbeat_integrity
+    bundled: zomes/heartbeat_integrity.wasm
+
+  - name: discovery_integrity
+    bundled: zomes/discovery_integrity.wasm
+
+  # Coordinator zomes - Implements business logic
+  - name: capabilities
+    bundled: zomes/capabilities.wasm
+    dependencies:
+      - name: capabilities_integrity
+
+  - name: heartbeat
+    bundled: zomes/heartbeat.wasm
+    dependencies:
+      - name: heartbeat_integrity
+
+  - name: discovery
+    bundled: zomes/discovery.wasm
+    dependencies:
+      - name: discovery_integrity
+
+# Network configuration
+network_seed: ~
+origin_time: 2024-01-01T00:00:00.000000Z
+
+# DNA modifiers (for testing/versioning)
+modifiers:
+  network_seed: ~
+  properties: ~
+  origin_time: ~
+  quantum_time: ~

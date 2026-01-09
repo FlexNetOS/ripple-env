@@ -1,0 +1,706 @@
+# Distributed Storage Policy Configuration
+# BUILDKIT_STARTER_SPEC.md Section 10.5: Distributed Storage Management
+# ARIA Priority: P3-009 (Distributed Storage Policy)
+#
+# This policy governs how storage resources are allocated, replicated,
+# and managed across the ARIA distributed platform.
+#
+# Requirements per spec:
+# - Multi-tier storage: Hot (SSD), Warm (HDD), Cold (Object Storage), Archive (Glacier)
+# - Replication: Configurable replication factor per storage tier
+# - Caching: Intelligent caching with TTL and eviction policies
+# - Backup: Automated backup with retention policies
+#
+# Feature Flag Integration:
+# - Controlled by: manifests/feature_flags.yaml::storage.DISTRIBUTED_STORAGE_ENABLED
+# - Replication factor: feature_flags.yaml::storage.DEFAULT_REPLICATION_FACTOR
+# - Cache enabled: feature_flags.yaml::storage.CACHE_ENABLED
+#
+# Version: 1.0.0
+# Last Updated: 2026-01-09
+
+storage_policy:
+  name: flexstack-distributed-storage
+  version: "1.0.0"
+  description: "Distributed storage management and allocation policy"
+
+  # Feature flag integration
+  feature_flags_source: "../feature_flags.yaml"
+  enabled_by: "storage.DISTRIBUTED_STORAGE_ENABLED"
+
+  # Storage tier configuration
+  tiers:
+    # Hot tier: High-performance SSD storage for active data
+    hot:
+      name: "hot-ssd"
+      description: "High-performance SSD storage for frequently accessed data"
+      backend: "ceph-ssd"
+      min_iops: 10000
+      max_iops: 50000
+      latency_target_ms: 5
+      retention_days: 7
+
+      allocation:
+        min_size_gb: 10
+        max_size_gb: 500
+        default_size_gb: 50
+        auto_scaling: true
+        scale_up_threshold_percent: 80
+        scale_down_threshold_percent: 30
+
+      replication:
+        factor: 3
+        consistency: "strong"
+        cross_zone: true
+        cross_region: false
+
+      # Data that qualifies for hot storage
+      criteria:
+        - recent_access_hours: 24
+        - access_frequency_per_hour: 10
+        - importance: "critical"
+        - workload_types:
+          - active_agent_state
+          - real_time_inference
+          - live_vector_embeddings
+          - temporal_workflow_data
+
+    # Warm tier: Standard HDD storage for less frequently accessed data
+    warm:
+      name: "warm-hdd"
+      description: "Standard HDD storage for moderately accessed data"
+      backend: "ceph-hdd"
+      min_iops: 1000
+      max_iops: 5000
+      latency_target_ms: 50
+      retention_days: 30
+
+      allocation:
+        min_size_gb: 50
+        max_size_gb: 2000
+        default_size_gb: 200
+        auto_scaling: true
+        scale_up_threshold_percent: 85
+        scale_down_threshold_percent: 40
+
+      replication:
+        factor: 2
+        consistency: "eventual"
+        cross_zone: true
+        cross_region: false
+
+      criteria:
+        - recent_access_hours: 168  # 7 days
+        - access_frequency_per_day: 5
+        - importance: "high"
+        - workload_types:
+          - agent_logs
+          - model_checkpoints
+          - intermediate_results
+          - cached_embeddings
+
+    # Cold tier: Object storage for archival data
+    cold:
+      name: "cold-object"
+      description: "Object storage for infrequently accessed archival data"
+      backend: "minio"
+      latency_target_ms: 500
+      retention_days: 365
+
+      allocation:
+        min_size_gb: 100
+        max_size_gb: 10000
+        default_size_gb: 500
+        auto_scaling: true
+        scale_up_threshold_percent: 90
+        scale_down_threshold_percent: 50
+
+      replication:
+        factor: 2
+        consistency: "eventual"
+        cross_zone: false
+        cross_region: true
+
+      criteria:
+        - recent_access_days: 30
+        - access_frequency_per_month: 1
+        - importance: "medium"
+        - workload_types:
+          - audit_logs
+          - historical_metrics
+          - old_model_versions
+          - backup_snapshots
+
+    # Archive tier: Long-term cold storage
+    archive:
+      name: "archive-glacier"
+      description: "Long-term archival storage with retrieval latency"
+      backend: "s3-glacier"
+      latency_target_hours: 12
+      retention_days: 2555  # 7 years
+
+      allocation:
+        min_size_gb: 1000
+        max_size_gb: 100000
+        default_size_gb: 5000
+        auto_scaling: true
+        scale_up_threshold_percent: 95
+
+      replication:
+        factor: 3
+        consistency: "eventual"
+        cross_zone: true
+        cross_region: true
+
+      criteria:
+        - recent_access_days: 365
+        - importance: "low"
+        - compliance_requirement: true
+        - workload_types:
+          - compliance_records
+          - annual_backups
+          - legacy_data
+
+  # Automatic data tiering policy
+  auto_tiering:
+    enabled: true
+    scan_interval_hours: 24
+
+    # Rules for promoting data to hotter tiers
+    promotion_rules:
+      - name: "hot_data_promotion"
+        trigger:
+          access_count_last_hour: 10
+          consecutive_accesses: 3
+        action:
+          promote_to: "hot"
+          notify: false
+
+      - name: "warm_data_promotion"
+        trigger:
+          access_count_last_day: 5
+          data_size_mb: ">10"
+        action:
+          promote_to: "warm"
+          notify: false
+
+    # Rules for demoting data to colder tiers
+    demotion_rules:
+      - name: "cold_data_demotion"
+        trigger:
+          no_access_days: 30
+          tier: "warm"
+        action:
+          demote_to: "cold"
+          compress: true
+          notify: false
+
+      - name: "archive_data_demotion"
+        trigger:
+          no_access_days: 365
+          tier: "cold"
+        action:
+          demote_to: "archive"
+          compress: true
+          encrypt: true
+          notify: true
+
+  # Caching configuration
+  cache:
+    enabled: "${CACHE_ENABLED:-true}"
+
+    # In-memory cache tier
+    memory_cache:
+      provider: "redis"
+      max_size_gb: 16
+      ttl_seconds: 3600
+      eviction_policy: "lru"
+      connection_pool_size: 100
+
+      cache_types:
+        - agent_state
+        - vector_embeddings
+        - api_responses
+        - computed_results
+
+    # Disk cache tier
+    disk_cache:
+      provider: "varnish"
+      max_size_gb: 100
+      ttl_seconds: 86400  # 24 hours
+      eviction_policy: "lfu"
+
+      cache_types:
+        - model_artifacts
+        - static_assets
+        - preprocessed_data
+
+    # CDN cache tier
+    cdn_cache:
+      provider: "cloudflare"
+      enabled: "${CDN_ENABLED:-false}"
+      ttl_seconds: 604800  # 7 days
+      edge_locations: ["us-east", "us-west", "eu-central"]
+
+      cache_types:
+        - public_assets
+        - documentation
+        - model_downloads
+
+  # Replication and consistency
+  replication:
+    # Global replication settings
+    default_factor: "${DEFAULT_REPLICATION_FACTOR:-3}"
+    consistency_model: "eventual"  # strong, eventual, causal
+
+    # Synchronous replication (for critical data)
+    synchronous:
+      enabled: true
+      min_replicas: 2
+      timeout_ms: 5000
+      failure_action: "abort"
+
+      data_types:
+        - agent_registry
+        - policy_decisions
+        - transaction_logs
+
+    # Asynchronous replication (for non-critical data)
+    asynchronous:
+      enabled: true
+      batch_size: 1000
+      batch_interval_seconds: 60
+      retry_attempts: 3
+
+      data_types:
+        - metrics
+        - logs
+        - analytics
+
+  # Backup and disaster recovery
+  backup:
+    enabled: true
+
+    # Full backup schedule
+    full_backup:
+      frequency: "weekly"
+      day_of_week: "sunday"
+      time: "02:00"
+      retention_weeks: 4
+      compression: true
+      encryption: true
+
+    # Incremental backup schedule
+    incremental_backup:
+      frequency: "daily"
+      time: "03:00"
+      retention_days: 7
+      compression: true
+
+    # Snapshot configuration
+    snapshots:
+      enabled: true
+      frequency_hours: 6
+      retention_count: 8
+      instant_recovery: true
+
+    # Backup storage location
+    backup_storage:
+      primary_location: "s3://aria-backups-primary"
+      secondary_location: "s3://aria-backups-dr"
+      cross_region: true
+      versioning: true
+
+  # Storage performance optimization
+  optimization:
+    # Deduplication
+    deduplication:
+      enabled: true
+      algorithm: "sha256"
+      chunk_size_kb: 128
+      inline: false  # Post-process deduplication
+
+    # Compression
+    compression:
+      enabled: true
+      algorithm: "zstd"
+      level: 3
+      compression_ratio_target: 0.5
+
+      # Data types to compress
+      compress_types:
+        - logs
+        - backups
+        - cold_storage
+        - archive_storage
+
+    # Erasure coding (for large objects)
+    erasure_coding:
+      enabled: true
+      data_chunks: 4
+      parity_chunks: 2
+      min_object_size_mb: 100
+
+    # Data placement optimization
+    placement:
+      enabled: true
+      strategy: "latency_optimized"  # latency_optimized, cost_optimized, balanced
+      locality_aware: true
+      affinity_rules:
+        - colocate_agent_and_state
+        - separate_replicas_across_zones
+
+# =============================================================================
+# STORAGE QUOTAS & LIMITS
+# Resource allocation and enforcement
+# =============================================================================
+quotas:
+  # Global platform limits
+  platform:
+    max_total_storage_tb: 100
+    max_hot_storage_tb: 10
+    max_warm_storage_tb: 30
+    max_cold_storage_tb: 50
+    max_archive_storage_tb: 500
+
+  # Per-namespace quotas
+  namespace:
+    default_quota_gb: 100
+    max_quota_gb: 1000
+
+    quotas:
+      - namespace: "production"
+        quota_gb: 500
+        hot_tier_gb: 50
+        warm_tier_gb: 200
+        cold_tier_gb: 250
+
+      - namespace: "staging"
+        quota_gb: 200
+        hot_tier_gb: 20
+        warm_tier_gb: 80
+        cold_tier_gb: 100
+
+      - namespace: "development"
+        quota_gb: 100
+        hot_tier_gb: 10
+        warm_tier_gb: 40
+        cold_tier_gb: 50
+
+  # Per-agent quotas
+  agent:
+    default_quota_gb: 10
+    max_quota_gb: 100
+    iops_limit: 1000
+    bandwidth_mbps: 100
+
+  # Enforcement
+  enforcement:
+    enabled: true
+    action: "throttle"  # throttle, reject, notify
+    grace_period_percent: 10
+    alert_threshold_percent: 85
+
+# =============================================================================
+# COST MANAGEMENT & BUDGETING
+# Track and optimize storage costs
+# =============================================================================
+cost_management:
+  enabled: true
+  currency: "USD"
+
+  # Budget limits
+  budgets:
+    daily_limit: 50.00
+    monthly_limit: 1500.00
+    alert_threshold_percent: 80
+
+  # Cost per tier (per GB per month)
+  tier_costs:
+    hot: 0.15
+    warm: 0.05
+    cold: 0.01
+    archive: 0.004
+
+    # Additional costs
+    replication_cost_multiplier: 1.5
+    backup_cost_per_gb: 0.02
+    bandwidth_cost_per_gb: 0.09
+
+  # Cost optimization strategies
+  optimization:
+    aggressive_tiering: true
+    compress_all_cold_data: true
+    deduplicate_backups: true
+    lifecycle_management: true
+    reserved_capacity: true
+
+# =============================================================================
+# PERFORMANCE MONITORING
+# Track storage performance metrics
+# =============================================================================
+monitoring:
+  enabled: true
+
+  # Key performance indicators
+  metrics:
+    - name: "latency_p50"
+      target_ms: 10
+      alert_threshold_ms: 50
+      tier: "hot"
+
+    - name: "latency_p95"
+      target_ms: 50
+      alert_threshold_ms: 200
+      tier: "hot"
+
+    - name: "iops"
+      target: 10000
+      alert_threshold: 5000
+      tier: "hot"
+
+    - name: "throughput_mbps"
+      target: 1000
+      alert_threshold: 500
+      tier: "hot"
+
+    - name: "cache_hit_rate"
+      target_percent: 90
+      alert_threshold_percent: 70
+
+    - name: "replication_lag_seconds"
+      target: 5
+      alert_threshold: 30
+
+  # Health checks
+  health_checks:
+    enabled: true
+    interval_seconds: 60
+
+    checks:
+      - name: "storage_availability"
+        critical: true
+      - name: "replication_status"
+        critical: true
+      - name: "backup_completion"
+        critical: false
+      - name: "disk_space_remaining"
+        critical: true
+
+# =============================================================================
+# FAILOVER & DISASTER RECOVERY
+# High availability and fault tolerance
+# =============================================================================
+failover:
+  enabled: true
+
+  # Automatic failover configuration
+  strategy:
+    primary_failure:
+      action: "failover_to_replica"
+      timeout_ms: 10000
+      auto_fallback: true
+
+    replica_failure:
+      action: "rebuild_from_primary"
+      timeout_ms: 30000
+
+    total_failure:
+      action: "restore_from_backup"
+      rto_minutes: 60  # Recovery Time Objective
+      rpo_minutes: 15  # Recovery Point Objective
+
+  # Geographic redundancy
+  geo_redundancy:
+    enabled: true
+    regions:
+      - primary: "us-east-1"
+        secondary: "us-west-2"
+      - primary: "eu-central-1"
+        secondary: "eu-west-1"
+
+    replication_mode: "asynchronous"
+    max_lag_seconds: 300
+
+# =============================================================================
+# INTEGRATION WITH ARIA COMPONENTS
+# Connect with other platform services
+# =============================================================================
+integrations:
+  # Holochain distributed state
+  holochain:
+    enabled: "${USE_HOLOCHAIN_STATE:-true}"
+    sync_storage_metadata: true
+    store_in_dna: "storage_metadata"
+    replicate_across_peers: true
+
+  # NATS event streaming
+  nats:
+    enabled: "${NATS_ENABLED:-true}"
+    publish_storage_events: true
+    subject_prefix: "aria.storage"
+    stream_name: "STORAGE_EVENTS"
+
+    event_types:
+      - storage_allocated
+      - storage_released
+      - tier_migration
+      - backup_completed
+      - quota_exceeded
+
+  # Temporal workflow coordination
+  temporal:
+    enabled: "${TEMPORAL_ENABLED:-true}"
+    workflow_name: "StorageManagementWorkflow"
+    task_queue: "storage-management"
+
+  # OpenTelemetry observability
+  opentelemetry:
+    enabled: "${OTEL_ENABLED:-true}"
+    trace_all_operations: true
+    custom_attributes:
+      service_name: "aria-distributed-storage"
+      team: "configuration-domain"
+
+  # Ceph storage backend
+  ceph:
+    enabled: true
+    monitors: ["ceph-mon-1:6789", "ceph-mon-2:6789", "ceph-mon-3:6789"]
+    pools:
+      hot: "aria-hot-pool"
+      warm: "aria-warm-pool"
+    user: "aria-storage"
+    keyring: "${CEPH_KEYRING}"
+
+  # MinIO object storage
+  minio:
+    enabled: true
+    endpoint: "${MINIO_ENDPOINT:-minio:9000}"
+    access_key: "${MINIO_ACCESS_KEY}"
+    secret_key: "${MINIO_SECRET_KEY}"
+    secure: true
+    buckets:
+      cold: "aria-cold-storage"
+      backups: "aria-backups"
+
+# =============================================================================
+# SECURITY & COMPLIANCE
+# Data protection and access control
+# =============================================================================
+security:
+  # Encryption at rest
+  encryption_at_rest:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_rotation_days: 90
+    key_management: "vault"  # vault, kms, local
+
+  # Encryption in transit
+  encryption_in_transit:
+    enabled: true
+    protocol: "TLS 1.3"
+    certificate_authority: "internal-ca"
+
+  # Access control
+  access_control:
+    enabled: true
+    model: "rbac"  # rbac, abac, acl
+
+    roles:
+      - name: "storage_admin"
+        permissions:
+          - create_storage
+          - delete_storage
+          - modify_quotas
+          - view_all
+
+      - name: "storage_user"
+        permissions:
+          - read_storage
+          - write_storage
+          - view_own
+
+      - name: "storage_readonly"
+        permissions:
+          - read_storage
+          - view_own
+
+  # Data sanitization
+  sanitization:
+    enabled: true
+
+    # Secure deletion
+    secure_delete:
+      enabled: true
+      method: "cryptographic_erasure"  # overwrite, cryptographic_erasure
+      verification: true
+
+    # Data redaction
+    redaction:
+      enabled: true
+      patterns:
+        - api_keys
+        - passwords
+        - credit_cards
+        - ssn
+
+  # Compliance
+  compliance:
+    opa_policy_gate_enabled: "${OPA_POLICY_GATE:-true}"
+    audit_all_access: true
+    retention_policy: "gdpr_compliant"
+    data_residency_enforcement: true
+
+# =============================================================================
+# DATA LIFECYCLE MANAGEMENT
+# Automated data lifecycle policies
+# =============================================================================
+lifecycle:
+  enabled: true
+
+  # Lifecycle rules
+  rules:
+    - name: "agent_logs_lifecycle"
+      filters:
+        prefix: "agent-logs/"
+        age_days: 7
+      actions:
+        - transition_to: "warm"
+          delay_days: 7
+        - transition_to: "cold"
+          delay_days: 30
+        - transition_to: "archive"
+          delay_days: 365
+        - delete:
+            delay_days: 2555  # 7 years
+
+    - name: "model_artifacts_lifecycle"
+      filters:
+        prefix: "models/"
+        tags:
+          type: "checkpoint"
+      actions:
+        - transition_to: "cold"
+          delay_days: 90
+        - delete:
+            delay_days: 365
+            keep_latest: 5
+
+    - name: "temporary_data_cleanup"
+      filters:
+        prefix: "tmp/"
+        age_hours: 24
+      actions:
+        - delete:
+            delay_hours: 24
+
+    - name: "compliance_retention"
+      filters:
+        tags:
+          compliance: "required"
+      actions:
+        - transition_to: "archive"
+          delay_days: 30
+        - delete:
+            delay_days: 2555  # 7 years
+            compliance_verified: true

@@ -1,0 +1,21 @@
+# Ignore all generated keys and certificates
+*.key
+*.crt
+*.pem
+*.jwk
+*.pub
+
+# Ignore database
+db/
+
+# Ignore secrets
+secrets/
+password.txt
+
+# Keep templates and configs
+!templates/
+!*.json
+!README.md
+
+# Ignore step-ca generated directories
+pki/

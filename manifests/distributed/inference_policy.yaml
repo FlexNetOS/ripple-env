@@ -1,5 +1,6 @@
 # Multi-Model Fan-Out (MOE) Policy Configuration
 # BUILDKIT_STARTER_SPEC.md Section 10.4: Parallel Inference Execution
+# ARIA Priority: P2-014 (MOE Inference Policy)
 #
 # This policy governs how change-making tasks are processed through
 # multiple models in parallel for consensus-based decision making.
@@ -8,11 +9,23 @@
 # - Local tier: >= 5 small local models (target <3B active params)
 # - Cloud tier: >= 2 strong cloud coders/reasoners in parallel
 # - Reducer: Deterministic merge + policy gate (OPA) + eval gate
+#
+# Feature Flag Integration:
+# - Controlled by: manifests/feature_flags.yaml::inference.MOE_ENABLED
+# - Local min models: feature_flags.yaml::inference.LOCAL_MODELS_MIN
+# - Cloud min models: feature_flags.yaml::inference.CLOUD_MODELS_MIN
+#
+# Version: 1.1.0
+# Last Updated: 2026-01-09
 
 inference_policy:
   name: flexstack-moe
-  version: "1.0.0"
+  version: "1.1.0"
   description: "Multi-model ensemble for change-making tasks"
+
+  # Feature flag integration
+  feature_flags_source: "../feature_flags.yaml"
+  enabled_by: "inference.MOE_ENABLED"
 
   # Trigger conditions for MOE inference
   trigger:
@@ -203,7 +216,7 @@ inference_policy:
       - policy_gate_rejections
       - timeout_rate
 
-  # Feature flags for A/B testing
+  # Feature flags for A/B testing (integrated with feature_flags.yaml)
   feature_flags:
     enable_local_tier: true
     enable_cloud_tier: true
@@ -212,3 +225,276 @@ inference_policy:
     experimental:
       chain_of_thought_voting: false
       semantic_similarity_merge: false
+
+# =============================================================================
+# DYNAMIC SCALING & RESOURCE MANAGEMENT
+# Auto-scaling based on load and cost optimization
+# =============================================================================
+scaling:
+  # Automatic model scaling based on demand
+  auto_scaling:
+    enabled: true
+    min_local_models: "${LOCAL_MODELS_MIN:-5}"
+    max_local_models: 8
+    min_cloud_models: "${CLOUD_MODELS_MIN:-2}"
+    max_cloud_models: 4
+
+    # Scale up triggers
+    scale_up:
+      queue_depth: 10
+      avg_latency_ms: 5000
+      consensus_failure_rate: 0.2
+      cooldown_seconds: 60
+
+    # Scale down triggers
+    scale_down:
+      queue_depth: 2
+      avg_latency_ms: 1000
+      idle_time_seconds: 300
+      cooldown_seconds: 120
+
+  # Resource allocation per tier
+  resource_limits:
+    local_tier:
+      max_cpu_cores: 8
+      max_memory_gb: 16
+      max_gpu_memory_gb: 8
+      disk_cache_gb: 50
+
+    cloud_tier:
+      max_concurrent_requests: 20
+      request_timeout_ms: 60000
+      retry_attempts: 3
+
+# =============================================================================
+# COST MANAGEMENT & BUDGETING
+# Track and limit inference costs
+# =============================================================================
+cost_management:
+  enabled: true
+  currency: "USD"
+
+  # Budget limits
+  budgets:
+    daily_limit: 100.00
+    monthly_limit: 2500.00
+    per_request_max: 1.00
+
+  # Cost tracking per provider
+  provider_costs:
+    local_tier:
+      compute_cost_per_hour: 0.50
+      electricity_kwh: 0.3
+      cost_per_kwh: 0.12
+
+    cloud_tier:
+      claude_code_per_1k_tokens: 0.015
+      codex_per_1k_tokens: 0.012
+      github_copilot_monthly: 10.00
+      openrouter_per_1k_tokens: 0.010
+
+  # Cost optimization strategies
+  optimization:
+    prefer_local_when_possible: true
+    cache_responses: true
+    cache_ttl_hours: 24
+    batch_similar_requests: true
+    avoid_cloud_for_simple_tasks: true
+
+  # Alerts
+  alerts:
+    warn_at_percent: 80
+    block_at_percent: 95
+    notification_channel: "slack://aria-costs"
+
+# =============================================================================
+# PERFORMANCE BENCHMARKING
+# Track and optimize model performance
+# =============================================================================
+benchmarking:
+  enabled: true
+
+  # Performance metrics
+  metrics:
+    - name: latency_p50
+      target_ms: 2000
+      alert_threshold_ms: 5000
+
+    - name: latency_p95
+      target_ms: 5000
+      alert_threshold_ms: 10000
+
+    - name: latency_p99
+      target_ms: 10000
+      alert_threshold_ms: 15000
+
+    - name: consensus_rate
+      target_percent: 85
+      alert_threshold_percent: 60
+
+    - name: accuracy_score
+      target_percent: 90
+      alert_threshold_percent: 75
+
+  # Benchmark suites
+  test_suites:
+    - name: code_generation_benchmark
+      tasks:
+        - simple_function
+        - class_with_methods
+        - api_integration
+        - algorithm_implementation
+      frequency: daily
+
+    - name: reasoning_benchmark
+      tasks:
+        - logic_puzzle
+        - code_analysis
+        - architecture_decision
+        - security_review
+      frequency: weekly
+
+  # A/B testing
+  ab_testing:
+    enabled: true
+    control_group_percent: 20
+    treatment_group_percent: 80
+    statistical_significance: 0.95
+
+# =============================================================================
+# FAILOVER & DISASTER RECOVERY
+# High availability and fault tolerance
+# =============================================================================
+failover:
+  # Automatic failover configuration
+  enabled: true
+  health_check_interval_seconds: 30
+
+  # Tier failover strategy
+  strategy:
+    local_tier_failure:
+      action: "fallback_to_cloud"
+      timeout_ms: 5000
+
+    cloud_tier_failure:
+      action: "retry_with_backup"
+      max_retries: 3
+      backoff_multiplier: 2
+
+    total_failure:
+      action: "queue_for_manual_review"
+      notification_channel: "pagerduty://aria-critical"
+
+  # Circuit breaker
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    success_threshold: 2
+    timeout_seconds: 60
+    half_open_requests: 3
+
+  # Degraded mode operation
+  degraded_mode:
+    enabled: true
+    min_models_required: 2
+    skip_quality_checks: false
+    use_cached_responses: true
+    notify_users: true
+
+# =============================================================================
+# INTEGRATION WITH ARIA COMPONENTS
+# Connect with other platform services
+# =============================================================================
+integrations:
+  # Holochain state synchronization
+  holochain:
+    enabled: "${USE_HOLOCHAIN_STATE:-true}"
+    sync_inference_decisions: true
+    store_in_dna: "policy_store"
+    replicate_across_peers: true
+
+  # NATS event streaming
+  nats:
+    enabled: "${NATS_ENABLED:-true}"
+    publish_decisions: true
+    subject_prefix: "aria.inference.moe"
+    stream_name: "INFERENCE_DECISIONS"
+    retention_policy: "limits"
+    max_age_hours: 168
+
+  # Temporal workflow coordination
+  temporal:
+    enabled: "${TEMPORAL_ENABLED:-true}"
+    workflow_name: "MOEInferenceWorkflow"
+    task_queue: "moe-inference"
+    retry_policy:
+      max_attempts: 3
+      backoff_coefficient: 2.0
+
+  # OpenTelemetry observability
+  opentelemetry:
+    enabled: "${OTEL_ENABLED:-true}"
+    trace_all_requests: true
+    trace_sampling_rate: 1.0
+    custom_attributes:
+      service_name: "aria-moe-inference"
+      team: "configuration-domain"
+
+  # Vector store for semantic caching
+  vector_store:
+    enabled: "${VECTOR_STORE:-true}"
+    provider: "qdrant"
+    collection_name: "moe_inference_cache"
+    similarity_threshold: 0.92
+    cache_hit_reuse: true
+
+  # API Gateway routing
+  api_gateway:
+    kong_enabled: "${KONG_ENABLED:-false}"
+    agent_gateway_enabled: "${AGENTGATEWAY_ENABLED:-true}"
+    rate_limiting:
+      requests_per_minute: 100
+      burst: 20
+
+# =============================================================================
+# SECURITY & COMPLIANCE
+# Security controls and audit requirements
+# =============================================================================
+security:
+  # Input validation
+  input_validation:
+    enabled: true
+    max_prompt_length: 100000
+    sanitize_code_injection: true
+    block_malicious_patterns: true
+
+  # Output filtering
+  output_filtering:
+    enabled: true
+    redact_secrets: true
+    redact_pii: true
+    content_moderation: true
+
+  # Access control
+  access_control:
+    require_authentication: true
+    rbac_enabled: true
+    allowed_roles:
+      - developer
+      - operator
+      - admin
+    audit_all_access: true
+
+  # Compliance
+  compliance:
+    opa_policy_gate_enabled: "${OPA_POLICY_GATE:-true}"
+    audit_logging_enabled: "${AUDIT_LOGGING:-true}"
+    gdpr_compliance: "${GDPR_COMPLIANCE:-true}"
+    data_retention_days: 90
+
+  # Model security
+  model_security:
+    verify_checksums: true
+    quarantine_untrusted: true
+    sandbox_execution: true
+    isolation_level: "${DEFAULT_ISOLATION:-container}"

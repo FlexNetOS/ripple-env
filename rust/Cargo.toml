@@ -46,12 +46,60 @@ chrono = "0.4"
 # Agent Runtime - Rust Orchestration (BUILDKIT_STARTER_SPEC.md Layer 7)
 # P1: arkflow - Rust streaming orchestration runtime
 # See: https://github.com/arkflow-rs/arkflow
-# arkflow = { git = "https://github.com/arkflow-rs/arkflow", branch = "main" }
+# P2-006: High performance stream processing engine with AI capabilities
+arkflow = "0.1"
 
 # Tool Execution - Rust utilities (BUILDKIT_STARTER_SPEC.md Layer 8)
-# P2: midstream - Streaming response analysis
-# midstream = { git = "https://github.com/ruvnet/midstream", branch = "main" }
-# P2: ruv-fann - Fast neural network utility
-# ruv-fann = { git = "https://github.com/ruvnet/ruv-FANN", branch = "main" }
-# P2: sublinear-time-solver - Fast solver tool
-# sublinear-time-solver = { git = "https://github.com/ruvnet/sublinear-time-solver", branch = "main" }
+# P2-007: midstream - Streaming response analysis with temporal processing
+# See: https://github.com/ruvnet/midstream
+# MidStream is a platform for real-time AI conversation analysis
+temporal-compare = "0.1"
+nanosecond-scheduler = "0.1"
+temporal-attractor-studio = "0.1"
+temporal-neural-solver = "0.1"
+strange-loop = "0.1"
+
+# P2-008: ruv-fann - Fast neural network utility
+# See: https://github.com/ruvnet/ruv-FANN
+# Blazing-fast, memory-safe neural network library (pure Rust FANN rewrite)
+ruv-fann = { git = "https://github.com/ruvnet/ruv-FANN", branch = "main" }
+
+# P2-009: sublinear-time-solver - Fast solver tool (installed via npx in flake.nix)
+# See: https://github.com/ruvnet/sublinear-time-solver
+
+# P2-015: remote-agentic-coding-system - Remote Coding Agent
+# NOTE: Repository FlexNetOS/remote-agentic-coding-system does not exist
+# Similar project available: https://github.com/coleam00/remote-agentic-coding-system
+# Description: Remote Coding Agent for connecting Claude Code/Codex to Slack, Telegram, GitHub
+# Installation: Node.js/TypeScript project with Docker support
+# Requires: npx, docker-compose (already available in this environment)
+# Usage: See repository README for setup instructions
+
+# Holochain Coordination (BUILDKIT_STARTER_SPEC.md Section 9.7)
+# P0: Holochain Development Kit - Required for building DNAs and zomes
+# P1-002: Holochain crate integration
+hdk = "0.4.0"
+hdi = "0.5.0"
+holochain = "0.4.0"
+holochain_types = "0.4.0"
+holochain_zome_types = "0.4.0"
+
+# State & Storage (BUILDKIT_STARTER_SPEC.md Layer 10)
+# P0-005: Redis client for cache and state management
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
+
+# P1-001: ruvector - Distributed vector database with GNN self-learning
+# See: https://github.com/ruvnet/ruvector
+# Feature flag: VECTOR_STORE=ruvector|pgvector|both
+# All-in-one package: vector search, Cypher queries, GNN, Raft consensus, WASM
+ruvector = { git = "https://github.com/ruvnet/ruvector", branch = "main" }
+
+# P1-003: sqlx - Async SQL toolkit with compile-time checked queries
+# Features: postgres (PostgreSQL driver), runtime-tokio-rustls (tokio runtime + rustls TLS)
+# Compatible with tokio 1.0 runtime and holochain async patterns
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "macros", "migrate"] }
+
+# P1-004: datafusion - Apache Arrow-based query engine for data processing
+# High-performance SQL query engine compatible with async tokio runtime
+# Used for distributed query processing and analytics
+datafusion = { version = "43" }

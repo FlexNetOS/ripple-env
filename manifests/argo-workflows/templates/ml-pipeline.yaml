@@ -1,0 +1,197 @@
+# Machine Learning Pipeline Workflow
+# Demonstrates data processing, training, and model deployment for AI/ML workloads
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: ml-pipeline
+  namespace: argo
+spec:
+  entrypoint: ml-training-pipeline
+  arguments:
+    parameters:
+    - name: dataset-path
+      value: "s3://aria-datasets/training-data"
+    - name: model-name
+      value: "aria-model-v1"
+    - name: epochs
+      value: "10"
+
+  templates:
+  - name: ml-training-pipeline
+    dag:
+      tasks:
+      - name: data-preparation
+        template: prepare-data
+        arguments:
+          parameters:
+          - name: dataset-path
+            value: "{{workflow.parameters.dataset-path}}"
+
+      - name: data-validation
+        template: validate-data
+        dependencies: [data-preparation]
+
+      - name: train-model
+        template: training
+        dependencies: [data-validation]
+        arguments:
+          parameters:
+          - name: epochs
+            value: "{{workflow.parameters.epochs}}"
+          - name: model-name
+            value: "{{workflow.parameters.model-name}}"
+
+      - name: evaluate-model
+        template: evaluation
+        dependencies: [train-model]
+        arguments:
+          parameters:
+          - name: model-name
+            value: "{{workflow.parameters.model-name}}"
+
+      - name: deploy-model
+        template: model-deployment
+        dependencies: [evaluate-model]
+        arguments:
+          parameters:
+          - name: model-name
+            value: "{{workflow.parameters.model-name}}"
+
+  - name: prepare-data
+    inputs:
+      parameters:
+      - name: dataset-path
+    container:
+      image: python:3.11-slim
+      command: [python, -c]
+      args:
+      - |
+        import json
+        print("Data Preparation Stage")
+        print(f"Loading data from: {{inputs.parameters.dataset-path}}")
+        print("Preprocessing data...")
+        print("Data cleaning completed")
+        print("Feature engineering completed")
+        print("Data split: 80% train, 20% validation")
+        # Simulate data preparation
+        result = {"status": "success", "samples": 10000}
+        print(json.dumps(result))
+      volumeMounts:
+      - name: data
+        mountPath: /data
+
+  - name: validate-data
+    container:
+      image: python:3.11-slim
+      command: [python, -c]
+      args:
+      - |
+        import json
+        print("Data Validation Stage")
+        print("Checking data quality...")
+        print("Validating schema...")
+        print("Checking for missing values...")
+        print("Validating data distributions...")
+        result = {"status": "passed", "quality_score": 0.95}
+        print(json.dumps(result))
+      volumeMounts:
+      - name: data
+        mountPath: /data
+
+  - name: training
+    inputs:
+      parameters:
+      - name: epochs
+      - name: model-name
+    container:
+      image: python:3.11-slim
+      command: [python, -c]
+      args:
+      - |
+        import json
+        print("Model Training Stage")
+        print(f"Training model: {{inputs.parameters.model-name}}")
+        print(f"Epochs: {{inputs.parameters.epochs}}")
+        print("Initializing model architecture...")
+        print("Starting training loop...")
+        for i in range(int("{{inputs.parameters.epochs}")):
+            loss = 1.0 / (i + 1)
+            accuracy = 0.5 + (i * 0.05)
+            print(f"Epoch {i+1}: Loss={loss:.4f}, Accuracy={accuracy:.4f}")
+        result = {"status": "completed", "final_accuracy": 0.92, "final_loss": 0.15}
+        print(json.dumps(result))
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "1000m"
+        limits:
+          memory: "4Gi"
+          cpu: "2000m"
+      volumeMounts:
+      - name: data
+        mountPath: /data
+      - name: models
+        mountPath: /models
+
+  - name: evaluation
+    inputs:
+      parameters:
+      - name: model-name
+    container:
+      image: python:3.11-slim
+      command: [python, -c]
+      args:
+      - |
+        import json
+        print("Model Evaluation Stage")
+        print(f"Evaluating model: {{inputs.parameters.model-name}}")
+        print("Running inference on test set...")
+        print("Calculating metrics...")
+        result = {
+          "status": "success",
+          "accuracy": 0.92,
+          "precision": 0.91,
+          "recall": 0.93,
+          "f1_score": 0.92
+        }
+        print(json.dumps(result, indent=2))
+      volumeMounts:
+      - name: data
+        mountPath: /data
+      - name: models
+        mountPath: /models
+
+  - name: model-deployment
+    inputs:
+      parameters:
+      - name: model-name
+    container:
+      image: bitnami/kubectl:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Model Deployment Stage"
+        echo "Deploying model: {{inputs.parameters.model-name}}"
+        echo "Creating model serving endpoint..."
+        # kubectl apply -f /manifests/model-serving.yaml
+        echo "Model deployed successfully"
+        echo "Endpoint: http://ml-serving.aria.svc.cluster.local/{{inputs.parameters.model-name}}"
+      volumeMounts:
+      - name: models
+        mountPath: /models
+
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi
+  - metadata:
+      name: models
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 2Gi

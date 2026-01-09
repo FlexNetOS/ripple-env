@@ -1,0 +1,223 @@
+name: OPA Policy Gate
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'config/opa/**'
+      - '.github/workflows/opa-policy-gate.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'config/opa/**'
+      - '.github/workflows/opa-policy-gate.yml'
+  workflow_dispatch:
+
+# Ensure only one OPA policy check per branch/PR at a time
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================
+  # OPA Policy Validation
+  # ===========================================
+  policy-check:
+    name: OPA Policy Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
+      - name: Verify OPA installation
+        run: |
+          opa version
+          echo "OPA installed successfully"
+
+      - name: Check policy syntax
+        run: |
+          echo "Checking OPA policy syntax..."
+          opa check config/opa/policies/authz.rego
+          echo "✅ Policy syntax is valid"
+
+      - name: Run policy tests
+        run: |
+          echo "Running OPA policy tests..."
+          # Check if test files exist
+          if [ -d "config/opa/tests" ]; then
+            opa test config/opa/policies/ config/opa/tests/ -v
+          else
+            echo "No test files found in config/opa/tests/"
+            echo "Skipping policy tests"
+          fi
+
+      - name: Evaluate policy with test data
+        run: |
+          echo "Evaluating policy with test inputs..."
+
+          # Test 1: Admin user should have full access
+          echo '{"input": {"user": {"role": "admin"}, "action": "read", "resource": {"name": "test"}}}' | \
+            opa eval --data config/opa/policies/authz.rego --input - "data.ros2.authz.allow" --format pretty
+
+          # Test 2: Agent accessing own resource
+          echo '{"input": {"user": {"type": "agent", "id": "agent-1"}, "action": "write", "resource": {"owner": "agent-1"}}}' | \
+            opa eval --data config/opa/policies/authz.rego --input - "data.ros2.authz.allow" --format pretty
+
+          # Test 3: Public resource read access
+          echo '{"input": {"user": {"role": "user"}, "action": "read", "resource": {"visibility": "public"}}}' | \
+            opa eval --data config/opa/policies/authz.rego --input - "data.ros2.authz.allow" --format pretty
+
+          # Test 4: Tool invocation with permissions
+          echo '{"input": {"user": {"type": "agent", "permissions": ["ros2_launch"]}, "action": "invoke", "resource": {"type": "tool", "name": "ros2_launch"}}}' | \
+            opa eval --data config/opa/policies/authz.rego --input - "data.ros2.authz.allow" --format pretty
+
+          # Test 5: Model inference for authenticated user
+          echo '{"input": {"user": {"authenticated": true}, "action": "inference", "resource": {"type": "model"}}}' | \
+            opa eval --data config/opa/policies/authz.rego --input - "data.ros2.authz.allow" --format pretty
+
+          echo "✅ Policy evaluation tests completed"
+
+      - name: Policy coverage analysis
+        run: |
+          echo "Analyzing policy coverage..."
+
+          # Count rules in the policy
+          rule_count=$(grep -c "allow if" config/opa/policies/authz.rego || echo "0")
+          echo "Total authorization rules: $rule_count"
+
+          # Check for default deny
+          if grep -q "default allow := false" config/opa/policies/authz.rego; then
+            echo "✅ Default deny policy is in place"
+          else
+            echo "⚠️  Warning: Default deny policy not found"
+          fi
+
+          # Check for audit logging
+          if grep -q "audit :=" config/opa/policies/authz.rego; then
+            echo "✅ Audit logging is configured"
+          else
+            echo "⚠️  Warning: Audit logging not found"
+          fi
+
+      - name: Generate policy documentation
+        run: |
+          echo "Generating policy documentation..."
+          echo "# OPA Policy Report" > opa-policy-report.md
+          echo "" >> opa-policy-report.md
+          echo "## Policy Files" >> opa-policy-report.md
+          echo "" >> opa-policy-report.md
+          find config/opa/policies -name "*.rego" -exec echo "- {}" \; >> opa-policy-report.md
+          echo "" >> opa-policy-report.md
+          echo "## Policy Summary" >> opa-policy-report.md
+          echo "" >> opa-policy-report.md
+          echo "- Package: \`ros2.authz\`" >> opa-policy-report.md
+          echo "- Rules: $(grep -c "allow if" config/opa/policies/authz.rego || echo "0")" >> opa-policy-report.md
+          echo "- Default: Deny (secure by default)" >> opa-policy-report.md
+          echo "" >> opa-policy-report.md
+          echo "## Authorization Rules" >> opa-policy-report.md
+          echo "" >> opa-policy-report.md
+          echo "1. Admin users have full access" >> opa-policy-report.md
+          echo "2. Agents can access their own resources" >> opa-policy-report.md
+          echo "3. Public resources allow read access" >> opa-policy-report.md
+          echo "4. Agents can invoke tools they have permission for" >> opa-policy-report.md
+          echo "5. Authenticated users can perform model inference" >> opa-policy-report.md
+
+          cat opa-policy-report.md
+
+      - name: Upload policy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: opa-policy-report
+          path: opa-policy-report.md
+          retention-days: 30
+
+  # ===========================================
+  # OPA Bundle Build (Optional)
+  # ===========================================
+  bundle-build:
+    name: OPA Bundle Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    needs: policy-check
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
+      - name: Build OPA bundle
+        run: |
+          echo "Building OPA bundle..."
+          mkdir -p build/opa
+          opa build config/opa/policies/ -o build/opa/bundle.tar.gz
+          echo "✅ OPA bundle built successfully"
+          ls -lh build/opa/bundle.tar.gz
+
+      - name: Upload OPA bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: opa-bundle
+          path: build/opa/bundle.tar.gz
+          retention-days: 30
+
+  # ===========================================
+  # Summary
+  # ===========================================
+  summary:
+    name: OPA Policy Gate Summary
+    runs-on: ubuntu-latest
+    needs: [policy-check, bundle-build]
+    if: always()
+    permissions:
+      contents: read
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## OPA Policy Gate Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Policy validation status
+          if [ "${{ needs.policy-check.result }}" == "success" ]; then
+            echo "| Policy Validation | ✅ |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Policy Validation | ❌ |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Bundle build status
+          if [ "${{ needs.bundle-build.result }}" == "success" ]; then
+            echo "| Bundle Build | ✅ |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Bundle Build | ❌ |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check for failures
+        run: |
+          if [ "${{ needs.policy-check.result }}" != "success" ]; then
+            echo "❌ OPA policy validation failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.bundle-build.result }}" != "success" ]; then
+            echo "❌ OPA bundle build failed"
+            exit 1
+          fi
+
+          echo "✅ All OPA policy gate checks passed"

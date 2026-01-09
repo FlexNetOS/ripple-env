@@ -11,7 +11,7 @@ services:
     command: server --disable traefik --disable servicelb --disable metrics-server
     privileged: true
     environment:
-      - K3S_TOKEN=argocd-dev-token
+      - K3S_TOKEN=${K3S_TOKEN:-changeme}
       - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
       - K3S_KUBECONFIG_MODE=666
     volumes:
@@ -57,85 +57,130 @@ networks:
     external: true
     name: agentic-network
 
+# =============================================================================
+# ARIA Infrastructure - Argo Stack (P1-011 Implementation)
+# =============================================================================
+# This stack includes:
+# - Argo CD: GitOps continuous delivery
+# - Argo Rollouts: Progressive delivery (canary, blue-green)
+# - Argo Workflows: Container-native workflow engine
+#
+# Quick Start:
+#   1. docker-compose -f docker-compose.argo.yml up -d
+#   2. ./scripts/setup-argo-workflows.sh
+#   3. Access UIs:
+#      - Argo CD: https://localhost:30443
+#      - Argo Rollouts: http://localhost:8081
+#      - Argo Workflows: http://localhost:2746
+# =============================================================================
+
 # Usage:
 # 1. Create required directories:
 #    mkdir -p data/k3s/kubeconfig scripts
 #
-# 2. Create installation script (scripts/install-argocd.sh):
-#    #!/bin/bash
-#    set -e
-#    echo "Waiting for k3s to be ready..."
-#    until kubectl get nodes 2>/dev/null; do sleep 5; done
-#    
-#    echo "Installing Argo CD..."
-#    kubectl create namespace argocd || true
-#    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-#    
-#    echo "Installing Argo Rollouts..."
-#    kubectl create namespace argo-rollouts || true
-#    kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
-#    
-#    echo "Installing Argo Workflows..."
-#    kubectl create namespace argo || true
-#    kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/latest/download/install.yaml
-#    
-#    echo "Patching Argo CD service to NodePort..."
-#    kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort", "ports": [{"port": 443, "nodePort": 30443}]}}'
-#    
-#    echo "Getting initial admin password..."
-#    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-#    echo ""
-#    echo "Installation complete!"
-#
-# 3. Make script executable:
-#    chmod +x scripts/install-argocd.sh
-#
-# 4. Start k3s and install Argo stack:
+# 2. Start k3s and install Argo stack:
 #    docker-compose -f docker-compose.argo.yml up -d
 #
-# 5. Wait for installation (check logs):
+# 3. Wait for installation (check logs):
 #    docker-compose -f docker-compose.argo.yml logs -f argocd-installer
 #
-# 6. Get Argo CD admin password:
+# 4. Configure Argo Workflows (RECOMMENDED):
+#    export KUBECONFIG=./data/k3s/kubeconfig/kubeconfig.yaml
+#    ./scripts/setup-argo-workflows.sh
+#
+# 5. Get Argo CD admin password:
 #    export KUBECONFIG=./data/k3s/kubeconfig/kubeconfig.yaml
 #    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 #
-# 7. Access Argo CD UI:
-#    https://localhost:30443
-#    Username: admin
-#    Password: (from step 6)
+# =============================================================================
+# ARGO CD - GitOps Continuous Delivery
+# =============================================================================
+# Access: https://localhost:30443
+# Username: admin
+# Password: (see step 5 above)
 #
-# 8. Port forward for easier access (alternative to NodePort):
-#    kubectl port-forward svc/argocd-server -n argocd 8080:443
-#    Access: https://localhost:8080
+# Port forward alternative:
+#   kubectl port-forward svc/argocd-server -n argocd 8080:443
+#   Access: https://localhost:8080
 #
-# 9. Install Argo CD CLI (optional):
-#    curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-#    sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
-#    rm argocd-linux-amd64
+# Install Argo CD CLI:
+#   curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+#   sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+#   argocd login localhost:30443 --username admin --password <password> --insecure
 #
-# 10. Login via CLI:
-#     argocd login localhost:30443 --username admin --password <password> --insecure
+# GitOps Workflow:
+#   argocd app create myapp --repo https://github.com/your-org/your-repo \
+#     --path manifests --dest-server https://kubernetes.default.svc \
+#     --dest-namespace default
+#   argocd app sync myapp
+#   argocd app get myapp
 #
-# Argo CD GitOps workflow:
-# 1. Create application:
-#    argocd app create myapp --repo https://github.com/your-org/your-repo \
-#      --path manifests --dest-server https://kubernetes.default.svc \
-#      --dest-namespace default
+# =============================================================================
+# ARGO ROLLOUTS - Progressive Delivery
+# =============================================================================
+# Features: Canary deployments, Blue-green deployments, Analysis runs
 #
-# 2. Sync application:
-#    argocd app sync myapp
+# Access dashboard:
+#   kubectl port-forward svc/argo-rollouts-dashboard -n argo-rollouts 3100:3100
+#   Access: http://localhost:3100
 #
-# 3. Monitor application:
-#    argocd app get myapp
-#    argocd app logs myapp
+# Install Argo Rollouts kubectl plugin:
+#   curl -LO https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-linux-amd64
+#   chmod +x kubectl-argo-rollouts-linux-amd64
+#   sudo mv kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
 #
-# Argo Rollouts (Progressive Delivery):
-# - Canary deployments
-# - Blue-green deployments
-# - Access dashboard: kubectl port-forward svc/argo-rollouts-dashboard -n argo-rollouts 3100:3100
+# Common commands:
+#   kubectl argo rollouts list rollouts -n default
+#   kubectl argo rollouts get rollout myapp -n default
+#   kubectl argo rollouts promote myapp -n default
 #
-# Argo Workflows (CI/CD Pipelines):
-# - DAG-based workflows
-# - Access UI: kubectl port-forward svc/argo-server -n argo 2746:2746
-# - Submit workflow: argo submit -n argo workflow.yaml
+# =============================================================================
+# ARGO WORKFLOWS - Container-Native Workflow Engine
+# =============================================================================
+# Features: DAG-based workflows, CI/CD pipelines, Data processing
+#
+# Access UI:
+#   Direct: http://localhost:2746
+#   NodePort: http://localhost:32746
+#   Port forward: kubectl port-forward svc/argo-server -n argo 2746:2746
+#
+# Install Argo CLI:
+#   curl -sLO https://github.com/argoproj/argo-workflows/releases/latest/download/argo-linux-amd64.gz
+#   gunzip argo-linux-amd64.gz
+#   chmod +x argo-linux-amd64
+#   sudo mv argo-linux-amd64 /usr/local/bin/argo
+#
+# Workflow operations:
+#   argo list -n argo                          # List all workflows
+#   argo submit workflow.yaml -n argo          # Submit workflow
+#   argo watch <workflow-name> -n argo         # Watch workflow execution
+#   argo logs <workflow-name> -n argo          # View workflow logs
+#   argo delete <workflow-name> -n argo        # Delete workflow
+#
+# Submit example workflows:
+#   kubectl create -f manifests/argo-workflows/templates/hello-world.yaml -n argo
+#   argo submit manifests/argo-workflows/templates/ci-pipeline.yaml -n argo
+#   argo submit manifests/argo-workflows/templates/ml-pipeline.yaml -n argo
+#
+# Documentation:
+#   See: manifests/argo-workflows/README.md
+#
+# =============================================================================
+# VERIFICATION & MONITORING
+# =============================================================================
+# Check all components:
+#   kubectl get all -n argocd
+#   kubectl get all -n argo-rollouts
+#   kubectl get all -n argo
+#
+# View logs:
+#   kubectl logs -n argocd deployment/argocd-server
+#   kubectl logs -n argo-rollouts deployment/argo-rollouts
+#   kubectl logs -n argo deployment/workflow-controller
+#   kubectl logs -n argo deployment/argo-server
+#
+# Check workflow templates:
+#   kubectl get workflowtemplate -n argo
+#
+# Monitor workflows:
+#   kubectl get workflows -n argo --watch

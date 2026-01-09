@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aria.tools/mcp/schemas/repository-analysis",
+  "title": "Repository Analysis Tool",
+  "description": "MCP tool for analyzing code repositories, extracting dependencies, and mapping installation methods",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "repository_analysis",
+      "description": "Tool identifier"
+    },
+    "description": {
+      "type": "string",
+      "const": "Analyzes a code repository to extract metadata, dependencies, installation methods, and integration points"
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "repository_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "GitHub repository URL to analyze",
+          "examples": ["https://github.com/agixt/agixt"]
+        },
+        "analysis_depth": {
+          "type": "string",
+          "enum": ["shallow", "standard", "deep"],
+          "default": "standard",
+          "description": "Depth of analysis: shallow (metadata only), standard (dependencies + config), deep (full codebase)"
+        },
+        "focus_areas": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["dependencies", "installation", "configuration", "integrations", "security", "testing"]
+          },
+          "description": "Specific areas to focus analysis on"
+        },
+        "target_domain": {
+          "type": "string",
+          "enum": [
+            "Host OS & Environment",
+            "Isolation & Runtime",
+            "Cluster & Delivery",
+            "Edge & Agent Traffic",
+            "Identity & Policy",
+            "Messaging & Orchestration",
+            "Agent Runtime",
+            "Tool Execution",
+            "Inference",
+            "State & Storage",
+            "Data & Query",
+            "LLMOps & Evaluation",
+            "Training",
+            "UI",
+            "Build Tools",
+            "Notebooks",
+            "Observability",
+            "Security",
+            "DevOps & Autonomy",
+            "Additional Tools"
+          ],
+          "description": "ARIA domain this repository belongs to"
+        }
+      },
+      "required": ["repository_url"]
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "object",
+          "properties": {
+            "url": {"type": "string", "format": "uri"},
+            "name": {"type": "string"},
+            "owner": {"type": "string"},
+            "description": {"type": "string"},
+            "language": {"type": "string"},
+            "stars": {"type": "number"},
+            "last_updated": {"type": "string", "format": "date-time"}
+          }
+        },
+        "dependencies": {
+          "type": "object",
+          "properties": {
+            "system": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "System-level dependencies (apt, brew, nix)"
+            },
+            "runtime": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Runtime dependencies (Python, Node, Rust, etc.)"
+            },
+            "development": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Development-only dependencies"
+            }
+          }
+        },
+        "installation_method": {
+          "type": "object",
+          "properties": {
+            "primary": {
+              "type": "string",
+              "enum": ["nix", "pixi", "docker", "cargo", "npm", "pip", "binary", "git_submodule", "manual"],
+              "description": "Primary installation method for ARIA integration"
+            },
+            "alternatives": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Alternative installation methods"
+            },
+            "target_file": {
+              "type": "string",
+              "description": "Target configuration file (e.g., flake.nix, pixi.toml, docker-compose.yml)"
+            },
+            "installation_command": {
+              "type": "string",
+              "description": "Command to install this component"
+            }
+          }
+        },
+        "configuration": {
+          "type": "object",
+          "properties": {
+            "config_files": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Configuration files required"
+            },
+            "environment_variables": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "description": {"type": "string"},
+                  "required": {"type": "boolean"},
+                  "default": {"type": "string"}
+                }
+              }
+            },
+            "ports": {
+              "type": "array",
+              "items": {"type": "number"},
+              "description": "Network ports used"
+            }
+          }
+        },
+        "integrations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service": {"type": "string"},
+              "type": {"type": "string", "enum": ["required", "optional", "recommended"]},
+              "description": {"type": "string"}
+            }
+          },
+          "description": "Integration points with other services"
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "component": {"type": "string"},
+              "reason": {"type": "string"},
+              "resolution": {"type": "string", "enum": ["feature_flag", "alternative", "version_constraint"]}
+            }
+          },
+          "description": "Potential conflicts with other components"
+        },
+        "verification": {
+          "type": "object",
+          "properties": {
+            "health_check": {"type": "string", "description": "Command to verify installation"},
+            "test_command": {"type": "string", "description": "Command to run tests"},
+            "expected_output": {"type": "string"}
+          }
+        }
+      },
+      "required": ["repository", "installation_method"]
+    }
+  },
+  "required": ["name", "description", "inputSchema", "outputSchema"]
+}

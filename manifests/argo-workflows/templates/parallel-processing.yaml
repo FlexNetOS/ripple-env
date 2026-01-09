@@ -1,0 +1,69 @@
+# Parallel Processing Workflow
+# Demonstrates parallel task execution and fan-out/fan-in patterns
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: parallel-processing
+  namespace: argo
+spec:
+  entrypoint: parallel-pipeline
+  arguments:
+    parameters:
+    - name: batch-size
+      value: "5"
+
+  templates:
+  - name: parallel-pipeline
+    steps:
+    - - name: generate-tasks
+        template: task-generator
+        arguments:
+          parameters:
+          - name: batch-size
+            value: "{{workflow.parameters.batch-size}}"
+
+    - - name: process-batch
+        template: process-item
+        arguments:
+          parameters:
+          - name: item-id
+            value: "{{item}}"
+        withParam: "{{steps.generate-tasks.outputs.result}}"
+
+    - - name: aggregate-results
+        template: aggregator
+
+  - name: task-generator
+    inputs:
+      parameters:
+      - name: batch-size
+    script:
+      image: python:3.11-slim
+      command: [python]
+      source: |
+        import json
+        batch_size = int("{{inputs.parameters.batch-size}}")
+        items = [f"item-{i}" for i in range(batch_size)]
+        print(json.dumps(items))
+
+  - name: process-item
+    inputs:
+      parameters:
+      - name: item-id
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Processing {{inputs.parameters.item-id}}"
+        sleep 2
+        echo "Completed {{inputs.parameters.item-id}}"
+
+  - name: aggregator
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Aggregating all results..."
+        echo "All parallel tasks completed successfully"

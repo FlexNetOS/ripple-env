@@ -1,0 +1,860 @@
+# Distributed Compute Policy Configuration
+# BUILDKIT_STARTER_SPEC.md Section 10.7: Distributed Compute Management
+# ARIA Priority: P3-011 (Distributed Compute Policy)
+#
+# This policy governs how compute resources (CPU, GPU, TPU) are allocated,
+# scheduled, and managed across the ARIA distributed platform.
+#
+# Requirements per spec:
+# - Multi-tier compute: CPU, GPU, TPU, FPGA, Edge devices
+# - Workload scheduling: Priority-based scheduling with preemption
+# - Auto-scaling: Dynamic scaling based on load and SLA requirements
+# - Resource isolation: CPU pinning, cgroups, and affinity management
+#
+# Feature Flag Integration:
+# - Controlled by: manifests/feature_flags.yaml::compute.DISTRIBUTED_COMPUTE_ENABLED
+# - CPU quota: feature_flags.yaml::compute.DEFAULT_CPU_QUOTA_MILLICORES
+# - GPU enabled: feature_flags.yaml::compute.GPU_ACCELERATION_ENABLED
+#
+# Version: 1.0.0
+# Last Updated: 2026-01-09
+
+compute_policy:
+  name: flexstack-distributed-compute
+  version: "1.0.0"
+  description: "Distributed compute resource management and scheduling policy"
+
+  # Feature flag integration
+  feature_flags_source: "../feature_flags.yaml"
+  enabled_by: "compute.DISTRIBUTED_COMPUTE_ENABLED"
+
+  # Compute tier configuration
+  tiers:
+    # CPU tier: General purpose compute
+    cpu:
+      name: "cpu-compute"
+      description: "CPU-based compute resources for general workloads"
+
+      resources:
+        total_cores: "${CPU_CORES:-32}"
+        total_threads: "${CPU_THREADS:-64}"
+        architecture: "x86_64"  # x86_64, arm64, riscv
+        instruction_sets: ["avx2", "avx512", "sse4.2"]
+
+        # Reserved system cores
+        reserved:
+          system_cores: 2
+          interrupt_cores: 2
+          allocatable_cores: 28
+
+      # CPU allocation strategies
+      allocation:
+        strategy: "spread"  # spread, binpack, balanced
+        overcommit_ratio: 2.0
+        cpu_pinning: true
+        numa_aware: true
+
+        # CPU quota enforcement
+        quota:
+          enabled: true
+          default_millicores: "${DEFAULT_CPU_QUOTA_MILLICORES:-1000}"
+          burst_enabled: true
+          burst_multiplier: 1.5
+
+      # CPU classes by performance
+      classes:
+        - name: "high_performance"
+          cores: [0, 1, 2, 3, 4, 5, 6, 7]
+          frequency_ghz: 3.5
+          turbo_enabled: true
+          priority: 1
+
+          workload_types:
+            - real_time_inference
+            - critical_agents
+            - interactive_tasks
+
+        - name: "standard"
+          cores: [8, 9, 10, 11, 12, 13, 14, 15]
+          frequency_ghz: 2.8
+          turbo_enabled: false
+          priority: 2
+
+          workload_types:
+            - batch_inference
+            - background_agents
+            - data_processing
+
+        - name: "power_efficient"
+          cores: [16, 17, 18, 19]
+          frequency_ghz: 2.0
+          power_saving: true
+          priority: 3
+
+          workload_types:
+            - monitoring
+            - logging
+            - idle_tasks
+
+    # GPU tier: Accelerated compute
+    gpu:
+      name: "gpu-compute"
+      description: "GPU-based accelerated compute for ML/AI workloads"
+      enabled: "${GPU_ACCELERATION_ENABLED:-false}"
+
+      devices:
+        - id: 0
+          name: "GPU-0"
+          vendor: "nvidia"  # nvidia, amd, intel
+          model: "RTX-4090"
+          compute_capability: "8.9"
+          cuda_cores: 16384
+          memory_gb: 24
+          tflops_fp32: 82.6
+          tflops_fp16: 165.2
+
+          allocation:
+            exclusive: false
+            mig_enabled: false  # Multi-Instance GPU
+            max_concurrent_jobs: 4
+            scheduling_strategy: "time_slicing"
+
+          workloads:
+            - name: "training"
+              priority: 1
+              max_utilization_percent: 100
+              preemptible: false
+
+            - name: "inference"
+              priority: 2
+              max_utilization_percent: 80
+              preemptible: true
+
+            - name: "batch_processing"
+              priority: 3
+              max_utilization_percent: 60
+              preemptible: true
+
+        - id: 1
+          name: "GPU-1"
+          vendor: "nvidia"
+          model: "RTX-4090"
+          compute_capability: "8.9"
+          cuda_cores: 16384
+          memory_gb: 24
+          tflops_fp32: 82.6
+          tflops_fp16: 165.2
+
+      # GPU resource fractions
+      resource_fractions:
+        enabled: true
+        min_fraction: 0.1
+        max_fraction: 1.0
+        allocation_granularity: 0.1
+
+    # TPU tier: Tensor Processing Units
+    tpu:
+      name: "tpu-compute"
+      description: "TPU-based compute for specialized ML workloads"
+      enabled: "${TPU_ENABLED:-false}"
+
+      devices:
+        - id: 0
+          name: "TPU-v4-pod"
+          generation: "v4"
+          chips: 4
+          tflops_fp16: 275
+          memory_gb: 32
+
+          allocation:
+            pod_slicing: true
+            max_concurrent_jobs: 8
+
+    # Edge tier: Edge computing devices
+    edge:
+      name: "edge-compute"
+      description: "Edge device compute for distributed inference"
+      enabled: "${EDGE_COMPUTE_ENABLED:-false}"
+
+      device_classes:
+        - name: "edge_gpu"
+          type: "jetson_orin"
+          count: 10
+          cpu_cores: 8
+          gpu_tflops: 5.3
+          memory_gb: 16
+
+        - name: "edge_cpu"
+          type: "raspberry_pi_5"
+          count: 50
+          cpu_cores: 4
+          memory_gb: 8
+
+  # Workload scheduling
+  scheduling:
+    # Scheduler type
+    scheduler_type: "priority_preemptive"  # fifo, fair_share, priority_preemptive
+
+    # Scheduling policies
+    policies:
+      # Priority classes
+      priority_classes:
+        - name: "system_critical"
+          priority: 1000
+          preemption_policy: "never"
+          resource_guarantee: 100
+
+        - name: "production"
+          priority: 500
+          preemption_policy: "lower_priority"
+          resource_guarantee: 80
+
+        - name: "staging"
+          priority: 250
+          preemption_policy: "lower_priority"
+          resource_guarantee: 50
+
+        - name: "development"
+          priority: 100
+          preemption_policy: "always"
+          resource_guarantee: 20
+
+        - name: "batch"
+          priority: 50
+          preemption_policy: "always"
+          resource_guarantee: 0
+
+      # Preemption rules
+      preemption:
+        enabled: true
+        grace_period_seconds: 30
+        checkpoint_before_preempt: true
+
+        # Preemption triggers
+        triggers:
+          - higher_priority_pending
+          - resource_quota_exceeded
+          - sla_violation
+
+      # Fair share scheduling
+      fair_share:
+        enabled: true
+        calculation_interval_seconds: 60
+
+        # Per-namespace shares
+        namespace_shares:
+          production: 50
+          staging: 30
+          development: 20
+
+    # Queue management
+    queue:
+      max_queue_length: 10000
+      queue_timeout_seconds: 3600
+
+      # Queue priorities
+      queues:
+        - name: "high_priority"
+          priority: 1
+          max_jobs: 1000
+
+        - name: "normal_priority"
+          priority: 2
+          max_jobs: 5000
+
+        - name: "low_priority"
+          priority: 3
+          max_jobs: 10000
+
+    # Affinity and anti-affinity
+    affinity:
+      # Node affinity (prefer certain nodes)
+      node_affinity:
+        enabled: true
+
+        rules:
+          - workload: "gpu_inference"
+            node_selector:
+              gpu: "true"
+              gpu_type: "nvidia"
+
+          - workload: "cpu_intensive"
+            node_selector:
+              cpu_type: "high_performance"
+
+      # Pod affinity (co-locate workloads)
+      pod_affinity:
+        enabled: true
+
+        rules:
+          - workload: "agent_and_state"
+            affinity_to:
+              - holochain_node
+              - temporal_worker
+
+      # Pod anti-affinity (separate workloads)
+      pod_anti_affinity:
+        enabled: true
+
+        rules:
+          - workload: "high_availability"
+            anti_affinity_to:
+              - same_agent_replicas
+
+    # Taints and tolerations
+    taints_tolerations:
+      enabled: true
+
+      taints:
+        - key: "gpu"
+          value: "true"
+          effect: "NoSchedule"
+          description: "Only GPU workloads can schedule"
+
+        - key: "dedicated"
+          value: "inference"
+          effect: "NoExecute"
+          description: "Dedicated inference nodes"
+
+  # Auto-scaling
+  auto_scaling:
+    enabled: true
+
+    # Horizontal scaling (add/remove compute nodes)
+    horizontal:
+      enabled: true
+
+      scale_up:
+        trigger_cpu_percent: 80
+        trigger_gpu_percent: 85
+        trigger_queue_depth: 100
+        cooldown_seconds: 300
+        max_nodes: 100
+
+      scale_down:
+        trigger_cpu_percent: 30
+        trigger_gpu_percent: 20
+        trigger_queue_depth: 10
+        cooldown_seconds: 600
+        min_nodes: 5
+
+      # Node pools
+      node_pools:
+        - name: "cpu_pool"
+          node_type: "cpu_optimized"
+          min_nodes: 3
+          max_nodes: 50
+          spot_instances: true
+          spot_max_price: 0.50
+
+        - name: "gpu_pool"
+          node_type: "gpu_optimized"
+          min_nodes: 2
+          max_nodes: 20
+          spot_instances: false
+
+    # Vertical scaling (adjust resource allocations)
+    vertical:
+      enabled: true
+
+      # VPA (Vertical Pod Autoscaler) configuration
+      vpa:
+        update_mode: "Auto"  # Off, Initial, Recreate, Auto
+        min_allowed_cpu_millicores: 100
+        max_allowed_cpu_millicores: 8000
+        min_allowed_memory_mb: 128
+        max_allowed_memory_mb: 16384
+
+    # Burst scaling
+    burst:
+      enabled: true
+      burst_to_cloud: true
+      cloud_provider: "aws"  # aws, gcp, azure
+
+      burst_conditions:
+        local_capacity_percent: 95
+        queue_wait_time_seconds: 300
+        cost_threshold_multiplier: 2.0
+
+  # Resource quotas and limits
+  quotas:
+    # Global platform limits
+    platform:
+      max_total_cpu_cores: 256
+      max_total_gpu_devices: 16
+      max_concurrent_jobs: 10000
+
+    # Per-namespace quotas
+    namespace:
+      default_cpu_cores: 8
+      default_gpu_devices: 1
+
+      quotas:
+        - namespace: "production"
+          cpu_cores: 100
+          cpu_millicores: 100000
+          gpu_devices: 8
+          max_concurrent_jobs: 1000
+
+        - namespace: "staging"
+          cpu_cores: 50
+          cpu_millicores: 50000
+          gpu_devices: 4
+          max_concurrent_jobs: 500
+
+        - namespace: "development"
+          cpu_cores: 30
+          cpu_millicores: 30000
+          gpu_devices: 2
+          max_concurrent_jobs: 200
+
+    # Per-agent quotas
+    agent:
+      default_cpu_millicores: 1000
+      max_cpu_millicores: 8000
+      default_gpu_fraction: 0.25
+      max_gpu_fraction: 1.0
+
+    # Enforcement
+    enforcement:
+      enabled: true
+      action: "throttle"  # throttle, reject, queue
+      grace_period_seconds: 60
+
+  # Performance optimization
+  optimization:
+    # CPU optimization
+    cpu:
+      # CPU governor
+      governor: "performance"  # performance, powersave, ondemand, conservative
+
+      # CPU frequency scaling
+      frequency_scaling:
+        enabled: true
+        min_freq_ghz: 1.5
+        max_freq_ghz: 4.0
+
+      # Hyperthreading
+      hyperthreading:
+        enabled: true
+        sibling_awareness: true
+
+      # CPU cache optimization
+      cache_optimization:
+        enabled: true
+        cache_line_size_bytes: 64
+        prefetch_enabled: true
+
+      # CPU isolation
+      isolation:
+        isolate_critical_cores: true
+        isolated_cores: [0, 1]
+        nohz_full: true
+
+    # GPU optimization
+    gpu:
+      # Persistence mode (keep GPU initialized)
+      persistence_mode: true
+
+      # Power management
+      power_limit_watts: 350
+      auto_boost: true
+
+      # Memory optimization
+      memory_clock_mhz: 9500
+      core_clock_mhz: 2520
+
+      # Multi-Process Service (MPS)
+      mps:
+        enabled: true
+        threads_per_context: 4
+
+    # Thermal management
+    thermal:
+      enabled: true
+      max_cpu_temp_celsius: 85
+      max_gpu_temp_celsius: 80
+
+      cooling:
+        strategy: "active"
+        fan_speed_percent: 80
+
+  # Workload characterization
+  workload_profiles:
+    # Define common workload patterns
+    profiles:
+      - name: "inference_realtime"
+        description: "Real-time inference workload"
+        cpu_millicores: 2000
+        memory_mb: 4096
+        gpu_fraction: 0.25
+        latency_target_ms: 100
+        priority_class: "production"
+
+      - name: "inference_batch"
+        description: "Batch inference workload"
+        cpu_millicores: 4000
+        memory_mb: 8192
+        gpu_fraction: 0.5
+        latency_target_ms: 5000
+        priority_class: "batch"
+
+      - name: "training"
+        description: "Model training workload"
+        cpu_millicores: 8000
+        memory_mb: 32768
+        gpu_fraction: 1.0
+        priority_class: "production"
+        preemptible: false
+
+      - name: "data_processing"
+        description: "Data preprocessing workload"
+        cpu_millicores: 4000
+        memory_mb: 8192
+        gpu_fraction: 0.0
+        priority_class: "staging"
+
+      - name: "monitoring"
+        description: "Monitoring and observability"
+        cpu_millicores: 500
+        memory_mb: 1024
+        gpu_fraction: 0.0
+        priority_class: "system_critical"
+
+# =============================================================================
+# COST MANAGEMENT & BUDGETING
+# Track and optimize compute costs
+# =============================================================================
+cost_management:
+  enabled: true
+  currency: "USD"
+
+  # Cost per resource per hour
+  resource_costs:
+    cpu_core_per_hour: 0.05
+    gpu_device_per_hour: 1.50
+    tpu_chip_per_hour: 4.50
+    edge_device_per_hour: 0.01
+
+    # Cloud burst costs
+    cloud_burst:
+      aws_cpu_per_hour: 0.10
+      aws_gpu_per_hour: 3.00
+      gcp_cpu_per_hour: 0.09
+      gcp_gpu_per_hour: 2.80
+
+  # Budget limits
+  budgets:
+    daily_limit: 500.00
+    monthly_limit: 15000.00
+    alert_threshold_percent: 80
+
+  # Cost optimization strategies
+  optimization:
+    use_spot_instances: true
+    spot_max_discount_percent: 70
+
+    prefer_local_compute: true
+    burst_to_cloud_threshold: 0.95
+
+    power_management:
+      idle_shutdown_minutes: 30
+      scale_down_aggressive: true
+
+    right_sizing:
+      enabled: true
+      analyze_interval_hours: 24
+      recommendation_threshold: 0.2
+
+# =============================================================================
+# MONITORING & OBSERVABILITY
+# Track compute usage and performance
+# =============================================================================
+monitoring:
+  enabled: true
+
+  # Key performance metrics
+  metrics:
+    # CPU metrics
+    - name: "cpu_utilization_percent"
+      target: 70
+      warning_threshold: 85
+      critical_threshold: 95
+
+    - name: "cpu_throttling_percent"
+      target: 0
+      warning_threshold: 5
+      critical_threshold: 20
+
+    - name: "cpu_context_switches_per_second"
+      target: 10000
+      warning_threshold: 50000
+      critical_threshold: 100000
+
+    # GPU metrics
+    - name: "gpu_utilization_percent"
+      target: 80
+      warning_threshold: 95
+      critical_threshold: 99
+
+    - name: "gpu_memory_utilization_percent"
+      target: 75
+      warning_threshold: 90
+      critical_threshold: 95
+
+    - name: "gpu_temperature_celsius"
+      target: 70
+      warning_threshold: 80
+      critical_threshold: 85
+
+    # Scheduling metrics
+    - name: "queue_depth"
+      target: 10
+      warning_threshold: 100
+      critical_threshold: 1000
+
+    - name: "scheduling_latency_ms"
+      target: 100
+      warning_threshold: 500
+      critical_threshold: 2000
+
+    - name: "job_completion_rate_percent"
+      target: 99
+      warning_threshold: 95
+      critical_threshold: 90
+
+  # Performance profiling
+  profiling:
+    enabled: true
+
+    tools:
+      - name: "perf"
+        enabled: true
+        sampling_rate_hz: 99
+
+      - name: "nvidia_nsight"
+        enabled: "${GPU_ENABLED:-false}"
+        profile_gpu: true
+
+      - name: "ebpf_tracing"
+        enabled: true
+        trace_syscalls: true
+
+  # Alerts
+  alerts:
+    - name: "high_cpu_usage"
+      condition: "cpu_utilization_percent > 90"
+      severity: "warning"
+      notification_channel: "slack://aria-ops"
+
+    - name: "gpu_overheating"
+      condition: "gpu_temperature_celsius > 80"
+      severity: "critical"
+      notification_channel: "pagerduty://aria-critical"
+
+    - name: "scheduler_queue_backlog"
+      condition: "queue_depth > 500"
+      severity: "warning"
+      notification_channel: "slack://aria-ops"
+
+# =============================================================================
+# INTEGRATION WITH ARIA COMPONENTS
+# Connect with other platform services
+# =============================================================================
+integrations:
+  # Holochain state synchronization
+  holochain:
+    enabled: "${USE_HOLOCHAIN_STATE:-true}"
+    sync_compute_metrics: true
+    store_in_dna: "compute_metrics"
+    replicate_across_peers: true
+
+  # NATS event streaming
+  nats:
+    enabled: "${NATS_ENABLED:-true}"
+    publish_compute_events: true
+    subject_prefix: "aria.compute"
+    stream_name: "COMPUTE_EVENTS"
+
+    event_types:
+      - job_scheduled
+      - job_started
+      - job_completed
+      - job_failed
+      - job_preempted
+      - resource_allocated
+      - resource_released
+      - quota_exceeded
+      - scaling_triggered
+
+  # Temporal workflow coordination
+  temporal:
+    enabled: "${TEMPORAL_ENABLED:-true}"
+    workflow_name: "ComputeManagementWorkflow"
+    task_queue: "compute-management"
+
+    activities:
+      - schedule_job
+      - allocate_resources
+      - monitor_execution
+      - handle_failure
+      - cleanup_resources
+
+  # OpenTelemetry observability
+  opentelemetry:
+    enabled: "${OTEL_ENABLED:-true}"
+    trace_all_jobs: true
+    trace_scheduling_decisions: true
+    custom_attributes:
+      service_name: "aria-distributed-compute"
+      team: "configuration-domain"
+
+  # Kubernetes scheduler
+  kubernetes:
+    enabled: true
+    scheduler_name: "aria-scheduler"
+
+    features:
+      pod_priority_preemption: true
+      pod_topology_spread: true
+      node_affinity: true
+      pod_affinity: true
+
+  # Cluster autoscaler
+  cluster_autoscaler:
+    enabled: true
+    scale_down_enabled: true
+    scale_down_delay_after_add: "10m"
+    scale_down_unneeded_time: "10m"
+    max_node_provision_time: "15m"
+
+# =============================================================================
+# FAILOVER & DISASTER RECOVERY
+# High availability and fault tolerance
+# =============================================================================
+failover:
+  enabled: true
+
+  # Job failure handling
+  job_failure:
+    retry_policy:
+      max_attempts: 3
+      backoff_multiplier: 2
+      max_backoff_seconds: 600
+
+    failure_actions:
+      - retry_on_different_node
+      - checkpoint_and_restart
+      - notify_on_persistent_failure
+
+  # Node failure handling
+  node_failure:
+    detection_timeout_seconds: 30
+    drain_timeout_seconds: 300
+
+    actions:
+      - mark_node_unschedulable
+      - migrate_running_jobs
+      - alert_operations
+
+  # Compute resource failure
+  resource_failure:
+    # GPU failure
+    gpu_failure:
+      detection_method: "health_check"
+      health_check_interval_seconds: 60
+      action: "drain_and_replace"
+
+    # CPU failure
+    cpu_failure:
+      detection_method: "kernel_panic"
+      action: "node_reboot"
+
+# =============================================================================
+# SECURITY & ISOLATION
+# Compute security and isolation policies
+# =============================================================================
+security:
+  # Process isolation
+  isolation:
+    enabled: true
+    method: "container"  # container, vm, process
+
+    # Container runtime security
+    container_runtime:
+      runtime: "containerd"
+      seccomp_enabled: true
+      apparmor_enabled: true
+      selinux_enabled: false
+
+      # Resource limits
+      resource_limits:
+        pids_limit: 4096
+        file_descriptors_limit: 65536
+        network_bandwidth_mbps: 1000
+
+  # Secure boot and attestation
+  secure_boot:
+    enabled: false
+    tpm_required: false
+    measured_boot: false
+
+  # Confidential computing
+  confidential_computing:
+    enabled: false
+    tee_enabled: false  # Trusted Execution Environment
+    sgx_enabled: false  # Intel SGX
+    sev_enabled: false  # AMD SEV
+
+  # Access control
+  access_control:
+    enabled: true
+    rbac_for_scheduling: true
+
+    roles:
+      - name: "scheduler_admin"
+        permissions:
+          - schedule_any_job
+          - modify_priorities
+          - manage_quotas
+
+      - name: "user"
+        permissions:
+          - schedule_own_jobs
+          - view_own_jobs
+
+# =============================================================================
+# BENCHMARKING & PERFORMANCE TESTING
+# Compute performance benchmarking
+# =============================================================================
+benchmarking:
+  enabled: true
+
+  # Benchmark suites
+  suites:
+    - name: "cpu_benchmark"
+      frequency: "weekly"
+      tests:
+        - sysbench_cpu
+        - coremark
+        - linpack
+
+    - name: "gpu_benchmark"
+      frequency: "weekly"
+      tests:
+        - nvidia_cuda_samples
+        - mlperf_inference
+        - pytorch_benchmark
+
+    - name: "scheduling_benchmark"
+      frequency: "daily"
+      tests:
+        - job_scheduling_latency
+        - throughput_test
+        - preemption_overhead
+
+  # Performance baselines
+  baselines:
+    cpu_coremark_score: 50000
+    gpu_tflops_fp32: 80
+    scheduling_latency_p95_ms: 100

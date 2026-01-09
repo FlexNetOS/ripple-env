@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aria.tools/mcp/schemas/workflow-verifier",
+  "title": "Workflow Verifier Tool",
+  "description": "MCP tool for verifying CI/CD workflows, testing pipelines, and end-to-end integration flows",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "workflow_verifier",
+      "description": "Tool identifier"
+    },
+    "description": {
+      "type": "string",
+      "const": "Verifies CI/CD workflows, validates pipeline configurations, runs smoke tests, and checks integration flows"
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "verification_type": {
+          "type": "string",
+          "enum": ["workflow_syntax", "pipeline_execution", "smoke_tests", "integration_tests", "e2e_flow", "comprehensive"],
+          "description": "Type of verification to perform"
+        },
+        "workflow_paths": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Paths to workflow files to verify (e.g., .github/workflows/*.yml)"
+        },
+        "target_environment": {
+          "type": "string",
+          "enum": ["local", "ci", "staging", "production"],
+          "default": "local",
+          "description": "Environment to run verification in"
+        },
+        "test_scope": {
+          "type": "object",
+          "properties": {
+            "domains": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Specific domains to test"
+            },
+            "components": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Specific components to test"
+            },
+            "include_optional": {"type": "boolean", "default": false}
+          }
+        },
+        "verification_options": {
+          "type": "object",
+          "properties": {
+            "timeout_seconds": {"type": "number", "default": 300},
+            "parallel_execution": {"type": "boolean", "default": true},
+            "fail_fast": {"type": "boolean", "default": false},
+            "generate_report": {"type": "boolean", "default": true}
+          }
+        }
+      },
+      "required": ["verification_type"]
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "verification_summary": {
+          "type": "object",
+          "properties": {
+            "type": {"type": "string"},
+            "timestamp": {"type": "string", "format": "date-time"},
+            "duration_seconds": {"type": "number"},
+            "overall_status": {"type": "string", "enum": ["passed", "passed_with_warnings", "failed", "error"]},
+            "total_checks": {"type": "number"},
+            "passed": {"type": "number"},
+            "failed": {"type": "number"},
+            "warnings": {"type": "number"},
+            "skipped": {"type": "number"}
+          }
+        },
+        "workflow_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "workflow_name": {"type": "string"},
+              "workflow_path": {"type": "string"},
+              "status": {"type": "string", "enum": ["valid", "invalid", "warning"]},
+              "syntax_validation": {
+                "type": "object",
+                "properties": {
+                  "valid": {"type": "boolean"},
+                  "errors": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "line": {"type": "number"},
+                        "message": {"type": "string"},
+                        "severity": {"type": "string", "enum": ["error", "warning"]}
+                      }
+                    }
+                  }
+                }
+              },
+              "jobs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "job_name": {"type": "string"},
+                    "status": {"type": "string", "enum": ["passed", "failed", "skipped", "timeout"]},
+                    "duration_seconds": {"type": "number"},
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "step_name": {"type": "string"},
+                          "status": {"type": "string", "enum": ["passed", "failed", "skipped"]},
+                          "output": {"type": "string"},
+                          "error": {"type": "string"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "smoke_tests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "test_name": {"type": "string"},
+              "component": {"type": "string"},
+              "domain": {"type": "string"},
+              "status": {"type": "string", "enum": ["passed", "failed", "timeout", "skipped"]},
+              "execution_time_ms": {"type": "number"},
+              "health_check": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {"type": "string"},
+                  "expected_status": {"type": "number"},
+                  "actual_status": {"type": "number"},
+                  "response_time_ms": {"type": "number"}
+                }
+              },
+              "assertions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "description": {"type": "string"},
+                    "passed": {"type": "boolean"},
+                    "expected": {"type": "string"},
+                    "actual": {"type": "string"}
+                  }
+                }
+              },
+              "error_details": {"type": "string"}
+            }
+          }
+        },
+        "integration_tests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "test_name": {"type": "string"},
+              "components": {"type": "array", "items": {"type": "string"}},
+              "flow": {"type": "array", "items": {"type": "string"}},
+              "status": {"type": "string", "enum": ["passed", "failed", "partial"]},
+              "steps_executed": {"type": "number"},
+              "steps_passed": {"type": "number"},
+              "steps_failed": {"type": "number"},
+              "data_flow_verified": {"type": "boolean"},
+              "error_logs": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        },
+        "e2e_flows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "flow_name": {"type": "string"},
+              "description": {"type": "string"},
+              "domains_involved": {"type": "array", "items": {"type": "string"}},
+              "status": {"type": "string", "enum": ["passed", "failed", "partial"]},
+              "total_steps": {"type": "number"},
+              "completed_steps": {"type": "number"},
+              "duration_seconds": {"type": "number"},
+              "bottlenecks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "component": {"type": "string"},
+                    "latency_ms": {"type": "number"},
+                    "severity": {"type": "string", "enum": ["critical", "high", "medium", "low"]}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "recommendations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "priority": {"type": "string", "enum": ["P0", "P1", "P2", "P3"]},
+              "category": {"type": "string", "enum": ["performance", "reliability", "security", "maintenance"]},
+              "description": {"type": "string"},
+              "affected_workflows": {"type": "array", "items": {"type": "string"}},
+              "suggested_fix": {"type": "string"}
+            }
+          }
+        },
+        "report_path": {"type": "string", "description": "Path to detailed verification report"}
+      },
+      "required": ["verification_summary", "workflow_results"]
+    }
+  },
+  "required": ["name", "description", "inputSchema", "outputSchema"]
+}

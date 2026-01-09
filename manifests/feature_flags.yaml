@@ -1,0 +1,523 @@
+# ARIA Feature Flags Configuration
+# Centralized feature flag management for FlexStack platform
+# Source: ARIA Configuration Domain Audit (P2-016)
+#
+# This file consolidates all feature flags across the platform to provide
+# a single source of truth for feature enablement and configuration.
+#
+# Version: 1.0.0
+# Last Updated: 2026-01-09
+
+# Metadata
+metadata:
+  version: "1.0.0"
+  schema_version: "1.0"
+  description: "Centralized feature flags for ARIA platform"
+  environment: "${ARIA_ENV:-development}"  # development, staging, production
+  last_modified: "2026-01-09T00:00:00Z"
+
+# =============================================================================
+# HOLOCHAIN FEATURES
+# Distributed state management and messaging via Holochain DHT
+# =============================================================================
+holochain:
+  # Enable Holochain-based state management
+  USE_HOLOCHAIN_STATE:
+    enabled: true
+    description: "Enable distributed state management via Holochain DHT"
+    environments:
+      development: true
+      staging: true
+      production: false  # Gradual rollout recommended
+    dependencies:
+      - holochain_conductor
+      - agent_registry_dna
+
+  # Enable Holochain-based peer-to-peer messaging
+  USE_HOLOCHAIN_MESSAGING:
+    enabled: true
+    description: "Enable P2P messaging between agents via Holochain"
+    environments:
+      development: true
+      staging: true
+      production: false
+    dependencies:
+      - holochain_conductor
+      - USE_HOLOCHAIN_STATE
+    fallback: "nats"  # Fallback to NATS if disabled
+
+# =============================================================================
+# ISOLATION & SECURITY
+# Container and process isolation policies
+# =============================================================================
+isolation:
+  # Default isolation level for agent execution
+  DEFAULT_ISOLATION:
+    enabled: true
+    level: "container"  # none, process, container, vm
+    description: "Default isolation level for agent execution contexts"
+    environments:
+      development: "process"    # Lighter isolation for dev
+      staging: "container"      # Full container isolation
+      production: "container"   # Full container isolation
+
+  # Tool-specific isolation overrides
+  TOOL_ISOLATION:
+    enabled: true
+    description: "Enable per-tool isolation policy enforcement"
+    policy_source: "manifests/distributed/tool_isolation_policy.yaml"
+    environments:
+      development: true
+      staging: true
+      production: true
+    overrides:
+      # Tools that require elevated isolation
+      docker: "vm"
+      kubectl: "container"
+      bash: "container"
+      # Tools safe to run with process isolation
+      git: "process"
+      npm: "process"
+
+# =============================================================================
+# DATA & MESSAGING INFRASTRUCTURE
+# Vector stores, message buses, and workflow orchestration
+# =============================================================================
+infrastructure:
+  # Vector store for embeddings and semantic search
+  VECTOR_STORE:
+    enabled: true
+    provider: "qdrant"  # qdrant, milvus, weaviate, pgvector
+    description: "Vector database for semantic memory and RAG"
+    environments:
+      development: true
+      staging: true
+      production: true
+    config:
+      url: "${QDRANT_URL:-http://qdrant:6333}"
+      collection_prefix: "aria_"
+      embedding_dim: 1536
+
+  # NATS messaging for event-driven communication
+  NATS_ENABLED:
+    enabled: true
+    description: "Enable NATS message bus for pub/sub and request/reply"
+    environments:
+      development: true
+      staging: true
+      production: true
+    config:
+      url: "${NATS_URL:-nats://nats:4222}"
+      cluster_name: "aria-cluster"
+      jetstream_enabled: true
+
+  # Temporal workflow orchestration
+  TEMPORAL_ENABLED:
+    enabled: true
+    description: "Enable Temporal for durable workflow orchestration"
+    environments:
+      development: true
+      staging: true
+      production: true
+    config:
+      frontend_address: "${TEMPORAL_ADDRESS:-temporal:7233}"
+      namespace: "aria"
+      task_queue: "aria-default"
+
+# =============================================================================
+# INFERENCE & MODEL ORCHESTRATION (MOE)
+# Multi-model ensemble configuration
+# =============================================================================
+inference:
+  # Master switch for MOE (Mixture of Experts) inference
+  MOE_ENABLED:
+    enabled: true
+    description: "Enable multi-model ensemble inference for consensus-based decisions"
+    environments:
+      development: true
+      staging: true
+      production: true
+    policy_source: "manifests/distributed/inference_policy.yaml"
+
+  # Minimum number of local models required for MOE
+  LOCAL_MODELS_MIN:
+    value: 5
+    description: "Minimum parallel local models (target <3B params each)"
+    validation:
+      min: 3
+      max: 10
+      type: "integer"
+    environments:
+      development: 3   # Reduced for dev environments
+      staging: 5       # Full spec compliance
+      production: 5    # Full spec compliance
+
+  # Minimum number of cloud models required for MOE
+  CLOUD_MODELS_MIN:
+    value: 2
+    description: "Minimum parallel cloud providers for strong reasoning"
+    validation:
+      min: 1
+      max: 5
+      type: "integer"
+    environments:
+      development: 1   # Single cloud model for cost savings
+      staging: 2       # Full spec compliance
+      production: 2    # Full spec compliance
+
+  # Task types that trigger MOE inference
+  MOE_TRIGGER_TASKS:
+    value:
+      - code_generation
+      - code_modification
+      - configuration_change
+      - deployment_decision
+      - security_review
+    description: "Task types that trigger multi-model consensus"
+
+  # MOE consensus threshold
+  MOE_CONSENSUS_THRESHOLD:
+    value: 0.6
+    description: "Minimum weighted agreement (60%) required for consensus"
+    validation:
+      min: 0.5
+      max: 1.0
+      type: "float"
+
+# =============================================================================
+# API GATEWAY & ROUTING
+# Kong API Gateway and AgentGateway service mesh
+# =============================================================================
+gateway:
+  # Kong API Gateway for external traffic
+  KONG_ENABLED:
+    enabled: true
+    description: "Enable Kong API Gateway for external API management"
+    environments:
+      development: false  # Direct access in dev
+      staging: true
+      production: true
+    config:
+      admin_url: "${KONG_ADMIN_URL:-http://kong-admin:8001}"
+      proxy_url: "${KONG_PROXY_URL:-http://kong:8000}"
+      database: "postgres"
+
+  # AgentGateway for internal agent-to-agent routing
+  AGENTGATEWAY_ENABLED:
+    enabled: true
+    description: "Enable AgentGateway for service mesh and agent routing"
+    environments:
+      development: true
+      staging: true
+      production: true
+    config:
+      service_mesh_provider: "linkerd"  # linkerd, istio, consul
+      mtls_enabled: true
+      retry_policy: "exponential_backoff"
+      circuit_breaker_enabled: true
+
+# =============================================================================
+# OBSERVABILITY & MONITORING
+# OpenTelemetry tracing and Netdata metrics
+# =============================================================================
+observability:
+  # OpenTelemetry for distributed tracing
+  OTEL_ENABLED:
+    enabled: true
+    description: "Enable OpenTelemetry for distributed tracing and metrics"
+    environments:
+      development: true
+      staging: true
+      production: true
+    config:
+      collector_endpoint: "${OTEL_COLLECTOR_ENDPOINT:-otel-collector:4317}"
+      service_name: "aria-platform"
+      trace_sample_rate: "${OTEL_TRACE_SAMPLE_RATE:-1.0}"
+      exporters:
+        - jaeger
+        - prometheus
+        - loki
+
+  # Netdata for real-time system metrics
+  NETDATA_ENABLED:
+    enabled: true
+    description: "Enable Netdata for real-time infrastructure monitoring"
+    environments:
+      development: true
+      staging: true
+      production: true
+    config:
+      parent_endpoint: "${NETDATA_PARENT:-http://netdata-parent:19999}"
+      stream_enabled: true
+      alarm_notify_enabled: true
+      retention_hours: 168  # 7 days
+
+# =============================================================================
+# EXPERIMENTAL FEATURES
+# Features under development or A/B testing
+# =============================================================================
+experimental:
+  # Semantic similarity-based response merging
+  SEMANTIC_SIMILARITY_MERGE:
+    enabled: false
+    description: "Use semantic similarity for merging MOE responses"
+    rollout_percentage: 0
+
+  # Chain-of-thought voting for MOE
+  CHAIN_OF_THOUGHT_VOTING:
+    enabled: false
+    description: "Enable chain-of-thought analysis in MOE consensus voting"
+    rollout_percentage: 0
+
+  # Adaptive model selection based on task complexity
+  ADAPTIVE_MODEL_SELECTION:
+    enabled: false
+    description: "Dynamically adjust model selection based on task complexity"
+    rollout_percentage: 0
+
+  # GPU offloading for local models
+  GPU_OFFLOAD_ENABLED:
+    enabled: false
+    description: "Enable GPU acceleration for local model inference"
+    rollout_percentage: 0
+    requires:
+      - cuda_runtime
+      - nvidia_docker
+
+# =============================================================================
+# COMPLIANCE & GOVERNANCE
+# Policy enforcement and audit requirements
+# =============================================================================
+compliance:
+  # OPA policy gate for inference decisions
+  OPA_POLICY_GATE:
+    enabled: true
+    description: "Enable Open Policy Agent for governance and compliance"
+    policy_source: "manifests/distributed/opa_policies/"
+    fail_action: "reject"  # reject, warn, passthrough
+
+  # Audit logging for all change-making decisions
+  AUDIT_LOGGING:
+    enabled: true
+    description: "Enable comprehensive audit logging"
+    retention_days: 90
+    storage_backend: "loki"
+
+  # GDPR compliance features
+  GDPR_COMPLIANCE:
+    enabled: true
+    description: "Enable GDPR data protection features"
+    features:
+      - right_to_erasure
+      - data_portability
+      - consent_management
+
+  # SOC2 compliance features
+  SOC2_COMPLIANCE:
+    enabled: false
+    description: "Enable SOC2 compliance controls"
+    features:
+      - access_logging
+      - change_management
+      - incident_response
+
+# =============================================================================
+# DISTRIBUTED STORAGE MANAGEMENT
+# Storage tier configuration and policies
+# =============================================================================
+storage:
+  # Master switch for distributed storage management
+  DISTRIBUTED_STORAGE_ENABLED:
+    enabled: true
+    description: "Enable distributed storage management across multiple tiers"
+    environments:
+      development: true
+      staging: true
+      production: true
+    policy_source: "manifests/distributed/storage_policy.yaml"
+
+  # Default replication factor for data redundancy
+  DEFAULT_REPLICATION_FACTOR:
+    value: 3
+    description: "Default replication factor for storage (copies of data)"
+    validation:
+      min: 1
+      max: 5
+      type: "integer"
+    environments:
+      development: 2    # Lower replication for dev
+      staging: 3        # Full replication
+      production: 3     # Full replication
+
+  # Enable caching layer
+  CACHE_ENABLED:
+    enabled: true
+    description: "Enable multi-tier caching (memory, disk, CDN)"
+    environments:
+      development: true
+      staging: true
+      production: true
+
+  # CDN caching for static assets
+  CDN_ENABLED:
+    enabled: false
+    description: "Enable CDN caching for public assets"
+    environments:
+      development: false
+      staging: false
+      production: true
+
+  # Auto-tiering for data lifecycle management
+  AUTO_TIERING_ENABLED:
+    enabled: true
+    description: "Automatically move data between hot/warm/cold/archive tiers"
+    environments:
+      development: false  # Manual tiering for dev
+      staging: true
+      production: true
+
+# =============================================================================
+# DISTRIBUTED MEMORY MANAGEMENT
+# Memory allocation and optimization policies
+# =============================================================================
+memory:
+  # Master switch for distributed memory management
+  DISTRIBUTED_MEMORY_ENABLED:
+    enabled: true
+    description: "Enable distributed memory management and allocation"
+    environments:
+      development: true
+      staging: true
+      production: true
+    policy_source: "manifests/distributed/memory_policy.yaml"
+
+  # Default agent memory allocation
+  DEFAULT_AGENT_MEMORY_MB:
+    value: 2048
+    description: "Default maximum memory allocation per agent (MB)"
+    validation:
+      min: 256
+      max: 16384
+      type: "integer"
+    environments:
+      development: 1024    # Lower memory for dev
+      staging: 2048        # Standard allocation
+      production: 2048     # Standard allocation
+
+  # Out-of-memory protection
+  OOM_PROTECTION_ENABLED:
+    enabled: true
+    description: "Enable OOM killer and memory pressure handling"
+    environments:
+      development: true
+      staging: true
+      production: true
+
+  # Memory compression (ZRAM)
+  MEMORY_COMPRESSION_ENABLED:
+    enabled: true
+    description: "Enable memory compression to increase effective capacity"
+    environments:
+      development: false
+      staging: true
+      production: true
+
+  # NUMA optimization
+  NUMA_OPTIMIZATION_ENABLED:
+    enabled: true
+    description: "Enable NUMA-aware memory allocation"
+    environments:
+      development: false
+      staging: true
+      production: true
+
+# =============================================================================
+# DISTRIBUTED COMPUTE MANAGEMENT
+# CPU, GPU, and accelerator resource policies
+# =============================================================================
+compute:
+  # Master switch for distributed compute management
+  DISTRIBUTED_COMPUTE_ENABLED:
+    enabled: true
+    description: "Enable distributed compute resource management and scheduling"
+    environments:
+      development: true
+      staging: true
+      production: true
+    policy_source: "manifests/distributed/compute_policy.yaml"
+
+  # Default CPU quota per agent
+  DEFAULT_CPU_QUOTA_MILLICORES:
+    value: 1000
+    description: "Default CPU allocation per agent in millicores (1000 = 1 core)"
+    validation:
+      min: 100
+      max: 8000
+      type: "integer"
+    environments:
+      development: 500     # Lower CPU for dev
+      staging: 1000        # Standard allocation
+      production: 1000     # Standard allocation
+
+  # GPU acceleration
+  GPU_ACCELERATION_ENABLED:
+    enabled: false
+    description: "Enable GPU acceleration for ML/AI workloads"
+    environments:
+      development: false
+      staging: false
+      production: false
+    dependencies:
+      - nvidia_driver
+      - cuda_runtime
+
+  # TPU support
+  TPU_ENABLED:
+    enabled: false
+    description: "Enable TPU support for specialized ML workloads"
+    environments:
+      development: false
+      staging: false
+      production: false
+
+  # Edge computing
+  EDGE_COMPUTE_ENABLED:
+    enabled: false
+    description: "Enable edge device compute for distributed inference"
+    environments:
+      development: false
+      staging: false
+      production: false
+
+  # Auto-scaling for compute resources
+  COMPUTE_AUTOSCALING_ENABLED:
+    enabled: true
+    description: "Enable automatic scaling of compute nodes"
+    environments:
+      development: false   # No autoscaling in dev
+      staging: true
+      production: true
+
+# =============================================================================
+# FEATURE FLAG OVERRIDES
+# Environment-specific and runtime overrides
+# =============================================================================
+overrides:
+  # Load additional overrides from environment
+  load_from_env: true
+  env_prefix: "ARIA_FEATURE_"
+
+  # Load from ConfigMap/Secret in Kubernetes
+  kubernetes:
+    enabled: true
+    configmap: "aria-feature-flags"
+    secret: "aria-feature-flags-secret"
+    namespace: "aria-system"
+
+  # Remote feature flag service (LaunchDarkly, Unleash, etc.)
+  remote_provider:
+    enabled: false
+    provider: "unleash"
+    api_url: "${UNLEASH_URL}"
+    api_token: "${UNLEASH_TOKEN}"
+    refresh_interval_seconds: 60

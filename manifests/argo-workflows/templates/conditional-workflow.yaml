@@ -1,0 +1,133 @@
+# Conditional Workflow
+# Demonstrates conditional execution based on previous step results
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: conditional-workflow
+  namespace: argo
+spec:
+  entrypoint: conditional-pipeline
+  arguments:
+    parameters:
+    - name: environment
+      value: "staging"
+
+  templates:
+  - name: conditional-pipeline
+    steps:
+    - - name: validation
+        template: validate-environment
+        arguments:
+          parameters:
+          - name: env
+            value: "{{workflow.parameters.environment}}"
+
+    - - name: deploy-staging
+        template: deploy
+        arguments:
+          parameters:
+          - name: env
+            value: "staging"
+        when: "{{workflow.parameters.environment}} == staging"
+
+      - name: deploy-production
+        template: deploy-with-approval
+        arguments:
+          parameters:
+          - name: env
+            value: "production"
+        when: "{{workflow.parameters.environment}} == production"
+
+    - - name: run-tests
+        template: integration-tests
+        arguments:
+          parameters:
+          - name: env
+            value: "{{workflow.parameters.environment}}"
+
+    - - name: notify
+        template: send-notification
+        arguments:
+          parameters:
+          - name: env
+            value: "{{workflow.parameters.environment}}"
+          - name: status
+            value: "{{steps.run-tests.outputs.result}}"
+
+  - name: validate-environment
+    inputs:
+      parameters:
+      - name: env
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Validating environment: {{inputs.parameters.env}}"
+        if [ "{{inputs.parameters.env}}" != "staging" ] && [ "{{inputs.parameters.env}}" != "production" ]; then
+          echo "Invalid environment!"
+          exit 1
+        fi
+        echo "Environment validated"
+
+  - name: deploy
+    inputs:
+      parameters:
+      - name: env
+    container:
+      image: bitnami/kubectl:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Deploying to {{inputs.parameters.env}}..."
+        # kubectl apply -f /manifests/{{inputs.parameters.env}}/
+        echo "Deployment to {{inputs.parameters.env}} completed"
+
+  - name: deploy-with-approval
+    inputs:
+      parameters:
+      - name: env
+    steps:
+    - - name: request-approval
+        template: approval-gate
+
+    - - name: deploy-to-prod
+        template: deploy
+        arguments:
+          parameters:
+          - name: env
+            value: "{{inputs.parameters.env}}"
+
+  - name: approval-gate
+    suspend:
+      duration: "1h"
+
+  - name: integration-tests
+    inputs:
+      parameters:
+      - name: env
+    container:
+      image: python:3.11-slim
+      command: [sh, -c]
+      args:
+      - |
+        echo "Running integration tests in {{inputs.parameters.env}}..."
+        # pytest tests/integration/
+        echo "All tests passed"
+        echo "success"
+
+  - name: send-notification
+    inputs:
+      parameters:
+      - name: env
+      - name: status
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Sending notification..."
+        echo "Environment: {{inputs.parameters.env}}"
+        echo "Status: {{inputs.parameters.status}}"
+        # curl -X POST webhook-url -d "Deployment to {{inputs.parameters.env}}: {{inputs.parameters.status}}"
+        echo "Notification sent"

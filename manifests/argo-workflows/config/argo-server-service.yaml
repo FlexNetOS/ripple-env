@@ -1,0 +1,20 @@
+# Argo Server Service Configuration
+# Exposes the Argo Workflows UI and API
+
+---
+# Patch to expose Argo Server UI via NodePort
+apiVersion: v1
+kind: Service
+metadata:
+  name: argo-server
+  namespace: argo
+spec:
+  type: NodePort
+  ports:
+  - name: web
+    port: 2746
+    targetPort: 2746
+    nodePort: 32746
+    protocol: TCP
+  selector:
+    app: argo-server

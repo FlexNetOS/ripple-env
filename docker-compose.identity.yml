@@ -4,19 +4,62 @@
 # BUILDKIT_STARTER_SPEC.md Layer 5: Identity & Policy
 #
 # Components:
+#   - Step-CA: Certificate Authority for mTLS (ARIA P1-005, SEC-003)
 #   - Keycloak: OIDC identity provider
 #   - PostgreSQL: Keycloak database
 #   - Vaultwarden: Bitwarden-compatible password vault (optional)
 #
 # Usage:
+#   # Initialize CA first (one-time):
+#   ./scripts/init-step-ca.sh
+#
+#   # Start services:
 #   docker-compose -f docker-compose.identity.yml up -d
 #
 # Access:
-#   - Keycloak Admin: http://localhost:8080/admin (admin/admin)
-#   - Vaultwarden: http://localhost:8081
+#   - Step-CA: https://localhost:9000 (mTLS certificate authority)
+#   - Keycloak Admin: http://localhost:8080/admin (use KEYCLOAK_ADMIN env vars)
+#   - Vaultwarden: http://localhost:8081 (use VAULTWARDEN_ADMIN_TOKEN env var)
+#
+# mTLS Documentation:
+#   - See docs/MTLS_SETUP.md for complete mTLS configuration guide
 # =============================================================================
 
 services:
+  # ---------------------------------------------------------------------------
+  # Step-CA - Certificate Authority for mTLS
+  # ---------------------------------------------------------------------------
+  # https://github.com/smallstep/certificates
+  # Provides PKI infrastructure for inter-service mTLS (P1-005, SEC-003)
+  step-ca:
+    image: smallstep/step-ca:0.27.5
+    container_name: step-ca
+    environment:
+      # Docker entrypoint password (must match init-step-ca.sh)
+      DOCKER_STEPCA_INIT_PASSWORD_FILE: /run/secrets/step-ca-password
+      # CA configuration
+      DOCKER_STEPCA_INIT_NAME: "ARIA Development CA"
+      DOCKER_STEPCA_INIT_DNS_NAMES: "step-ca,localhost"
+      DOCKER_STEPCA_INIT_PROVISIONER_NAME: "admin"
+      # Use existing configuration if available
+      DOCKER_STEPCA_INIT_SKIP_CONFIRM: "true"
+    volumes:
+      # CA configuration and PKI
+      - ./config/step-ca:/home/step
+      # Password file (created by init-step-ca.sh)
+      - ./config/step-ca/secrets/password.txt:/run/secrets/step-ca-password:ro
+    ports:
+      - "9000:9000"
+    networks:
+      - identity-network
+    healthcheck:
+      test: ["CMD", "step", "ca", "health", "--ca-url=https://localhost:9000", "--root=/home/step/pki/root_ca.crt"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
   # ---------------------------------------------------------------------------
   # Keycloak - OIDC Identity Provider
   # ---------------------------------------------------------------------------
@@ -27,14 +70,14 @@ services:
     container_name: keycloak
     command: start-dev
     environment:
-      # Admin credentials (change in production!)
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      # Admin credentials (loaded from environment variables)
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-changeme}
       # Database connection
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
-      KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloak
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_DB_NAME:-keycloak}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-changeme}
       # Development settings
       KC_HOSTNAME_STRICT: "false"
       KC_HTTP_ENABLED: "true"
@@ -42,11 +85,23 @@ services:
       # Health endpoint
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
+      # mTLS Configuration (SEC-003)
+      # Uncomment when service certificates are generated
+      # KC_HTTPS_CERTIFICATE_FILE: /etc/certs/keycloak.crt
+      # KC_HTTPS_CERTIFICATE_KEY_FILE: /etc/certs/keycloak.key
+      # KC_HTTPS_CLIENT_AUTH: request
+      # KC_HTTPS_TRUST_STORE_FILE: /etc/ssl/certs/aria-root-ca.crt
+    volumes:
+      # mTLS certificates (mount when available)
+      # - ./config/step-ca/pki/root_ca.crt:/etc/ssl/certs/aria-root-ca.crt:ro
+      # - ./data/certs/keycloak:/etc/certs:ro
     ports:
       - "8080:8080"
       - "8443:8443"
     depends_on:
       keycloak-db:
+        condition: service_healthy
+      step-ca:
         condition: service_healthy
     networks:
       - identity-network
@@ -65,15 +120,15 @@ services:
     image: postgres:17.2-alpine
     container_name: keycloak-db
     environment:
-      POSTGRES_DB: keycloak
-      POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: keycloak
+      POSTGRES_DB: ${KEYCLOAK_DB_NAME:-keycloak}
+      POSTGRES_USER: ${KEYCLOAK_DB_USER:-keycloak}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-changeme}
     volumes:
       - keycloak-db-data:/var/lib/postgresql/data
     networks:
       - identity-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USER:-keycloak} -d ${KEYCLOAK_DB_NAME:-keycloak}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -90,19 +145,28 @@ services:
     environment:
       # Disable signups in production
       SIGNUPS_ALLOWED: "true"
-      # Admin token (change in production!)
-      ADMIN_TOKEN: "admin-token-change-me"
+      # Admin token (loaded from environment variables)
+      ADMIN_TOKEN: ${VAULTWARDEN_ADMIN_TOKEN:-changeme}
       # WebSocket notifications
       WEBSOCKET_ENABLED: "true"
       # Database (SQLite by default, can use PostgreSQL)
       DATABASE_URL: /data/db.sqlite3
       # Domain for email verification
       DOMAIN: "http://localhost:8081"
+      # mTLS Configuration (SEC-003)
+      # Uncomment when service certificates are generated
+      # ROCKET_TLS: '{certs="/etc/certs/vaultwarden.crt",key="/etc/certs/vaultwarden.key"}'
     volumes:
       - vaultwarden-data:/data
+      # mTLS certificates (mount when available)
+      # - ./config/step-ca/pki/root_ca.crt:/etc/ssl/certs/aria-root-ca.crt:ro
+      # - ./data/certs/vaultwarden:/etc/certs:ro
     ports:
       - "8081:80"
       - "3012:3012"  # WebSocket
+    depends_on:
+      step-ca:
+        condition: service_healthy
     networks:
       - identity-network
     healthcheck:

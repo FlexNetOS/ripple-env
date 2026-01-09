@@ -19,6 +19,14 @@
     #   2. fetchFromGitHub allows pinning to a specific commit
     #   3. Avoids flake.lock sync issues
     # See: https://github.com/spartan-holochain-counsel/nix-overlay
+
+    # P2-017: Agentic DevOps automation layer (BUILDKIT_STARTER_SPEC.md L301)
+    # Provides: Autonomous DevOps and remediation capabilities
+    # See: https://github.com/agenticsorg/devops
+    agenticsorg-devops = {
+      url = "github:agenticsorg/devops";
+      flake = false;  # Not a flake, just source reference
+    };
   };
 
   outputs =
@@ -90,6 +98,12 @@
             sha256 = "sha256-LZkgXdLY+C+1CxynKzsdtM0g4gC0NJjPP3d24pHPyIU=";
           };
 
+          # P2-017: AgenticsOrg DevOps automation layer reference
+          # Source is available at: inputs.agenticsorg-devops
+          # Usage: Provides autonomous DevOps and remediation capabilities
+          # Documentation: ${inputs.agenticsorg-devops}/README.md
+          agenticsorgDevopsSrc = inputs.agenticsorg-devops;
+
           # Apply Holochain overlay for P2P coordination
           pkgs = import inputs.nixpkgs {
             inherit system;
@@ -101,10 +115,28 @@
           };
 
           # Holochain packages from overlay (P0 - MANDATORY per BUILDKIT_STARTER_SPEC.md)
+          # P3-006: Holochain reference tools (Phase 3 - Development tooling)
+          #
+          # The 'hc' CLI provides comprehensive development commands:
+          #   - hc sandbox    : Generate and run test networks for development
+          #   - hc scaffold   : Generate DNA, zome, and entry type templates
+          #   - hc dna        : DNA operations (init, pack, unpack)
+          #   - hc app        : hApp bundle operations (pack, unpack)
+          #   - hc web-app    : Web hApp operations
+          #
+          # For additional launch capabilities:
+          #   - Use 'hc sandbox' for local development environments
+          #   - For production: holochain conductor with conductor.yaml config
+          #   - Alternative: Install @holochain/hc-spin via npm for enhanced DX
+          #
+          # References:
+          #   - Holochain Developer Docs: https://developer.holochain.org
+          #   - hc CLI source: https://github.com/holochain/holochain (crates/hc)
+          #   - Nix overlay: https://github.com/spartan-holochain-counsel/nix-overlay
           holochainPackages = with pkgs; [
-            holochain       # Holochain conductor (agent-centric P2P)
-            hc              # Holochain dev CLI (scaffold/package/run)
-            lair-keystore   # Secure keystore for Holochain agent keys
+            holochain       # Holochain conductor (agent-centric P2P runtime)
+            hc              # Holochain dev CLI (scaffold/sandbox/pack/launch)
+            lair-keystore   # Secure keystore for Holochain agent keys (cryptographic identity)
           ];
 
           inherit (pkgs.lib) optionalString optionals optionalAttrs;
@@ -128,6 +160,7 @@
             pixi
             git
             gh
+            jujutsu              # P2-013: Modern Git-compatible VCS (jj command)
 
             # Python 3.13.x - Latest stable (for non-ROS2 tools)
             # ROS2 uses Python 3.11 via Pixi/RoboStack (separate environment)
@@ -209,8 +242,10 @@
             step-cli            # smallstep CLI for mTLS/PKI
 
             # Isolation & Sandboxing (BUILDKIT_STARTER_SPEC.md L3)
+            # Layer 3: 33% -> 100% coverage (P0-001, P0-002)
             firecracker         # MicroVM for untrusted workloads
             runc                # OCI container runtime (low-level)
+            kata-runtime        # P0-002: Kata Containers runtime (lightweight VMs)
 
             # Shells
             zsh
@@ -233,6 +268,27 @@
             # P2P federation for multi-robot distributed inference
             # See: docs/adr/adr-006-agixt-integration.md
             local-ai
+
+            # P3-002: prompt-cache - LLM Semantic Caching Proxy (Go binary)
+            # See: https://github.com/messkan/prompt-cache
+            # Description: Drop-in, provider-agnostic LLM proxy for semantic caching
+            # Features:
+            #   - Reduces LLM costs by up to 80% via semantic similarity detection
+            #   - Sub-millisecond cached responses
+            #   - Embedded BadgerDB for persistent storage
+            #   - Multi-provider support: OpenAI, Mistral, Claude (Anthropic)
+            # Installation (NOT in nixpkgs - install from source):
+            #   Option 1 (Docker Compose - Recommended):
+            #     git clone https://github.com/messkan/prompt-cache.git
+            #     cd prompt-cache && docker-compose up -d
+            #   Option 2 (From source):
+            #     git clone https://github.com/messkan/prompt-cache.git
+            #     cd prompt-cache && make run
+            # Usage:
+            #   # Point your OpenAI client to the proxy:
+            #   client = OpenAI(base_url="http://localhost:8080/v1", api_key="your-key")
+            # NOTE: Requires Go 1.25+ to build from source
+            # NOTE: Complementary to P3-001 (vCache) - use together for best results
 
             # Audio (for aider voice features)
             portaudio
@@ -366,6 +422,92 @@
                   echo "  stop   - Stop LocalAI server"
                   echo "  status - Check if LocalAI is running"
                   echo "  models - List available models"
+                  ;;
+              esac
+            '')
+            # P3-002: PromptCache LLM Proxy management
+            (pkgs.writeShellScriptBin "prompt-cache" ''
+              # PromptCache semantic caching proxy management
+              # Usage: prompt-cache [install|up|down|logs|status]
+              PROMPTCACHE_DIR="''${PROMPTCACHE_DIR:-$HOME/.local/share/prompt-cache}"
+              PROMPTCACHE_PORT="''${PROMPTCACHE_PORT:-8080}"
+
+              case "''${1:-status}" in
+                install)
+                  echo "Installing PromptCache..."
+                  mkdir -p "$PROMPTCACHE_DIR"
+                  if [ ! -d "$PROMPTCACHE_DIR/prompt-cache" ]; then
+                    git clone https://github.com/messkan/prompt-cache.git "$PROMPTCACHE_DIR/prompt-cache"
+                    echo ""
+                    echo "PromptCache installed to: $PROMPTCACHE_DIR/prompt-cache"
+                    echo ""
+                    echo "Configure environment variables:"
+                    echo "  OPENAI_API_KEY        - Your OpenAI API key"
+                    echo "  VOYAGE_API_KEY        - Your Voyage AI API key (for Claude embeddings)"
+                    echo "  PROMPTCACHE_PORT      - Server port (default: 8080)"
+                    echo ""
+                    echo "Start with: prompt-cache up"
+                  else
+                    echo "PromptCache already installed at $PROMPTCACHE_DIR/prompt-cache"
+                    echo "To update: cd $PROMPTCACHE_DIR/prompt-cache && git pull"
+                  fi
+                  ;;
+                up)
+                  if [ ! -d "$PROMPTCACHE_DIR/prompt-cache" ]; then
+                    echo "PromptCache not installed. Run: prompt-cache install"
+                    exit 1
+                  fi
+                  echo "Starting PromptCache on port $PROMPTCACHE_PORT..."
+                  cd "$PROMPTCACHE_DIR/prompt-cache"
+                  if [ -f "docker-compose.yml" ]; then
+                    docker compose up -d "''${@:2}"
+                    echo ""
+                    echo "PromptCache API: http://localhost:$PROMPTCACHE_PORT/v1"
+                    echo "Point your OpenAI client to this URL for semantic caching"
+                  else
+                    echo "Starting from source (requires Go 1.25+)..."
+                    make run &
+                    echo "PromptCache API: http://localhost:$PROMPTCACHE_PORT/v1"
+                  fi
+                  ;;
+                down)
+                  if [ -f "$PROMPTCACHE_DIR/prompt-cache/docker-compose.yml" ]; then
+                    cd "$PROMPTCACHE_DIR/prompt-cache"
+                    docker compose down "''${@:2}"
+                  else
+                    pkill -f "prompt-cache" && echo "PromptCache stopped" || echo "PromptCache not running"
+                  fi
+                  ;;
+                logs)
+                  if [ -f "$PROMPTCACHE_DIR/prompt-cache/docker-compose.yml" ]; then
+                    cd "$PROMPTCACHE_DIR/prompt-cache"
+                    docker compose logs -f "''${@:2}"
+                  else
+                    echo "No docker-compose setup found. Check process logs manually."
+                  fi
+                  ;;
+                status)
+                  if pgrep -f "prompt-cache" > /dev/null || docker ps | grep -q "prompt-cache"; then
+                    echo "PromptCache is running on port $PROMPTCACHE_PORT"
+                    curl -s "http://localhost:$PROMPTCACHE_PORT/health" > /dev/null 2>&1 && echo "  API ready: http://localhost:$PROMPTCACHE_PORT/v1" || echo "  API not responding"
+                  else
+                    echo "PromptCache is not running"
+                    echo "  Install: prompt-cache install"
+                    echo "  Start:   prompt-cache up"
+                  fi
+                  ;;
+                *)
+                  echo "Usage: prompt-cache [install|up|down|logs|status]"
+                  echo "  install - Clone PromptCache repository"
+                  echo "  up      - Start PromptCache proxy (port $PROMPTCACHE_PORT)"
+                  echo "  down    - Stop PromptCache proxy"
+                  echo "  logs    - Follow PromptCache logs (Docker only)"
+                  echo "  status  - Check if PromptCache is running"
+                  echo ""
+                  echo "Integration with vCache (P3-001):"
+                  echo "  Use PromptCache as a proxy + vCache for application-level caching"
+                  echo "  PromptCache: Provider-agnostic proxy with BadgerDB persistence"
+                  echo "  vCache: Python library with guaranteed error bounds"
                   ;;
               esac
             '')
@@ -521,102 +663,207 @@
               echo ""
               echo "AgentGateway installed! Run with: agentgateway --help"
             '')
-            # P0: sandbox-runtime - Process sandbox for MCP/tool execution
+            # P0-001: sandbox-runtime - Process sandbox for MCP/tool execution
             # BUILDKIT_STARTER_SPEC.md Layer 3 (Isolation) and Layer 8 (Tool Execution)
+            # Uses Anthropic's sandbox-runtime via npx for on-demand execution
             (pkgs.writeShellScriptBin "sandbox-runtime" ''
-              # Sandbox-runtime wrapper
-              # Checks for installation, provides install instructions if missing
-              SANDBOX_BIN="''${SANDBOX_RUNTIME_PATH:-$HOME/.cargo/bin/sandbox-runtime}"
+              # Sandbox-runtime wrapper (P0-001)
+              # Anthropic's sandbox for enforcing filesystem and network restrictions
+              # Runs via npx to use the latest version from npm
 
-              if [ -x "$SANDBOX_BIN" ]; then
-                exec "$SANDBOX_BIN" "$@"
-              elif command -v sandbox-runtime >/dev/null 2>&1; then
+              # Check if globally installed first (faster)
+              if command -v sandbox-runtime >/dev/null 2>&1; then
                 exec sandbox-runtime "$@"
+              fi
+
+              # Fall back to npx for on-demand execution
+              # Package: @anthropic-ai/sandbox-runtime
+              if command -v npx >/dev/null 2>&1; then
+                exec npx --yes @anthropic-ai/sandbox-runtime "$@"
               else
-                echo "sandbox-runtime not found. Install with:" >&2
+                echo "Error: sandbox-runtime requires Node.js and npx" >&2
                 echo "" >&2
-                echo "  # Option 1: Build from source (recommended)" >&2
-                echo "  git clone https://github.com/anthropic-experimental/sandbox-runtime.git" >&2
-                echo "  cd sandbox-runtime && cargo build --release" >&2
-                echo "  cargo install --path ." >&2
+                echo "Installation options:" >&2
                 echo "" >&2
-                echo "  # Option 2: Install via cargo" >&2
-                echo "  cargo install --git https://github.com/anthropic-experimental/sandbox-runtime" >&2
+                echo "  1. Global install (recommended):" >&2
+                echo "     npm install -g @anthropic-ai/sandbox-runtime" >&2
                 echo "" >&2
-                echo "See: docs/SANDBOX_RUNTIME_INSTALL.md" >&2
+                echo "  2. Use via npx (available in this environment):" >&2
+                echo "     npx @anthropic-ai/sandbox-runtime <command>" >&2
+                echo "" >&2
+                echo "Platform requirements:" >&2
+                echo "  - Linux: bubblewrap, socat, ripgrep" >&2
+                echo "  - macOS: ripgrep (uses native sandbox-exec)" >&2
+                echo "" >&2
+                echo "Layer 3 Isolation - P0-001 (Critical)" >&2
                 exit 127
               fi
             '')
-            # P0: Kata Containers management wrapper
+            # P0-007: genai-toolbox (MCP Toolbox for Databases)
+            # BUILDKIT_STARTER_SPEC.md Layer 8 (Tool Execution)
+            # MCP server for AI tool integration with database access
+            (pkgs.writeShellScriptBin "mcp-toolbox" ''
+              # MCP Toolbox (genai-toolbox) wrapper
+              # Provides the Model Context Protocol server for database tool execution
+              # See: https://github.com/googleapis/genai-toolbox
+
+              # Check if installed via home-manager module
+              if command -v mcp-toolbox >/dev/null 2>&1; then
+                exec mcp-toolbox "$@"
+              else
+                echo "MCP Toolbox (genai-toolbox) not found." >&2
+                echo "" >&2
+                echo "Installation options:" >&2
+                echo "" >&2
+                echo "  1. Enable home-manager module (recommended):" >&2
+                echo "     programs.genai-toolbox.enable = true;" >&2
+                echo "" >&2
+                echo "  2. Install via Homebrew:" >&2
+                echo "     brew install mcp-toolbox" >&2
+                echo "" >&2
+                echo "  3. Install via Go:" >&2
+                echo "     go install github.com/googleapis/genai-toolbox@v0.25.0" >&2
+                echo "" >&2
+                echo "  4. Download binary from releases:" >&2
+                echo "     https://github.com/googleapis/genai-toolbox/releases" >&2
+                echo "" >&2
+                echo "  5. Use NPX:" >&2
+                echo "     npx @toolbox-sdk/server" >&2
+                echo "" >&2
+                echo "Layer 8 Tool Execution - P0-007 (Critical)" >&2
+                exit 127
+              fi
+            '')
+            # P2-009: sublinear-time-solver - Fast solver via npx
+            # BUILDKIT_STARTER_SPEC.md Layer 8 (Tool Execution)
+            # See: https://github.com/ruvnet/sublinear-time-solver
+            (pkgs.writeShellScriptBin "sublinear-solver" ''
+              # Sublinear-time solver wrapper (P2-009)
+              # Rust + WASM sublinear-time solver for asymmetric diagonally dominant systems
+              # Runs via npx for on-demand execution
+              if command -v npx >/dev/null 2>&1; then
+                exec npx sublinear-time-solver "$@"
+              else
+                echo "ERROR: npx not found" >&2
+                echo "" >&2
+                echo "sublinear-time-solver requires Node.js and npx." >&2
+                echo "" >&2
+                echo "Install Node.js:" >&2
+                echo "  - Via Nix: Available in this environment" >&2
+                echo "  - Via pixi: Already configured" >&2
+                echo "  - System: https://nodejs.org" >&2
+                echo "" >&2
+                echo "Usage: sublinear-solver [command] [options]" >&2
+                echo "  sublinear-solver mcp       # Start MCP server" >&2
+                echo "  sublinear-solver --help    # Show help" >&2
+                echo "" >&2
+                echo "Layer 8 Tool Execution - P2-009" >&2
+                exit 127
+              fi
+            '')
+            # P0-002: Kata Containers management wrapper
             # BUILDKIT_STARTER_SPEC.md Layer 3 (Isolation)
+            # Kata Containers runtime available via nixpkgs (kata-runtime)
             (pkgs.writeShellScriptBin "kata" ''
-              # Kata Containers wrapper
-              # Provides installation guidance and runtime management
+              # Kata Containers wrapper (P0-002)
+              # Management interface for Kata Containers lightweight VM runtime
+              # Runtime provided by nixpkgs package: kata-runtime
 
               case "''${1:-status}" in
-                install)
-                  echo "Installing Kata Containers..."
-                  echo ""
-                  echo "Kata Containers requires system-level installation."
-                  echo ""
-                  echo "# Ubuntu/Debian:"
-                  echo "  sudo apt-get install -y kata-containers"
-                  echo ""
-                  echo "# Fedora:"
-                  echo "  sudo dnf install -y kata-containers"
-                  echo ""
-                  echo "# From official releases (check https://github.com/kata-containers/kata-containers/releases):"
-                  echo "  # Get latest version"
-                  echo "  KATA_VERSION=\$(curl -s https://api.github.com/repos/kata-containers/kata-containers/releases/latest | grep tag_name | cut -d '\"' -f 4)"
-                  echo "  # Download and install"
-                  echo "  curl -fsSL https://github.com/kata-containers/kata-containers/releases/download/\$KATA_VERSION/kata-static-\$KATA_VERSION-amd64.tar.xz | sudo tar -C / -xJf -"
-                  echo ""
-                  echo "# Configure Docker to use Kata:"
-                  echo "  sudo mkdir -p /etc/docker"
-                  echo "  cat <<EOF | sudo tee /etc/docker/daemon.json"
-                  echo '  {'
-                  echo '    "runtimes": {'
-                  echo '      "kata": {'
-                  echo '        "path": "/usr/bin/kata-runtime"'
-                  echo '      }'
-                  echo '    }'
-                  echo '  }'
-                  echo "  EOF"
-                  echo "  sudo systemctl restart docker"
-                  echo ""
-                  echo "See: docs/KATA_CONTAINERS_INSTALL.md"
-                  ;;
                 status)
+                  echo "Kata Containers Status"
+                  echo "======================"
                   if command -v kata-runtime >/dev/null 2>&1; then
-                    echo "Kata Containers: INSTALLED"
+                    echo "Runtime: AVAILABLE"
                     kata-runtime --version
                     echo ""
-                    echo "Docker runtime check:"
-                    docker info 2>/dev/null | grep -i kata || echo "  Kata not configured as Docker runtime"
+                    echo "Docker Configuration:"
+                    if command -v docker >/dev/null 2>&1; then
+                      if docker info 2>/dev/null | grep -i kata >/dev/null; then
+                        echo "  Status: Configured as Docker runtime"
+                      else
+                        echo "  Status: Not configured (run 'kata config-docker')"
+                      fi
+                    else
+                      echo "  Docker: Not installed"
+                    fi
                   else
-                    echo "Kata Containers: NOT INSTALLED"
-                    echo "Run 'kata install' for installation instructions."
+                    echo "Runtime: NOT AVAILABLE"
+                    echo ""
+                    echo "Kata Containers is available via nixpkgs in this environment."
+                    echo "If kata-runtime is not in PATH, ensure you're in the nix shell:"
+                    echo "  nix develop .#full"
                   fi
                   ;;
                 check)
                   if command -v kata-runtime >/dev/null 2>&1; then
-                    echo "Running Kata check-config..."
+                    echo "Running Kata runtime checks..."
                     kata-runtime check
                   else
-                    echo "kata-runtime not found"
+                    echo "Error: kata-runtime not found in PATH" >&2
+                    echo "Ensure you're in the nix development environment" >&2
                     exit 1
                   fi
                   ;;
+                config-docker)
+                  if ! command -v docker >/dev/null 2>&1; then
+                    echo "Error: Docker not installed" >&2
+                    exit 1
+                  fi
+                  echo "Configuring Docker to use Kata Containers..."
+                  echo ""
+                  KATA_PATH=$(command -v kata-runtime)
+                  echo "Detected kata-runtime at: $KATA_PATH"
+                  echo ""
+                  echo "Add this to /etc/docker/daemon.json (requires sudo):"
+                  echo ""
+                  cat << DOCKERCFG
+{
+  "runtimes": {
+    "kata": {
+      "path": "$KATA_PATH"
+    }
+  }
+}
+DOCKERCFG
+                  echo ""
+                  echo "Then restart Docker:"
+                  echo "  sudo systemctl restart docker"
+                  ;;
                 test)
+                  if ! command -v docker >/dev/null 2>&1; then
+                    echo "Error: Docker not installed" >&2
+                    exit 1
+                  fi
                   echo "Testing Kata runtime with Docker..."
+                  echo "Command: docker run --rm --runtime=kata alpine cat /etc/os-release"
+                  echo ""
                   docker run --rm --runtime=kata alpine cat /etc/os-release
                   ;;
+                version)
+                  if command -v kata-runtime >/dev/null 2>&1; then
+                    kata-runtime --version
+                  else
+                    echo "kata-runtime not found" >&2
+                    exit 1
+                  fi
+                  ;;
                 *)
-                  echo "Usage: kata [install|status|check|test]"
-                  echo "  install - Show installation instructions"
-                  echo "  status  - Check if Kata is installed"
-                  echo "  check   - Run kata-runtime check-config"
-                  echo "  test    - Test Kata with Docker"
+                  echo "Usage: kata <command>"
+                  echo ""
+                  echo "Commands:"
+                  echo "  status        - Show Kata Containers status and configuration"
+                  echo "  check         - Run kata-runtime system checks"
+                  echo "  config-docker - Show Docker configuration for Kata"
+                  echo "  test          - Test Kata runtime with Docker"
+                  echo "  version       - Show kata-runtime version"
+                  echo ""
+                  echo "Environment:"
+                  echo "  Kata runtime provided by nixpkgs (kata-runtime package)"
+                  echo "  Ensure you're in the nix development environment:"
+                  echo "    nix develop .#full"
+                  echo ""
+                  echo "Layer 3 Isolation - P0-002 (Critical)"
                   ;;
               esac
             '')
@@ -1209,6 +1456,20 @@ PROMCFG
               fi
 
               echo "Pre-commit checks complete."
+            '')
+            # P1-012: SWC compiler wrapper
+            # Fast TypeScript/JavaScript compiler written in Rust
+            # 10x faster than tsc for transpilation and bundling
+            (pkgs.writeShellScriptBin "swc" ''
+              # SWC (Speedy Web Compiler) - Fast TypeScript/JavaScript compiler
+              # Usage: swc <input> [options]
+              # Examples:
+              #   swc src/index.ts -o dist/index.js
+              #   swc src/ -d dist/
+              #
+              # Uses npx to avoid 150MB node_modules bloat
+              # See: https://github.com/NixOS/nixpkgs/issues/195677
+              exec npx -y @swc/cli@latest "$@"
             '')
           ];
 
@@ -2779,6 +3040,9 @@ STATS
             EDITOR = "hx";
             VISUAL = "hx";
 
+            # P2-017: AgenticsOrg DevOps source path
+            AGENTICSORG_DEVOPS_SRC = toString agenticsorgDevopsSrc;
+
             shellHook = ''
               # Ensure TMPDIR is valid (fix for Codespaces/devcontainers)
               export TMPDIR=''${TMPDIR:-/tmp}
@@ -2828,6 +3092,15 @@ STATS
             EDITOR = "hx";
             VISUAL = "hx";
 
+            # Layer 3 Isolation Configuration (ARIA P0-001, P0-002)
+            # DEFAULT_ISOLATION: Primary isolation runtime for containers/workloads
+            # Options: "firecracker" (microVM), "kata" (lightweight VM), "sandbox-runtime" (process-level)
+            DEFAULT_ISOLATION = "firecracker";
+
+            # TOOL_ISOLATION: Isolation for MCP/AI tool execution
+            # Options: "sandbox-runtime" (recommended), "kata", "none"
+            TOOL_ISOLATION = "sandbox-runtime";
+
             shellHook = ''
               # Ensure TMPDIR is valid (fix for Codespaces/devcontainers)
               export TMPDIR=''${TMPDIR:-/tmp}
@@ -2862,6 +3135,13 @@ STATS
               echo "  Platform: ${if isDarwin then "macOS" else "Linux"} (${system})"
               echo "  Python (Nix): ${pkgs.python313.version} (for scripts/tools)"
               echo "  Python (ROS2): 3.11.x via Pixi/RoboStack"
+              echo ""
+              echo "Layer 3 Isolation (ARIA Audit):"
+              echo "  DEFAULT_ISOLATION: $DEFAULT_ISOLATION"
+              echo "  TOOL_ISOLATION:    $TOOL_ISOLATION"
+              echo "  firecracker        - MicroVM isolation (ready)"
+              echo "  kata               - Kata Containers (check: kata status)"
+              echo "  sandbox-runtime    - Process sandbox (check: sandbox-runtime --version)"
               echo ""
               echo "Quick commands:"
               echo "  cb          - colcon build --symlink-install"
@@ -2898,9 +3178,14 @@ STATS
               echo "  sign-artifact - Sign with cosign"
               echo "  pki-cert    - PKI certificates (step-cli)"
               echo ""
-              echo "Holochain (P2P):"
-              echo "  holochain   - Holochain conductor"
-              echo "  hc          - Holochain dev CLI"
+              echo "Holochain (P2P) - P3-006 Reference Tools:"
+              echo "  holochain       - Holochain conductor runtime"
+              echo "  hc              - Holochain dev CLI"
+              echo "    hc sandbox    - Generate and run test networks"
+              echo "    hc scaffold   - Generate DNA/zome templates"
+              echo "    hc dna        - DNA operations (init/pack/unpack)"
+              echo "    hc app        - hApp bundle operations"
+              echo "  lair-keystore   - Secure cryptographic keystore"
               echo ""
             '';
           };

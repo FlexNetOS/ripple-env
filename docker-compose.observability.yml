@@ -246,9 +246,9 @@ services:
     ports:
       - "3001:3000"
     environment:
-      DATABASE_URL: postgresql://umami:umami@umami-db:5432/umami
+      DATABASE_URL: postgresql://${UMAMI_DB_USER:-umami}:${UMAMI_DB_PASSWORD:-changeme}@umami-db:5432/${UMAMI_DB_NAME:-umami}
       DATABASE_TYPE: postgresql
-      APP_SECRET: ${UMAMI_APP_SECRET:-replace-me-with-a-random-string}
+      APP_SECRET: ${UMAMI_APP_SECRET:-changeme}
     depends_on:
       umami-db:
         condition: service_healthy
@@ -265,15 +265,15 @@ services:
     image: postgres:17.2-alpine
     container_name: umami-db
     environment:
-      POSTGRES_DB: umami
-      POSTGRES_USER: umami
-      POSTGRES_PASSWORD: umami
+      POSTGRES_DB: ${UMAMI_DB_NAME:-umami}
+      POSTGRES_USER: ${UMAMI_DB_USER:-umami}
+      POSTGRES_PASSWORD: ${UMAMI_DB_PASSWORD:-changeme}
     volumes:
       - umami-data:/var/lib/postgresql/data
     networks:
       - agentic-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U umami -d umami"]
+      test: ["CMD-SHELL", "pg_isready -U ${UMAMI_DB_USER:-umami} -d ${UMAMI_DB_NAME:-umami}"]
       interval: 10s
       timeout: 5s
       retries: 5

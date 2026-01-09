@@ -1,0 +1,6 @@
+{
+  "ca-url": "https://step-ca:9000",
+  "ca-config": "/etc/step-ca/ca.json",
+  "fingerprint": "",
+  "root": "/etc/step-ca/pki/root_ca.crt"
+}

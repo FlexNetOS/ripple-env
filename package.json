@@ -1,0 +1,37 @@
+{
+  "name": "ros2-humble-env",
+  "version": "1.0.0",
+  "description": "ROS2 Humble development environment with build tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "swc": "swc",
+    "swc:build": "swc src -d dist",
+    "swc:watch": "swc src -d dist --watch"
+  },
+  "dependencies": {
+    "pixi.js": "^8.0.0"
+  },
+  "devDependencies": {
+    "@swc/cli": "^0.5.1",
+    "@swc/core": "^1.10.1"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "ros2",
+    "build-tools",
+    "swc",
+    "pixijs",
+    "P1-012",
+    "P1-013"
+  ],
+  "author": "ARIA Build Tools Domain Team",
+  "license": "MIT",
+  "comments": {
+    "P1-012": "SWC compiler - Fast TypeScript/JavaScript compiler (10x faster than tsc)",
+    "P1-013": "PixiJS - 2D rendering library for UI components",
+    "note": "This package.json provides npm-based build tools. The swc wrapper in flake.nix uses npx for zero-install convenience."
+  }
+}

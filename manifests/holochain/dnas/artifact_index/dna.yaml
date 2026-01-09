@@ -1,0 +1,48 @@
+---
+# Artifact Index DNA
+# Purpose: IPFS CID registry and provenance tracking
+# Status: Initial scaffolding (P0-006)
+
+manifest_version: "1"
+name: artifact_index
+uid: "00000000-0000-0000-0000-000000000004"
+properties: ~
+
+# Zome definitions
+zomes:
+  # Integrity zomes - Defines data structures and validation rules
+  - name: artifacts_integrity
+    bundled: zomes/artifacts_integrity.wasm
+
+  - name: provenance_integrity
+    bundled: zomes/provenance_integrity.wasm
+
+  - name: replication_integrity
+    bundled: zomes/replication_integrity.wasm
+
+  # Coordinator zomes - Implements business logic
+  - name: artifacts
+    bundled: zomes/artifacts.wasm
+    dependencies:
+      - name: artifacts_integrity
+
+  - name: provenance
+    bundled: zomes/provenance.wasm
+    dependencies:
+      - name: provenance_integrity
+
+  - name: replication
+    bundled: zomes/replication.wasm
+    dependencies:
+      - name: replication_integrity
+
+# Network configuration
+network_seed: ~
+origin_time: 2024-01-01T00:00:00.000000Z
+
+# DNA modifiers (for testing/versioning)
+modifiers:
+  network_seed: ~
+  properties: ~
+  origin_time: ~
+  quantum_time: ~

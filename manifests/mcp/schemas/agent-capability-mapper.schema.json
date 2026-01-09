@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aria.tools/mcp/schemas/agent-capability-mapper",
+  "title": "Agent Capability Mapper Tool",
+  "description": "MCP tool for mapping agent capabilities to available tools and APIs, enabling dynamic tool selection",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "agent_capability_mapper",
+      "description": "Tool identifier"
+    },
+    "description": {
+      "type": "string",
+      "const": "Maps agent capabilities to available tools and APIs from the capability registry, enables tool discovery and selection"
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["discover", "map", "search", "recommend", "validate"],
+          "description": "Capability mapping action"
+        },
+        "agent_profile": {
+          "type": "object",
+          "properties": {
+            "agent_id": {"type": "string"},
+            "agent_type": {"type": "string", "enum": ["coordinator", "domain_specialist", "task_executor", "researcher"]},
+            "domain": {"type": "string"},
+            "required_capabilities": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "optional_capabilities": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "constraints": {
+              "type": "object",
+              "properties": {
+                "max_latency_ms": {"type": "number"},
+                "cost_tier": {"type": "string", "enum": ["free", "low", "medium", "high"]},
+                "require_authentication": {"type": "boolean"}
+              }
+            }
+          },
+          "description": "Agent profile for capability mapping"
+        },
+        "task_requirements": {
+          "type": "object",
+          "properties": {
+            "task_type": {"type": "string"},
+            "capabilities_needed": {"type": "array", "items": {"type": "string"}},
+            "input_format": {"type": "string"},
+            "output_format": {"type": "string"},
+            "performance_requirements": {
+              "type": "object",
+              "properties": {
+                "max_execution_time_seconds": {"type": "number"},
+                "min_accuracy": {"type": "number"},
+                "max_cost_per_call": {"type": "number"}
+              }
+            }
+          },
+          "description": "Task requirements for tool selection"
+        },
+        "search_query": {
+          "type": "object",
+          "properties": {
+            "categories": {"type": "array", "items": {"type": "string"}},
+            "keywords": {"type": "array", "items": {"type": "string"}},
+            "use_cases": {"type": "array", "items": {"type": "string"}},
+            "filters": {"type": "object"}
+          },
+          "description": "Search query for tool discovery"
+        }
+      },
+      "required": ["action"]
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {"type": "string"},
+        "timestamp": {"type": "string", "format": "date-time"},
+        "capability_map": {
+          "type": "object",
+          "properties": {
+            "agent_id": {"type": "string"},
+            "capabilities": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "capability_name": {"type": "string"},
+                  "description": {"type": "string"},
+                  "category": {"type": "string"},
+                  "mapped_tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "tool_name": {"type": "string"},
+                        "tool_type": {"type": "string", "enum": ["mcp_server", "api", "internal", "external"]},
+                        "provider": {"type": "string"},
+                        "confidence_score": {"type": "number", "minimum": 0, "maximum": 1},
+                        "capabilities_provided": {"type": "array", "items": {"type": "string"}},
+                        "authentication_required": {"type": "boolean"},
+                        "pricing": {"type": "string"},
+                        "latency_estimate_ms": {"type": "number"},
+                        "reliability_score": {"type": "number", "minimum": 0, "maximum": 1}
+                      }
+                    }
+                  },
+                  "coverage_percentage": {"type": "number"},
+                  "gaps": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            },
+            "total_tools_available": {"type": "number"},
+            "total_capabilities_covered": {"type": "number"},
+            "coverage_score": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        },
+        "discovered_tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tool_id": {"type": "string"},
+              "tool_name": {"type": "string"},
+              "provider": {"type": "string"},
+              "category": {"type": "string"},
+              "description": {"type": "string"},
+              "capabilities": {"type": "array", "items": {"type": "string"}},
+              "use_cases": {"type": "array", "items": {"type": "string"}},
+              "integration_method": {"type": "string", "enum": ["mcp", "api", "sdk", "cli"]},
+              "documentation_url": {"type": "string", "format": "uri"},
+              "pricing_model": {"type": "string"},
+              "authentication": {
+                "type": "object",
+                "properties": {
+                  "required": {"type": "boolean"},
+                  "methods": {"type": "array", "items": {"type": "string"}}
+                }
+              },
+              "performance_metrics": {
+                "type": "object",
+                "properties": {
+                  "avg_latency_ms": {"type": "number"},
+                  "success_rate": {"type": "number"},
+                  "uptime_percentage": {"type": "number"}
+                }
+              }
+            }
+          }
+        },
+        "search_results": {
+          "type": "object",
+          "properties": {
+            "query": {"type": "object"},
+            "total_results": {"type": "number"},
+            "results": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tool_name": {"type": "string"},
+                  "relevance_score": {"type": "number"},
+                  "category": {"type": "string"},
+                  "match_reasons": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            }
+          }
+        },
+        "recommendations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tool_name": {"type": "string"},
+              "recommendation_reason": {"type": "string"},
+              "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+              "use_case_fit": {"type": "string", "enum": ["perfect", "good", "acceptable", "poor"]},
+              "pros": {"type": "array", "items": {"type": "string"}},
+              "cons": {"type": "array", "items": {"type": "string"}},
+              "alternatives": {"type": "array", "items": {"type": "string"}},
+              "integration_effort": {"type": "string", "enum": ["low", "medium", "high"]},
+              "priority": {"type": "string", "enum": ["P0", "P1", "P2", "P3"]}
+            }
+          }
+        },
+        "validation_results": {
+          "type": "object",
+          "properties": {
+            "all_required_capabilities_covered": {"type": "boolean"},
+            "performance_requirements_met": {"type": "boolean"},
+            "cost_constraints_satisfied": {"type": "boolean"},
+            "gaps_identified": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "capability": {"type": "string"},
+                  "severity": {"type": "string", "enum": ["critical", "high", "medium", "low"]},
+                  "suggested_solutions": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            }
+          }
+        },
+        "registry_stats": {
+          "type": "object",
+          "properties": {
+            "total_apis": {"type": "number"},
+            "total_categories": {"type": "number"},
+            "mcp_servers": {"type": "number"},
+            "last_updated": {"type": "string", "format": "date-time"}
+          }
+        }
+      },
+      "required": ["action", "timestamp"]
+    }
+  },
+  "required": ["name", "description", "inputSchema", "outputSchema"]
+}

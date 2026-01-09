@@ -1,0 +1,72 @@
+# Workflow Controller ConfigMap
+# Configuration for Argo Workflows controller
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-controller-configmap
+  namespace: argo
+data:
+  # Workflow execution configuration
+  config: |
+    # Executor configuration
+    executor:
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 100m
+          memory: 64Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+    # Archive logs to enable workflow history
+    artifactRepository:
+      archiveLogs: true
+
+    # Workflow default settings
+    workflowDefaults:
+      spec:
+        # Timeout for workflows (2 hours)
+        activeDeadlineSeconds: 7200
+        # Time to live after workflow completion (1 week)
+        ttlStrategy:
+          secondsAfterCompletion: 604800
+          secondsAfterSuccess: 604800
+          secondsAfterFailure: 2419200  # 4 weeks for failed workflows
+
+        # Pod garbage collection
+        podGC:
+          strategy: OnPodCompletion
+          deleteDelayDuration: 300s  # Delete pods 5 minutes after completion
+
+    # Parallelism limits
+    parallelism: 10
+
+    # Resource limits for workflows
+    resourceRateLimit:
+      limit: 10
+      burst: 1
+
+    # Links to external services (optional)
+    links:
+    - name: Argo CD
+      scope: workflow
+      url: http://localhost:8080
+    - name: Grafana
+      scope: workflow
+      url: http://localhost:3000
+
+    # Workflow metadata
+    workflowRestrictions:
+      templateReferencing: Strict
+
+    # Persistent volume claims
+    persistence:
+      archive: true
+      archiveTTL: 7d
+
+    # Metrics configuration
+    metricsConfig:
+      enabled: true
+      path: /metrics
+      port: 9090

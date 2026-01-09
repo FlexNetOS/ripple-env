@@ -1,32 +1,484 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Holochain DHT network configuration for FlexStack",
+  "description": "Holochain DHT network configuration for FlexStack ARIA Platform",
+  "version": "1.1.0",
+  "last_updated": "2026-01-09T00:00:00Z",
+  "aria_priority": "P2-018",
+
+  "metadata": {
+    "platform": "ARIA",
+    "component": "Holochain Networks",
+    "team": "Configuration Domain",
+    "feature_flag_source": "../feature_flags.yaml",
+    "enabled_by": "holochain.USE_HOLOCHAIN_STATE"
+  },
+
   "networks": {
     "mainnet": {
       "name": "ripple-mainnet",
       "description": "Production agent coordination network",
-      "bootstrap_url": "https://bootstrap.ripple.io/mainnet",
-      "signal_url": "wss://signal.ripple.io/mainnet",
-      "persistence": "permanent",
-      "min_peers": 3
+      "environment": "production",
+      "enabled": false,
+
+      "bootstrap": {
+        "url": "https://bootstrap.ripple.io/mainnet",
+        "nodes": [
+          "kitsune://bootstrap1.ripple.io:8787",
+          "kitsune://bootstrap2.ripple.io:8787",
+          "kitsune://bootstrap3.ripple.io:8787"
+        ],
+        "retry_interval_seconds": 60,
+        "max_retries": 5
+      },
+
+      "signaling": {
+        "url": "wss://signal.ripple.io/mainnet",
+        "fallback_urls": [
+          "wss://signal-backup1.ripple.io/mainnet",
+          "wss://signal-backup2.ripple.io/mainnet"
+        ],
+        "protocol": "kitsune-quic",
+        "keep_alive_interval_seconds": 30
+      },
+
+      "networking": {
+        "transport": "quic",
+        "bind_address": "0.0.0.0",
+        "bind_port": 8788,
+        "advertise_address": null,
+        "use_proxy": false,
+        "proxy_url": null,
+        "upnp_enabled": true,
+        "nat_traversal": "holepunch"
+      },
+
+      "peers": {
+        "min_peers": 5,
+        "target_peers": 10,
+        "max_peers": 50,
+        "peer_discovery": "bootstrap",
+        "gossip_interval_seconds": 5,
+        "redundancy_factor": 3
+      },
+
+      "dht": {
+        "gossip_strategy": "recent_activity",
+        "arc_range": "full",
+        "redundancy_target": 5,
+        "validation_timeout_seconds": 30,
+        "publish_timeout_seconds": 60,
+        "sync_interval_seconds": 120
+      },
+
+      "persistence": {
+        "mode": "permanent",
+        "storage_path": "/var/lib/holochain/mainnet",
+        "max_storage_gb": 100,
+        "backup_enabled": true,
+        "backup_interval_hours": 24,
+        "backup_retention_days": 90
+      },
+
+      "security": {
+        "require_tls": true,
+        "verify_signatures": true,
+        "encryption": "chacha20poly1305",
+        "peer_authentication": "ed25519",
+        "rate_limiting": {
+          "enabled": true,
+          "max_requests_per_second": 100,
+          "burst_size": 200
+        },
+        "blacklist_enabled": true,
+        "whitelist_mode": false
+      },
+
+      "governance": {
+        "admin_pubkeys": [],
+        "moderator_pubkeys": [],
+        "policy_dna": "policy_store",
+        "require_governance_approval": true
+      },
+
+      "monitoring": {
+        "metrics_enabled": true,
+        "metrics_endpoint": "http://prometheus:9090",
+        "tracing_enabled": true,
+        "trace_exporter": "jaeger",
+        "health_check_interval_seconds": 60
+      }
     },
+
     "testnet": {
       "name": "ripple-testnet",
       "description": "QA/staging validation network",
-      "bootstrap_url": "https://bootstrap.ripple.io/testnet",
-      "signal_url": "wss://signal.ripple.io/testnet",
-      "persistence": "30-day-prune",
-      "min_peers": 2
+      "environment": "staging",
+      "enabled": true,
+
+      "bootstrap": {
+        "url": "https://bootstrap.ripple.io/testnet",
+        "nodes": [
+          "kitsune://testnet-bootstrap1.ripple.io:8787",
+          "kitsune://testnet-bootstrap2.ripple.io:8787"
+        ],
+        "retry_interval_seconds": 30,
+        "max_retries": 3
+      },
+
+      "signaling": {
+        "url": "wss://signal.ripple.io/testnet",
+        "fallback_urls": [
+          "wss://signal-backup.ripple.io/testnet"
+        ],
+        "protocol": "kitsune-quic",
+        "keep_alive_interval_seconds": 30
+      },
+
+      "networking": {
+        "transport": "quic",
+        "bind_address": "0.0.0.0",
+        "bind_port": 8788,
+        "advertise_address": null,
+        "use_proxy": false,
+        "proxy_url": null,
+        "upnp_enabled": true,
+        "nat_traversal": "holepunch"
+      },
+
+      "peers": {
+        "min_peers": 3,
+        "target_peers": 8,
+        "max_peers": 30,
+        "peer_discovery": "bootstrap",
+        "gossip_interval_seconds": 5,
+        "redundancy_factor": 3
+      },
+
+      "dht": {
+        "gossip_strategy": "recent_activity",
+        "arc_range": "full",
+        "redundancy_target": 3,
+        "validation_timeout_seconds": 20,
+        "publish_timeout_seconds": 40,
+        "sync_interval_seconds": 60
+      },
+
+      "persistence": {
+        "mode": "30-day-prune",
+        "storage_path": "/var/lib/holochain/testnet",
+        "max_storage_gb": 50,
+        "backup_enabled": true,
+        "backup_interval_hours": 48,
+        "backup_retention_days": 30,
+        "prune_interval_hours": 24
+      },
+
+      "security": {
+        "require_tls": true,
+        "verify_signatures": true,
+        "encryption": "chacha20poly1305",
+        "peer_authentication": "ed25519",
+        "rate_limiting": {
+          "enabled": true,
+          "max_requests_per_second": 200,
+          "burst_size": 400
+        },
+        "blacklist_enabled": true,
+        "whitelist_mode": false
+      },
+
+      "governance": {
+        "admin_pubkeys": [],
+        "moderator_pubkeys": [],
+        "policy_dna": "policy_store",
+        "require_governance_approval": false
+      },
+
+      "monitoring": {
+        "metrics_enabled": true,
+        "metrics_endpoint": "http://prometheus:9090",
+        "tracing_enabled": true,
+        "trace_exporter": "jaeger",
+        "health_check_interval_seconds": 30
+      }
     },
+
     "local": {
       "name": "ripple-local",
       "description": "Development/offline network",
-      "bootstrap_url": null,
-      "signal_url": null,
-      "discovery": "mdns",
-      "persistence": "session-only",
-      "min_peers": 1
+      "environment": "development",
+      "enabled": true,
+
+      "bootstrap": {
+        "url": null,
+        "nodes": [],
+        "retry_interval_seconds": 10,
+        "max_retries": 1
+      },
+
+      "signaling": {
+        "url": null,
+        "fallback_urls": [],
+        "protocol": "kitsune-quic",
+        "keep_alive_interval_seconds": 30
+      },
+
+      "networking": {
+        "transport": "mem",
+        "bind_address": "127.0.0.1",
+        "bind_port": 8788,
+        "advertise_address": null,
+        "use_proxy": false,
+        "proxy_url": null,
+        "upnp_enabled": false,
+        "nat_traversal": "none"
+      },
+
+      "peers": {
+        "min_peers": 1,
+        "target_peers": 3,
+        "max_peers": 10,
+        "peer_discovery": "mdns",
+        "gossip_interval_seconds": 2,
+        "redundancy_factor": 1
+      },
+
+      "dht": {
+        "gossip_strategy": "eager",
+        "arc_range": "full",
+        "redundancy_target": 1,
+        "validation_timeout_seconds": 5,
+        "publish_timeout_seconds": 10,
+        "sync_interval_seconds": 30
+      },
+
+      "persistence": {
+        "mode": "session-only",
+        "storage_path": "/tmp/holochain/local",
+        "max_storage_gb": 10,
+        "backup_enabled": false,
+        "clear_on_restart": true
+      },
+
+      "security": {
+        "require_tls": false,
+        "verify_signatures": true,
+        "encryption": "chacha20poly1305",
+        "peer_authentication": "ed25519",
+        "rate_limiting": {
+          "enabled": false,
+          "max_requests_per_second": 1000,
+          "burst_size": 2000
+        },
+        "blacklist_enabled": false,
+        "whitelist_mode": false
+      },
+
+      "governance": {
+        "admin_pubkeys": [],
+        "moderator_pubkeys": [],
+        "policy_dna": null,
+        "require_governance_approval": false
+      },
+
+      "monitoring": {
+        "metrics_enabled": true,
+        "metrics_endpoint": "http://localhost:9090",
+        "tracing_enabled": true,
+        "trace_exporter": "stdout",
+        "health_check_interval_seconds": 10,
+        "verbose_logging": true
+      }
+    },
+
+    "private": {
+      "name": "ripple-private",
+      "description": "Private enterprise network with whitelist access",
+      "environment": "production",
+      "enabled": false,
+
+      "bootstrap": {
+        "url": "${PRIVATE_BOOTSTRAP_URL}",
+        "nodes": [],
+        "retry_interval_seconds": 60,
+        "max_retries": 5
+      },
+
+      "signaling": {
+        "url": "${PRIVATE_SIGNAL_URL}",
+        "fallback_urls": [],
+        "protocol": "kitsune-quic",
+        "keep_alive_interval_seconds": 30
+      },
+
+      "networking": {
+        "transport": "quic",
+        "bind_address": "0.0.0.0",
+        "bind_port": 8788,
+        "advertise_address": "${PRIVATE_ADVERTISE_ADDRESS}",
+        "use_proxy": true,
+        "proxy_url": "${PRIVATE_PROXY_URL}",
+        "upnp_enabled": false,
+        "nat_traversal": "relay"
+      },
+
+      "peers": {
+        "min_peers": 2,
+        "target_peers": 5,
+        "max_peers": 20,
+        "peer_discovery": "whitelist",
+        "gossip_interval_seconds": 5,
+        "redundancy_factor": 2
+      },
+
+      "dht": {
+        "gossip_strategy": "cautious",
+        "arc_range": "partial",
+        "redundancy_target": 3,
+        "validation_timeout_seconds": 30,
+        "publish_timeout_seconds": 60,
+        "sync_interval_seconds": 120
+      },
+
+      "persistence": {
+        "mode": "permanent",
+        "storage_path": "/var/lib/holochain/private",
+        "max_storage_gb": 200,
+        "backup_enabled": true,
+        "backup_interval_hours": 12,
+        "backup_retention_days": 180,
+        "encryption_at_rest": true
+      },
+
+      "security": {
+        "require_tls": true,
+        "verify_signatures": true,
+        "encryption": "chacha20poly1305",
+        "peer_authentication": "ed25519",
+        "rate_limiting": {
+          "enabled": true,
+          "max_requests_per_second": 50,
+          "burst_size": 100
+        },
+        "blacklist_enabled": true,
+        "whitelist_mode": true,
+        "allowed_peer_pubkeys": []
+      },
+
+      "governance": {
+        "admin_pubkeys": [],
+        "moderator_pubkeys": [],
+        "policy_dna": "policy_store",
+        "require_governance_approval": true,
+        "audit_all_actions": true
+      },
+
+      "monitoring": {
+        "metrics_enabled": true,
+        "metrics_endpoint": "http://prometheus:9090",
+        "tracing_enabled": true,
+        "trace_exporter": "jaeger",
+        "health_check_interval_seconds": 30,
+        "alert_on_peer_loss": true
+      }
     }
   },
-  "default_network": "testnet"
+
+  "default_network": "testnet",
+
+  "conductor_integration": {
+    "conductor_config_path": "./conductor.yaml",
+    "app_interface_port": 8888,
+    "admin_interface_port": 8889,
+    "keystore_path": "/var/lib/holochain/keystore",
+    "passphrase_service": "lair-keystore"
+  },
+
+  "dnas": {
+    "agent_registry": {
+      "enabled": true,
+      "file": "./dnas/agent_registry/agent_registry.dna",
+      "networks": ["mainnet", "testnet", "local"]
+    },
+    "resource_mesh": {
+      "enabled": true,
+      "file": "./dnas/resource_mesh/resource_mesh.dna",
+      "networks": ["mainnet", "testnet", "local"]
+    },
+    "policy_store": {
+      "enabled": true,
+      "file": "./dnas/policy_store/policy_store.dna",
+      "networks": ["mainnet", "testnet", "local", "private"]
+    },
+    "artifact_index": {
+      "enabled": true,
+      "file": "./dnas/artifact_index/artifact_index.dna",
+      "networks": ["mainnet", "testnet", "local"]
+    },
+    "memory_shards": {
+      "enabled": true,
+      "file": "./dnas/memory_shards/memory_shards.dna",
+      "networks": ["mainnet", "testnet", "local"]
+    }
+  },
+
+  "feature_flags": {
+    "holochain_state_enabled": "${USE_HOLOCHAIN_STATE:-true}",
+    "holochain_messaging_enabled": "${USE_HOLOCHAIN_MESSAGING:-true}",
+    "auto_network_selection": true,
+    "network_failover_enabled": true,
+    "metrics_export_enabled": true
+  },
+
+  "operational": {
+    "health_checks": {
+      "enabled": true,
+      "interval_seconds": 30,
+      "timeout_seconds": 10,
+      "failure_threshold": 3,
+      "success_threshold": 2
+    },
+    "auto_reconnect": {
+      "enabled": true,
+      "max_attempts": 10,
+      "backoff_multiplier": 2,
+      "max_backoff_seconds": 300
+    },
+    "network_selection": {
+      "strategy": "environment_based",
+      "fallback_order": ["testnet", "local"],
+      "prefer_local_if_available": true
+    },
+    "bandwidth_management": {
+      "max_upload_mbps": 10,
+      "max_download_mbps": 50,
+      "traffic_shaping_enabled": true
+    }
+  },
+
+  "integration": {
+    "nats_bridge": {
+      "enabled": "${NATS_ENABLED:-true}",
+      "publish_to_nats": true,
+      "subscribe_from_nats": true,
+      "subject_prefix": "aria.holochain"
+    },
+    "temporal_workflows": {
+      "enabled": "${TEMPORAL_ENABLED:-true}",
+      "workflow_namespace": "aria-holochain",
+      "task_queue": "holochain-sync"
+    },
+    "observability": {
+      "opentelemetry_enabled": "${OTEL_ENABLED:-true}",
+      "trace_propagation": "w3c",
+      "metrics_port": 9091
+    }
+  },
+
+  "compliance": {
+    "audit_logging": true,
+    "gdpr_compliance": true,
+    "data_residency": "auto",
+    "retention_policy": "network_defined"
+  }
 }

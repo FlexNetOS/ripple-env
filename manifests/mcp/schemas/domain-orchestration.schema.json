@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aria.tools/mcp/schemas/domain-orchestration",
+  "title": "Domain Orchestration Tool",
+  "description": "MCP tool for orchestrating parallel domain analysis across ARIA's 20 architectural domains",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "domain_orchestration",
+      "description": "Tool identifier"
+    },
+    "description": {
+      "type": "string",
+      "const": "Orchestrates parallel analysis of multiple domains, aggregating results and identifying cross-domain dependencies"
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Host OS & Environment",
+              "Isolation & Runtime",
+              "Cluster & Delivery",
+              "Edge & Agent Traffic",
+              "Identity & Policy",
+              "Messaging & Orchestration",
+              "Agent Runtime",
+              "Tool Execution",
+              "Inference",
+              "State & Storage",
+              "Data & Query",
+              "LLMOps & Evaluation",
+              "Training",
+              "UI",
+              "Build Tools",
+              "Notebooks",
+              "Observability",
+              "Security",
+              "DevOps & Autonomy",
+              "Additional Tools"
+            ]
+          },
+          "description": "List of domains to analyze in parallel",
+          "default": ["all"]
+        },
+        "analysis_mode": {
+          "type": "string",
+          "enum": ["discovery", "installation", "verification", "comprehensive"],
+          "default": "comprehensive",
+          "description": "Type of analysis to perform across domains"
+        },
+        "parallel_limit": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 20,
+          "description": "Maximum number of domains to analyze in parallel"
+        },
+        "output_format": {
+          "type": "string",
+          "enum": ["json", "markdown", "yaml"],
+          "default": "json",
+          "description": "Format for aggregated results"
+        }
+      },
+      "required": ["analysis_mode"]
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "execution_summary": {
+          "type": "object",
+          "properties": {
+            "total_domains": {"type": "number"},
+            "completed": {"type": "number"},
+            "failed": {"type": "number"},
+            "duration_seconds": {"type": "number"},
+            "timestamp": {"type": "string", "format": "date-time"}
+          }
+        },
+        "domain_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "domain": {"type": "string"},
+              "status": {"type": "string", "enum": ["success", "partial", "failed"]},
+              "repos_found": {"type": "number"},
+              "repos_list": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "installation_methods": {
+                "type": "object",
+                "properties": {
+                  "nix": {"type": "number"},
+                  "pixi": {"type": "number"},
+                  "docker": {"type": "number"},
+                  "cargo": {"type": "number"},
+                  "other": {"type": "number"}
+                }
+              },
+              "conflicts_detected": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "components": {"type": "array", "items": {"type": "string"}},
+                    "reason": {"type": "string"},
+                    "suggested_resolution": {"type": "string"}
+                  }
+                }
+              },
+              "missing_deps": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "priority_tasks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "priority": {"type": "string", "enum": ["P0", "P1", "P2", "P3"]},
+                    "title": {"type": "string"},
+                    "description": {"type": "string"},
+                    "estimated_hours": {"type": "number"}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "cross_domain_analysis": {
+          "type": "object",
+          "properties": {
+            "shared_dependencies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "dependency": {"type": "string"},
+                  "domains": {"type": "array", "items": {"type": "string"}},
+                  "versions": {"type": "array", "items": {"type": "string"}},
+                  "conflict": {"type": "boolean"}
+                }
+              }
+            },
+            "integration_points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "from_domain": {"type": "string"},
+                  "to_domain": {"type": "string"},
+                  "integration_type": {"type": "string"},
+                  "status": {"type": "string", "enum": ["configured", "missing", "partial"]}
+                }
+              }
+            },
+            "feature_flags_needed": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "flag_name": {"type": "string"},
+                  "affected_domains": {"type": "array", "items": {"type": "string"}},
+                  "options": {"type": "array", "items": {"type": "string"}},
+                  "default_option": {"type": "string"},
+                  "config_location": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "aggregated_tasks": {
+          "type": "object",
+          "properties": {
+            "P0": {"type": "array", "items": {"type": "object"}},
+            "P1": {"type": "array", "items": {"type": "object"}},
+            "P2": {"type": "array", "items": {"type": "object"}},
+            "P3": {"type": "array", "items": {"type": "object"}}
+          },
+          "description": "All tasks aggregated by priority across domains"
+        },
+        "recommendations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {"type": "string", "enum": ["optimization", "security", "integration", "maintenance"]},
+              "description": {"type": "string"},
+              "affected_domains": {"type": "array", "items": {"type": "string"}},
+              "priority": {"type": "string", "enum": ["P0", "P1", "P2", "P3"]}
+            }
+          }
+        }
+      },
+      "required": ["execution_summary", "domain_results", "aggregated_tasks"]
+    }
+  },
+  "required": ["name", "description", "inputSchema", "outputSchema"]
+}

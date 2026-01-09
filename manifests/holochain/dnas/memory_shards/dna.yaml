@@ -1,0 +1,48 @@
+---
+# Memory Shards DNA
+# Purpose: Vector DB partition coordination
+# Status: Initial scaffolding (P0-006)
+
+manifest_version: "1"
+name: memory_shards
+uid: "00000000-0000-0000-0000-000000000005"
+properties: ~
+
+# Zome definitions
+zomes:
+  # Integrity zomes - Defines data structures and validation rules
+  - name: shards_integrity
+    bundled: zomes/shards_integrity.wasm
+
+  - name: routing_integrity
+    bundled: zomes/routing_integrity.wasm
+
+  - name: sync_integrity
+    bundled: zomes/sync_integrity.wasm
+
+  # Coordinator zomes - Implements business logic
+  - name: shards
+    bundled: zomes/shards.wasm
+    dependencies:
+      - name: shards_integrity
+
+  - name: routing
+    bundled: zomes/routing.wasm
+    dependencies:
+      - name: routing_integrity
+
+  - name: sync
+    bundled: zomes/sync.wasm
+    dependencies:
+      - name: sync_integrity
+
+# Network configuration
+network_seed: ~
+origin_time: 2024-01-01T00:00:00.000000Z
+
+# DNA modifiers (for testing/versioning)
+modifiers:
+  network_seed: ~
+  properties: ~
+  origin_time: ~
+  quantum_time: ~

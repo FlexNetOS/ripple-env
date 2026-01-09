@@ -1,0 +1,48 @@
+---
+# Resource Mesh DNA
+# Purpose: Compute/storage/inference allocation and scheduling
+# Status: Initial scaffolding (P0-006)
+
+manifest_version: "1"
+name: resource_mesh
+uid: "00000000-0000-0000-0000-000000000002"
+properties: ~
+
+# Zome definitions
+zomes:
+  # Integrity zomes - Defines data structures and validation rules
+  - name: resources_integrity
+    bundled: zomes/resources_integrity.wasm
+
+  - name: scheduling_integrity
+    bundled: zomes/scheduling_integrity.wasm
+
+  - name: accounting_integrity
+    bundled: zomes/accounting_integrity.wasm
+
+  # Coordinator zomes - Implements business logic
+  - name: resources
+    bundled: zomes/resources.wasm
+    dependencies:
+      - name: resources_integrity
+
+  - name: scheduling
+    bundled: zomes/scheduling.wasm
+    dependencies:
+      - name: scheduling_integrity
+
+  - name: accounting
+    bundled: zomes/accounting.wasm
+    dependencies:
+      - name: accounting_integrity
+
+# Network configuration
+network_seed: ~
+origin_time: 2024-01-01T00:00:00.000000Z
+
+# DNA modifiers (for testing/versioning)
+modifiers:
+  network_seed: ~
+  properties: ~
+  origin_time: ~
+  quantum_time: ~

@@ -1,0 +1,48 @@
+---
+# Policy Store DNA
+# Purpose: Distributed OPA policy cache and decisions
+# Status: Initial scaffolding (P0-006)
+
+manifest_version: "1"
+name: policy_store
+uid: "00000000-0000-0000-0000-000000000003"
+properties: ~
+
+# Zome definitions
+zomes:
+  # Integrity zomes - Defines data structures and validation rules
+  - name: policies_integrity
+    bundled: zomes/policies_integrity.wasm
+
+  - name: decisions_integrity
+    bundled: zomes/decisions_integrity.wasm
+
+  - name: audit_integrity
+    bundled: zomes/audit_integrity.wasm
+
+  # Coordinator zomes - Implements business logic
+  - name: policies
+    bundled: zomes/policies.wasm
+    dependencies:
+      - name: policies_integrity
+
+  - name: decisions
+    bundled: zomes/decisions.wasm
+    dependencies:
+      - name: decisions_integrity
+
+  - name: audit
+    bundled: zomes/audit.wasm
+    dependencies:
+      - name: audit_integrity
+
+# Network configuration
+network_seed: ~
+origin_time: 2024-01-01T00:00:00.000000Z
+
+# DNA modifiers (for testing/versioning)
+modifiers:
+  network_seed: ~
+  properties: ~
+  origin_time: ~
+  quantum_time: ~

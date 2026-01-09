@@ -1,0 +1,268 @@
+# CronWorkflow Example
+# Demonstrates scheduled/recurring workflow execution
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: scheduled-health-check
+  namespace: argo
+spec:
+  # Schedule in cron format (every hour)
+  schedule: "0 * * * *"
+  # Timezone for the schedule
+  timezone: "UTC"
+  # Number of successful workflow history to keep
+  successfulJobsHistoryLimit: 5
+  # Number of failed workflow history to keep
+  failedJobsHistoryLimit: 3
+  # Concurrency policy: Allow, Forbid, or Replace
+  concurrencyPolicy: "Forbid"
+  # Starting deadline in seconds for starting the job if it misses scheduled time
+  startingDeadlineSeconds: 300
+
+  workflowSpec:
+    entrypoint: health-check-pipeline
+    # Time to live after workflow completion (24 hours)
+    ttlStrategy:
+      secondsAfterCompletion: 86400
+
+    templates:
+    - name: health-check-pipeline
+      steps:
+      - - name: check-services
+          template: service-health-check
+
+      - - name: check-database
+          template: database-health-check
+
+        - name: check-api
+          template: api-health-check
+
+      - - name: generate-report
+          template: health-report
+
+      - - name: send-alert
+          template: alert-on-failure
+          when: "{{steps.check-services.status}} != Succeeded || {{steps.check-database.status}} != Succeeded || {{steps.check-api.status}} != Succeeded"
+
+    - name: service-health-check
+      container:
+        image: curlimages/curl:latest
+        command: [sh, -c]
+        args:
+        - |
+          echo "Checking service health..."
+          # curl -f http://service.aria.svc.cluster.local/health || exit 1
+          echo "Service health check passed"
+
+    - name: database-health-check
+      container:
+        image: postgres:16-alpine
+        command: [sh, -c]
+        args:
+        - |
+          echo "Checking database health..."
+          # psql -h db.aria.svc.cluster.local -U user -c "SELECT 1" || exit 1
+          echo "Database health check passed"
+
+    - name: api-health-check
+      container:
+        image: curlimages/curl:latest
+        command: [sh, -c]
+        args:
+        - |
+          echo "Checking API health..."
+          # curl -f http://api.aria.svc.cluster.local/v1/health || exit 1
+          echo "API health check passed"
+
+    - name: health-report
+      container:
+        image: alpine:latest
+        command: [sh, -c]
+        args:
+        - |
+          echo "Generating health report..."
+          echo "Timestamp: $(date)"
+          echo "All health checks passed"
+          # Generate detailed report and store in S3/MinIO
+
+    - name: alert-on-failure
+      container:
+        image: alpine:latest
+        command: [sh, -c]
+        args:
+        - |
+          echo "Health check failure detected!"
+          echo "Sending alert notification..."
+          # Send alert via webhook, email, or slack
+          # curl -X POST webhook-url -d "Health check failed at $(date)"
+
+---
+# Another example: Daily data processing job
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: daily-data-processing
+  namespace: argo
+spec:
+  # Run daily at 2 AM UTC
+  schedule: "0 2 * * *"
+  timezone: "UTC"
+  suspend: true  # Start in suspended state, can be resumed later
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 7
+  concurrencyPolicy: "Forbid"
+
+  workflowSpec:
+    entrypoint: data-processing
+    ttlStrategy:
+      secondsAfterCompletion: 604800  # 1 week
+
+    templates:
+    - name: data-processing
+      dag:
+        tasks:
+        - name: extract-data
+          template: extract
+
+        - name: transform-data
+          dependencies: [extract-data]
+          template: transform
+
+        - name: load-data
+          dependencies: [transform-data]
+          template: load
+
+        - name: cleanup
+          dependencies: [load-data]
+          template: cleanup-temp-files
+
+    - name: extract
+      container:
+        image: python:3.11-slim
+        command: [python, -c]
+        args:
+        - |
+          import json
+          from datetime import datetime
+          print("Extracting data from source systems...")
+          print(f"Timestamp: {datetime.now().isoformat()}")
+          # Extract data from various sources
+          result = {"records_extracted": 10000, "status": "success"}
+          print(json.dumps(result))
+
+    - name: transform
+      container:
+        image: python:3.11-slim
+        command: [python, -c]
+        args:
+        - |
+          import json
+          print("Transforming data...")
+          print("Applying business logic...")
+          print("Data quality validation...")
+          result = {"records_transformed": 9500, "status": "success"}
+          print(json.dumps(result))
+
+    - name: load
+      container:
+        image: python:3.11-slim
+        command: [python, -c]
+        args:
+        - |
+          import json
+          print("Loading data to data warehouse...")
+          print("Creating indexes...")
+          result = {"records_loaded": 9500, "status": "success"}
+          print(json.dumps(result))
+
+    - name: cleanup-temp-files
+      container:
+        image: alpine:latest
+        command: [sh, -c]
+        args:
+        - |
+          echo "Cleaning up temporary files..."
+          # rm -rf /tmp/data-processing/*
+          echo "Cleanup completed"
+
+---
+# Example: Periodic model retraining
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: weekly-model-retrain
+  namespace: argo
+spec:
+  # Run every Sunday at 3 AM
+  schedule: "0 3 * * 0"
+  timezone: "UTC"
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 4
+  concurrencyPolicy: "Forbid"
+
+  workflowSpec:
+    entrypoint: retrain-models
+    ttlStrategy:
+      secondsAfterSuccess: 1209600  # 2 weeks
+      secondsAfterFailure: 2419200  # 4 weeks
+
+    templates:
+    - name: retrain-models
+      steps:
+      - - name: fetch-training-data
+          template: fetch-data
+
+      - - name: train-model
+          template: training
+
+      - - name: evaluate-performance
+          template: evaluation
+
+      - - name: deploy-if-better
+          template: conditional-deployment
+
+    - name: fetch-data
+      container:
+        image: python:3.11-slim
+        command: [sh, -c]
+        args:
+        - |
+          echo "Fetching latest training data..."
+          # Download data from last week
+          echo "Data fetched successfully"
+
+    - name: training
+      container:
+        image: python:3.11-slim
+        command: [sh, -c]
+        args:
+        - |
+          echo "Training model with updated data..."
+          echo "Model training completed"
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+
+    - name: evaluation
+      container:
+        image: python:3.11-slim
+        command: [sh, -c]
+        args:
+        - |
+          echo "Evaluating new model performance..."
+          echo "Comparing with production model..."
+          echo "New model accuracy: 0.94 (production: 0.92)"
+
+    - name: conditional-deployment
+      container:
+        image: bitnami/kubectl:latest
+        command: [sh, -c]
+        args:
+        - |
+          echo "New model performs better, deploying..."
+          # kubectl set image deployment/model-serving model=new-model:latest
+          echo "Model deployed successfully"

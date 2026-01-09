@@ -1,0 +1,119 @@
+# CI/CD Pipeline Workflow Template
+# Demonstrates a typical build-test-deploy pipeline
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: ci-pipeline
+  namespace: argo
+spec:
+  entrypoint: ci-pipeline
+  arguments:
+    parameters:
+    - name: repo-url
+      value: "https://github.com/example/repo"
+    - name: branch
+      value: "main"
+    - name: image-tag
+      value: "latest"
+
+  templates:
+  - name: ci-pipeline
+    dag:
+      tasks:
+      - name: checkout
+        template: git-clone
+        arguments:
+          parameters:
+          - name: repo-url
+            value: "{{workflow.parameters.repo-url}}"
+          - name: branch
+            value: "{{workflow.parameters.branch}}"
+
+      - name: build
+        template: docker-build
+        dependencies: [checkout]
+        arguments:
+          parameters:
+          - name: image-tag
+            value: "{{workflow.parameters.image-tag}}"
+
+      - name: test
+        template: run-tests
+        dependencies: [build]
+
+      - name: deploy
+        template: deploy-app
+        dependencies: [test]
+        arguments:
+          parameters:
+          - name: image-tag
+            value: "{{workflow.parameters.image-tag}}"
+
+  - name: git-clone
+    inputs:
+      parameters:
+      - name: repo-url
+      - name: branch
+    container:
+      image: alpine/git:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Cloning repository: {{inputs.parameters.repo-url}}"
+        echo "Branch: {{inputs.parameters.branch}}"
+        # git clone -b {{inputs.parameters.branch}} {{inputs.parameters.repo-url}} /workspace
+        echo "Clone completed successfully"
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+
+  - name: docker-build
+    inputs:
+      parameters:
+      - name: image-tag
+    container:
+      image: docker:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Building Docker image with tag: {{inputs.parameters.image-tag}}"
+        # docker build -t myapp:{{inputs.parameters.image-tag}} /workspace
+        echo "Build completed successfully"
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+
+  - name: run-tests
+    container:
+      image: python:3.11-slim
+      command: [sh, -c]
+      args:
+      - |
+        echo "Running test suite..."
+        # pytest tests/
+        echo "All tests passed!"
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+
+  - name: deploy-app
+    inputs:
+      parameters:
+      - name: image-tag
+    container:
+      image: bitnami/kubectl:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Deploying application with image tag: {{inputs.parameters.image-tag}}"
+        # kubectl set image deployment/myapp myapp=myapp:{{inputs.parameters.image-tag}}
+        echo "Deployment completed successfully"
+
+  volumeClaimTemplates:
+  - metadata:
+      name: workspace
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
