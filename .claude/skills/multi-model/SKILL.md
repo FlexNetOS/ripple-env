@@ -75,6 +75,57 @@ curl http://localhost:8000/v1/chat/completions \
   -d '{"model": "mistralai/Mixtral-8x7B-Instruct-v0.1", "messages": [...]}'
 ```
 
+#### 5. Moonshot Kimi K2 (OpenAI-compatible)
+```bash
+# Using OpenAI SDK with Moonshot endpoint
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["MOONSHOT_API_KEY"],
+    base_url="https://api.moonshot.ai/v1",
+)
+
+# Kimi K2 Instruct - best for agentic tasks
+response = client.chat.completions.create(
+    model="kimi-k2-instruct",
+    messages=[{"role": "user", "content": "Analyze this codebase..."}],
+    temperature=0.6,  # Recommended for K2
+)
+
+# Kimi K2 Thinking - step-by-step reasoning with tool use
+response = client.chat.completions.create(
+    model="kimi-k2-thinking",
+    messages=[{"role": "user", "content": "Debug this complex issue..."}],
+)
+```
+
+```bash
+# Via curl (OpenAI-compatible)
+curl https://api.moonshot.ai/v1/chat/completions \
+  -H "Authorization: Bearer $MOONSHOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "kimi-k2-instruct",
+    "messages": [{"role": "user", "content": "..."}],
+    "temperature": 0.6
+  }'
+
+# Via aichat (if configured)
+aichat -m moonshot:kimi-k2-instruct "Your prompt here"
+```
+
+#### 6. OpenRouter (Unified Gateway)
+```bash
+# Access Kimi K2 and 100+ models via single API
+curl https://openrouter.ai/api/v1/chat/completions \
+  -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "moonshotai/kimi-k2",
+    "messages": [{"role": "user", "content": "..."}]
+  }'
+```
+
 ## ARIA Multi-Model Dispatch Pattern
 
 ### Cost-Optimized Routing
@@ -159,13 +210,24 @@ curl -s http://localhost:8080/v1/models | jq .  # LocalAI
 
 | Task Type | Recommended | Fallback | Reason |
 |-----------|-------------|----------|--------|
-| Orchestration | claude.opus | - | Best reasoning |
-| Code review | claude.sonnet | openai.gpt4 | Code understanding |
+| Orchestration | claude.opus | moonshot.kimi_k2 | Best reasoning |
+| Agentic tasks | moonshot.kimi_k2 | claude.sonnet | 1T MoE, tool use optimized |
+| Deep reasoning | moonshot.kimi_k2_thinking | claude.opus | Step-by-step with tools |
+| Code review | claude.sonnet | moonshot.kimi_k2 | Code understanding |
+| Coding tasks | moonshot.kimi_k2 | claude.sonnet | Strong coding benchmark |
 | Documentation | claude.haiku | local.llama3 | Cost-effective |
 | Vision/Images | openai.gpt4o | claude.sonnet | Multimodal |
 | Private data | local.ollama | local.localai | Data stays local |
 | High volume | local.vllm | local.localai | Throughput |
 | Offline | local.ollama | - | No internet |
+
+### Kimi K2 Specs
+- **Architecture**: Mixture-of-Experts (MoE)
+- **Total Parameters**: 1 trillion
+- **Active Parameters**: 32 billion per forward pass
+- **Strengths**: Agentic tasks, reasoning, coding
+- **API**: OpenAI-compatible (https://api.moonshot.ai/v1)
+- **Recommended temp**: 0.6
 
 ## Security Considerations
 

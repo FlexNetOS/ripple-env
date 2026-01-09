@@ -68,6 +68,37 @@
         "use_case": "GCP integration",
         "env_key": "GOOGLE_APPLICATION_CREDENTIALS"
       }
+    },
+
+    "moonshot": {
+      "kimi_k2": {
+        "id": "kimi-k2-instruct",
+        "endpoint": "https://api.moonshot.ai/v1",
+        "use_case": "agentic tasks, reasoning, coding",
+        "env_key": "MOONSHOT_API_KEY",
+        "params": {
+          "total": "1T",
+          "active": "32B",
+          "type": "MoE"
+        },
+        "recommended_temp": 0.6
+      },
+      "kimi_k2_thinking": {
+        "id": "kimi-k2-thinking",
+        "endpoint": "https://api.moonshot.ai/v1",
+        "use_case": "step-by-step reasoning, tool use",
+        "env_key": "MOONSHOT_API_KEY",
+        "note": "Thinking agent with dynamic tool invocation"
+      }
+    },
+
+    "openrouter": {
+      "kimi_k2": {
+        "id": "moonshotai/kimi-k2",
+        "endpoint": "https://openrouter.ai/api/v1",
+        "use_case": "unified access to Kimi K2",
+        "env_key": "OPENROUTER_API_KEY"
+      }
     }
   },
 
@@ -79,7 +110,10 @@
       "validation": "claude.haiku",
       "vision": "openai.gpt4o",
       "offline": "local.ollama",
-      "high_throughput": "local.vllm"
+      "high_throughput": "local.vllm",
+      "agentic": "moonshot.kimi_k2",
+      "reasoning": "moonshot.kimi_k2_thinking",
+      "coding": "moonshot.kimi_k2"
     }
   }
 }
