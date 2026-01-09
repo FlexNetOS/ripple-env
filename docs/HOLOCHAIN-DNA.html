@@ -1,0 +1,1502 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Holochain-ROS2 Integration: Decentralized Robotics Architecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #64748b;
+            --accent: #3b82f6;
+            --neutral: #f8fafc;
+            --base: #ffffff;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+            color: #334155;
+            overflow-x: hidden;
+        }
+        
+        .serif { font-family: 'Crimson Text', serif; }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        }
+        
+        .toc-fixed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: var(--base);
+            border-right: 1px solid #e2e8f0;
+            overflow-y: auto;
+            z-index: 1000;
+            padding: 2rem 1.5rem;
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+        
+        .toc-link {
+            display: block;
+            padding: 0.5rem 0;
+            color: var(--secondary);
+            text-decoration: none;
+            border-left: 2px solid transparent;
+            padding-left: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .toc-link:hover, .toc-link.active {
+            color: var(--primary);
+            border-left-color: var(--accent);
+            background: #f8fafc;
+            margin-left: -1.5rem;
+            padding-left: 2.5rem;
+        }
+        
+        .hero-section {
+            background: var(--neutral);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .bento-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 2rem;
+            align-items: start;
+        }
+        
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            line-height: 1.1;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+        
+        .highlight-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+            margin: 4rem 0;
+        }
+        
+        .citation-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 2px 6px;
+            background: #eff6ff;
+            border-radius: 4px;
+            margin: 0 2px;
+        }
+        
+        .citation-link:hover {
+            background: #dbeafe;
+        }
+        
+        .code-block {
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .diagram-container {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+            max-height: 800px;
+            background: #ffffff;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+            .toc-fixed {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+        
+        .scroll-indicator {
+            position: fixed;
+            top: 0;
+            left: 280px;
+            right: 0;
+            height: 3px;
+            background: #e2e8f0;
+            z-index: 999;
+        }
+        
+        .scroll-progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--primary));
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        /* Mermaid diagram styling */
+        .mermaid-container {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+            max-height: 800px;
+            background: #ffffff;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mermaid-container .mermaid {
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            cursor: grab;
+            transition: transform 0.3s ease;
+            transform-origin: center center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: none; /* 防止触摸设备上的默认行为 */
+            -webkit-user-select: none; /* 防止文本选择 */
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .mermaid-container .mermaid svg {
+            max-width: 100%;
+            height: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .mermaid-container .mermaid:active {
+            cursor: grabbing;
+        }
+
+        .mermaid-container.zoomed .mermaid {
+            height: 100%;
+            width: 100%;
+            cursor: grab;
+        }
+
+        .mermaid-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .mermaid-control-btn {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #374151;
+            font-size: 14px;
+            min-width: 36px;
+            height: 36px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mermaid-control-btn:hover {
+            background: #f8fafc;
+            border-color: #3b82f6;
+            color: #3b82f6;
+            transform: translateY(-1px);
+        }
+
+        .mermaid-control-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Enhanced Mermaid theme customization for better contrast */
+        .mermaid {
+            font-family: 'Inter', sans-serif !important;
+        }
+        
+        /* Ensure text contrast for different node types */
+        .mermaid .node rect,
+        .mermaid .node circle,
+        .mermaid .node ellipse,
+        .mermaid .node polygon {
+            fill: #ffffff !important;
+            stroke: var(--primary) !important;
+            stroke-width: 2px !important;
+        }
+        
+        /* Default node styling */
+        .mermaid .node rect {
+            fill: #ffffff !important;
+            stroke: var(--primary) !important;
+        }
+        
+        /* Special styling for different node types to ensure contrast */
+        .mermaid .node.specialNode rect,
+        .mermaid .node.specialNode circle {
+            fill: #f0f9ff !important;
+            stroke: #0369a1 !important;
+        }
+        
+        .mermaid .node.storageNode rect {
+            fill: #f0fdf4 !important;
+            stroke: #166534 !important;
+        }
+        
+        .mermaid .node.computeNode rect {
+            fill: #fffbeb !important;
+            stroke: #d97706 !important;
+        }
+        
+        .mermaid .node.agentNode rect {
+            fill: #faf5ff !important;
+            stroke: #9333ea !important;
+        }
+        
+        .mermaid .node.bridgeNode rect {
+            fill: #fef2f2 !important;
+            stroke: #dc2626 !important;
+        }
+        
+        /* Text styling with high contrast */
+        .mermaid .node .label,
+        .mermaid .nodeLabel,
+        .mermaid text {
+            fill: #111827 !important;
+            color: #111827 !important;
+            font-weight: 600 !important;
+            font-size: 13px !important;
+        }
+        
+        /* Ensure text is readable on all node backgrounds */
+        .mermaid .node.specialNode text,
+        .mermaid .node.storageNode text,
+        .mermaid .node.computeNode text,
+        .mermaid .node.agentNode text,
+        .mermaid .node.bridgeNode text {
+            fill: #111827 !important;
+            color: #111827 !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Edge styling */
+        .mermaid .edgePath .path {
+            stroke: var(--secondary) !important;
+            stroke-width: 2px !important;
+        }
+        
+        .mermaid .arrowheadPath {
+            fill: var(--secondary) !important;
+            stroke: var(--secondary) !important;
+        }
+        
+        /* Edge labels */
+        .mermaid .edgeLabel {
+            background-color: white !important;
+            color: #374151 !important;
+            font-weight: 500 !important;
+            padding: 4px 8px !important;
+            border-radius: 4px !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+        
+        /* Subgraph styling */
+        .mermaid .subgraph {
+            fill: #f8fafc !important;
+            stroke: #cbd5e1 !important;
+            stroke-width: 2px !important;
+        }
+        
+        .mermaid .subgraphTitle {
+            fill: var(--primary) !important;
+            color: var(--primary) !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+        }
+        
+        /* Timeline specific styling with better contrast */
+        .mermaid .timeline-section {
+            fill: #f8fafc !important;
+            stroke: #e2e8f0 !important;
+        }
+        
+        .mermaid .timeline-task {
+            fill: #ffffff !important;
+            stroke: var(--primary) !important;
+            stroke-width: 2px !important;
+        }
+        
+        .mermaid .timeline-task text {
+            fill: #111827 !important;
+            color: #111827 !important;
+            font-weight: 600 !important;
+        }
+        
+        .mermaid .timeline-milestone {
+            fill: #fef3c7 !important;
+            stroke: #d97706 !important;
+            stroke-width: 3px !important;
+        }
+        
+        .mermaid .timeline-milestone text {
+            fill: #92400e !important;
+            color: #92400e !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Flowchart specific enhancements */
+        .mermaid .flowchart-link {
+            stroke: var(--secondary) !important;
+            stroke-width: 2px !important;
+        }
+        
+        .mermaid .flowchart-node {
+            fill: #ffffff !important;
+            stroke: var(--primary) !important;
+            stroke-width: 2px !important;
+        }
+        
+        .mermaid .flowchart-node text {
+            fill: #111827 !important;
+            color: #111827 !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Responsive adjustments for mermaid controls */
+        @media (max-width: 1024px) {
+            .mermaid-control-btn:not(.reset-zoom) {
+                display: none;
+            }
+            .mermaid-controls {
+                top: auto;
+                bottom: 15px;
+                right: 15px;
+            }
+        }
+    </style>
+  <base target="_blank">
+</head>
+
+  <body class="bg-slate-50">
+    <!-- Scroll Progress Indicator -->
+    <div class="scroll-indicator">
+      <div class="scroll-progress" id="scrollProgress"></div>
+    </div>
+
+    <!-- Fixed Table of Contents -->
+    <nav class="toc-fixed">
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-slate-800 mb-4">Contents</h3>
+      </div>
+      <div class="space-y-1">
+        <a href="#architectural-overview" class="toc-link">1. Architectural Overview</a>
+        <a href="#environment-setup" class="toc-link">2. Environment Setup</a>
+        <a href="#dna-design" class="toc-link">3. DNA Design</a>
+        <a href="#ros2-integration" class="toc-link">4. ROS2 Integration</a>
+        <a href="#applications" class="toc-link">5. Applications</a>
+        <a href="#deployment" class="toc-link">6. Deployment</a>
+      </div>
+
+      <div class="mt-8 pt-6 border-t border-slate-200">
+        <h4 class="text-sm font-medium text-slate-600 mb-3">Key Concepts</h4>
+        <div class="space-y-2 text-sm">
+          <div class="text-slate-500">Holochain DNA</div>
+          <div class="text-slate-500">Distributed Hash Table</div>
+          <div class="text-slate-500">Agent-Centric Model</div>
+          <div class="text-slate-500">ROS2 Bridge</div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Hero Section -->
+      <section class="hero-section px-6 py-12">
+        <div class="max-w-6xl mx-auto">
+          <div class="bento-grid">
+            <div class="space-y-6">
+              <div class="space-y-4">
+                <h1 class="hero-title serif italic">
+                  Integrating Holochain DNA with ROS2 Humble for Distributed Robotics and XR
+                </h1>
+                <p class="text-xl text-slate-600 leading-relaxed">
+                  A comprehensive architecture for building resilient, scalable, and secure decentralized robotics applications using Holochain&#39;s agent-centric distributed ledger technology and ROS2&#39;s robotics middleware framework.
+                </p>
+              </div>
+
+              <div class="flex items-center space-x-6 text-sm text-slate-500">
+                <div class="flex items-center space-x-2">
+                  <i class="fas fa-network-wired text-blue-500"></i>
+                  <span>Decentralized Architecture</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <i class="fas fa-robot text-green-500"></i>
+                  <span>Robotics Integration</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <i class="fas fa-vr-cardboard text-purple-500"></i>
+                  <span>XR Interface</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="highlight-card">
+                <h3 class="font-semibold text-slate-800 mb-3">Core Innovation</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                  Merging Holochain&#39;s agent-centric distributed ledger with ROS2&#39;s robotics middleware to create a decentralized, trust-enabling layer for robotic coordination and extended reality applications.
+                </p>
+              </div>
+
+              <div class="highlight-card">
+                <h3 class="font-semibold text-slate-800 mb-3">Target Applications</h3>
+                <ul class="text-slate-600 text-sm space-y-2">
+                  <li class="flex items-center space-x-2">
+                    <i class="fas fa-check text-green-500 text-xs"></i>
+                    <span>Decentralized robotics swarms</span>
+                  </li>
+                  <li class="flex items-center space-x-2">
+                    <i class="fas fa-check text-green-500 text-xs"></i>
+                    <span>Agentic DevOps management</span>
+                  </li>
+                  <li class="flex items-center space-x-2">
+                    <i class="fas fa-check text-green-500 text-xs"></i>
+                    <span>XR/MR voice and vision interfaces</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Article Content -->
+      <article class="px-6 py-8 max-w-4xl mx-auto">
+
+        <!-- Section 1: Architectural Overview -->
+        <section id="architectural-overview" class="mb-16">
+          <h2 class="text-3xl serif font-semibold text-slate-800 mb-8">1. Architectural Overview: Merging ROS2 with Holochain</h2>
+
+          <div class="prose prose-lg max-w-none">
+            <p class="text-lg leading-relaxed mb-6">
+              The integration of Holochain&#39;s agent-centric, distributed ledger technology (DLT) with the Robot Operating System 2 (ROS2) presents a paradigm shift for building resilient, scalable, and secure robotic and extended reality (XR) applications. This architecture moves beyond traditional centralized or client-server models, where a single point of failure can compromise the entire system.
+              <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12251913/" class="citation-link" target="_blank">[88]</a>
+            </p>
+
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-6 my-8">
+              <div class="flex">
+                <i class="fas fa-lightbulb text-blue-400 mt-1 mr-3"></i>
+                <div>
+                  <h4 class="font-semibold text-blue-900">Key Insight</h4>
+                  <p class="text-blue-800 mt-2">
+                    Each device—be it a robot, an XR/MR headset, or a compute node—operates as an autonomous agent within a peer-to-peer network. The core of this architecture is the Holochain DNA (Distributed Network Application), which serves as the foundational blueprint for the network&#39;s rules, data structures, and validation logic.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">1.1 Core Concept: Using Holochain DNA as a Decentralized Layer for ROS2</h3>
+
+            <p class="mb-6">
+              The fundamental concept behind this integration is to use Holochain as a decentralized, trust-enabling layer that underpins and enhances ROS2&#39;s communication infrastructure. While ROS2 excels at providing a robust middleware framework for robotics, its default discovery and communication mechanisms, often based on DDS (Data Distribution Service), are primarily designed for local network environments and can face challenges in large-scale, dynamic, or security-sensitive deployments.
+              <a href="https://holochain-open-dev.github.io/blog/holochain-rsm-migration-guide/" class="citation-link" target="_blank">[3]</a>
+            </p>
+
+            <h4 class="text-xl font-semibold text-slate-800 mt-8 mb-4">1.1.1 Mapping ROS2 Communication Patterns to Holochain</h4>
+
+            <p class="mb-6">
+              A critical aspect of the integration is mapping ROS2&#39;s core communication patterns—publish/subscribe (topics), request/response (services), and asynchronous goal-oriented tasks (actions)—onto Holochain&#39;s architecture. The publish/subscribe model, which is the most common in ROS2, can be elegantly replicated using Holochain&#39;s DHT.
+              <a href="https://blog.csdn.net/gitblog_00257/article/details/146812508" class="citation-link" target="_blank">[228]</a>
+              <a href="https://arxiv.org/pdf/2203.03426" class="citation-link" target="_blank">[206]</a>
+              <a href="https://arxiv.org/abs/2208.13467" class="citation-link" target="_blank">[215]</a>
+            </p>
+
+            <!-- Architecture Diagram -->
+            <div class="my-8">
+              <div class="mermaid-container">
+                <div class="mermaid-controls">
+                  <button class="mermaid-control-btn zoom-in" title="放大">
+                    <i class="fas fa-search-plus"></i>
+                  </button>
+                  <button class="mermaid-control-btn zoom-out" title="缩小">
+                    <i class="fas fa-search-minus"></i>
+                  </button>
+                  <button class="mermaid-control-btn reset-zoom" title="重置">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                  </button>
+                  <button class="mermaid-control-btn fullscreen" title="全屏查看">
+                    <i class="fas fa-expand"></i>
+                  </button>
+                </div>
+                <div class="mermaid">
+                  graph TB
+                  A[&#34;ROS2 Node&#34;] --&gt;|&#34;Publish/Subscribe&#34;| B[&#34;Holochain Bridge&#34;]
+                  B --&gt;|&#34;Zome Function Calls&#34;| C[&#34;Holochain Conductor&#34;]
+                  C --&gt;|&#34;Commit&#34;| D[&#34;Source Chain&#34;]
+                  C --&gt;|&#34;Gossip&#34;| E[&#34;Distributed Hash Table&#34;]
+                  E --&gt;|&#34;Validate &amp; Store&#34;| F[&#34;Validation Authorities&#34;]
+                  G[&#34;XR/MR Device&#34;] --&gt;|&#34;Voice/Vision&#34;| B
+                  H[&#34;Robot Agent&#34;] --&gt;|&#34;Sensor Data&#34;| B
+                  E --&gt;|&#34;Query&#34;| I[&#34;Peer Agents&#34;]
+                </div>
+              </div>
+            </div>
+
+            <h4 class="text-xl font-semibold text-slate-800 mt-8 mb-4">1.1.2 Leveraging the DHT for Distributed Storage and Data Integrity</h4>
+
+            <p class="mb-6">
+              The Distributed Hash Table (DHT) is the cornerstone of Holochain&#39;s shared data layer and a critical component for enabling distributed storage and ensuring data integrity across the robotic network. Unlike a traditional blockchain where every node stores a complete copy of the ledger, the Holochain DHT is a monotonic, validating DHT where each node is responsible for storing and validating only a small, specific portion of the data.
+              <a href="https://pkg.go.dev/github.com/metacurrency/holochain" class="citation-link" target="_blank">[40]</a>
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">1.2 System Components and Their Roles</h3>
+
+            <p class="mb-6">
+              The integrated system is composed of several key components, each with a distinct role in enabling the distributed functionality. These components work in concert to bridge the gap between the ROS2 world of topics, services, and actions, and the Holochain world of agents, DHTs, and source chains.
+            </p>
+
+            <!-- Component Diagram -->
+            <div class="my-8">
+              <div class="mermaid-container">
+                <div class="mermaid-controls">
+                  <button class="mermaid-control-btn zoom-in" title="放大">
+                    <i class="fas fa-search-plus"></i>
+                  </button>
+                  <button class="mermaid-control-btn zoom-out" title="缩小">
+                    <i class="fas fa-search-minus"></i>
+                  </button>
+                  <button class="mermaid-control-btn reset-zoom" title="重置">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                  </button>
+                  <button class="mermaid-control-btn fullscreen" title="全屏查看">
+                    <i class="fas fa-expand"></i>
+                  </button>
+                </div>
+                <div class="mermaid">
+                  graph LR
+                  subgraph &#34;ROS2 Ecosystem&#34;
+                  R1[&#34;ROS2 Publisher Node&#34;]
+                  R2[&#34;ROS2 Subscriber Node&#34;]
+                  R3[&#34;ROS2 Service Server&#34;]
+                  end
+
+                  subgraph &#34;Holochain Bridge Layer&#34;
+                  B1[&#34;Bridge Node&#34;]
+                  B2[&#34;Holochain Client API&#34;]
+                  end
+
+                  subgraph &#34;Holochain Core&#34;
+                  C1[&#34;Holochain Conductor&#34;]
+                  C2[&#34;DNA Instance&#34;]
+                  C3[&#34;Source Chain&#34;]
+                  C4[&#34;DHT Network&#34;]
+                  end
+
+                  R1 --&gt; B1
+                  R2 --&gt; B1
+                  R3 --&gt; B1
+                  B1 --&gt; B2
+                  B2 --&gt; C1
+                  C1 --&gt; C2
+                  C2 --&gt; C3
+                  C2 --&gt; C4
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">1.3 High-Level Integration Strategy</h3>
+
+            <p class="mb-6">
+              The high-level integration strategy focuses on creating a seamless bridge between the ROS2 and Holochain ecosystems, allowing them to work together as a single, cohesive distributed system. This involves not only technical integration at the code level but also a unified approach to packaging, deployment, and networking.
+              <a href="https://developer.holochain.org/resources/" class="citation-link" target="_blank">[295]</a>
+            </p>
+          </div>
+        </section>
+
+        <div class="section-divider"></div>
+
+        <!-- Section 2: Environment Setup -->
+        <section id="environment-setup" class="mb-16">
+          <h2 class="text-3xl serif font-semibold text-slate-800 mb-8">2. Environment Setup: The `ros2-humble-env` Foundation</h2>
+
+          <div class="prose prose-lg max-w-none">
+            <p class="text-lg leading-relaxed mb-6">
+              The successful integration of Holochain and ROS2 hinges on a robust and reproducible development environment. The `ros2-humble-env` repository provides a pre-configured environment based on NixOS, Pixi, Nushell, and Docker.
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">2.1 Initializing the NixOS Development Environment</h3>
+
+            <p class="mb-6">
+              The `ros2-humble-env` repository is built around NixOS, a Linux distribution that uses the Nix package manager to provide a declarative and reproducible way to manage software. This is a significant advantage for a complex project like this, as it ensures that all developers are working with the exact same versions of all dependencies, from the ROS2 libraries to the Holochain binaries.
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">2.2 Docker Configuration for Containerized Deployment</h3>
+
+            <p class="mb-6">
+              Docker is a key component of the `ros2-humble-env`, providing a way to package the entire development environment into a self-contained container. The most common and effective solution for enabling seamless ROS2 communication within a single host is to use the host&#39;s network stack by running containers with the
+              <code class="bg-slate-100 px-2 py-1 rounded">--network=host</code> flag.
+              <a href="https://robofoundry.medium.com/trying-out-ros2-humble-hawksbill-using-docker-4490bc88c926" class="citation-link" target="_blank">[287]</a>
+              <a href="https://blog.csdn.net/nenchoumi3119/article/details/154589665" class="citation-link" target="_blank">[286]</a>
+            </p>
+
+            <div class="code-block">
+              <pre><code># Docker configuration for ROS2 and GUI applications
+docker run -it --network=host \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  -e DISPLAY=$DISPLAY \
+  -v $HOME/.Xauthority:/root/.Xauthority:ro \
+  ros2-holochain-env:latest</code></pre>
+            </div>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">2.3 Advanced Containerization with Firecracker and Kata</h3>
+
+            <p class="mb-6">
+              While Docker is the primary containerization technology for this project, the specification of Firecracker and Kata containers suggests an interest in exploring more advanced and secure forms of containerization. These technologies represent a middle ground between traditional containers and full virtual machines (VMs), offering enhanced isolation and security without the significant performance overhead of a full VM.
+            </p>
+          </div>
+        </section>
+
+        <div class="section-divider"></div>
+
+        <!-- Section 3: DNA Design -->
+        <section id="dna-design" class="mb-16">
+          <h2 class="text-3xl serif font-semibold text-slate-800 mb-8">3. Designing the Holochain DNA for Distributed Robotics</h2>
+
+          <div class="prose prose-lg max-w-none">
+            <p class="text-lg leading-relaxed mb-6">
+              The design of the Holochain DNA is the most critical step in building a decentralized robotics application. The DNA is the blueprint for the entire system, defining the data structures, the rules of interaction, and the public API that ROS2 nodes will use to communicate.
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">3.1 Defining DNA Structure and Zomes</h3>
+
+            <p class="mb-6">
+              The first step in designing the DNA is to define its high-level structure. This involves creating a
+              <code class="bg-slate-100 px-2 py-1 rounded">dna.yaml</code> file that specifies the properties of the DNA, such as its name, description, and version, and lists the zomes that it contains.
+              <a href="https://developer.holochain.org/build/application-structure/" class="citation-link" target="_blank">[232]</a>
+            </p>
+
+            <div class="code-block">
+              <pre><code># dna.yaml - Holochain DNA configuration
+---
+manifest_version: &#34;1&#34;
+name: ros2_holochain_bridge
+description: A Holochain DNA for bridging ROS2 with a decentralized network.
+version: &#34;0.1.0&#34;
+integrity:
+  network_seed: &#34;ros2_holochain_bridge_seed&#34;
+  properties: {}
+  zomes:
+    - name: perception
+      hash: ~
+      bundled: &#34;target/wasm32-unknown-unknown/release/perception.wasm&#34;
+    - name: navigation
+      hash: ~
+      bundled: &#34;target/wasm32-unknown-unknown/release/navigation.wasm&#34;
+    - name: task
+      hash: ~
+      bundled: &#34;target/wasm32-unknown-unknown/release/task.wasm&#34;
+    - name: devops
+      hash: ~
+      bundled: &#34;target/wasm32-unknown-unknown/release/devops.wasm&#34;</code></pre>
+            </div>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">3.2 Implementing Core Zomes in Rust</h3>
+
+            <p class="mb-6">
+              Once the DNA structure and entry types have been defined, the next step is to implement the core zomes in Rust. This involves writing the zome functions that will be exposed to the outside world, as well as the validation logic that will ensure the integrity of the data on the DHT.
+            </p>
+
+            <div class="code-block">
+              <pre><code>// Rust implementation for ROS2 topic management zome
+use hdk::prelude::*;
+
+#[hdk_extern]
+pub fn publish_pose(pose: PoseStamped) -&gt; ExternResult<headerhash> {
+    let entry = EntryTypes::PoseStamped(pose);
+    let header_hash = create_entry(entry)?;
+    Ok(header_hash)
+}
+
+#[hdk_extern]
+pub fn get_poses(_: ()) -&gt; ExternResult<vec<posestamped>&gt; {
+    let links = get_links(AnyLinkableHash::from(agent_info()?.agent_initial_pubkey), LinkTypes::Pose)?;
+    let poses: Vec<posestamped> = links
+        .into_iter()
+        .filter_map(|link| {
+            let entry_hash = link.target.into_entry_hash()?;
+            let element = get(entry_hash, GetOptions::default()).ok()??;
+            element.entry().to_app_option::<posestamped>().ok()?
+        })
+        .collect();
+    Ok(poses)
+}</posestamped></posestamped></vec<posestamped></headerhash></code></pre>
+            </div>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">3.3 Compiling and Packaging the DNA</h3>
+
+            <p class="mb-6">
+              Once the zomes have been implemented, the final step is to compile them into WebAssembly (WASM) and package them into a DNA bundle. This process is handled by the Holochain CLI tool (
+              <code class="bg-slate-100 px-2 py-1 rounded">hc</code>) and the Rust compiler (
+              <code class="bg-slate-100 px-2 py-1 rounded">cargo</code>).
+            </p>
+
+            <!-- DNA Development Workflow -->
+            <div class="my-8">
+              <div class="mermaid-container">
+                <div class="mermaid-controls">
+                  <button class="mermaid-control-btn zoom-in" title="放大">
+                    <i class="fas fa-search-plus"></i>
+                  </button>
+                  <button class="mermaid-control-btn zoom-out" title="缩小">
+                    <i class="fas fa-search-minus"></i>
+                  </button>
+                  <button class="mermaid-control-btn reset-zoom" title="重置">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                  </button>
+                  <button class="mermaid-control-btn fullscreen" title="全屏查看">
+                    <i class="fas fa-expand"></i>
+                  </button>
+                </div>
+                <div class="mermaid">
+                  flowchart TD
+                  A[&#34;Define Entry Types&#34;] --&gt; B[&#34;Implement Zome Functions&#34;]
+                  B --&gt; C[&#34;Write Validation Logic&#34;]
+                  C --&gt; D[&#34;Compile to WASM&#34;]
+                  D --&gt; E[&#34;Package DNA Bundle&#34;]
+                  E --&gt; F[&#34;Test Integration&#34;]
+                  F --&gt; G[&#34;Deploy to Network&#34;]
+
+                  subgraph &#34;Development Phase&#34;
+                  A
+                  B
+                  C
+                  end
+
+                  subgraph &#34;Build Phase&#34;
+                  D
+                  E
+                  end
+
+                  subgraph &#34;Deployment Phase&#34;
+                  F
+                  G
+                  end
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="section-divider"></div>
+
+        <!-- Section 4: ROS2 Integration -->
+        <section id="ros2-integration" class="mb-16">
+          <h2 class="text-3xl serif font-semibold text-slate-800 mb-8">4. Integrating ROS2 Nodes with the Holochain DNA</h2>
+
+          <div class="prose prose-lg max-w-none">
+            <p class="text-lg leading-relaxed mb-6">
+              The integration of ROS2 nodes with the Holochain DNA is the final step in building a decentralized robotics application. This involves creating a bridge between the ROS2 and Holochain ecosystems, developing a ROS2 package that uses this bridge, and managing the dependencies and build configuration for the package.
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">4.1 The ROS2-Holochain Bridge: Implementation Approaches</h3>
+
+            <p class="mb-6">
+              The ROS2-Holochain bridge is the key component that enables communication between the two systems. The bridge will interact with the Holochain Conductor through its Application API, which is exposed over a WebSocket connection.
+              <a href="https://developer.holochain.org/resources/" class="citation-link" target="_blank">[295]</a>
+              <a href="https://developer.holochain.org/concepts/2_application_architecture/" class="citation-link" target="_blank">[302]</a>
+            </p>
+
+            <!-- ROS2-Holochain Bridge Architecture -->
+            <div class="my-8">
+              <div class="mermaid-container">
+                <div class="mermaid-controls">
+                  <button class="mermaid-control-btn zoom-in" title="放大">
+                    <i class="fas fa-search-plus"></i>
+                  </button>
+                  <button class="mermaid-control-btn zoom-out" title="缩小">
+                    <i class="fas fa-search-minus"></i>
+                  </button>
+                  <button class="mermaid-control-btn reset-zoom" title="重置">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                  </button>
+                  <button class="mermaid-control-btn fullscreen" title="全屏查看">
+                    <i class="fas fa-expand"></i>
+                  </button>
+                </div>
+                <div class="mermaid">
+                  graph TB
+                  subgraph &#34;ROS2 Ecosystem&#34;
+                  R1[&#34;ROS2 Publisher&#34;]
+                  R2[&#34;ROS2 Subscriber&#34;]
+                  R3[&#34;ROS2 Service&#34;]
+                  R4[&#34;ROS2 Action&#34;]
+                  end
+
+                  subgraph &#34;Holochain Bridge&#34;
+                  B1[&#34;Message Translator&#34;]
+                  B2[&#34;WebSocket Client&#34;]
+                  B3[&#34;Signal Handler&#34;]
+                  end
+
+                  subgraph &#34;Holochain Conductor&#34;
+                  C1[&#34;Admin API&#34;]
+                  C2[&#34;App API&#34;]
+                  C3[&#34;DNA Instance&#34;]
+                  end
+
+                  R1 --&gt;|&#34;Topic Msg&#34;| B1
+                  R2 --&gt;|&#34;Subscribe Req&#34;| B1
+                  R3 --&gt;|&#34;Service Call&#34;| B1
+                  R4 --&gt;|&#34;Action Goal&#34;| B1
+
+                  B1 --&gt;|&#34;Zome Call&#34;| B2
+                  B2 --&gt;|&#34;WebSocket&#34;| C2
+                  C2 --&gt;|&#34;Function Call&#34;| C3
+
+                  C3 --&gt;|&#34;Signal&#34;| B3
+                  B3 --&gt;|&#34;ROS2 Msg&#34;| R2
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">4.2 Developing the ROS2 Integration Package</h3>
+
+            <p class="mb-6">
+              Once the bridge has been implemented, the next step is to develop a ROS2 package that uses the bridge to interact with the Holochain network. This package will contain the ROS2 nodes that perform the actual work of the application, such as controlling a robot or processing sensor data.
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">4.3 Managing Dependencies and Build Configuration</h3>
+
+            <p class="mb-6">
+              The final step is to manage the dependencies and build configuration for the ROS2 integration package. This involves adding the Holochain client library to the package&#39;s dependencies and configuring the
+              <code class="bg-slate-100 px-2 py-1 rounded">CMakeLists.txt</code> and
+              <code class="bg-slate-100 px-2 py-1 rounded">package.xml</code> files to build the package correctly.
+            </p>
+          </div>
+        </section>
+
+        <div class="section-divider"></div>
+
+        <!-- Section 5: Applications -->
+        <section id="applications" class="mb-16">
+          <h2 class="text-3xl serif font-semibold text-slate-800 mb-8">5. Application-Specific Implementation: XR/MR, Robotics, and DevOps</h2>
+
+          <div class="prose prose-lg max-w-none">
+            <p class="text-lg leading-relaxed mb-6">
+              With the foundational architecture and environment in place, this section explores the application-specific implementations for the three core use cases: decentralized robotics with XR/MR glasses, distributed inference and compute, and agentic DevOps.
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">5.1 Decentralized Robotics with XR/MR Glasses</h3>
+
+            <p class="mb-6">
+              This use case focuses on using XR/MR glasses as a natural interface for controlling and collaborating with a team of robots. The glasses act as a Holochain agent, processing user input and sharing perception data with the robotic fleet.
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-6 my-8">
+              <div class="highlight-card">
+                <h4 class="font-semibold text-slate-800 mb-3">
+                  <i class="fas fa-eye text-purple-500 mr-2"></i>
+                  Vision Processing
+                </h4>
+                <p class="text-slate-600 text-sm">
+                  Edge processing of camera feeds for object recognition, gesture detection, and gaze tracking, converted into ROS2 messages for the Holochain network.
+                </p>
+              </div>
+              <div class="highlight-card">
+                <h4 class="font-semibold text-slate-800 mb-3">
+                  <i class="fas fa-microphone text-blue-500 mr-2"></i>
+                  Voice Commands
+                </h4>
+                <p class="text-slate-600 text-sm">
+                  Local speech-to-text conversion with semantic parsing, enabling natural language control of robotic systems through the DHT.
+                </p>
+              </div>
+            </div>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">5.2 Distributed Inference and Compute</h3>
+
+            <p class="mb-6">
+              This use case leverages the collective computational power of all devices in the network to perform large-scale inference tasks, such as training a machine learning model or running a complex simulation.
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">5.3 Agentic DevOps</h3>
+
+            <p class="mb-6">
+              This use case applies the principles of decentralization and agent-centricity to the management of the robotic system itself, creating a self-healing and self-organizing infrastructure.
+            </p>
+
+            <!-- Agentic DevOps Workflow -->
+            <div class="my-8">
+              <div class="mermaid-container">
+                <div class="mermaid-controls">
+                  <button class="mermaid-control-btn zoom-in" title="放大">
+                    <i class="fas fa-search-plus"></i>
+                  </button>
+                  <button class="mermaid-control-btn zoom-out" title="缩小">
+                    <i class="fas fa-search-minus"></i>
+                  </button>
+                  <button class="mermaid-control-btn reset-zoom" title="重置">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                  </button>
+                  <button class="mermaid-control-btn fullscreen" title="全屏查看">
+                    <i class="fas fa-expand"></i>
+                  </button>
+                </div>
+                <div class="mermaid">
+                  timeline
+                  title &#34;Agentic DevOps Workflow&#34;
+
+                  section &#34;Monitoring&#34;
+                  &#34;Health Check&#34; : &#34;System Metrics&#34;
+                  &#34;Log Analysis&#34; : &#34;Anomaly Detection&#34;
+                  &#34;Performance&#34; : &#34;Resource Usage&#34;
+
+                  section &#34;Decision&#34;
+                  &#34;Auto-Scaling&#34; : &#34;Node Addition/Removal&#34;
+                  &#34;Update Policy&#34; : &#34;Version Management&#34;
+                  &#34;Recovery&#34; : &#34;Failover Strategy&#34;
+
+                  section &#34;Execution&#34;
+                  &#34;Deployment&#34; : &#34;Software Updates&#34;
+                  &#34;Configuration&#34; : &#34;Parameter Updates&#34;
+                  &#34;Validation&#34; : &#34;Health Verification&#34;
+
+                  section &#34;Learning&#34;
+                  &#34;Feedback Loop&#34; : &#34;Performance Data&#34;
+                  &#34;Optimization&#34; : &#34;Policy Updates&#34;
+                  &#34;Prediction&#34; : &#34;Preventive Actions&#34;
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="section-divider"></div>
+
+        <!-- Section 6: Deployment -->
+        <section id="deployment" class="mb-16">
+          <h2 class="text-3xl serif font-semibold text-slate-800 mb-8">6. Deployment and Network Orchestration</h2>
+
+          <div class="prose prose-lg max-w-none">
+            <p class="text-lg leading-relaxed mb-6">
+              The final stage of the integration process is deploying the system to the target environment and orchestrating the network of agents. This involves configuring the Holochain Conductor, setting up networking for peer discovery, and establishing monitoring and debugging procedures.
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">6.1 Running the Holochain Conductor in the Target Environment</h3>
+
+            <p class="mb-6">
+              The Holochain Conductor must be properly configured and running on each device in the network. The Conductor is configured using a YAML file that specifies the network settings, storage paths, and the APIs to be exposed.
+              <a href="https://docs.rs/holochain_conductor_api/latest/holochain_conductor_api" class="citation-link" target="_blank">[301]</a>
+              <a href="https://holochain-open-dev.github.io/blog/holochain-rsm-migration-guide/" class="citation-link" target="_blank">[312]</a>
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">6.2 Networking and Peer Discovery</h3>
+
+            <p class="mb-6">
+              A critical aspect of deploying a distributed system is ensuring that the agents can discover and communicate with each other. This involves configuring both the Holochain peer-to-peer network and the ROS2 DDS network. The use of a discovery server is a recommended approach for large-scale deployments.
+              <a href="https://docs.clearpathrobotics.com/docs/ros/networking/ros2_networking/overview" class="citation-link" target="_blank">[317]</a>
+              <a href="https://husarion.com/tutorials/ros2-tutorials/6-robot-network/" class="citation-link" target="_blank">[318]</a>
+            </p>
+
+            <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">6.3 Monitoring and Performance Considerations</h3>
+
+            <p class="mb-6">
+              Once the system is deployed, it is important to monitor its performance and to have tools in place for debugging any issues that may arise. The latency of the Holochain-ROS2 integration should be carefully measured and analyzed to ensure that it meets the requirements of the application.
+            </p>
+
+            <!-- Network Topology Diagram -->
+            <div class="my-8">
+              <div class="mermaid-container">
+                <div class="mermaid-controls">
+                  <button class="mermaid-control-btn zoom-in" title="放大">
+                    <i class="fas fa-search-plus"></i>
+                  </button>
+                  <button class="mermaid-control-btn zoom-out" title="缩小">
+                    <i class="fas fa-search-minus"></i>
+                  </button>
+                  <button class="mermaid-control-btn reset-zoom" title="重置">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                  </button>
+                  <button class="mermaid-control-btn fullscreen" title="全屏查看">
+                    <i class="fas fa-expand"></i>
+                  </button>
+                </div>
+                <div class="mermaid">
+                  graph TD
+                  subgraph &#34;Robot Fleet&#34;
+                  R1[&#34;Robot 1
+                  <br/>ROS2+Holochain&#34;]
+                  R2[&#34;Robot 2
+                  <br/>ROS2+Holochain&#34;]
+                  R3[&#34;Robot 3
+                  <br/>ROS2+Holochain&#34;]
+                  end
+
+                  subgraph &#34;Infrastructure&#34;
+                  DS[&#34;DDS Discovery Server&#34;]
+                  BS[&#34;Holochain Bootstrap&#34;]
+                  PS[&#34;Proxy Servers&#34;]
+                  end
+
+                  subgraph &#34;User Devices&#34;
+                  XR[&#34;XR Glasses&#34;]
+                  PC[&#34;Developer PC&#34;]
+                  MO[&#34;Mobile Device&#34;]
+                  end
+
+                  subgraph &#34;Cloud Services&#34;
+                  MON[&#34;Monitoring&#34;]
+                  LOG[&#34;Central Logging&#34;]
+                  REG[&#34;Registry&#34;]
+                  end
+
+                  R1 --&gt; DS
+                  R2 --&gt; DS
+                  R3 --&gt; DS
+
+                  R1 --&gt; BS
+                  R2 --&gt; BS
+                  R3 --&gt; BS
+
+                  XR --&gt; PS
+                  PC --&gt; PS
+                  MO --&gt; PS
+
+                  R1 --&gt; MON
+                  R2 --&gt; MON
+                  R3 --&gt; MON
+
+                  R1 --&gt; LOG
+                  R2 --&gt; LOG
+                  R3 --&gt; LOG
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-green-50 border-l-4 border-green-400 p-6 my-8">
+              <div class="flex">
+                <i class="fas fa-check-circle text-green-400 mt-1 mr-3"></i>
+                <div>
+                  <h4 class="font-semibold text-green-900">Deployment Success Factors</h4>
+                  <p class="text-green-800 mt-2">
+                    Successful deployment requires careful attention to network configuration, security boundaries, and performance monitoring. The integrated Holochain-ROS2 system provides a robust foundation for building next-generation distributed robotics applications.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Conclusion -->
+        <section class="mt-16 mb-16 bg-slate-100 rounded-xl p-8">
+          <h2 class="text-2xl serif font-semibold text-slate-800 mb-6">Conclusion</h2>
+          <p class="text-lg leading-relaxed text-slate-700">
+            The integration of Holochain with ROS2 Humble represents a significant advancement in decentralized robotics architecture. By combining Holochain&#39;s agent-centric distributed ledger technology with ROS2&#39;s proven robotics middleware, this architecture enables the development of resilient, scalable, and secure robotic systems that can operate without centralized coordination. The implementation provides a comprehensive foundation for building next-generation applications in decentralized robotics, extended reality interfaces, and autonomous system management.
+          </p>
+        </section>
+      </article>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#ffffff',
+                primaryTextColor: '#111827',
+                primaryBorderColor: '#1e3a8a',
+                lineColor: '#64748b',
+                secondaryColor: '#f8fafc',
+                tertiaryColor: '#e2e8f0',
+                background: '#ffffff',
+                mainBkg: '#ffffff',
+                secondBkg: '#f8fafc',
+                tertiaryBkg: '#f1f5f9',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '13px',
+                fontWeight: '600',
+                // Enhanced contrast colors
+                cScale0: '#ffffff',
+                cScale1: '#f0f9ff',
+                cScale2: '#f0fdf4', 
+                cScale3: '#fffbeb',
+                cScale4: '#faf5ff',
+                cScale5: '#fef2f2',
+                // Text colors for different scales
+                cScaleLabel0: '#111827',
+                cScaleLabel1: '#111827',
+                cScaleLabel2: '#111827',
+                cScaleLabel3: '#111827',
+                cScaleLabel4: '#111827',
+                cScaleLabel5: '#111827'
+            },
+            flowchart: {
+                useMaxWidth: false,
+                htmlLabels: true,
+                curve: 'basis',
+                padding: 20
+            },
+            sequence: {
+                useMaxWidth: false,
+                wrap: true
+            },
+            gantt: {
+                useMaxWidth: false
+            },
+            timeline: {
+                useMaxWidth: false
+            },
+            // Global diagram settings
+            securityLevel: 'loose'
+        });
+
+        // Initialize Mermaid Controls for zoom and pan
+        function initializeMermaidControls() {
+            const containers = document.querySelectorAll('.mermaid-container');
+
+            containers.forEach(container => {
+            const mermaidElement = container.querySelector('.mermaid');
+            let scale = 1;
+            let isDragging = false;
+            let startX, startY, translateX = 0, translateY = 0;
+
+            // 触摸相关状态
+            let isTouch = false;
+            let touchStartTime = 0;
+            let initialDistance = 0;
+            let initialScale = 1;
+            let isPinching = false;
+
+            // Zoom controls
+            const zoomInBtn = container.querySelector('.zoom-in');
+            const zoomOutBtn = container.querySelector('.zoom-out');
+            const resetBtn = container.querySelector('.reset-zoom');
+            const fullscreenBtn = container.querySelector('.fullscreen');
+
+            function updateTransform() {
+                mermaidElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+
+                if (scale > 1) {
+                container.classList.add('zoomed');
+                } else {
+                container.classList.remove('zoomed');
+                }
+
+                mermaidElement.style.cursor = isDragging ? 'grabbing' : 'grab';
+            }
+
+            if (zoomInBtn) {
+                zoomInBtn.addEventListener('click', () => {
+                scale = Math.min(scale * 1.25, 4);
+                updateTransform();
+                });
+            }
+
+            if (zoomOutBtn) {
+                zoomOutBtn.addEventListener('click', () => {
+                scale = Math.max(scale / 1.25, 0.3);
+                if (scale <= 1) {
+                    translateX = 0;
+                    translateY = 0;
+                }
+                updateTransform();
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+                updateTransform();
+                });
+            }
+
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => {
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                } else if (container.webkitRequestFullscreen) {
+                    container.webkitRequestFullscreen();
+                } else if (container.msRequestFullscreen) {
+                    container.msRequestFullscreen();
+                }
+                });
+            }
+
+            // Mouse Events
+            mermaidElement.addEventListener('mousedown', (e) => {
+                if (isTouch) return; // 如果是触摸设备，忽略鼠标事件
+
+                isDragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                mermaidElement.style.cursor = 'grabbing';
+                updateTransform();
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging && !isTouch) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                updateTransform();
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging && !isTouch) {
+                isDragging = false;
+                mermaidElement.style.cursor = 'grab';
+                updateTransform();
+                }
+            });
+
+            document.addEventListener('mouseleave', () => {
+                if (isDragging && !isTouch) {
+                isDragging = false;
+                mermaidElement.style.cursor = 'grab';
+                updateTransform();
+                }
+            });
+
+            // 获取两点之间的距离
+            function getTouchDistance(touch1, touch2) {
+                return Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+                );
+            }
+
+            // Touch Events - 触摸事件处理
+            mermaidElement.addEventListener('touchstart', (e) => {
+                isTouch = true;
+                touchStartTime = Date.now();
+
+                if (e.touches.length === 1) {
+                // 单指拖动
+                isPinching = false;
+                isDragging = true;
+
+                const touch = e.touches[0];
+                startX = touch.clientX - translateX;
+                startY = touch.clientY - translateY;
+
+                } else if (e.touches.length === 2) {
+                // 双指缩放
+                isPinching = true;
+                isDragging = false;
+
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                initialDistance = getTouchDistance(touch1, touch2);
+                initialScale = scale;
+                }
+
+                e.preventDefault();
+            }, { passive: false });
+
+            mermaidElement.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && isDragging && !isPinching) {
+                // 单指拖动
+                const touch = e.touches[0];
+                translateX = touch.clientX - startX;
+                translateY = touch.clientY - startY;
+                updateTransform();
+
+                } else if (e.touches.length === 2 && isPinching) {
+                // 双指缩放
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const currentDistance = getTouchDistance(touch1, touch2);
+
+                if (initialDistance > 0) {
+                    const newScale = Math.min(Math.max(
+                    initialScale * (currentDistance / initialDistance),
+                    0.3
+                    ), 4);
+                    scale = newScale;
+                    updateTransform();
+                }
+                }
+
+                e.preventDefault();
+            }, { passive: false });
+
+            mermaidElement.addEventListener('touchend', (e) => {
+                // 重置状态
+                if (e.touches.length === 0) {
+                isDragging = false;
+                isPinching = false;
+                initialDistance = 0;
+
+                // 延迟重置isTouch，避免鼠标事件立即触发
+                setTimeout(() => {
+                    isTouch = false;
+                }, 100);
+                } else if (e.touches.length === 1 && isPinching) {
+                // 从双指变为单指，切换为拖动模式
+                isPinching = false;
+                isDragging = true;
+
+                const touch = e.touches[0];
+                startX = touch.clientX - translateX;
+                startY = touch.clientY - translateY;
+                }
+
+                updateTransform();
+            });
+
+            mermaidElement.addEventListener('touchcancel', (e) => {
+                isDragging = false;
+                isPinching = false;
+                initialDistance = 0;
+
+                setTimeout(() => {
+                isTouch = false;
+                }, 100);
+
+                updateTransform();
+            });
+
+            // Enhanced wheel zoom with better center point handling
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const rect = container.getBoundingClientRect();
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                const newScale = Math.min(Math.max(scale * delta, 0.3), 4);
+
+                // Adjust translation to zoom towards center
+                if (newScale !== scale) {
+                const scaleDiff = newScale / scale;
+                translateX = translateX * scaleDiff;
+                translateY = translateY * scaleDiff;
+                scale = newScale;
+
+                if (scale <= 1) {
+                    translateX = 0;
+                    translateY = 0;
+                }
+
+                updateTransform();
+                }
+            });
+
+            // Initialize display
+            updateTransform();
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMermaidControls();
+        });
+
+        // Table of Contents Active Link
+        const sections = document.querySelectorAll('section[id]');
+        const tocLinks = document.querySelectorAll('.toc-link');
+
+        function updateActiveLink() {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 100;
+                if (scrollY >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            tocLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateActiveLink);
+
+        // Smooth scroll for TOC links
+        tocLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    targetSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Scroll progress indicator
+        window.addEventListener('scroll', function() {
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollProgress = (window.scrollY / scrollHeight) * 100;
+            document.getElementById('scrollProgress').style.width = scrollProgress + '%';
+        });
+
+        // Code block syntax highlighting simulation
+        document.querySelectorAll('.code-block').forEach(block => {
+            block.addEventListener('mouseenter', function() {
+                this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+            });
+            
+            block.addEventListener('mouseleave', function() {
+                this.style.boxShadow = 'none';
+            });
+        });
+    </script>
+  
+
+</body></html>
