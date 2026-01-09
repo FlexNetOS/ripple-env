@@ -11,6 +11,7 @@ This directory contains Architecture Decision Records (ADRs) documenting signifi
 | [ADR-003](adr-003-version-management.md) | Version Management: Nix + Pixi (Skip mise/0install) | Accepted | 2026-01-09 |
 | [ADR-004](adr-004-devpod-integration.md) | DevPod for Optional Remote Development | Proposed | 2026-01-09 |
 | [ADR-005](adr-005-xdg-compliance.md) | XDG Base Directory Compliance | Accepted | 2026-01-09 |
+| [ADR-006](adr-006-agixt-integration.md) | AGiXT Integration: Docker + LocalAI | Proposed | 2026-01-09 |
 
 ## ADR Template
 
