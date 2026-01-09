@@ -265,6 +265,20 @@ def detect_issues(workflow: Dict) -> List[Dict]:
             "suggestion": "Add DeterminateSystems/magic-nix-cache-action"
         })
 
+    # Check for inconsistent nix installer (cachix vs DeterminateSystems)
+    has_cachix_installer = any(
+        "cachix/install-nix-action" in step.get("uses", "")
+        for job in jobs.values()
+        for step in job.get("steps", [])
+    )
+    if has_cachix_installer:
+        issues.append({
+            "severity": "warning",
+            "job": "workflow",
+            "issue": "Using cachix/install-nix-action instead of DeterminateSystems/nix-installer-action",
+            "suggestion": "Use DeterminateSystems/nix-installer-action@v14 + magic-nix-cache-action@v8 for consistency"
+        })
+
     return issues
 
 
