@@ -79,12 +79,41 @@ def parse_flake_inputs(conn):
         )
         log_success(f"  Found input: {name} -> {url}")
 
-    # Parse block inputs with follows
-    block_pattern = r'(\w[\w-]*?)\s*=\s*\{[^}]*?url\s*=\s*"([^"]+)"[^}]*?(?:inputs\.(\w+)\.follows)?[^}]*?\}'
-    for match in re.finditer(block_pattern, content, re.DOTALL):
-        name, url = match.group(1), match.group(2)
-        follows = match.group(3) if match.group(3) else None
+    # Parse block inputs with follows using a brace-aware scan
+    block_start_pattern = re.compile(r'(\w[\w-]*?)\s*=\s*\{', re.MULTILINE)
 
+    for match in block_start_pattern.finditer(content):
+        name = match.group(1)
+        brace_start = content.find("{", match.start())
+        if brace_start == -1:
+            continue
+
+        # Find the matching closing brace, accounting for nested blocks
+        depth = 0
+        end = None
+        for idx in range(brace_start, len(content)):
+            ch = content[idx]
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = idx
+                    break
+        if end is None:
+            continue
+
+        block_text = content[brace_start:end + 1]
+
+        # Extract URL inside the block
+        url_match = re.search(r'url\s*=\s*"([^"]+)"', block_text)
+        if not url_match:
+            continue
+        url = url_match.group(1)
+
+        # Extract any follows declarations inside the block
+        follows_matches = re.findall(r'inputs\.(\w+)\.follows', block_text)
+        follows = follows_matches[0] if follows_matches else None
         # Skip if already inserted with simple pattern
         existing = conn.execute("SELECT name FROM flake_inputs WHERE name=?", (name,)).fetchone()
         if existing:
@@ -283,6 +312,9 @@ def run_validation(conn):
     """Run validation checks."""
     log_info("Running validation checks...")
     flake_file = REPO_ROOT / "flake.nix"
+    if not flake_file.exists():
+        log_warn("flake.nix not found; skipping validation checks")
+        return
     content = flake_file.read_text()
 
     conn.commit()
