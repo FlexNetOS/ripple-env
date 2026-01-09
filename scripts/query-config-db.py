@@ -7,7 +7,6 @@ Usage: python3 scripts/query-config-db.py <command> [args]
 
 import sqlite3
 import sys
-import json
 from pathlib import Path
 from typing import List, Tuple, Any
 
