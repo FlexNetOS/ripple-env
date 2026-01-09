@@ -506,6 +506,7 @@
               echo "AI infrastructure:"
               echo "  localai   - LocalAI server management (start|stop|status|models)"
               echo "  agixt     - AGiXT platform via Docker (up|down|logs|status)"
+              echo "  aios      - AIOS Agent Kernel management (install|start|stop|status)"
               echo ""
               echo "Rust (AGiXT SDK):"
               echo "  cargo build -p agixt-bridge  # Build AGiXT-ROS2 bridge"
