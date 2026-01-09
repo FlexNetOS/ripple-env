@@ -46,8 +46,8 @@ def init_db(reset=False):
 
     # Check if schema file exists
     if not SCHEMA_PATH.exists():
-        log_error(f"Schema file not found at {SCHEMA_PATH}")
-        log_error("Please ensure the schema.sql file exists in the data/ directory")
+        log_error(f"Schema file not found: {SCHEMA_PATH}")
+        log_error("Please ensure the schema file exists before running this script.")
         sys.exit(1)
 
     conn = sqlite3.connect(DB_PATH)
