@@ -448,6 +448,6 @@ prompts/
 
 ## Related Skills
 
-- [AI Assistants](../ai-assistants/README.md) - AI tool usage
-- [DevOps](../devops/README.md) - CI/CD integration
-- [ROS2 Development](../ros2-development/README.md) - Robot integration
+- [AI Assistants](../ai-assistants/SKILL.md) - AI tool usage
+- [DevOps](../devops/SKILL.md) - CI/CD integration
+- [ROS2 Development](../ros2-development/SKILL.md) - Robot integration

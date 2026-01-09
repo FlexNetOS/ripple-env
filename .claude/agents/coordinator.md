@@ -17,19 +17,30 @@ The Coordinator manages task routing between specialized agents based on context
 
 ### Core Domain Agents
 
-| Agent | Domain | Trigger Keywords |
-|-------|--------|------------------|
-| robotics-agent | ROS2, packages, nodes, topics | ros2, colcon, launch, topic, node, msg |
-| devops-agent | CI/CD, GitHub, deployment | workflow, actions, pr, issue, deploy |
-| nix-agent | Nix, environment, modules | flake, nix, module, home-manager, shell |
+| Agent | Domain | Trigger Keywords | Model |
+|-------|--------|------------------|-------|
+| robotics-agent | ROS2, packages, nodes, topics | ros2, colcon, launch, topic, node, msg | sonnet |
+| devops-agent | CI/CD, GitHub, deployment | workflow, actions, pr, issue, deploy | sonnet |
+| nix-agent | Nix, environment, modules | flake, nix, module, home-manager, shell | sonnet |
+| kubernetes-agent | K8s, Helm, ArgoCD | k8s, kubectl, helm, argo, cluster, pod | sonnet |
+| identity-agent | Auth, Keycloak, OPA, Vault | auth, keycloak, opa, vault, token, rbac | sonnet |
 
 ### Architecture & Analysis Agents
 
-| Agent | Domain | Trigger Keywords |
-|-------|--------|------------------|
-| architect-agent | System design, frameworks, integration | design, architecture, framework, integrate, scale, plan |
-| pre-verify-agent | Validation, compatibility, pre-checks | verify, validate, check, compatible, dependency, security |
-| cross-analysis-agent | Code search, patterns, impact | analyze, search, find, pattern, impact, usage, trace |
+| Agent | Domain | Trigger Keywords | Model |
+|-------|--------|------------------|-------|
+| architect-agent | System design, frameworks, integration | design, architecture, framework, integrate, scale, plan | sonnet |
+| pre-verify-agent | Validation, compatibility, pre-checks | verify, validate, check, compatible, dependency, security | sonnet |
+| cross-analysis-agent | Code search, patterns, impact | analyze, search, find, pattern, impact, usage, trace | sonnet |
+
+### Specialized Agents
+
+| Agent | Domain | Trigger Keywords | Model |
+|-------|--------|------------------|-------|
+| security-agent | Vulnerabilities, scanning, secrets | security, vuln, cve, scan, secret, trivy | sonnet |
+| migration-agent | Upgrades, deprecations, version | upgrade, migrate, deprecate, version, breaking | sonnet |
+| test-runner-agent | Testing, coverage, CI | test, pytest, coverage, ci, failing | haiku |
+| docs-agent | Documentation, changelog | docs, readme, changelog, api docs | haiku |
 
 ## Routing Rules
 
@@ -44,9 +55,15 @@ User can specify agent with:
 - `@robotics` - Route to Robotics Agent
 - `@devops` - Route to DevOps Agent
 - `@nix` - Route to Nix Agent
+- `@k8s` - Route to Kubernetes Agent
+- `@identity` - Route to Identity Agent
 - `@architect` - Route to Architect Agent
 - `@verify` - Route to Pre-Verify Agent
 - `@analyze` - Route to Cross-Analysis Agent
+- `@security` - Route to Security Agent
+- `@migrate` - Route to Migration Agent
+- `@test` - Route to Test Runner Agent
+- `@docs` - Route to Documentation Agent
 
 ### Multi-Agent Tasks
 For tasks spanning multiple domains:

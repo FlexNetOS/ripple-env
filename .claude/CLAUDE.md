@@ -128,7 +128,7 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 ### Adding Skills
 
-Skills are structured knowledge for agents. Create in `.claude/skills/<name>/README.md`:
+Skills are structured knowledge for agents. Create in `.claude/skills/<name>/SKILL.md`:
 
 ```markdown
 ---

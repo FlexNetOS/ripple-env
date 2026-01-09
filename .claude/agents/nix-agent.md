@@ -80,7 +80,7 @@ nix-store -q --references /path
 ## Context Loading
 
 When working on Nix tasks, load:
-- `.claude/skills/nix-environment/README.md`
+- `.claude/skills/nix-environment/SKILL.md`
 - `flake.nix`
 - `lib/default.nix`
 - `modules/common/default.nix`

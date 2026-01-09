@@ -277,7 +277,7 @@ New skills can be added by:
 
 1. **Nix packages**: Add to `flake.nix` or `modules/common/packages.nix`
 2. **Pixi packages**: Add via `pixi add <package>`
-3. **Structured skills**: Add to `.claude/skills/<skill-name>/README.md`
+3. **Structured skills**: Add to `.claude/skills/<skill-name>/SKILL.md`
 4. **Slash commands**: Add to `.claude/commands/<command>.md`
 5. **Shell aliases**: Add to `modules/common/packages.nix` shellAliases
 6. **Devshell commands**: Add to `flake.nix` devshells.default.commands

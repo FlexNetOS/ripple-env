@@ -142,7 +142,7 @@ User -> API -> Service -> Database
 ## Context Loading
 
 When working on architecture tasks, load:
-- `.claude/skills/architecture/README.md` (if exists)
+- `.claude/skills/architecture/SKILL.md` (if exists)
 - `flake.nix` for current dependencies
 - `README.md` for project context
 - Existing architecture documentation

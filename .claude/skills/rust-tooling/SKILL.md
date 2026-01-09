@@ -491,7 +491,7 @@ See `rust/agixt-bridge/src/config.rs` for configuration details.
 
 ## Related Skills
 
-- [ROS2 Development](../ros2-development/README.md) - ROS2 integration
-- [Nix Environment](../nix-environment/README.md) - Package management
-- [AI Assistants](../ai-assistants/README.md) - LocalAI, AGiXT, aichat, aider
-- [Distributed Systems](../distributed-systems/README.md) - NATS messaging for multi-robot
+- [ROS2 Development](../ros2-development/SKILL.md) - ROS2 integration
+- [Nix Environment](../nix-environment/SKILL.md) - Package management
+- [AI Assistants](../ai-assistants/SKILL.md) - LocalAI, AGiXT, aichat, aider
+- [Distributed Systems](../distributed-systems/SKILL.md) - NATS messaging for multi-robot

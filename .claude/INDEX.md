@@ -23,15 +23,23 @@
 
 | Skill | Description |
 |-------|-------------|
-| [ROS2 Development](./skills/ros2-development/README.md) | Building, testing, and running ROS2 packages |
-| [DevOps](./skills/devops/README.md) | CI/CD, GitHub workflows, automation |
-| [Nix Environment](./skills/nix-environment/README.md) | Flakes, home-manager, environment management |
-| [AI Assistants](./skills/ai-assistants/README.md) | AI tools (aichat, aider, LocalAI, AGiXT) |
-| [AIOS & Cerebrum](./skills/aios-cerebrum/README.md) | Agent OS kernel and SDK for building AI agents |
-| [Distributed Systems](./skills/distributed-systems/README.md) | NATS messaging, Temporal workflows |
-| [Rust Tooling](./skills/rust-tooling/README.md) | PyO3 bindings, sqlx, AGiXT Rust SDK |
-| [Observability](./skills/observability/README.md) | Prometheus, OpenTelemetry, monitoring |
-| [LLM Evaluation](./skills/llm-evaluation/README.md) | promptfoo, TruLens, LLM testing |
+| [ROS2 Development](./skills/ros2-development/SKILL.md) | Building, testing, and running ROS2 packages |
+| [DevOps](./skills/devops/SKILL.md) | CI/CD, GitHub workflows, automation |
+| [Nix Environment](./skills/nix-environment/SKILL.md) | Flakes, home-manager, environment management |
+| [AI Assistants](./skills/ai-assistants/SKILL.md) | AI tools (aichat, aider, LocalAI, AGiXT) |
+| [AIOS & Cerebrum](./skills/aios-cerebrum/SKILL.md) | Agent OS kernel and SDK for building AI agents |
+| [Distributed Systems](./skills/distributed-systems/SKILL.md) | NATS messaging, Temporal workflows |
+| [Rust Tooling](./skills/rust-tooling/SKILL.md) | PyO3 bindings, sqlx, AGiXT Rust SDK |
+| [Observability](./skills/observability/SKILL.md) | Prometheus, OpenTelemetry, monitoring |
+| [LLM Evaluation](./skills/llm-evaluation/SKILL.md) | promptfoo, TruLens, LLM testing |
+| [Holochain](./skills/holochain/SKILL.md) | Holochain DHT development, hApps, Zome code |
+| [Kubernetes](./skills/kubernetes/SKILL.md) | K8s manifests, Helm, ArgoCD, Kustomize |
+| [Identity & Auth](./skills/identity-auth/SKILL.md) | Keycloak, OPA, Vault |
+| [Messaging](./skills/messaging/SKILL.md) | NATS pub/sub, Temporal workflows |
+| [Inference](./skills/inference/SKILL.md) | LocalAI, vLLM, GGUF models |
+| [Python Ruff](./skills/python-ruff-tool/SKILL.md) | Linting, formatting, and code modernization |
+| [Python Pyupgrade](./skills/python-pyupgrade-tool/SKILL.md) | Python syntax upgrader |
+| [Python Flynt](./skills/python-flynt-tool/SKILL.md) | F-string converter |
 
 ### Architecture Decision Records
 

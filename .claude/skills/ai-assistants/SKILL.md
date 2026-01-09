@@ -438,6 +438,6 @@ cargo run --example basic_chat
 
 ## Related Skills
 
-- [Distributed Systems](../distributed-systems/README.md) - NATS, Temporal
-- [Observability](../observability/README.md) - Monitoring AI services
-- [Rust Tooling](../rust-tooling/README.md) - AGiXT Rust SDK development
+- [Distributed Systems](../distributed-systems/SKILL.md) - NATS, Temporal
+- [Observability](../observability/SKILL.md) - Monitoring AI services
+- [Rust Tooling](../rust-tooling/SKILL.md) - AGiXT Rust SDK development
