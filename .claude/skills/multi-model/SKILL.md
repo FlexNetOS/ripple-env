@@ -13,7 +13,20 @@ This skill enables ARIA to dispatch tasks to multiple LLM providers beyond Claud
 |------|---------|
 | `.claude/config/models.json` | Model registry and routing rules |
 | `.claude/config/env.template` | API key template (copy to secure location) |
+| `.claude/config/claude-code-router.template.json` | Router config for hybrid mode |
 | `.claude/mcp-servers.json` | MCP server configurations |
+
+## Multi-Model Modes
+
+### Mode A: Full Replacement (Kimi K2 replaces Claude)
+All Claude calls redirect to Kimi K2. Simplest setup.
+
+### Mode B: Hybrid (Claude + Kimi K2 together) ⭐ Recommended
+Use Claude as main orchestrator, Kimi K2 for subagents/background tasks.
+Requires [claude-code-router](https://github.com/musistudio/claude-code-router).
+
+### Mode C: Subagent-only
+Keep Claude for everything, use Kimi K2 only when explicitly requested in Task prompts.
 
 ## Supported Providers
 
@@ -175,31 +188,116 @@ for model in models:
 consensus = check_consensus(responses, threshold=0.66)
 ```
 
+## Hybrid Mode Setup (Claude + Kimi K2)
+
+Use Claude as the main orchestrator and Kimi K2 for subagent/background tasks.
+
+### 1. Install claude-code-router
+```bash
+npm install -g claude-code-router
+```
+
+### 2. Create Router Config
+```bash
+mkdir -p ~/.claude-code-router
+cp .claude/config/claude-code-router.template.json ~/.claude-code-router/config.json
+# Edit with your API keys
+```
+
+### 3. Router Configuration
+```json
+{
+  "providers": [
+    {
+      "name": "anthropic",
+      "api_base_url": "https://api.anthropic.com",
+      "api_key": "$ANTHROPIC_API_KEY",
+      "models": ["claude-opus-4-5-20251101", "claude-sonnet-4-20250514"]
+    },
+    {
+      "name": "moonshot",
+      "api_base_url": "https://api.moonshot.ai/anthropic",
+      "api_key": "$MOONSHOT_API_KEY",
+      "models": ["kimi-k2-thinking-turbo", "kimi-k2-instruct"]
+    }
+  ],
+  "router": {
+    "default": "anthropic,claude-sonnet-4-20250514",
+    "think": "anthropic,claude-opus-4-5-20251101",
+    "background": "moonshot,kimi-k2-thinking-turbo"
+  }
+}
+```
+
+### 4. Run with Hybrid Mode
+```bash
+# Activate router (sets ANTHROPIC_BASE_URL to local proxy)
+ccr activate
+
+# Run Claude Code - it will route to different models based on task
+claude
+```
+
+### 5. Route Specific Subagents to Kimi K2
+In Task prompts, add at the beginning:
+```python
+Task(subagent_type="general-purpose",
+     prompt="""<CCR-SUBAGENT-MODEL>moonshot,kimi-k2-thinking</CCR-SUBAGENT-MODEL>
+
+     Analyze this codebase for security vulnerabilities...""")
+```
+
 ## Environment Setup
 
 ### 1. Copy API Key Template
 ```bash
-cp .claude/config/env.template ~/.config/claude-code/env
+# Option A: Project-local (gitignored)
+cp .claude/config/env.template .claude/config/env
+
+# Option B: User-global
+cp .claude/config/env.template ~/.claude/env
+
 # Edit with your actual API keys
 ```
 
 ### 2. Source Environment
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
-if [ -f ~/.config/claude-code/env ]; then
+ENV_FILE="${HOME}/.claude/env"
+[ -f ".claude/config/env" ] && ENV_FILE=".claude/config/env"
+
+if [ -f "$ENV_FILE" ]; then
   set -a
-  source ~/.config/claude-code/env
+  source "$ENV_FILE"
   set +a
 fi
 ```
 
-### 3. Verify Configuration
+### 3. Use Kimi K2 as Claude Replacement (Optional)
+```bash
+# Add to env file to use Kimi K2 instead of Claude:
+export ANTHROPIC_BASE_URL=https://api.moonshot.ai/anthropic
+export ANTHROPIC_AUTH_TOKEN=${MOONSHOT_API_KEY}
+export ANTHROPIC_MODEL=kimi-k2-thinking-turbo
+export ANTHROPIC_DEFAULT_OPUS_MODEL=kimi-k2-thinking-turbo
+export ANTHROPIC_DEFAULT_SONNET_MODEL=kimi-k2-thinking-turbo
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=kimi-k2-thinking-turbo
+export CLAUDE_CODE_SUBAGENT_MODEL=kimi-k2-thinking-turbo
+
+# Then run Claude Code normally - it will use Kimi K2!
+claude
+```
+
+### 4. Verify Configuration
 ```bash
 # Check Claude
 echo "Claude: ${ANTHROPIC_API_KEY:0:10}..."
 
 # Check OpenAI
 echo "OpenAI: ${OPENAI_API_KEY:0:10}..."
+
+# Check Moonshot
+echo "Moonshot: ${MOONSHOT_API_KEY:0:10}..."
 
 # Check local models
 ollama list

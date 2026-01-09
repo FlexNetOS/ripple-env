@@ -48,6 +48,7 @@
 |------|---------|
 | [models.json](./config/models.json) | Multi-model registry and routing |
 | [env.template](./config/env.template) | API key template |
+| [claude-code-router.template.json](./config/claude-code-router.template.json) | Hybrid mode router config |
 | [mcp-servers.json](./mcp-servers.json) | MCP server configurations |
 
 ### Architecture Decision Records

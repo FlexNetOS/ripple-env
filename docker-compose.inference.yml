@@ -1,1 +1,1 @@
-docker-compose.localai.yml
+docker/docker-compose.inference.yml

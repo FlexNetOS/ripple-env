@@ -12,7 +12,7 @@ This directory contains reusable prompt templates designed for Claude Opus 4.5 a
 
 ARIA is a comprehensive codebase audit and orchestration system that:
 
-1. **Discovers** ALL files, subjects, and reference links from README.md and BUILDKIT_STARTER_SPEC.md
+1. **Discovers** ALL files, subjects, and reference links from README.md and docs/BUILDKIT_STARTER_SPEC.md
 2. **Deploys** 14 parallel research teams (1 per domain)
 3. **Maps** every repository to installation method (Nix/Pixi/Docker/Cargo/NPM)
 4. **Resolves** conflicts with A/B feature flags (never removes features)
@@ -120,5 +120,5 @@ Use ARIA v2.0 as a template. Include these sections:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 2.0.0 | 2026-01 | Major rewrite: Model specs, 14 domains, installation mapping, feature flags, BUILDKIT_STARTER_SPEC.md integration |
+| 2.0.0 | 2026-01 | Major rewrite: Model specs, 14 domains, installation mapping, feature flags, docs/BUILDKIT_STARTER_SPEC.md integration |
 | 1.0.0 | 2026-01 | Initial ARIA orchestrator |

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://raw.githubusercontent.com/musistudio/claude-code-router/main/config.schema.json",
+  "_comment": "Copy to ~/.claude-code-router/config.json",
+
+  "providers": [
+    {
+      "name": "anthropic",
+      "api_base_url": "https://api.anthropic.com",
+      "api_key": "$ANTHROPIC_API_KEY",
+      "models": [
+        "claude-opus-4-5-20251101",
+        "claude-sonnet-4-20250514",
+        "claude-haiku-3-5-20241022"
+      ]
+    },
+    {
+      "name": "moonshot",
+      "api_base_url": "https://api.moonshot.ai/anthropic",
+      "api_key": "$MOONSHOT_API_KEY",
+      "models": [
+        "kimi-k2-thinking-turbo",
+        "kimi-k2-thinking",
+        "kimi-k2-instruct"
+      ]
+    },
+    {
+      "name": "openrouter",
+      "api_base_url": "https://openrouter.ai/api/v1",
+      "api_key": "$OPENROUTER_API_KEY",
+      "models": [
+        "moonshotai/kimi-k2",
+        "anthropic/claude-3.5-sonnet",
+        "openai/gpt-4-turbo"
+      ]
+    }
+  ],
+
+  "router": {
+    "_comment": "Format: provider-name,model-name",
+
+    "default": "anthropic,claude-sonnet-4-20250514",
+    "think": "anthropic,claude-opus-4-5-20251101",
+    "background": "moonshot,kimi-k2-thinking-turbo",
+    "longContext": "moonshot,kimi-k2-thinking-turbo",
+    "webSearch": "anthropic,claude-sonnet-4-20250514",
+
+    "longContextThreshold": 100000
+  },
+
+  "_usage": {
+    "install": "npm install -g claude-code-router",
+    "activate": "ccr activate",
+    "run": "claude",
+    "manage": "ccr model"
+  }
+}
