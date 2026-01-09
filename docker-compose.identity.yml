@@ -1,0 +1,123 @@
+# =============================================================================
+# Identity & Access Management Stack
+# =============================================================================
+# BUILDKIT_STARTER_SPEC.md Layer 5: Identity & Policy
+#
+# Components:
+#   - Keycloak: OIDC identity provider
+#   - PostgreSQL: Keycloak database
+#   - Vaultwarden: Bitwarden-compatible password vault (optional)
+#
+# Usage:
+#   docker-compose -f docker-compose.identity.yml up -d
+#
+# Access:
+#   - Keycloak Admin: http://localhost:8080/admin (admin/admin)
+#   - Vaultwarden: http://localhost:8081
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Keycloak - OIDC Identity Provider
+  # ---------------------------------------------------------------------------
+  # https://github.com/keycloak/keycloak
+  # Provides OAuth2/OIDC authentication for all services
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    command: start-dev
+    environment:
+      # Admin credentials (change in production!)
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      # Database connection
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      # Development settings
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
+      # Health endpoint
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    networks:
+      - identity-network
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\n\r\n' >&3;timeout --signal=QUIT 1 cat <&3 | grep -q '200 OK'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL - Keycloak Database
+  # ---------------------------------------------------------------------------
+  keycloak-db:
+    image: postgres:17.2-alpine
+    container_name: keycloak-db
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak-db-data:/var/lib/postgresql/data
+    networks:
+      - identity-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Vaultwarden - Bitwarden-Compatible Password Vault
+  # ---------------------------------------------------------------------------
+  # https://github.com/dani-garcia/vaultwarden
+  # Self-hosted password manager for human secrets and device credentials
+  vaultwarden:
+    image: vaultwarden/server:1.32.5
+    container_name: vaultwarden
+    environment:
+      # Disable signups in production
+      SIGNUPS_ALLOWED: "true"
+      # Admin token (change in production!)
+      ADMIN_TOKEN: "admin-token-change-me"
+      # WebSocket notifications
+      WEBSOCKET_ENABLED: "true"
+      # Database (SQLite by default, can use PostgreSQL)
+      DATABASE_URL: /data/db.sqlite3
+      # Domain for email verification
+      DOMAIN: "http://localhost:8081"
+    volumes:
+      - vaultwarden-data:/data
+    ports:
+      - "8081:80"
+      - "3012:3012"  # WebSocket
+    networks:
+      - identity-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/alive"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  identity-network:
+    driver: bridge
+
+volumes:
+  keycloak-db-data:
+    driver: local
+  vaultwarden-data:
+    driver: local

@@ -1,0 +1,100 @@
+# Alertmanager Configuration
+# BUILDKIT_STARTER_SPEC.md Layer 1.18: Observability
+#
+# Routes alerts from Prometheus to notification channels
+
+global:
+  resolve_timeout: 5m
+  # SMTP settings (uncomment and configure for email alerts)
+  # smtp_smarthost: 'smtp.example.com:587'
+  # smtp_from: 'alertmanager@example.com'
+  # smtp_auth_username: 'alertmanager'
+  # smtp_auth_password: 'password'
+
+# Route tree for alert routing
+route:
+  # Default receiver
+  receiver: 'default'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'cluster', 'service', 'severity']
+
+  # Wait before sending first notification for a group
+  group_wait: 30s
+
+  # Wait before sending subsequent notifications
+  group_interval: 5m
+
+  # Wait before resending notifications
+  repeat_interval: 12h
+
+  # Child routes for specific alert types
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Warning alerts
+    - match:
+        severity: warning
+      receiver: 'warning'
+      group_wait: 1m
+      repeat_interval: 4h
+
+    # Agent-related alerts
+    - match_re:
+        alertname: ^(Agent|AIOS|AGiXT).*
+      receiver: 'agent-alerts'
+      group_by: ['alertname', 'agent_id']
+
+    # Infrastructure alerts
+    - match_re:
+        alertname: ^(Node|Container|Disk|Memory|CPU).*
+      receiver: 'infrastructure'
+
+# Notification receivers
+receivers:
+  - name: 'default'
+    # Default: log to stdout (useful for debugging)
+    # Add webhook, email, slack, etc. as needed
+
+  - name: 'critical'
+    # Critical alerts receiver
+    # webhook_configs:
+    #   - url: 'http://alerthandler:8080/critical'
+    #     send_resolved: true
+
+  - name: 'warning'
+    # Warning alerts receiver
+
+  - name: 'agent-alerts'
+    # Agent-specific alerts
+    # webhook_configs:
+    #   - url: 'http://agixt:7437/api/alerts'
+    #     send_resolved: true
+
+  - name: 'infrastructure'
+    # Infrastructure alerts
+
+# Inhibition rules - suppress alerts based on other alerts
+inhibit_rules:
+  # If critical alert is firing, suppress warnings for same alertname
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster', 'service']
+
+  # If node is down, suppress all alerts from that node
+  - source_match:
+      alertname: 'NodeDown'
+    target_match_re:
+      alertname: '.+'
+    equal: ['node']
+
+# Templates for notification formatting
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

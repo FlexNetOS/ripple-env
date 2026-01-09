@@ -1,0 +1,154 @@
+# ArgoCD Application CRDs
+# BUILDKIT_STARTER_SPEC.md Layer 1.6: Cluster & Delivery
+#
+# GitOps applications for automated deployment
+# See: https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/
+
+---
+# Application Project - defines access controls
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: flexstack
+  namespace: argocd
+spec:
+  description: FlexStack Agentic OS Applications
+  sourceRepos:
+    - 'https://github.com/FlexNetOS/*'
+    - 'https://github.com/ruvnet/*'
+    - 'https://github.com/agiresearch/*'
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+
+---
+# Observability Stack Application
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: flexstack
+  source:
+    repoURL: https://github.com/FlexNetOS/ros2-humble-env.git
+    targetRevision: HEAD
+    path: manifests/observability
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+
+---
+# Holochain Coordination Application
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: holochain
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: flexstack
+  source:
+    repoURL: https://github.com/FlexNetOS/ros2-humble-env.git
+    targetRevision: HEAD
+    path: manifests/holochain
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: holochain
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+# LLMOps Application
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: llmops
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: flexstack
+  source:
+    repoURL: https://github.com/FlexNetOS/ros2-humble-env.git
+    targetRevision: HEAD
+    path: manifests/llmops
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: llmops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+# Distributed Inference Application
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: inference
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: flexstack
+  source:
+    repoURL: https://github.com/FlexNetOS/ros2-humble-env.git
+    targetRevision: HEAD
+    path: manifests/distributed
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: inference
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+# Temporal Workflows Application
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: temporal
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: flexstack
+  source:
+    repoURL: https://github.com/FlexNetOS/ros2-humble-env.git
+    targetRevision: HEAD
+    path: manifests/temporal
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: temporal
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

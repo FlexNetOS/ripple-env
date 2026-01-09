@@ -216,6 +216,7 @@
 
             # Isolation & Sandboxing (BUILDKIT_STARTER_SPEC.md L3)
             firecracker         # MicroVM for untrusted workloads
+            runc                # OCI container runtime (low-level)
 
             # Shells
             zsh
@@ -538,7 +539,8 @@
           # Use standard `devShells` (and avoid the devshell flake module) so `nix flake check`
           # stays warning-free on newer Nix.
           devShells.default = pkgs.mkShell {
-            packages = basePackages ++ coreCommandWrappers ++ linuxPackages ++ darwinPackages;
+            # Include Holochain in default shell - P2P coordination is mandatory
+            packages = basePackages ++ holochainPackages ++ coreCommandWrappers ++ linuxPackages ++ darwinPackages;
             COLCON_DEFAULTS_FILE = toString colconDefaults;
             EDITOR = "hx";
             VISUAL = "hx";

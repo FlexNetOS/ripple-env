@@ -1,0 +1,172 @@
+# SBOM Generation Workflow
+# BUILDKIT_STARTER_SPEC.md: Supply chain security
+#
+# Generates Software Bill of Materials (SBOM) for all artifacts
+# Uses Syft for SBOM generation and Cosign for signing
+
+name: SBOM Generation
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write  # For Cosign signing
+
+jobs:
+  generate-sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Install Syft
+        run: |
+          nix develop --command syft version || {
+            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          }
+
+      - name: Generate Nix SBOM
+        run: |
+          mkdir -p sbom
+          # Generate SBOM for the Nix flake
+          nix develop --command syft packages dir:. -o spdx-json=sbom/nix-sbom.spdx.json
+          nix develop --command syft packages dir:. -o cyclonedx-json=sbom/nix-sbom.cdx.json
+
+      - name: Generate Docker SBOM
+        run: |
+          # List all docker-compose files and generate SBOMs
+          for compose in docker-compose*.yml; do
+            if [ -f "$compose" ]; then
+              name=$(basename "$compose" .yml)
+              echo "Generating SBOM for $compose"
+              syft packages file:"$compose" -o spdx-json=sbom/"$name"-sbom.spdx.json 2>/dev/null || true
+            fi
+          done
+
+      - name: Generate Python SBOM
+        run: |
+          # Generate SBOM from pixi.lock if it exists
+          if [ -f "pixi.lock" ]; then
+            syft packages file:pixi.lock -o spdx-json=sbom/python-sbom.spdx.json 2>/dev/null || true
+          fi
+
+      - name: Generate Rust SBOM
+        run: |
+          # Generate SBOM from Cargo.lock if it exists
+          if [ -f "rust/Cargo.lock" ]; then
+            syft packages dir:rust -o spdx-json=sbom/rust-sbom.spdx.json
+          fi
+
+      - name: Merge SBOMs
+        run: |
+          # Create a combined SBOM summary
+          echo '{"sboms": [' > sbom/combined-manifest.json
+          first=true
+          for f in sbom/*.spdx.json; do
+            if [ -f "$f" ]; then
+              if [ "$first" = true ]; then
+                first=false
+              else
+                echo ',' >> sbom/combined-manifest.json
+              fi
+              echo "{\"file\": \"$(basename $f)\", \"format\": \"spdx\"}" >> sbom/combined-manifest.json
+            fi
+          done
+          echo ']}' >> sbom/combined-manifest.json
+
+      - name: Install Cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign SBOMs
+        if: github.event_name != 'pull_request'
+        run: |
+          for sbom_file in sbom/*.spdx.json sbom/*.cdx.json; do
+            if [ -f "$sbom_file" ]; then
+              echo "Signing $sbom_file"
+              cosign sign-blob --yes --output-signature "${sbom_file}.sig" "$sbom_file" 2>/dev/null || echo "Signing skipped (no OIDC)"
+            fi
+          done
+        env:
+          COSIGN_EXPERIMENTAL: 1
+
+      - name: Upload SBOM Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom/
+          retention-days: 90
+
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            sbom/*.spdx.json
+            sbom/*.cdx.json
+            sbom/*.sig
+
+  vulnerability-scan:
+    name: Vulnerability Scan
+    runs-on: ubuntu-latest
+    needs: generate-sbom
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom/
+
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Scan for Vulnerabilities
+        run: |
+          mkdir -p vulnerability-reports
+          for sbom_file in sbom/*.spdx.json; do
+            if [ -f "$sbom_file" ]; then
+              name=$(basename "$sbom_file" .spdx.json)
+              echo "Scanning $sbom_file for vulnerabilities"
+              grype sbom:"$sbom_file" -o json > "vulnerability-reports/${name}-vulns.json" || true
+              grype sbom:"$sbom_file" -o table > "vulnerability-reports/${name}-vulns.txt" || true
+            fi
+          done
+
+      - name: Upload Vulnerability Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability-reports-${{ github.sha }}
+          path: vulnerability-reports/
+          retention-days: 30
+
+      - name: Check Critical Vulnerabilities
+        run: |
+          critical_count=0
+          for vuln_file in vulnerability-reports/*-vulns.json; do
+            if [ -f "$vuln_file" ]; then
+              count=$(jq '[.matches[] | select(.vulnerability.severity == "Critical")] | length' "$vuln_file" 2>/dev/null || echo "0")
+              critical_count=$((critical_count + count))
+            fi
+          done
+          echo "Total critical vulnerabilities: $critical_count"
+          if [ "$critical_count" -gt 0 ]; then
+            echo "::warning::Found $critical_count critical vulnerabilities"
+          fi

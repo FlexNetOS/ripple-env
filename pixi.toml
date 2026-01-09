@@ -65,6 +65,19 @@ sentence-transformers = ">=3.3,<4"
 datasets = ">=3.2,<4"
 tokenizers = ">=0.21,<1"
 
+# Messaging & Orchestration (BUILDKIT_STARTER_SPEC.md Layer 6)
+nats-py = ">=2.9"           # NATS Python client for event bus
+temporalio = ">=1.7"        # Temporal Python SDK for durable workflows
+
+# Agent Frameworks (BUILDKIT_STARTER_SPEC.md Layer 8)
+agno = ">=0.1"              # Agent dev framework (agno-agi/agno)
+agentic-flow = ">=0.1"      # Agent dev to deploy flow (ruvnet/agentic-flow)
+claude-flow = ">=0.1"       # Swarm orchestration (ruvnet/claude-flow)
+
+# Additional agent frameworks (pip install if not in conda-forge):
+# pip install synaptic-mesh    # Distributed agent mesh (ruvnet/Synaptic-Mesh)
+# pip install daa              # Distributed agent architecture (ruvnet/daa)
+
 # Build tools (JavaScript/TypeScript)
 esbuild = ">=0.24,<1"
 
@@ -144,6 +157,11 @@ nltk = ">=3.8"
 requests = ">=2.28"
 platformdirs = ">=3.0"
 datasets = ">=2.14"
+
+# Cerebrum Agent SDK (installed via pip post-install)
+# See: https://github.com/agiresearch/Cerebrum
+# Install: pip install aios-agent-sdk
+pyautogen = ">=0.2"         # AutoGen for multi-agent orchestration
 
 # =============================================================================
 # AIOS + CUDA Feature

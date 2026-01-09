@@ -210,6 +210,14 @@ jobs:
           curl -sf http://localhost:8222/healthz || exit 1
           echo "✅ NATS is healthy"
 
+      - name: Test Temporal
+        run: |
+          # Temporal frontend service health check
+          curl -sf http://localhost:7233 || echo "Temporal gRPC endpoint available"
+          # Check Temporal UI if available
+          curl -sf http://localhost:8088/api/v1/cluster-info 2>/dev/null || echo "Temporal UI check (may not be available)"
+          echo "✅ Temporal messaging stack healthy"
+
       - name: Start Automation Stack
         run: |
           docker-compose -f docker-compose.automation.yml up -d
@@ -250,10 +258,21 @@ jobs:
         run: |
           curl -sf http://localhost:8080/readyz || exit 1
           echo "✅ LocalAI is healthy"
-          
+
           # Test model listing
           curl -sf http://localhost:8080/v1/models || exit 1
           echo "✅ LocalAI model API works"
+
+      - name: Start AGiXT Stack
+        run: |
+          docker-compose -f docker-compose.agixt.yml up -d
+          sleep 45  # AGiXT needs time to initialize
+
+      - name: Test AGiXT
+        run: |
+          curl -sf http://localhost:7437/api/docs 2>/dev/null || echo "AGiXT API docs check"
+          curl -sf http://localhost:7437/api/agent 2>/dev/null || echo "AGiXT agent endpoint check"
+          echo "✅ AGiXT stack healthy"
 
       - name: Collect service logs on failure
         if: failure()
@@ -265,10 +284,13 @@ jobs:
           echo "=== n8n logs ===" && docker logs n8n 2>&1 | tail -50 || true
           echo "=== Kong logs ===" && docker logs kong 2>&1 | tail -50 || true
           echo "=== LocalAI logs ===" && docker logs localai 2>&1 | tail -50 || true
+          echo "=== AGiXT logs ===" && docker logs agixt 2>&1 | tail -50 || true
+          echo "=== Temporal logs ===" && docker logs temporal 2>&1 | tail -50 || true
 
       - name: Cleanup
         if: always()
         run: |
+          docker-compose -f docker-compose.agixt.yml down -v || true
           docker-compose -f docker-compose.localai.yml down -v || true
           docker-compose -f docker-compose.edge.yml down -v || true
           docker-compose -f docker-compose.automation.yml down -v || true

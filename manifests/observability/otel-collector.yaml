@@ -1,0 +1,169 @@
+# =============================================================================
+# OpenTelemetry Collector Configuration
+# =============================================================================
+# BUILDKIT_STARTER_SPEC.md Layer 18: Observability
+#
+# Receives telemetry from:
+#   - LocalAI (inference metrics)
+#   - AGiXT (agent metrics)
+#   - Holochain (P2P coordination metrics)
+#   - ROS2 nodes (robotics telemetry)
+#
+# Exports to:
+#   - Prometheus (metrics)
+#   - Loki (logs)
+#   - Jaeger/Tempo (traces - when deployed)
+# =============================================================================
+
+receivers:
+  # OTLP receiver for traces, metrics, and logs
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Prometheus receiver to scrape metrics from services
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 15s
+          static_configs:
+            - targets: ['localhost:8888']
+
+        - job_name: 'localai'
+          scrape_interval: 30s
+          static_configs:
+            - targets: ['localai:8080']
+          metrics_path: /metrics
+
+        - job_name: 'holochain'
+          scrape_interval: 30s
+          static_configs:
+            - targets: ['host.docker.internal:8888']
+          metrics_path: /metrics
+
+  # Host metrics for the collector itself
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+      disk:
+      filesystem:
+      load:
+      memory:
+      network:
+      process:
+        include:
+          match_type: regexp
+          names: [".*"]
+
+processors:
+  # Batch processor to reduce network overhead
+  batch:
+    send_batch_size: 1000
+    timeout: 10s
+
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # Resource detection for cloud metadata
+  resourcedetection:
+    detectors: [env, system, docker]
+    timeout: 5s
+    override: false
+
+  # Add resource attributes
+  resource:
+    attributes:
+      - key: service.namespace
+        value: flexstack
+        action: upsert
+      - key: deployment.environment
+        value: development
+        action: upsert
+
+exporters:
+  # Prometheus exporter for metrics
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: otel
+    send_timestamps: true
+    metric_expiration: 180m
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  # Prometheus remote write to push metrics
+  prometheusremotewrite:
+    endpoint: "http://prometheus:9090/api/v1/write"
+    tls:
+      insecure: true
+
+  # Loki exporter for logs
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+    labels:
+      attributes:
+        service.name: "service_name"
+        service.namespace: "service_namespace"
+      resource:
+        deployment.environment: "environment"
+
+  # Debug exporter for troubleshooting
+  debug:
+    verbosity: basic
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+  # OTLP exporter for traces (to Jaeger/Tempo when available)
+  otlp/jaeger:
+    endpoint: "jaeger:4317"
+    tls:
+      insecure: true
+
+extensions:
+  # Health check extension
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+  # Performance profiler
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+  # zPages for debugging
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, pprof, zpages]
+
+  pipelines:
+    # Traces pipeline
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [debug]  # Add otlp/jaeger when Jaeger is deployed
+
+    # Metrics pipeline
+    metrics:
+      receivers: [otlp, prometheus, hostmetrics]
+      processors: [memory_limiter, batch, resource, resourcedetection]
+      exporters: [prometheus, prometheusremotewrite]
+
+    # Logs pipeline
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [loki, debug]
+
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      level: detailed
+      address: 0.0.0.0:8888
