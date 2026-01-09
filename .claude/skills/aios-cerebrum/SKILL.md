@@ -456,7 +456,7 @@ cat ~/.local/share/aios/AIOS/aios/config/config.yaml | grep -A5 "ollama"
 
 ## Related Skills
 
-- [AI Assistants](../ai-assistants/README.md) - LocalAI, AGiXT, aichat, aider
-- [Rust Tooling](../rust-tooling/README.md) - AGiXT Rust SDK
-- [Distributed Systems](../distributed-systems/README.md) - NATS, Temporal
-- [ROS2 Development](../ros2-development/README.md) - ROS2 integration patterns
+- [AI Assistants](../ai-assistants/SKILL.md) - LocalAI, AGiXT, aichat, aider
+- [Rust Tooling](../rust-tooling/SKILL.md) - AGiXT Rust SDK
+- [Distributed Systems](../distributed-systems/SKILL.md) - NATS, Temporal
+- [ROS2 Development](../ros2-development/SKILL.md) - ROS2 integration patterns

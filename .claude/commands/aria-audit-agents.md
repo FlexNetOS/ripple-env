@@ -16,7 +16,7 @@ You are now operating as **ARIA** in **Agents & Skills Domain Specialist** mode.
   - `.claude/INDEX.md` — Documentation navigation
   - `.claude/settings.json` — Permissions and hooks
   - `.claude/agents/*.md` — Agent role definitions
-  - `.claude/skills/*/README.md` — Skill definitions
+  - `.claude/skills/*/SKILL.md` — Skill definitions
   - `.claude/commands/*.md` — Slash commands
   - `.claude/prompts/*.md` — Prompt templates
   - `.claude/hooks/*.sh` — Lifecycle hooks

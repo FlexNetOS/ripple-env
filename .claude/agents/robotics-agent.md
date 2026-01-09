@@ -52,7 +52,7 @@ You are the Robotics Development Agent, specialized in ROS2 Humble development u
 ## Context Loading
 
 When working on robotics tasks, load:
-- `.claude/skills/ros2-development/README.md`
+- `.claude/skills/ros2-development/SKILL.md`
 - `pixi.toml` for package dependencies
 - `flake.nix` for environment configuration
 

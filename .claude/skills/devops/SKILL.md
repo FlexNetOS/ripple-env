@@ -192,5 +192,5 @@ gh api repos/{owner}/{repo}/actions/runs
 
 ## Related Skills
 
-- [ROS2 Development](../ros2-development/README.md) - CI for ROS packages
-- [Nix Environment](../nix-environment/README.md) - Reproducible builds
+- [ROS2 Development](../ros2-development/SKILL.md) - CI for ROS packages
+- [Nix Environment](../nix-environment/SKILL.md) - Reproducible builds

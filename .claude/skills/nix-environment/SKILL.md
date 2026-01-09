@@ -241,5 +241,5 @@ nix-collect-garbage -d               # Remove old generations
 
 ## Related Skills
 
-- [ROS2 Development](../ros2-development/README.md) - Using the environment
-- [DevOps](../devops/README.md) - CI/CD integration
+- [ROS2 Development](../ros2-development/SKILL.md) - Using the environment
+- [DevOps](../devops/SKILL.md) - CI/CD integration

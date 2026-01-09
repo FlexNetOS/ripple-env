@@ -133,5 +133,5 @@ source install/setup.bash             # Source workspace (after build)
 
 ## Related Skills
 
-- [DevOps](../devops/README.md) - CI/CD for ROS2 packages
-- [Nix Environment](../nix-environment/README.md) - Environment management
+- [DevOps](../devops/SKILL.md) - CI/CD for ROS2 packages
+- [Nix Environment](../nix-environment/SKILL.md) - Environment management

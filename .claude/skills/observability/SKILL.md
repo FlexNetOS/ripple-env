@@ -408,6 +408,6 @@ class Service(SimpleService):
 
 ## Related Skills
 
-- [Distributed Systems](../distributed-systems/README.md) - NATS metrics
-- [DevOps](../devops/README.md) - CI/CD monitoring
-- [ROS2 Development](../ros2-development/README.md) - ROS2 metrics
+- [Distributed Systems](../distributed-systems/SKILL.md) - NATS metrics
+- [DevOps](../devops/SKILL.md) - CI/CD monitoring
+- [ROS2 Development](../ros2-development/SKILL.md) - ROS2 metrics

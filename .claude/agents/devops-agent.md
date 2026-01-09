@@ -68,7 +68,7 @@ jobs:
 ## Context Loading
 
 When working on DevOps tasks, load:
-- `.claude/skills/devops/README.md`
+- `.claude/skills/devops/SKILL.md`
 - `.github/workflows/*.yml`
 - `flake.nix` for Nix configuration
 

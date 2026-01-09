@@ -28,7 +28,7 @@ Read and follow the complete orchestration prompt at `.claude/prompts/aria-orche
 2. Read `BUILDKIT_STARTER_SPEC.md` — the Single Source of Truth (SSoT)
 3. Read `README.md` repository links section
 4. Count ALL GitHub repository URLs
-5. Identify the 13-layer architecture
+5. Identify the 14-domain architecture (13 layers + security cross-cutting)
 
 ### Phase 2: Team Deployment
 Deploy domain teams in **parallel** using the Task tool:
@@ -43,7 +43,7 @@ teams:
     lead_model: "sonnet"
     specialists: ["AIOS", "AGiXT", "claude-flow"]
 
-  # ... (14 domains total, see orchestrator prompt)
+  # ... (14 domains total: 13 layers + security cross-cutting)
 ```
 
 For each team:

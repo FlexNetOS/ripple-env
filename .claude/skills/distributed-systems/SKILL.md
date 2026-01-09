@@ -317,6 +317,6 @@ async def main():
 
 ## Related Skills
 
-- [ROS2 Development](../ros2-development/README.md) - ROS2 integration
-- [DevOps](../devops/README.md) - Deployment and CI/CD
-- [Observability](../observability/README.md) - Monitoring and metrics
+- [ROS2 Development](../ros2-development/SKILL.md) - ROS2 integration
+- [DevOps](../devops/SKILL.md) - Deployment and CI/CD
+- [Observability](../observability/SKILL.md) - Monitoring and metrics
