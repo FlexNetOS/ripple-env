@@ -62,7 +62,7 @@
       perSystem =
         { pkgs, system, ... }:
         let
-          inherit (pkgs.lib) optionalString optionals;
+          inherit (pkgs.lib) optionalString optionals optionalAttrs;
           isDarwin = pkgs.stdenv.isDarwin;
           isLinux = pkgs.stdenv.isLinux;
 
@@ -228,6 +228,14 @@
             '')
           ];
 
+          # CUDA 13.x package set (latest available in nixpkgs)
+          # Falls back to default cudaPackages if 13.1 unavailable
+          # Only defined on Linux where CUDA is available
+          cudaPkgs = if isLinux then
+            (pkgs.cudaPackages_13_1 or pkgs.cudaPackages_13 or pkgs.cudaPackages)
+          else
+            null;
+
         in
         {
           # Development shell (main entry point)
@@ -279,14 +287,38 @@
             '';
           };
 
-          # CUDA 13.x package set (latest available in nixpkgs)
-          # Falls back to default cudaPackages if 13.1 unavailable
-          cudaPkgs = pkgs.cudaPackages_13_1 or pkgs.cudaPackages_13 or pkgs.cudaPackages;
+          # Minimal shell for CI
+          devShells.ci = pkgs.mkShell {
+            packages = with pkgs; [
+              pixi
+              git
+            ];
+            COLCON_DEFAULTS_FILE = toString colconDefaults;
 
-          # CUDA-enabled shell for GPU workloads
-          # Usage: nix develop .#cuda
-          # Requires: NVIDIA GPU with drivers installed
-          # Binary cache: https://cache.nixos-cuda.org
+            shellHook = ''
+              if [ -f pixi.toml ]; then
+                ${optionalString isDarwin ''
+                  export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
+                ''}
+                eval "$(pixi shell-hook)"
+              fi
+            '';
+          };
+
+          # Formatter for nix files
+          formatter = pkgs.nixfmt-rfc-style;
+
+          # Check flake
+          checks = {
+            # Verify the devshell builds
+            devshell = self.devShells.${system}.default;
+          };
+        }
+        # CUDA-enabled shell for GPU workloads (Linux only)
+        # Usage: nix develop .#cuda
+        # Requires: NVIDIA GPU with drivers installed
+        # Binary cache: https://cache.nixos-cuda.org
+        // optionalAttrs isLinux {
           devShells.cuda = pkgs.mkShell {
             packages = commonPackages ++ commandWrappers ++ linuxPackages ++ (with pkgs; [
               # CUDA Toolkit 13.x (or latest available)
@@ -411,33 +443,6 @@
                 echo ""
               fi
             '';
-          };
-
-          # Minimal shell for CI
-          devShells.ci = pkgs.mkShell {
-            packages = with pkgs; [
-              pixi
-              git
-            ];
-            COLCON_DEFAULTS_FILE = toString colconDefaults;
-
-            shellHook = ''
-              if [ -f pixi.toml ]; then
-                ${optionalString isDarwin ''
-                  export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
-                ''}
-                eval "$(pixi shell-hook)"
-              fi
-            '';
-          };
-
-          # Formatter for nix files
-          formatter = pkgs.nixfmt-rfc-style;
-
-          # Check flake
-          checks = {
-            # Verify the devshell builds
-            devshell = self.devShells.${system}.default;
           };
         };
     };
