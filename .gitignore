@@ -68,3 +68,6 @@ htmlcov/
 
 # Documentation build
 docs/_build/
+
+# Configuration database (generated)
+data/config.db

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "_comment": "Copy to settings.local.json and fill in your values. This file is gitignored.",
+
+  "env": {
+    "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+    "FLAKEHUB_API_TOKEN": "${FLAKEHUB_API_TOKEN}",
+
+    "_comment_ai": "Optional: AI provider API keys for aichat/aider",
+    "OPENAI_API_KEY": "",
+    "ANTHROPIC_API_KEY": "",
+
+    "_comment_agixt": "Optional: AGiXT configuration",
+    "AGIXT_API_KEY": "",
+    "AGIXT_URI": "http://localhost:7437"
+  },
+
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(nix *)",
+      "Bash(nom *)",
+      "Bash(colcon *)",
+      "Bash(pixi *)",
+      "Bash(python* *)",
+      "Bash(cargo *)",
+      "Read",
+      "Write",
+      "Edit"
+    ],
+    "deny": []
+  },
+
+  "hooks": {
+    "_comment": "Local hooks override - customize as needed",
+    "preToolCall": [],
+    "postToolCall": []
+  }
+}

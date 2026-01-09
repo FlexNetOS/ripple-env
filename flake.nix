@@ -14,16 +14,11 @@
 
     # Holochain overlay for P2P coordination (BUILDKIT_STARTER_SPEC.md L11)
     # Provides: holochain, hc, lair-keystore
-    # NOTE: This overlay is not a flake - it's loaded via fetchFromGitHub in the overlay section
+    # NOTE: This overlay is loaded via fetchFromGitHub (not as flake input) because:
+    #   1. The upstream repo is not a proper flake
+    #   2. fetchFromGitHub allows pinning to a specific commit
+    #   3. Avoids flake.lock sync issues
     # See: https://github.com/spartan-holochain-counsel/nix-overlay
-    # holochain-nix = {
-    #   url = "github:spartan-holochain-counsel/nix-overlay";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    # };
-    holochain-nix = {
-      url = "github:spartan-holochain-counsel/nix-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -33,7 +28,6 @@
       flake-parts,
       systems,
       home-manager,
-      holochain-nix,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
