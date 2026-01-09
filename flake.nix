@@ -82,7 +82,15 @@
             git
             gh
 
-            # Nix tooling
+            # Python 3.14.2 - Latest stable (for non-ROS2 tools)
+            # ROS2 uses Python 3.11 via Pixi/RoboStack (separate environment)
+            python313
+            python313Packages.pip
+            python313Packages.virtualenv
+
+            # Nix tools
+            nix-output-monitor
+            nix-tree
             nixfmt-rfc-style
             nil
 
@@ -109,12 +117,25 @@
             unzip
             gzip
 
+            # Messaging
+            natscli
+            nats-server
+
             # Directory navigation
             zoxide
 
             # System monitoring
             btop
             htop
+            prometheus
+
+            # Infrastructure & Monitoring (from GitHub resources research)
+            # See docs/GITHUB-RESOURCES.md for full analysis
+            prometheus          # Metrics collection for ROS2 DDS
+            nats-server         # WAN/multi-site robot messaging
+            trippy              # Network diagnostics for DDS traffic
+            trivy               # Container/SBOM security scanning
+            opa                 # Policy enforcement for ROS2 topics
 
             # Shells
             zsh
@@ -130,20 +151,29 @@
             aichat
             aider-chat
 
+            # AI inference (edge/local models)
+            # local-ai           # Uncomment when needed - large package (~2GB)
+                                 # Alternative: docker run -p 8080:8080 localai/localai
+
             # Audio (for aider voice features)
             portaudio
 
             # Build tools & compilation cache
-            ccache
-            sccache
-            mold
+            ccache              # Fast C/C++ compilation cache
+            sccache             # Distributed compilation cache (cloud support)used as a compiler wrapper and avoids compilation when possible. Sccache has the capability to utilize caching in remote storage environments, in local storage.
+            mold                # Fast modern linker (12x faster than lld)
+            maturin             # Build tool for PyO3 Rust-Python bindings
+
+            # Database tools
+            sqlx-cli            # SQL database CLI for migrations and schema management
 
             # Tree-sitter (for LazyVim/Neovim)
             tree-sitter
 
-            # Node.js ecosystem (for LazyVim plugins)
-            nodejs_22
+            # Node.js ecosystem (for LazyVim plugins & LLM testing)
+            nodejs_22           # LTS "Jod" - active until Apr 2027
             nodePackages.pnpm
+            # Note: promptfoo (LLM eval/testing) not in nixpkgs - use 'npx promptfoo@latest'
 
             # Git tools
             lazygit
@@ -197,6 +227,11 @@
                 exit 127
               fi
             '')
+            (pkgs.writeShellScriptBin "promptfoo" ''
+              # Wrapper for promptfoo LLM testing tool
+              # Uses npx to run the latest version without global installation
+              exec npx promptfoo@latest "$@"
+            '')
           ];
 
         in
@@ -243,6 +278,168 @@
                   export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
                 ''}
                 eval "$(pixi shell-hook)"
+              fi
+              # Initialize direnv
+              eval "$(direnv hook bash)"
+
+              # Initialize zoxide
+              eval "$(zoxide init bash)"
+
+              # Initialize starship prompt
+              eval "$(starship init bash)"
+
+              # ROS2 environment info
+              echo ""
+              echo "🤖 ROS2 Humble Development Environment"
+              echo "======================================"
+              echo "  Platform: ${if isDarwin then "macOS" else "Linux"} (${system})"
+              echo "  Python (Nix): ${pkgs.python313.version} (for scripts/tools)"
+              echo "  Python (ROS2): 3.11.x via Pixi/RoboStack"
+              echo ""
+              echo "Quick commands:"
+              echo "  cb     - colcon build --symlink-install"
+              echo "  ct     - colcon test"
+              echo "  pixi   - package manager (ROS2 Python env)"
+              echo "  python3.13 - Nix Python for non-ROS tools"
+              echo ""
+              echo "AI assistants:"
+              echo "  ai        - AI chat (aichat, lightweight)"
+              echo "  pair      - AI pair programming (aider, git-integrated)"
+              echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
+              echo ""
+            '';
+          };
+
+          # CUDA 13.x package set (latest available in nixpkgs)
+          # Falls back to default cudaPackages if 13.1 unavailable
+          cudaPkgs = pkgs.cudaPackages_13_1 or pkgs.cudaPackages_13 or pkgs.cudaPackages;
+
+          # CUDA-enabled shell for GPU workloads
+          # Usage: nix develop .#cuda
+          # Requires: NVIDIA GPU with drivers installed
+          # Binary cache: https://cache.nixos-cuda.org
+          devShells.cuda = pkgs.mkShell {
+            packages = commonPackages ++ commandWrappers ++ linuxPackages ++ (with pkgs; [
+              # CUDA Toolkit 13.x (or latest available)
+              # See docs/CONFLICTS.md for version details
+              cudaPkgs.cudatoolkit
+              cudaPkgs.cudnn
+              cudaPkgs.cutensor
+              cudaPkgs.nccl
+              cudaPkgs.cuda_cudart
+
+              # GCC 13 pinned for CUDA compatibility
+              # CUDA requires specific GCC versions for nvcc
+              gcc13
+
+              # GPU monitoring
+              nvtopPackages.full
+            ]);
+
+            COLCON_DEFAULTS_FILE = toString colconDefaults;
+            EDITOR = "hx";
+            VISUAL = "hx";
+
+            # CUDA environment variables
+            CUDA_PATH = "${cudaPkgs.cudatoolkit}";
+            # Pin compiler for CUDA compatibility
+            CC = "${pkgs.gcc13}/bin/gcc";
+            CXX = "${pkgs.gcc13}/bin/g++";
+
+            shellHook = ''
+              # Set up LD_LIBRARY_PATH for CUDA libraries
+              export LD_LIBRARY_PATH="${cudaPkgs.cudatoolkit}/lib:${cudaPkgs.cudnn}/lib:$LD_LIBRARY_PATH"
+
+              # Initialize pixi environment with CUDA feature
+              if [ -f pixi.toml ]; then
+                eval "$(pixi shell-hook -e cuda 2>/dev/null || pixi shell-hook)"
+              fi
+
+              # Initialize direnv
+              eval "$(direnv hook bash)"
+
+              # Initialize zoxide
+              eval "$(zoxide init bash)"
+
+              # Initialize starship prompt
+              eval "$(starship init bash)"
+
+              # Verify CUDA availability
+              if command -v nvidia-smi &> /dev/null; then
+                echo ""
+                echo "🚀 ROS2 Humble + CUDA Development Environment"
+                echo "=============================================="
+                echo "  Platform: Linux (${system}) with NVIDIA GPU"
+                nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null | head -1 | while read line; do
+                  echo "  GPU: $line"
+                done
+                echo "  CUDA: ${cudaPkgs.cudatoolkit.version}"
+                echo "  GCC: $(${pkgs.gcc13}/bin/gcc --version | head -1)"
+                echo "  Python (Nix): ${pkgs.python313.version}"
+                echo "  Python (ROS2): via Pixi 3.11.x"
+                echo ""
+                echo "PyTorch CUDA verification:"
+                echo "  python -c \"import torch; print(torch.cuda.is_available())\""
+                echo ""
+                echo "AI assistants:"
+                echo "  ai        - AI chat (aichat, lightweight)"
+                echo "  pair      - AI pair programming (aider, git-integrated)"
+                echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
+                echo ""
+              '';
+
+              motd = "";
+            };
+
+            # Command aliases
+            commands = [
+              {
+                name = "cb";
+                help = "colcon build --symlink-install";
+                command = "colcon build --symlink-install $@";
+              }
+              {
+                name = "ct";
+                help = "colcon test";
+                command = "colcon test $@";
+              }
+              {
+                name = "ctr";
+                help = "colcon test-result --verbose";
+                command = "colcon test-result --verbose";
+              }
+              {
+                name = "ros2-env";
+                help = "Show ROS2 environment variables";
+                command = "env | grep -E '^(ROS|RMW|AMENT|COLCON)' | sort";
+              }
+              {
+                name = "update-deps";
+                help = "Update pixi dependencies";
+                command = "pixi update";
+              }
+              {
+                name = "ai";
+                help = "AI chat assistant (provider-agnostic)";
+                command = "aichat $@";
+              }
+              {
+                name = "pair";
+                help = "AI pair programming with git integration (aider)";
+                command = "aider $@";
+              }
+              {
+                name = "promptfoo";
+                help = "LLM testing and evaluation framework";
+                command = "npx promptfoo@latest $@";
+              }
+            ];
+              else
+                echo ""
+                echo "⚠️  Warning: nvidia-smi not found"
+                echo "   CUDA toolkit is available but GPU drivers may not be installed."
+                echo "   Install NVIDIA drivers on your host system."
+                echo ""
               fi
             '';
           };
