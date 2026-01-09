@@ -31,3 +31,25 @@ rosdep = ">=0.26.0,<0.27"
 colcon-common-extensions = ">=0.3.0,<0.4"
 ros-humble-desktop = ">=0.10.0,<0.11"
 catkin_tools = ">=0.8.2,<0.10"
+
+# PyTorch ML stack (CPU by default, CUDA via feature)
+# Using conda-forge for native performance and ROS2 compatibility
+# See docs/CONFLICTS.md for Python 3.14 and CUDA analysis
+pytorch = ">=2.5,<3"
+torchvision = ">=0.20,<1"
+torchaudio = ">=2.5,<3"
+
+[feature.cuda]
+# CUDA-enabled PyTorch (requires NVIDIA GPU)
+# Activate with: pixi run -e cuda <command>
+platforms = ["linux-64"]
+
+[feature.cuda.dependencies]
+pytorch-cuda = "12.4"
+pytorch = { version = ">=2.5,<3", build = "*cuda*" }
+torchvision = { version = ">=0.20,<1", build = "*cuda*" }
+torchaudio = { version = ">=2.5,<3", build = "*cuda*" }
+
+[environments]
+default = { features = [], solve-group = "default" }
+cuda = { features = ["cuda"], solve-group = "cuda" }

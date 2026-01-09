@@ -26,8 +26,15 @@
 | [ROS2 Development](./skills/ros2-development/README.md) | Building, testing, and running ROS2 packages |
 | [DevOps](./skills/devops/README.md) | CI/CD, GitHub workflows, automation |
 | [Nix Environment](./skills/nix-environment/README.md) | Flakes, home-manager, environment management |
+| [AI Assistants](./skills/ai-assistants/README.md) | AI-powered development tools (aichat, aider) |
+| [Distributed Systems](./skills/distributed-systems/README.md) | NATS messaging, Temporal workflows |
+| [Rust Tooling](./skills/rust-tooling/README.md) | PyO3 bindings, sqlx database access |
+| [Observability](./skills/observability/README.md) | Prometheus, OpenTelemetry, monitoring |
+| [LLM Evaluation](./skills/llm-evaluation/README.md) | promptfoo, TruLens, LLM testing |
 
 ### Agent Roles
+
+#### Core Domain Agents
 
 | Agent | Description |
 |-------|-------------|
@@ -35,6 +42,14 @@
 | [Robotics Agent](./agents/robotics-agent.md) | ROS2 development specialist |
 | [DevOps Agent](./agents/devops-agent.md) | CI/CD and infrastructure specialist |
 | [Nix Agent](./agents/nix-agent.md) | Environment configuration specialist |
+
+#### Architecture & Analysis Agents
+
+| Agent | Description |
+|-------|-------------|
+| [Architect Agent](./agents/architect-agent.md) | Full-stack architecture and framework design |
+| [Pre-Verify Agent](./agents/pre-verify-agent.md) | Pre-implementation verification and validation |
+| [Cross-Analysis Agent](./agents/cross-analysis-agent.md) | Codebase analysis and pattern discovery |
 
 ### Slash Commands
 
@@ -62,7 +77,17 @@ ros2-humble-env/
 │   │   │   └── README.md
 │   │   ├── devops/
 │   │   │   └── README.md
-│   │   └── nix-environment/
+│   │   ├── nix-environment/
+│   │   │   └── README.md
+│   │   ├── ai-assistants/
+│   │   │   └── README.md
+│   │   ├── distributed-systems/
+│   │   │   └── README.md
+│   │   ├── rust-tooling/
+│   │   │   └── README.md
+│   │   ├── observability/
+│   │   │   └── README.md
+│   │   └── llm-evaluation/
 │   │       └── README.md
 │   ├── commands/                     # Slash command definitions
 │   │   ├── build.md
@@ -73,7 +98,10 @@ ros2-humble-env/
 │   │   ├── coordinator.md            # Multi-agent orchestration
 │   │   ├── robotics-agent.md         # ROS2 specialist
 │   │   ├── devops-agent.md           # CI/CD specialist
-│   │   └── nix-agent.md              # Environment specialist
+│   │   ├── nix-agent.md              # Environment specialist
+│   │   ├── architect-agent.md        # Full-stack architecture
+│   │   ├── pre-verify-agent.md       # Pre-implementation validation
+│   │   └── cross-analysis-agent.md   # Codebase analysis
 │   ├── hooks/                        # Hook scripts
 │   │   └── session-start.sh          # Workspace initialization
 │   └── config/
@@ -98,6 +126,10 @@ ros2-humble-env/
 │   │   ├── direnv.nix                # direnv configuration
 │   │   ├── git.nix                   # Git configuration
 │   │   ├── packages.nix              # Common packages and aliases
+│   │   ├── ai/                       # AI-powered development tools
+│   │   │   ├── default.nix           # AI module aggregator
+│   │   │   ├── aichat.nix            # Provider-agnostic AI CLI
+│   │   │   └── aider.nix             # AI pair programming with Git
 │   │   ├── nix/
 │   │   │   └── default.nix           # Nix settings and caches
 │   │   ├── editor/
@@ -113,7 +145,7 @@ ros2-humble-env/
 │   ├── linux/                        # Linux-specific configurations
 │   │   ├── default.nix               # Linux module aggregator
 │   │   ├── packages.nix              # Linux packages (debug, serial)
-│   │   ├── docker.nix                # Docker/Podman setup
+│   │   ├── docker.nix                # Docker/container support
 │   │   ├── udev.nix                  # Device rules for robotics
 │   │   ├── users.nix                 # User configuration
 │   │   └── systemd.nix               # Systemd services

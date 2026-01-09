@@ -26,7 +26,7 @@ cd ros2-humble-env
 ./bootstrap.sh
 
 # Or if you already have nix installed:
-nom develop
+nix develop  # (or: nom develop for nicer output)
 ```
 
 ## Goal
@@ -37,7 +37,7 @@ nom develop
 - ✅ Loads the nix flake and configurations per direnv
 - ✅ Sets up pixi package manager, tools, and packages
 - ✅ Adds zsh and nushell (bash stays default with nix)
-- ✅ Uses nom instead of nix
+- ✅ Includes `nom` (nix-output-monitor) for nicer output (optional; `nix` still works)
 - ✅ Installs git and gh cli
 
 ### Agentic System
@@ -106,7 +106,10 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 # Enter the environment
 wsl -d NixOS-ROS2
 cd ~/ros2-humble-env
-direnv allow  # or: nom develop
+direnv allow
+
+# If you prefer manual activation (direnv optional):
+nix develop  # (or: nom develop for nicer output)
 ```
 
 ### Linux / macOS Installation
@@ -135,9 +138,10 @@ If you prefer to install manually:
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 
 # Enter the development environment
-nom develop
-# or
 nix develop
+
+# Optional (nicer output):
+nom develop
 ```
 
 ### Using direnv

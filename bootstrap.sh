@@ -5,7 +5,7 @@
 # This script installs all dependencies and sets up the development environment:
 # - Nix with flakes enabled (using experimental installer)
 # - direnv for automatic environment activation
-# - nom for better nix output
+# - nix-output-monitor (nom) for nicer output (optional; nix remains the primary CLI)
 # - pixi for package management
 # - zsh and nushell shells
 # - git and gh cli
@@ -356,11 +356,7 @@ verify_environment() {
 
     # Build the devshell (this validates the configuration)
     log_info "Building development shell..."
-    if check_command nom; then
-        nom develop --command echo "Development shell verified successfully"
-    else
-        nix develop --command echo "Development shell verified successfully"
-    fi
+    nix develop --command echo "Development shell verified successfully"
 
     log_success "Environment verification complete"
 }
@@ -408,7 +404,10 @@ print_summary() {
     echo ""
     echo "Or manually:"
     echo "  nix develop"
-    echo "  # (optional) nom develop"
+    echo "  # (Prefered option) nom develop"
+    echo ""
+    echo "Prefered Option (nicer output):"
+    echo "  nom develop"
     echo ""
 }
 

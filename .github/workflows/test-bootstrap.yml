@@ -187,6 +187,7 @@ jobs:
           }
 
           # Convert e.g. D:\a\repo\repo\bootstrap.sh -> /mnt/d/a/repo/repo/bootstrap.sh
+          
           $drive = $winPath.Substring(0,1).ToLower()
           $rest = $winPath.Substring(2) -replace '\\','/'
           $wslPath = "/mnt/$drive$rest"
@@ -194,8 +195,9 @@ jobs:
           Write-Host "Validating bootstrap.sh syntax in WSL:" -ForegroundColor Cyan
           Write-Host "  Windows: $winPath"
           Write-Host "  WSL:     $wslPath"
-
+          
           # Ensure WSL can see the file
+          
           wsl -- test -f "$wslPath"
           if ($LASTEXITCODE -ne 0) {
             Write-Error "WSL cannot access expected path: $wslPath"
@@ -203,6 +205,7 @@ jobs:
 
           # Windows checkouts can surface CRLF to WSL via /mnt/* (e.g. `do\r`).
           # Normalize CR away for syntax validation to avoid false negatives.
+          
           $raw = Get-Content -Raw -LiteralPath $winPath
           if ($raw -match "`r") {
             Write-Warning "bootstrap.sh contains CR characters (CRLF). Normalizing for WSL syntax check."
@@ -216,11 +219,26 @@ jobs:
       - name: Test Nix installation in WSL
         shell: pwsh
         run: |
-          # Install Nix in WSL Ubuntu
-          wsl -- bash -c "curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes" || true
+          Write-Host "Attempting Nix install inside WSL (best-effort)..."
 
-          # Source nix and verify
-          wsl -- bash -c "source ~/.nix-profile/etc/profile.d/nix.sh 2>/dev/null && nix --version" || echo "Nix installation test completed"
+          # Install Nix in WSL Ubuntu.
+          # Note: this is intentionally best-effort; some WSL environments lack kernel features Nix uses for sandboxing.
+          wsl -- bash -lc 'export NIX_CONFIG="sandbox = false"; curl -fsSL https://nixos.org/nix/install | sh -s -- --daemon --yes'
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Nix installer exited with code $LASTEXITCODE (continuing anyway)."
+          }
+
+          # Source nix and verify (try common locations across single-user and daemon installs)
+          wsl -- bash -lc '
+            set +e
+            . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null
+            . /nix/var/nix/profiles/default/etc/profile.d/nix.sh 2>/dev/null
+            . ~/.nix-profile/etc/profile.d/nix.sh 2>/dev/null
+            command -v nix >/dev/null 2>&1 && nix --version
+          '
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Nix does not appear to be available in WSL after install attempt."
+          }
 
       - name: Run Integration Tests
         shell: pwsh

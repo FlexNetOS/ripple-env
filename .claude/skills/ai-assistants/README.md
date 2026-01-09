@@ -19,6 +19,17 @@ tools:
 
 This environment includes AI-powered development tools to enhance your ROS2 development workflow.
 
+## Access Methods
+
+There are two ways to access AI tools in this environment:
+
+| Method | Commands Available | Requires |
+|--------|-------------------|----------|
+| **Devshell** | `ai`, `pair` | `nom develop` or `direnv allow` |
+| **Home-Manager** | All aliases (ai-code, pair-voice, etc.) | Module enablement |
+
+**Note**: The devshell commands are always available when you enter the development environment. The extended aliases require home-manager module configuration.
+
 ## aichat - Foundation AI CLI
 
 **aichat** is the default AI assistant - a tiny, provider-agnostic CLI that works with multiple AI providers.
@@ -69,7 +80,7 @@ aichat stores configuration in `~/.config/aichat/config.yaml`:
 
 ```yaml
 # Example configuration
-model: claude-3-sonnet-20240229
+model: claude                         # Short model name (aichat resolves to latest)
 save: true
 highlight: true
 temperature: 0.7
@@ -84,6 +95,8 @@ roles:
       - Message/Service definitions
       - Best practices for robotics
 ```
+
+**Note**: aichat uses short model names (e.g., `claude`, `gpt-4`, `gemini-pro`) and automatically resolves to the latest available version.
 
 ### Using with Ollama (Local Models)
 
@@ -214,21 +227,6 @@ export OPENAI_API_KEY="sk-..."         # For GPT-4
 export DEEPSEEK_API_KEY="..."          # For DeepSeek
 ```
 
-### Home-Manager Configuration
-
-```nix
-{
-  programs.aider = {
-    enable = true;
-    settings = {
-      model = "claude-3-sonnet-20240229";
-      auto-commits = true;
-      dark-mode = true;
-    };
-  };
-}
-```
-
 ### Voice Mode Requirements
 
 Voice-to-code requires:
@@ -252,17 +250,33 @@ export AICHAT_MODEL="claude-3-sonnet-20240229"
 
 ## Home-Manager Configuration
 
-If using home-manager, enable aichat:
+If using home-manager, enable the AI modules to get all aliases:
 
 ```nix
 {
+  # Enable aichat with aliases (ai, ai-code, ai-explain, ai-review)
   programs.aichat = {
     enable = true;
     settings = {
-      model = "claude-3-sonnet-20240229";
+      model = "claude";                 # Short model name
       save = true;
       highlight = true;
     };
   };
+
+  # Enable aider with aliases (pair, pair-voice, pair-watch, pair-claude, pair-gpt4)
+  programs.aider = {
+    enable = true;
+    settings = {
+      model = "claude-3-sonnet-20240229";
+      auto-commits = true;
+      dark-mode = true;
+    };
+  };
 }
 ```
+
+**Module Locations**:
+- `modules/common/ai/aichat.nix` - aichat configuration
+- `modules/common/ai/aider.nix` - aider configuration
+- `modules/common/ai/default.nix` - AI module aggregator

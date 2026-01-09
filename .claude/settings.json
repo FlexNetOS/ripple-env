@@ -21,6 +21,8 @@
       "Bash(cat *)",
       "Bash(mkdir *)",
       "Bash(rm -rf build install log)",
+      "Bash(aichat *)",
+      "Bash(aider *)",
       "Read",
       "Write",
       "Edit",
@@ -29,14 +31,22 @@
     ],
     "deny": [
       "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
       "Bash(sudo *)",
       "Bash(chmod 777 *)",
+      "Bash(eval *)",
+      "Bash(git reset --hard)",
+      "Bash(git push --force)",
+      "Bash(git clean -fdx)",
       "Read(.env)",
       "Read(.env.*)",
       "Read(**/secrets/**)",
       "Read(**/.secrets/**)",
+      "Read(.aws/**)",
+      "Read(.ssh/**)",
       "Write(.env)",
-      "Write(.env.*)"
+      "Write(.env.*)",
+      "Write(.git/config)"
     ]
   },
   "hooks": {
@@ -54,16 +64,26 @@
       ".claude/CLAUDE.md",
       ".claude/AGENT.md",
       ".claude/RULES.md",
+      ".claude/INDEX.md",
+      ".claude/SKILL.md",
       "README.md",
-      "flake.nix"
+      "flake.nix",
+      "pixi.toml"
     ],
     "exclude": [
       "*.lock",
       "node_modules/**",
       ".pixi/**",
+      ".git/**",
       "build/**",
       "install/**",
-      "log/**"
+      "log/**",
+      "src/**/build/**",
+      "src/**/install/**",
+      "__pycache__/**",
+      ".pytest_cache/**",
+      ".venv/**",
+      "venv/**"
     ]
   }
 }
