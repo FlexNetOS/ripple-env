@@ -12,11 +12,15 @@ This document catalogs external GitHub resources evaluated for integration with 
 | Category | Top Recommendations | Status | Priority |
 |----------|--------------------| ------------|----------|
 | **AI Agents** | LocalAI, AIOS | ⚠️ Docker/Pixi | High |
+| **AI Gateway** | AgentGateway | ✅ **Integrated** (install helper) | High |
 | **Monitoring** | Prometheus, Trivy, Trippy | ✅ **Integrated** | High |
 | **Messaging** | NATS Server + CLI | ✅ **Integrated** | High |
 | **Security** | OPA, Trivy, Vault, gVisor | ✅ **Integrated** | High |
 | **Identity** | Keycloak, Vaultwarden | ✅ **Integrated** (identity shell) | High |
+| **Database** | SQLx, Neon, PostgreSQL | ✅ **Integrated** | High |
+| **Vector DB** | ruvector | ⚠️ Rust crate | Medium |
 | **Evaluation** | Promptfoo | ✅ **Integrated** | High |
+| **LLM Cache** | vCache | ⚠️ Python pip | Medium |
 | **Memory** | Memori, Memobase | ⚠️ Pixi | Medium |
 | **Rust** | maturin, sqlx-cli | ✅ **Integrated** | High |
 
@@ -121,14 +125,44 @@ commonPackages = with pkgs; [ local-ai ];
 | **Status** | ❌ Not recommended for ROS2 |
 | **Relevance** | Low - Node.js ecosystem conflicts |
 
-### Agent Gateway
+### Agent Gateway ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [agentgateway/agentgateway](https://github.com/agentgateway/agentgateway) |
-| **Stars** | 1,384 |
+| **Stars** | 1,384+ |
 | **Language** | Rust (74.6%) |
-| **Status** | ⚠️ Infrastructure layer |
-| **Relevance** | Medium - Multi-robot routing (advanced use) |
+| **Organization** | Linux Foundation AI & Data |
+| **Protocols** | MCP, A2A, OpenAI, Anthropic |
+| **Installation** | `agentgateway-install` helper in devshell |
+| **Status** | ✅ **Install helper integrated** |
+| **Relevance** | **High** - Multi-protocol AI agent routing |
+
+**Integration Note**: The `agentgateway-install` helper is included in the full devshell. It installs AgentGateway via cargo from source. Requires Rust toolchain.
+
+**Features**:
+- Model Context Protocol (MCP) support
+- Agent-to-Agent (A2A) protocol
+- OpenAI/Anthropic API compatibility
+- Rate limiting and authentication
+- Multi-backend routing
+
+**Installation**:
+```bash
+# Use the devshell helper
+agentgateway-install
+
+# Or manually with cargo
+cargo install --git https://github.com/agentgateway/agentgateway agentgateway
+```
+
+**Usage**:
+```bash
+# Start the gateway
+agentgateway --config config.yaml
+
+# Example config supports multiple backends
+agentgateway --help
+```
 
 ---
 
@@ -273,12 +307,67 @@ commonPackages = with pkgs; [ local-ai ];
 
 **Integration Note**: `sqlx-cli` is included in the devshell for database migrations and schema management. For library builds requiring compile-time DB verification, use `naersk` with a prepared DB image.
 
-### Neon - Serverless Postgres
+### Neon - Serverless Postgres ⭐ INTEGRATED
 | Attribute | Value |
 |-----------|-------|
 | **Repository** | [neondatabase/neon](https://github.com/neondatabase/neon) |
-| **Status** | 🔬 Cloud service |
-| **Relevance** | Low - Development databases (prefer local PostgreSQL) |
+| **Stars** | 17k+ |
+| **Type** | Cloud PostgreSQL service |
+| **CLI Package** | `neonctl` (npm-based) |
+| **Installation** | `neonctl` wrapper in devshell |
+| **Status** | ✅ **CLI integrated in devshell** |
+| **Relevance** | Medium - Serverless Postgres for cloud deployments |
+
+**Integration Note**: The `neonctl` CLI wrapper is included in the full devshell. It uses `npx neonctl@latest` automatically. For local development, use the existing PostgreSQL tools (`postgresql_15`, `pgcli`, `sqlx-cli`) in the identity shell.
+
+**Usage**:
+```bash
+# Authenticate with Neon
+neonctl auth
+
+# Create a project
+neonctl projects create --name my-project
+
+# Connect to database
+neonctl connection-string
+```
+
+### vCache - LLM Semantic Caching
+| Attribute | Value |
+|-----------|-------|
+| **Repository** | [vcache-project/vCache](https://github.com/vcache-project/vCache) |
+| **Type** | Python library |
+| **Installation** | `pip install vcache` or `pixi add vcache` |
+| **Status** | ⚠️ Available via pip |
+| **Relevance** | Medium - Semantic prompt caching for LLM cost reduction |
+
+**Note**: vCache is a Python library for semantic caching of LLM prompts, NOT a distributed cache like Redis. It reduces LLM API costs by caching semantically similar queries.
+
+**Usage**:
+```python
+from vcache import VCache
+cache = VCache()
+# Cache semantically similar prompts
+response = cache.get_or_call(prompt, llm_function)
+```
+
+### ruvector - Rust Vector Database
+| Attribute | Value |
+|-----------|-------|
+| **Repository** | [ruvnet/ruvector](https://github.com/ruvnet/ruvector) |
+| **Type** | Rust library (crate) |
+| **Crate** | `ruvector` |
+| **Installation** | `cargo add ruvector` |
+| **Status** | ⚠️ Rust crate (not standalone tool) |
+| **Relevance** | Medium - Vector database for embeddings |
+
+**Note**: ruvector is a Rust library for vector similarity search with self-learning Graph Neural Networks (GNNs) and HNSW indexing. Include in Rust projects as a crate dependency.
+
+**Cargo.toml**:
+```toml
+[dependencies]
+ruvector = "*"
+```
 
 ---
 

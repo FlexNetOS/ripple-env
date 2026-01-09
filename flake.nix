@@ -252,6 +252,27 @@
               echo ""
               exec vault server -dev -dev-root-token-id root -dev-tls "$@"
             '')
+            (pkgs.writeShellScriptBin "neonctl" ''
+              # Wrapper for Neon serverless Postgres CLI
+              # Uses npx to run the latest version without global installation
+              # See: https://neon.tech/docs/reference/cli-reference
+              exec npx neonctl@latest "$@"
+            '')
+            (pkgs.writeShellScriptBin "agentgateway-install" ''
+              # Install AgentGateway from source
+              # Requires Rust toolchain (cargo)
+              echo "Installing AgentGateway..."
+              echo "  Repository: github.com/agentgateway/agentgateway"
+              echo ""
+              if ! command -v cargo >/dev/null 2>&1; then
+                echo "Error: Rust/Cargo not found. Install Rust first:" >&2
+                echo "  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh" >&2
+                exit 1
+              fi
+              cargo install --git https://github.com/agentgateway/agentgateway agentgateway "$@"
+              echo ""
+              echo "AgentGateway installed! Run with: agentgateway --help"
+            '')
           ];
 
           # CUDA 13.x package set (latest available in nixpkgs)
