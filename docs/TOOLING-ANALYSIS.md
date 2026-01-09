@@ -10,7 +10,7 @@
 | Env Activation | direnv (`.envrc` with `use flake`) | ✅ Active |
 | Python | 3.11.14+ via Pixi/conda-forge | ✅ Active |
 | ROS | ros-humble-desktop via RoboStack | ✅ Active |
-| AI Assistants | aichat + aider-chat | ✅ **IMPLEMENTED** |
+| AI Assistants | aichat + aider-chat + Agent Gateway | ✅ **IMPLEMENTED** |
 | Editor | Helix with ROS2 LSPs | ✅ Active |
 | Shells | bash, zsh, nushell + starship | ✅ Active |
 | Multi-platform | Windows (WSL2), Linux, macOS | ✅ Active |

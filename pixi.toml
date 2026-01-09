@@ -18,6 +18,9 @@ ninja = ">=1.13.2,<2"
 ccache = ">=4.10,<5"
 sccache = ">=0.8,<1"
 
+# Note: Rust toolchain for Agent Gateway comes from Nix, not pixi
+# (cargo/rust not available on all platforms in conda-forge)
+
 # Archive/Network tools (for tree-sitter)
 tar = ">=1.34"
 curl = ">=8.0"
@@ -54,13 +57,15 @@ torchaudio = ">=2.5,<2.6"
 # CUDA-enabled PyTorch (requires NVIDIA GPU)
 # Activate with: pixi run -e cuda <command>
 platforms = ["linux-64"]
+channels = ["pytorch", "nvidia", "conda-forge"]
 
 [feature.cuda.dependencies]
-pytorch-cuda = "12.4"
+# PyTorch with CUDA from pytorch channel
 # Version coupling: PyTorch 2.5.x requires torchvision 0.20.x, torchaudio 2.5.x
-pytorch = { version = ">=2.5,<2.6", build = "*cuda*" }
-torchvision = { version = ">=0.20,<0.21", build = "*cuda*" }
-torchaudio = { version = ">=2.5,<2.6", build = "*cuda*" }
+pytorch-cuda = { version = "12.4.*", channel = "pytorch" }
+pytorch = { version = ">=2.5,<2.6", channel = "pytorch", build = "*cuda*" }
+torchvision = { version = ">=0.20,<0.21", channel = "pytorch", build = "*cuda*" }
+torchaudio = { version = ">=2.5,<2.6", channel = "pytorch", build = "*cuda*" }
 
 # =============================================================================
 # AIOS Agent OS Feature

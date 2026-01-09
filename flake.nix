@@ -28,28 +28,40 @@
       # Flake-level outputs (not per-system)
       flake = {
         # Export library functions
-        lib = (import ./lib { inherit (nixpkgs) lib; inherit inputs; }) // {
-          # Home-manager modules are not a standard flake output; expose them under lib
-          # to avoid warnings like: "unknown flake output 'homeManagerModules'".
-          homeManagerModules = {
-            common = ./modules/common;
-            linux = ./modules/linux;
-            macos = ./modules/macos;
+        lib =
+          (import ./lib {
+            inherit (nixpkgs) lib;
+            inherit inputs;
+          })
+          // {
+            # Home-manager modules are not a standard flake output; expose them under lib
+            # to avoid warnings like: "unknown flake output 'homeManagerModules'".
+            homeManagerModules = {
+              common = ./modules/common;
+              linux = ./modules/linux;
+              macos = ./modules/macos;
 
-            # Combined module that auto-selects based on platform
-            default =
-              { config, lib, pkgs, ... }:
-              {
-                imports = [
-                  ./modules/common
-                ] ++ lib.optionals pkgs.stdenv.isLinux [
-                  ./modules/linux
-                ] ++ lib.optionals pkgs.stdenv.isDarwin [
-                  ./modules/macos
-                ];
-              };
+              # Combined module that auto-selects based on platform
+              default =
+                {
+                  config,
+                  lib,
+                  pkgs,
+                  ...
+                }:
+                {
+                  imports = [
+                    ./modules/common
+                  ]
+                  ++ lib.optionals pkgs.stdenv.isLinux [
+                    ./modules/linux
+                  ]
+                  ++ lib.optionals pkgs.stdenv.isDarwin [
+                    ./modules/macos
+                  ];
+                };
+            };
           };
-        };
 
         # Export NixOS/Darwin modules (for system-level configuration)
         nixosModules.default = ./modules/linux;
@@ -158,6 +170,7 @@
             aider-chat
 
             # AI inference (edge/local models) - LocalAI
+            # Alternative: docker run -p 8080:8080 localai/localai
             # OpenAI-compatible API server for local LLM inference
             # Supports: GGUF, GGML, Safetensors models
             # P2P federation for multi-robot distributed inference
@@ -182,13 +195,13 @@
             clippy              # Rust linter
 
             # Database tools
-            sqlx-cli            # SQL database CLI for migrations and schema management
+            sqlx-cli # SQL database CLI for migrations and schema management
 
             # Tree-sitter (for LazyVim/Neovim)
             tree-sitter
 
             # Node.js ecosystem (for LazyVim plugins & LLM testing)
-            nodejs_22           # LTS "Jod" - active until Apr 2027
+            nodejs_22 # LTS "Jod" - active until Apr 2027
             nodePackages.pnpm
             # Note: promptfoo (LLM eval/testing) not in nixpkgs - use 'npx promptfoo@latest'
 
@@ -212,11 +225,13 @@
           ];
 
           # macOS-specific packages
-          darwinPackages = with pkgs; optionals isDarwin [
-            coreutils
-            gnused
-            gawk
-          ];
+          darwinPackages =
+            with pkgs;
+            optionals isDarwin [
+              coreutils
+              gnused
+              gawk
+            ];
 
           # Provide common helper commands as real executables (not shell functions), so they
           # are available when CI uses `nix develop --command ...`.
@@ -453,11 +468,7 @@
 
           # CUDA 13.x package set (latest available in nixpkgs)
           # Falls back to default cudaPackages if 13.1 unavailable
-          # Only defined on Linux where CUDA is available
-          cudaPkgs = if isLinux then
-            (pkgs.cudaPackages_13_1 or pkgs.cudaPackages_13 or pkgs.cudaPackages)
-          else
-            null;
+          cudaPkgs = pkgs.cudaPackages_13_1 or pkgs.cudaPackages_13 or pkgs.cudaPackages;
 
         in
         {
@@ -471,12 +482,22 @@
             VISUAL = "hx";
 
             shellHook = ''
+              # Ensure TMPDIR is valid (fix for Codespaces/devcontainers)
+              export TMPDIR=''${TMPDIR:-/tmp}
+              [ -d "$TMPDIR" ] || export TMPDIR=/tmp
+              mkdir -p "$TMPDIR" 2>/dev/null || true
+
+              # Define stub functions for RoboStack activation scripts
+              # These are called by conda post-link scripts but don't exist in plain bash
+              noa_add_path() { :; }
+              export -f noa_add_path 2>/dev/null || true
+
               # Initialize pixi environment
               if [ -f pixi.toml ]; then
                 ${optionalString isDarwin ''
                   export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
                 ''}
-                eval "$(pixi shell-hook)"
+                eval "$(pixi shell-hook 2>/dev/null)" || true
               fi
 
               # Keep startup fast for non-interactive shells (CI, `nix develop --command ...`).
@@ -492,17 +513,32 @@
 
           # Full-featured shell (slower initial download, more tools)
           devShells.full = pkgs.mkShell {
-            packages = basePackages ++ fullExtras ++ coreCommandWrappers ++ aiCommandWrappers ++ linuxPackages ++ darwinPackages;
+            packages =
+              basePackages
+              ++ fullExtras
+              ++ coreCommandWrappers
+              ++ aiCommandWrappers
+              ++ linuxPackages
+              ++ darwinPackages;
             COLCON_DEFAULTS_FILE = toString colconDefaults;
             EDITOR = "hx";
             VISUAL = "hx";
 
             shellHook = ''
+              # Ensure TMPDIR is valid (fix for Codespaces/devcontainers)
+              export TMPDIR=''${TMPDIR:-/tmp}
+              [ -d "$TMPDIR" ] || export TMPDIR=/tmp
+              mkdir -p "$TMPDIR" 2>/dev/null || true
+
+              # Define stub functions for RoboStack activation scripts
+              noa_add_path() { :; }
+              export -f noa_add_path 2>/dev/null || true
+
               if [ -f pixi.toml ]; then
                 ${optionalString isDarwin ''
                   export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
                 ''}
-                eval "$(pixi shell-hook)"
+                eval "$(pixi shell-hook 2>/dev/null)" || true
               fi
               # Initialize direnv
               eval "$(direnv hook bash)"
@@ -543,38 +579,10 @@
             '';
           };
 
-          # Minimal shell for CI
-          devShells.ci = pkgs.mkShell {
-            packages = with pkgs; [
-              pixi
-              git
-            ];
-            COLCON_DEFAULTS_FILE = toString colconDefaults;
-
-            shellHook = ''
-              if [ -f pixi.toml ]; then
-                ${optionalString isDarwin ''
-                  export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
-                ''}
-                eval "$(pixi shell-hook)"
-              fi
-            '';
-          };
-
-          # Formatter for nix files
-          formatter = pkgs.nixfmt-rfc-style;
-
-          # Check flake
-          checks = {
-            # Verify the devshell builds
-            devshell = self.devShells.${system}.default;
-          };
-        }
-        # CUDA-enabled shell for GPU workloads (Linux only)
-        # Usage: nix develop .#cuda
-        # Requires: NVIDIA GPU with drivers installed
-        # Binary cache: https://cache.nixos-cuda.org
-        // optionalAttrs isLinux {
+          # CUDA-enabled shell for GPU workloads
+          # Usage: nix develop .#cuda
+          # Requires: NVIDIA GPU with drivers installed
+          # Binary cache: https://cache.nixos-cuda.org
           devShells.cuda = pkgs.mkShell {
             packages = basePackages ++ fullExtras ++ coreCommandWrappers ++ aiCommandWrappers ++ linuxPackages ++ (with pkgs; [
               # CUDA Toolkit 13.x (or latest available)
@@ -604,12 +612,21 @@
             CXX = "${pkgs.gcc13}/bin/g++";
 
             shellHook = ''
+              # Ensure TMPDIR is valid (fix for Codespaces/devcontainers)
+              export TMPDIR=''${TMPDIR:-/tmp}
+              [ -d "$TMPDIR" ] || export TMPDIR=/tmp
+              mkdir -p "$TMPDIR" 2>/dev/null || true
+
+              # Define stub functions for RoboStack activation scripts
+              noa_add_path() { :; }
+              export -f noa_add_path 2>/dev/null || true
+
               # Set up LD_LIBRARY_PATH for CUDA libraries
               export LD_LIBRARY_PATH="${cudaPkgs.cudatoolkit}/lib:${cudaPkgs.cudnn}/lib:$LD_LIBRARY_PATH"
 
               # Initialize pixi environment with CUDA feature
               if [ -f pixi.toml ]; then
-                eval "$(pixi shell-hook -e cuda 2>/dev/null || pixi shell-hook)"
+                eval "$(pixi shell-hook -e cuda 2>/dev/null || pixi shell-hook 2>/dev/null)" || true
               fi
 
               # Initialize direnv
@@ -638,6 +655,11 @@
                 echo "PyTorch CUDA verification:"
                 echo "  python -c \"import torch; print(torch.cuda.is_available())\""
                 echo ""
+                echo "AI assistants:"
+                echo "  ai        - AI chat (aichat, lightweight)"
+                echo "  pair      - AI pair programming (aider, git-integrated)"
+                echo "  promptfoo - LLM testing & evaluation (robot command parsing)"
+                echo ""
               else
                 echo ""
                 echo "⚠️  Warning: nvidia-smi not found"
@@ -646,6 +668,50 @@
                 echo ""
               fi
             '';
+
+            # Command aliases
+            commands = [
+              {
+                name = "cb";
+                help = "colcon build --symlink-install";
+                command = "colcon build --symlink-install $@";
+              }
+              {
+                name = "ct";
+                help = "colcon test";
+                command = "colcon test $@";
+              }
+              {
+                name = "ctr";
+                help = "colcon test-result --verbose";
+                command = "colcon test-result --verbose";
+              }
+              {
+                name = "ros2-env";
+                help = "Show ROS2 environment variables";
+                command = "env | grep -E '^(ROS|RMW|AMENT|COLCON)' | sort";
+              }
+              {
+                name = "update-deps";
+                help = "Update pixi dependencies";
+                command = "pixi update";
+              }
+              {
+                name = "ai";
+                help = "AI chat assistant (provider-agnostic)";
+                command = "aichat $@";
+              }
+              {
+                name = "pair";
+                help = "AI pair programming with git integration (aider)";
+                command = "aider $@";
+              }
+              {
+                name = "promptfoo";
+                help = "LLM testing and evaluation framework";
+                command = "npx promptfoo@latest $@";
+              }
+            ];
           };
 
           # Identity & Auth shell for Keycloak/Vaultwarden development (Linux only)
@@ -676,9 +742,19 @@
             JAVA_HOME = "${pkgs.jdk21_headless}";
 
             shellHook = ''
-              # Initialize pixi environment
+              # Ensure TMPDIR is valid
+              export TMPDIR=''${TMPDIR:-/tmp}
+              [ -d "$TMPDIR" ] || export TMPDIR=/tmp
+
+              # Define stub functions for RoboStack activation scripts
+              noa_add_path() { :; }
+              export -f noa_add_path 2>/dev/null || true
+
               if [ -f pixi.toml ]; then
-                eval "$(pixi shell-hook)"
+                ${optionalString isDarwin ''
+                  export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
+                ''}
+                eval "$(pixi shell-hook 2>/dev/null)" || true
               fi
 
               echo ""
