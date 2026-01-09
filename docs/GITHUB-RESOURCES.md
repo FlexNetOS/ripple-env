@@ -37,7 +37,7 @@ Before integrating any tools, be aware of these conflicts:
 
 ### Python Version Matrix
 
-| Tool | Required Python | ROS2 Humble (3.10) |
+| Tool | Required Python | ROS2 Humble (3.11) |
 |------|-----------------|-------------------|
 | AIOS/Cerebrum | 3.10/3.11 only | ✅ Compatible |
 | TruLens | 3.9+ | ✅ Compatible |
@@ -490,7 +490,7 @@ commonPackages = with pkgs; [ local-ai ];
 
 | Tool | Python Version | ROS2 Humble Compatible |
 |------|---------------|------------------------|
-| AIOS | 3.10/3.11 only | ✅ Yes (ROS2 uses 3.10) |
+| AIOS | 3.10/3.11 only | ✅ Yes (ROS2 uses 3.11) |
 | TruLens | 3.9+ | ✅ Yes |
 | Memori | 3.10+ | ✅ Yes |
 | ComfyUI | 3.12-3.13 | ⚠️ Separate env needed |
@@ -578,7 +578,7 @@ devshells.default.devshell.packages = with pkgs; [
 ```toml
 # In pixi.toml
 [dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.11,<3.12"
 
 [pypi-dependencies]
 trulens = "*"
