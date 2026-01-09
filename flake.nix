@@ -92,7 +92,7 @@
                 owner = "spartan-holochain-counsel";
                 repo = "nix-overlay";
                 rev = "2a321bc7d6d94f169c6071699d9a89acd55039bb";
-                sha256 = "sha256-0000000000000000000000000000000000000000000=";
+                sha256 = "sha256-LZkgXdLY+C+1CxynKzsdtM0g4gC0NJjPP3d24pHPyIU=";
               }) {
                 pkgs = super;
                 inherit system;
