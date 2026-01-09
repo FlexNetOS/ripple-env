@@ -7,6 +7,7 @@
       "installZsh": true,
       "configureZshAsDefaultShell": true
     },
+    "ghcr.io/devcontainers/features/git-lfs:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/nix:1": {
       "multiUser": false,
