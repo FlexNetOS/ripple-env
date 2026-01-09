@@ -26,6 +26,10 @@ if [ ! -d "$TMPDIR" ]; then
 fi
 export TMPDIR
 
+# Keep TMP/TEMP consistent with TMPDIR for downstream tools.
+export TMP="${TMPDIR}"
+export TEMP="${TMPDIR}"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -335,8 +339,15 @@ verify_environment() {
     fi
 
     # Verify flake (fail hard if it doesn't evaluate)
+    # NOTE: `--all-systems` can be significantly slower. Keep it for CI, but
+    # default to the current system for interactive/local usage.
     log_info "Checking flake..."
-    if ! nix flake check --no-build --all-systems; then
+    local flake_check_args=(--no-build)
+    if [ "$CI_MODE" = true ]; then
+        flake_check_args+=(--all-systems)
+    fi
+
+    if ! nix flake check "${flake_check_args[@]}"; then
         log_error "nix flake check failed"
         log_info "flake output (for debugging):"
         nix flake show || true
@@ -393,8 +404,9 @@ print_summary() {
     echo ""
     echo "Or manually:"
     echo "  nix develop"
+    echo "  # (Prefered option) nom develop"
     echo ""
-    echo "Optional (nicer output):"
+    echo "Prefered Option (nicer output):"
     echo "  nom develop"
     echo ""
 }

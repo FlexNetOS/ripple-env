@@ -5,7 +5,6 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     systems.url = "github:nix-systems/default";
-    devshell.url = "github:numtide/devshell";
 
     # Home-manager for user configuration
     home-manager = {
@@ -20,7 +19,6 @@
       nixpkgs,
       flake-parts,
       systems,
-      devshell,
       home-manager,
       ...
     }:
@@ -77,14 +75,14 @@
                 ${optionalString isDarwin "- -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON"}
           '';
 
-          # Common packages for the development shell
-          commonPackages = with pkgs; [
-            # Core tools
+          # Keep the default shell lightweight for fast `direnv` / `nix develop`.
+          # Put heavier/optional tools into `devShells.full`.
+          basePackages = with pkgs; [
             pixi
             git
             gh
 
-            # Python 3.13 - Latest stable (for non-ROS2 tools)
+            # Python 3.14.2 - Latest stable (for non-ROS2 tools)
             # ROS2 uses Python 3.11 via Pixi/RoboStack (separate environment)
             python313
             python313Packages.pip
@@ -96,18 +94,25 @@
             nixfmt-rfc-style
             nil
 
+            # Useful basics
+            curl
+            jq
+            direnv
+            nix-direnv
+          ];
+
+          fullExtras = with pkgs; [
+            nix-output-monitor
+            nix-tree
+
             # Shell utilities
             bat
             eza
             fd
             ripgrep
             fzf
-            jq
             yq
-
-            # Archive/Network (explicit for tree-sitter)
             gnutar
-            curl
             wget
             unzip
             gzip
@@ -118,8 +123,6 @@
 
             # Directory navigation
             zoxide
-            direnv
-            nix-direnv
 
             # System monitoring
             btop
@@ -157,7 +160,7 @@
 
             # Build tools & compilation cache
             ccache              # Fast C/C++ compilation cache
-            sccache             # Distributed compilation cache (cloud support)
+            sccache             # Distributed compilation cache (cloud support)used as a compiler wrapper and avoids compilation when possible. Sccache has the capability to utilize caching in remote storage environments, in local storage.
             mold                # Fast modern linker (12x faster than lld)
             maturin             # Build tool for PyO3 Rust-Python bindings
 
@@ -173,7 +176,7 @@
             # Note: promptfoo (LLM eval/testing) not in nixpkgs - use 'npx promptfoo@latest'
 
             # Git tools
-            lazygit             # Git TUI (integrates with LazyVim)
+            lazygit
           ];
 
           # Linux-specific packages
@@ -192,7 +195,7 @@
 
           # Provide common helper commands as real executables (not shell functions), so they
           # are available when CI uses `nix develop --command ...`.
-          commandWrappers = [
+          coreCommandWrappers = [
             (pkgs.writeShellScriptBin "cb" ''
               exec colcon build --symlink-install "$@"
             '')
@@ -208,6 +211,9 @@
             (pkgs.writeShellScriptBin "update-deps" ''
               exec pixi update
             '')
+          ];
+
+          aiCommandWrappers = [
             (pkgs.writeShellScriptBin "ai" ''
               exec aichat "$@"
             '')
@@ -242,7 +248,7 @@
           # Use standard `devShells` (and avoid the devshell flake module) so `nix flake check`
           # stays warning-free on newer Nix.
           devShells.default = pkgs.mkShell {
-            packages = commonPackages ++ commandWrappers ++ linuxPackages ++ darwinPackages;
+            packages = basePackages ++ coreCommandWrappers ++ linuxPackages ++ darwinPackages;
             COLCON_DEFAULTS_FILE = toString colconDefaults;
             EDITOR = "hx";
             VISUAL = "hx";
@@ -256,6 +262,31 @@
                 eval "$(pixi shell-hook)"
               fi
 
+              # Keep startup fast for non-interactive shells (CI, `nix develop --command ...`).
+              if [[ $- == *i* ]]; then
+                echo ""
+                echo "ROS2 Humble Development Environment"
+                echo "=================================="
+                echo "  Platform: ${if isDarwin then "macOS" else "Linux"} (${system})"
+                echo ""
+              fi
+            '';
+          };
+
+          # Full-featured shell (slower initial download, more tools)
+          devShells.full = pkgs.mkShell {
+            packages = basePackages ++ fullExtras ++ coreCommandWrappers ++ aiCommandWrappers ++ linuxPackages ++ darwinPackages;
+            COLCON_DEFAULTS_FILE = toString colconDefaults;
+            EDITOR = "hx";
+            VISUAL = "hx";
+
+            shellHook = ''
+              if [ -f pixi.toml ]; then
+                ${optionalString isDarwin ''
+                  export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
+                ''}
+                eval "$(pixi shell-hook)"
+              fi
               # Initialize direnv
               eval "$(direnv hook bash)"
 
@@ -443,6 +474,33 @@
                 echo ""
               fi
             '';
+          };
+
+          # Minimal shell for CI
+          devShells.ci = pkgs.mkShell {
+            packages = with pkgs; [
+              pixi
+              git
+            ];
+            COLCON_DEFAULTS_FILE = toString colconDefaults;
+
+            shellHook = ''
+              if [ -f pixi.toml ]; then
+                ${optionalString isDarwin ''
+                  export DYLD_FALLBACK_LIBRARY_PATH="$PWD/.pixi/envs/default/lib:$DYLD_FALLBACK_LIBRARY_PATH"
+                ''}
+                eval "$(pixi shell-hook)"
+              fi
+            '';
+          };
+
+          # Formatter for nix files
+          formatter = pkgs.nixfmt-rfc-style;
+
+          # Check flake
+          checks = {
+            # Verify the devshell builds
+            devshell = self.devShells.${system}.ci;
           };
         };
     };

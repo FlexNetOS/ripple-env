@@ -1,0 +1,51 @@
+{
+  "name": "ros2-humble-env (Codespaces)",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "username": "vscode"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/nix:1": {
+      "multiUser": false,
+      "extraNixConfig": "experimental-features = nix-command flakes\naccept-flake-config = true\n"
+    }
+  },
+
+  "mounts": [
+    "source=ros2-humble-env-nix-store,target=/nix,type=volume",
+    "source=ros2-humble-env-nix-cache,target=/home/vscode/.cache/nix,type=volume",
+    "source=ros2-humble-env-pixi-cache,target=/home/vscode/.cache/pixi,type=volume"
+  ],
+
+  "updateRemoteUserUID": true,
+
+  "containerEnv": {
+    "TMPDIR": "/tmp",
+    "TMP": "/tmp",
+    "TEMP": "/tmp"
+  },
+
+  "postCreateCommand": "bash -lc 'set -euo pipefail; if command -v nix >/dev/null 2>&1; then nix --version; nix profile install github:nixos/nixpkgs/nixos-unstable#direnv github:nixos/nixpkgs/nixos-unstable#nix-direnv github:nixos/nixpkgs/nixos-unstable#nil github:nixos/nixpkgs/nixos-unstable#nixfmt-rfc-style >/dev/null; fi; echo \"Devcontainer ready. Tip: use nix develop .#ci for fast commands, nix develop .#full for extra tools.\"'",
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.shellIntegration.enabled": true,
+        "files.eol": "\n",
+        "editor.formatOnSave": true,
+        "git.enableCommitSigning": false
+      },
+      "extensions": [
+        "jnoortheen.nix-ide",
+        "mkhl.direnv",
+        "timonwong.shellcheck",
+        "ms-vscode.powershell",
+        "editorconfig.editorconfig"
+      ]
+    }
+  }
+}
