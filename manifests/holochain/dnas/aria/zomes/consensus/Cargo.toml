@@ -1,0 +1,18 @@
+[package]
+name = "consensus"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "consensus"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+hdk = "0.4.0"
+consensus_integrity = { path = "../consensus_integrity" }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"

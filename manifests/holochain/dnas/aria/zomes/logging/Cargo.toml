@@ -1,0 +1,20 @@
+[package]
+name = "logging"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "logging"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+hdk = "0.4.0"
+logging_integrity = { path = "../logging_integrity" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
