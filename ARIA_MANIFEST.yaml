@@ -760,6 +760,92 @@ docker_services:
       timeout: 5
     required: false
 
+  # ---------------------------------------------------------------------------
+  # UI Stack (BUILDKIT_STARTER_SPEC Layer 1.20)
+  # ---------------------------------------------------------------------------
+  - id: lobe-chat
+    name: "Lobe Chat"
+    category: ui
+    source: "docker/docker-compose.ui.yml"
+    ports: [3210]
+    verify:
+      type: http
+      url: "http://localhost:3210/api/health"
+      timeout: 30
+    required: false
+
+  - id: open-lovable
+    name: "Open-Lovable"
+    category: ui
+    source: "docker/docker-compose.ui.yml"
+    ports: [3211]
+    verify:
+      type: http
+      url: "http://localhost:3211"
+      timeout: 30
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # LLMOps Stack (BUILDKIT_STARTER_SPEC Layer 1.16)
+  # ---------------------------------------------------------------------------
+  - id: tensorzero
+    name: "TensorZero Gateway"
+    category: llmops
+    source: "docker/docker-compose.llmops.yml"
+    ports: [3030]
+    verify:
+      type: http
+      url: "http://localhost:3030/health"
+      timeout: 10
+    required: false
+
+  - id: tensorzero-ui
+    name: "TensorZero UI"
+    category: llmops
+    source: "docker/docker-compose.llmops.yml"
+    ports: [3031]
+    verify:
+      type: http
+      url: "http://localhost:3031"
+      timeout: 10
+    required: false
+
+  - id: mlflow
+    name: "MLflow Tracking"
+    category: llmops
+    source: "docker/docker-compose.llmops.yml"
+    ports: [5000]
+    verify:
+      type: http
+      url: "http://localhost:5000/health"
+      timeout: 10
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Data & Query Stack (BUILDKIT_STARTER_SPEC Layer 1.15)
+  # ---------------------------------------------------------------------------
+  - id: mindsdb
+    name: "MindsDB"
+    category: data
+    source: "docker/docker-compose.data.yml"
+    ports: [47334, 47335, 47336]
+    verify:
+      type: http
+      url: "http://localhost:47334/api/status"
+      timeout: 30
+    required: false
+
+  - id: neo4j
+    name: "Neo4j Graph DB"
+    category: data
+    source: "docker/docker-compose.data.yml"
+    ports: [7474, 7687]
+    verify:
+      type: http
+      url: "http://localhost:7474"
+      timeout: 30
+    required: false
+
 # =============================================================================
 # COMMAND WRAPPERS (from flake.nix)
 # =============================================================================

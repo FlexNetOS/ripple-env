@@ -1,0 +1,245 @@
+# stack.yaml - Single Source of Truth Pointer File
+# =============================================================================
+# This file maps all configuration sources and their relationships.
+# Reference: BUILDKIT_STARTER_SPEC.md
+# =============================================================================
+
+version: "1.0.0"
+description: "FlexStack configuration pointer file - maps all SSoT sources"
+
+# =============================================================================
+# PRIMARY SOURCES OF TRUTH
+# =============================================================================
+sources:
+  # ---------------------------------------------------------------------------
+  # Authoritative Specification
+  # ---------------------------------------------------------------------------
+  spec:
+    path: BUILDKIT_STARTER_SPEC.md
+    description: "Authoritative stack map with 50+ integrated tool repos"
+    authority: primary
+    format: markdown
+    sections:
+      - "§1: Stack Layers (20 functional layers)"
+      - "§2: 13 Foundational Design Rules"
+      - "§3: Integrated Tools Inventory"
+      - "§12: Manifest Directory Structure"
+
+  # ---------------------------------------------------------------------------
+  # Component Verification
+  # ---------------------------------------------------------------------------
+  manifest:
+    path: ARIA_MANIFEST.yaml
+    description: "Component verification definitions for CI/CD and local dev"
+    authority: primary
+    format: yaml
+    schema: https://ros2-humble-env.dev/schemas/aria-manifest.schema.json
+    verifies:
+      - nix_components
+      - pixi_components
+      - docker_services
+      - commands
+      - devshells
+
+  # ---------------------------------------------------------------------------
+  # Build Phase Orchestration
+  # ---------------------------------------------------------------------------
+  build_phases:
+    path: manifests/build_phases.json
+    description: "7-phase build orchestration from bootstrap to verification"
+    authority: primary
+    format: json
+    schema: https://ros2-humble-env.dev/schemas/build-phases.schema.json
+    orchestrates:
+      - preflight
+      - environment
+      - nix-packages
+      - pixi-packages
+      - docker-network
+      - services
+      - kubernetes
+      - verification
+
+# =============================================================================
+# PLATFORM-SPECIFIC CONFIGURATIONS
+# =============================================================================
+platforms:
+  linux:
+    bootstrap: bootstrap.sh
+    installer: scripts/install-all.sh
+    devshells: [default, full, cuda]
+    docker: true
+    native_ros2: true
+
+  darwin:
+    bootstrap: bootstrap.sh
+    installer: scripts/install-all.sh
+    devshells: [default, full]
+    docker: "Docker Desktop"
+    native_ros2: false
+    notes: "ROS2 runs via Pixi/RoboStack"
+
+  wsl2:
+    bootstrap: bootstrap.ps1
+    config: manifests/wsl2/distro.json
+    assets: manifests/wsl2/assets.json
+    installer: scripts/install-all.sh
+    devshells: [default, full]
+    docker: "Docker Desktop WSL2 backend"
+    native_ros2: true
+    notes: "Windows host runs PowerShell, WSL2 runs Linux environment"
+
+  cloud:
+    config: manifests/cloud/
+    builder: manifests/cloud/builder_image.json
+    pipeline: manifests/cloud/ci_pipeline.yaml
+    mcp_tools: manifests/cloud/mcp_tools.json
+
+# =============================================================================
+# PACKAGE MANAGEMENT
+# =============================================================================
+packages:
+  nix:
+    lock: flake.lock
+    config: flake.nix
+    description: "System-level packages and development shells"
+    categories:
+      - infrastructure
+      - dev-tools
+      - security
+      - ai-tools
+      - kubernetes
+
+  pixi:
+    lock: pixi.lock
+    config: pixi.toml
+    description: "Language packages (Python, ROS2, ML)"
+    categories:
+      - robotics
+      - data-science
+      - ml
+      - code-quality
+      - testing
+
+# =============================================================================
+# SERVICE ORCHESTRATION
+# =============================================================================
+services:
+  docker_compose:
+    directory: docker/
+    network: agentic-network
+    stacks:
+      observability:
+        file: docker-compose.observability.yml
+        services: [prometheus, grafana, loki]
+      messaging:
+        file: docker-compose.messaging.yml
+        services: [nats, temporal]
+      automation:
+        file: docker-compose.automation.yml
+        services: [n8n]
+      identity:
+        file: docker-compose.identity.yml
+        services: [keycloak, vault]
+      inference:
+        file: docker-compose.inference.yml
+        services: [localai]
+      edge:
+        file: docker-compose.edge.yml
+        services: [kong]
+      ui:
+        file: docker-compose.ui.yml
+        services: [lobe-chat, open-lovable]
+      llmops:
+        file: docker-compose.llmops.yml
+        services: [tensorzero, mlflow]
+      data:
+        file: docker-compose.data.yml
+        services: [mindsdb, neo4j]
+      state:
+        file: docker-compose.state.yml
+        services: [redis, minio]
+
+  kubernetes:
+    directory: manifests/argocd/
+    apps:
+      - observability-stack
+      - messaging-stack
+      - identity-stack
+
+# =============================================================================
+# AGENT CONFIGURATION
+# =============================================================================
+agents:
+  config_directory: .claude/
+  index: .claude/INDEX.md
+  agents: .claude/agents/
+  skills: .claude/skills/
+  commands: .claude/commands/
+  settings: .claude/settings.json
+
+# =============================================================================
+# INFRASTRUCTURE AS CODE
+# =============================================================================
+infrastructure:
+  terraform:
+    directory: infrastructure/terraform/
+    modules:
+      - aws/
+      - gcp/
+      - azure/
+
+  packer:
+    directory: infrastructure/packer/
+    templates:
+      - wsl2-image.pkr.hcl
+      - cloud-builder.pkr.hcl
+
+# =============================================================================
+# DOCUMENTATION
+# =============================================================================
+documentation:
+  readme: README.md
+  contributing: CONTRIBUTING.md
+  security: SECURITY.md
+  adr: docs/adr/
+  audits: docs/audits/
+
+# =============================================================================
+# CI/CD WORKFLOWS
+# =============================================================================
+workflows:
+  github_actions:
+    directory: .github/workflows/
+    primary:
+      - ci.yml
+      - wsl2-build.yml
+    scheduled:
+      - nightly.yml
+    release:
+      - release.yml
+
+# =============================================================================
+# VERIFICATION PROFILES
+# =============================================================================
+profiles:
+  minimal:
+    description: "Core tools only - fastest"
+    phases: [0, 1, 2, 3, 7]
+    skip_services: true
+
+  ci:
+    description: "CI/CD pipeline - no services"
+    phases: [0, 1, 2, 3, 7]
+    skip_services: true
+    non_interactive: true
+
+  default:
+    description: "Standard development"
+    phases: [0, 1, 2, 3, 4, 5, 7]
+    service_stacks: [observability, messaging]
+
+  full:
+    description: "Complete with all services"
+    phases: [0, 1, 2, 3, 4, 5, 6, 7]
+    service_stacks: all

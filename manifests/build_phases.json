@@ -1,0 +1,288 @@
+{
+  "$schema": "https://ros2-humble-env.dev/schemas/build-phases.schema.json",
+  "version": "1.0.0",
+  "description": "Build phase orchestration for ros2-humble-env cross-platform installation",
+  "metadata": {
+    "source": "scripts/install-all.sh",
+    "platforms": ["linux", "darwin", "wsl2"],
+    "entry_points": {
+      "linux": "bootstrap.sh",
+      "darwin": "bootstrap.sh",
+      "wsl2": "bootstrap.ps1"
+    }
+  },
+  "phases": [
+    {
+      "id": 0,
+      "name": "preflight",
+      "display_name": "Pre-flight Checks",
+      "description": "Validate system dependencies before installation",
+      "required": true,
+      "platforms": ["linux", "darwin", "wsl2"],
+      "checks": [
+        {
+          "id": "nix",
+          "command": "nix --version",
+          "required": true,
+          "install_hint": "Run: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh"
+        },
+        {
+          "id": "pixi",
+          "command": "pixi --version",
+          "required": true,
+          "install_hint": "Run: curl -fsSL https://pixi.sh/install.sh | bash"
+        },
+        {
+          "id": "docker",
+          "command": "docker --version",
+          "required": false,
+          "install_hint": "Install Docker Desktop or docker.io package"
+        },
+        {
+          "id": "docker-compose",
+          "command": "docker compose version",
+          "required": false,
+          "install_hint": "Docker Compose is included with Docker Desktop"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "environment",
+      "display_name": "Environment Setup",
+      "description": "Configure direnv and environment variables",
+      "required": true,
+      "platforms": ["linux", "darwin", "wsl2"],
+      "actions": [
+        {
+          "id": "direnv-allow",
+          "command": "direnv allow .",
+          "description": "Allow direnv to load .envrc"
+        },
+        {
+          "id": "env-vars",
+          "description": "Set required environment variables",
+          "variables": {
+            "NIXPKGS_ALLOW_UNFREE": "1",
+            "PIXI_HOME": "$HOME/.pixi"
+          }
+        }
+      ],
+      "depends_on": [0]
+    },
+    {
+      "id": 2,
+      "name": "nix-packages",
+      "display_name": "Nix Packages",
+      "description": "Install system-level tools via Nix",
+      "required": true,
+      "platforms": ["linux", "darwin", "wsl2"],
+      "actions": [
+        {
+          "id": "flake-check",
+          "command": "nix flake check",
+          "description": "Validate flake configuration"
+        },
+        {
+          "id": "devshell-build",
+          "command": "nix develop --command true",
+          "description": "Build and cache development shell"
+        }
+      ],
+      "devshells": ["default", "full"],
+      "depends_on": [1]
+    },
+    {
+      "id": 3,
+      "name": "pixi-packages",
+      "display_name": "Pixi Packages",
+      "description": "Install language-specific packages (Python, ROS2)",
+      "required": true,
+      "platforms": ["linux", "darwin", "wsl2"],
+      "actions": [
+        {
+          "id": "pixi-install",
+          "command": "pixi install",
+          "description": "Install all Pixi dependencies"
+        },
+        {
+          "id": "ros2-verify",
+          "command": "pixi run ros2 --help",
+          "description": "Verify ROS2 installation",
+          "platforms": ["linux"]
+        }
+      ],
+      "environments": ["default", "llmops", "aios"],
+      "depends_on": [2]
+    },
+    {
+      "id": 4,
+      "name": "docker-network",
+      "display_name": "Docker Network",
+      "description": "Create container networking infrastructure",
+      "required": false,
+      "platforms": ["linux", "wsl2"],
+      "skip_if_missing": ["docker"],
+      "actions": [
+        {
+          "id": "create-network",
+          "command": "docker network create agentic-network 2>/dev/null || true",
+          "description": "Create shared Docker network for service communication"
+        }
+      ],
+      "depends_on": [3]
+    },
+    {
+      "id": 5,
+      "name": "services",
+      "display_name": "Core Services",
+      "description": "Start Docker Compose service stacks in dependency order",
+      "required": false,
+      "platforms": ["linux", "wsl2"],
+      "skip_if_missing": ["docker", "docker-compose"],
+      "service_groups": [
+        {
+          "id": "observability",
+          "name": "Observability Stack",
+          "compose_file": "docker/docker-compose.observability.yml",
+          "health_checks": [
+            {"service": "prometheus", "url": "http://localhost:9090/-/healthy"},
+            {"service": "grafana", "url": "http://localhost:3000/api/health"}
+          ],
+          "order": 1
+        },
+        {
+          "id": "messaging",
+          "name": "Messaging Stack",
+          "compose_file": "docker/docker-compose.messaging.yml",
+          "health_checks": [
+            {"service": "nats", "url": "http://localhost:8222/healthz"}
+          ],
+          "order": 2
+        },
+        {
+          "id": "automation",
+          "name": "Automation Stack",
+          "compose_file": "docker/docker-compose.automation.yml",
+          "health_checks": [
+            {"service": "n8n", "url": "http://localhost:5678/healthz"},
+            {"service": "temporal-ui", "url": "http://localhost:8088"}
+          ],
+          "order": 3
+        },
+        {
+          "id": "edge",
+          "name": "Edge Stack",
+          "compose_file": "docker/docker-compose.edge.yml",
+          "health_checks": [
+            {"service": "kong", "url": "http://localhost:8001/status"}
+          ],
+          "order": 4
+        },
+        {
+          "id": "inference",
+          "name": "Inference Stack",
+          "compose_file": "docker/docker-compose.inference.yml",
+          "health_checks": [
+            {"service": "localai", "url": "http://localhost:8080/readyz"}
+          ],
+          "order": 5
+        },
+        {
+          "id": "ui",
+          "name": "UI Stack",
+          "compose_file": "docker/docker-compose.ui.yml",
+          "health_checks": [
+            {"service": "lobe-chat", "url": "http://localhost:3210/api/health"}
+          ],
+          "order": 6
+        },
+        {
+          "id": "llmops",
+          "name": "LLMOps Stack",
+          "compose_file": "docker/docker-compose.llmops.yml",
+          "health_checks": [
+            {"service": "tensorzero", "url": "http://localhost:3030/health"},
+            {"service": "mlflow", "url": "http://localhost:5000/health"}
+          ],
+          "order": 7
+        }
+      ],
+      "depends_on": [4]
+    },
+    {
+      "id": 6,
+      "name": "kubernetes",
+      "display_name": "Kubernetes/Argo CD",
+      "description": "Optional Kubernetes and GitOps setup",
+      "required": false,
+      "interactive": true,
+      "platforms": ["linux", "wsl2"],
+      "skip_if_missing": ["kubectl"],
+      "actions": [
+        {
+          "id": "argocd-install",
+          "command": "kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml",
+          "description": "Install Argo CD to cluster",
+          "interactive": true
+        }
+      ],
+      "depends_on": [5]
+    },
+    {
+      "id": 7,
+      "name": "verification",
+      "display_name": "Verification",
+      "description": "Post-installation verification and health checks",
+      "required": true,
+      "platforms": ["linux", "darwin", "wsl2"],
+      "actions": [
+        {
+          "id": "manifest-verify",
+          "command": "python scripts/verify-manifest.py --profile default",
+          "description": "Run ARIA manifest verification"
+        },
+        {
+          "id": "component-verify",
+          "command": "./scripts/verify-components.sh --profile default",
+          "description": "Verify all components"
+        }
+      ],
+      "depends_on": [3]
+    }
+  ],
+  "profiles": {
+    "minimal": {
+      "description": "Minimal installation - Nix and Pixi only",
+      "phases": [0, 1, 2, 3, 7],
+      "skip_services": true
+    },
+    "default": {
+      "description": "Standard development environment",
+      "phases": [0, 1, 2, 3, 4, 5, 7],
+      "service_groups": ["observability", "messaging"]
+    },
+    "full": {
+      "description": "Complete installation with all services",
+      "phases": [0, 1, 2, 3, 4, 5, 6, 7],
+      "service_groups": "all"
+    },
+    "ci": {
+      "description": "CI/CD pipeline - no services, fast verification",
+      "phases": [0, 1, 2, 3, 7],
+      "skip_services": true,
+      "non_interactive": true
+    }
+  },
+  "platform_overrides": {
+    "darwin": {
+      "skip_phases": [4, 5, 6],
+      "notes": "Docker services typically run in Docker Desktop VM on macOS"
+    },
+    "wsl2": {
+      "entry_point": "bootstrap.ps1",
+      "pre_phases": ["wsl2-setup"],
+      "notes": "WSL2 requires Windows host setup before Linux bootstrap"
+    }
+  }
+}

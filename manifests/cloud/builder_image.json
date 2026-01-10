@@ -1,0 +1,124 @@
+{
+  "$schema": "https://ros2-humble-env.dev/schemas/cloud-builder.schema.json",
+  "version": "1.0.0",
+  "description": "Cloud builder image configurations for ros2-humble-env CI/CD",
+  "base_images": {
+    "linux": {
+      "default": "ubuntu:22.04",
+      "nix": "nixos/nix:latest",
+      "ros2": "ros:humble",
+      "cuda": "nvidia/cuda:12.2.0-devel-ubuntu22.04"
+    },
+    "windows": {
+      "default": "mcr.microsoft.com/windows/servercore:ltsc2022",
+      "msvc": "mcr.microsoft.com/dotnet/framework/sdk:4.8-windowsservercore-ltsc2022"
+    }
+  },
+  "builder_configs": {
+    "github-actions": {
+      "linux": {
+        "runner": "ubuntu-latest",
+        "image": null,
+        "setup_steps": [
+          "Install Nix via Determinate Systems installer",
+          "Configure Nix cache (cachix)",
+          "Install Pixi",
+          "Run bootstrap.sh --ci"
+        ]
+      },
+      "macos": {
+        "runner": "macos-latest",
+        "image": null,
+        "setup_steps": [
+          "Install Nix via Determinate Systems installer",
+          "Configure Nix cache",
+          "Run bootstrap.sh --ci"
+        ]
+      },
+      "windows": {
+        "runner": "windows-latest",
+        "image": null,
+        "setup_steps": [
+          "Install Rust toolchain",
+          "Build Windows binaries",
+          "Create MSI installer"
+        ]
+      }
+    },
+    "gitlab-ci": {
+      "linux": {
+        "image": "nixos/nix:latest",
+        "setup_commands": [
+          "nix-env -iA nixpkgs.git",
+          "./bootstrap.sh --ci"
+        ]
+      }
+    },
+    "circleci": {
+      "linux": {
+        "image": "cimg/base:stable",
+        "resource_class": "large",
+        "setup_steps": [
+          "Install Nix",
+          "Run bootstrap"
+        ]
+      }
+    }
+  },
+  "custom_images": {
+    "ros2-humble-builder": {
+      "dockerfile": "docker/Dockerfile.builder",
+      "base": "ubuntu:22.04",
+      "features": [
+        "Nix with flakes",
+        "Pixi package manager",
+        "ROS2 Humble via RoboStack",
+        "Python 3.11+",
+        "Rust toolchain",
+        "Docker-in-Docker"
+      ],
+      "registry": "ghcr.io/flexnetos/ros2-humble-builder",
+      "tags": ["latest", "${version}"]
+    }
+  },
+  "caching": {
+    "nix": {
+      "provider": "cachix",
+      "cache_name": "ros2-humble-env",
+      "signing_key_secret": "CACHIX_SIGNING_KEY"
+    },
+    "pixi": {
+      "paths": [
+        "~/.pixi",
+        ".pixi"
+      ]
+    },
+    "docker": {
+      "registry_cache": true,
+      "buildx_cache": true
+    }
+  },
+  "resource_requirements": {
+    "minimal": {
+      "cpu": 2,
+      "memory_gb": 4,
+      "disk_gb": 20
+    },
+    "standard": {
+      "cpu": 4,
+      "memory_gb": 8,
+      "disk_gb": 50
+    },
+    "full": {
+      "cpu": 8,
+      "memory_gb": 16,
+      "disk_gb": 100
+    },
+    "cuda": {
+      "cpu": 8,
+      "memory_gb": 32,
+      "disk_gb": 100,
+      "gpu": "nvidia-t4"
+    }
+  }
+}

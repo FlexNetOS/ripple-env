@@ -1,0 +1,90 @@
+{
+  "$schema": "https://ros2-humble-env.dev/schemas/wsl2-distro.schema.json",
+  "version": "1.0.0",
+  "description": "WSL2 NixOS distribution configuration for ros2-humble-env",
+  "distro": {
+    "name": "NixOS-ROS2",
+    "display_name": "NixOS ROS2 Development Environment",
+    "base_image": "nixos/nix",
+    "nixos_wsl_version": "latest",
+    "nixos_wsl_repo": "https://github.com/nix-community/NixOS-WSL"
+  },
+  "system_requirements": {
+    "windows_version": {
+      "minimum_build": 19041,
+      "recommended_build": 22621,
+      "notes": "Windows 10 version 2004+ or Windows 11"
+    },
+    "wsl_version": 2,
+    "features_required": [
+      "Microsoft-Windows-Subsystem-Linux",
+      "VirtualMachinePlatform"
+    ]
+  },
+  "defaults": {
+    "install_path": "%USERPROFILE%\\WSL\\NixOS-ROS2",
+    "disk_size_gb": 1024,
+    "memory_size_gb": 8,
+    "swap_size_gb": 8,
+    "processors": null
+  },
+  "wslconfig": {
+    "wsl2": {
+      "memory": "${memory_size_gb}GB",
+      "swap": "${swap_size_gb}GB",
+      "localhostForwarding": true,
+      "nestedVirtualization": false
+    },
+    "experimental": {
+      "autoMemoryReclaim": "gradual",
+      "sparseVhd": true
+    }
+  },
+  "nix_configuration": {
+    "enable_flakes": true,
+    "extra_config": [
+      "experimental-features = nix-command flakes",
+      "trusted-users = root @wheel"
+    ],
+    "channels": {
+      "nixpkgs": "https://nixos.org/channels/nixpkgs-unstable"
+    }
+  },
+  "post_install": {
+    "clone_repo": true,
+    "repo_url": "https://github.com/FlexNetOS/ros2-humble-env.git",
+    "repo_path": "/home/nixos/ros2-humble-env",
+    "run_bootstrap": true,
+    "bootstrap_args": ["--ci"],
+    "set_as_default": true
+  },
+  "networking": {
+    "mode": "mirrored",
+    "dns_tunneling": true,
+    "firewall": false,
+    "auto_proxy": true
+  },
+  "integration": {
+    "systemd": true,
+    "docker_desktop": {
+      "enabled": true,
+      "use_wsl_backend": true
+    },
+    "vscode_remote": true,
+    "windows_terminal": {
+      "add_profile": true,
+      "icon": "🤖",
+      "starting_directory": "//wsl.localhost/NixOS-ROS2/home/nixos/ros2-humble-env"
+    }
+  },
+  "gpu_support": {
+    "cuda": {
+      "enabled": false,
+      "notes": "Requires NVIDIA GPU and WSL2 CUDA drivers"
+    },
+    "directml": {
+      "enabled": false,
+      "notes": "DirectML for AMD/Intel GPUs"
+    }
+  }
+}

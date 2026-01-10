@@ -1,0 +1,167 @@
+{
+  "$schema": "https://ros2-humble-env.dev/schemas/mcp-tools.schema.json",
+  "version": "1.0.0",
+  "description": "MCP tool configurations for cloud and remote environments",
+  "providers": {
+    "local": {
+      "description": "Local development environment tools",
+      "enabled": true,
+      "tools": {
+        "filesystem": {
+          "server": "mcp-server-filesystem",
+          "allowed_paths": [
+            "${workspaceFolder}",
+            "${HOME}/.config",
+            "/tmp"
+          ]
+        },
+        "git": {
+          "server": "mcp-server-git",
+          "enabled": true
+        },
+        "docker": {
+          "server": "mcp-server-docker",
+          "enabled": true,
+          "socket": "/var/run/docker.sock"
+        }
+      }
+    },
+    "cloud": {
+      "description": "Cloud deployment environment tools",
+      "enabled": false,
+      "tools": {
+        "kubernetes": {
+          "server": "mcp-server-kubernetes",
+          "kubeconfig": "${KUBECONFIG}",
+          "contexts": ["default", "staging", "production"]
+        },
+        "aws": {
+          "server": "mcp-server-aws",
+          "enabled": false,
+          "services": ["s3", "ec2", "ecs", "lambda"]
+        },
+        "gcp": {
+          "server": "mcp-server-gcp",
+          "enabled": false,
+          "services": ["gcs", "gce", "gke", "cloud-run"]
+        },
+        "azure": {
+          "server": "mcp-server-azure",
+          "enabled": false,
+          "services": ["blob", "vm", "aks", "container-apps"]
+        }
+      }
+    },
+    "ci": {
+      "description": "CI/CD pipeline tools",
+      "enabled": true,
+      "tools": {
+        "github": {
+          "server": "mcp-server-github",
+          "token_env": "GITHUB_TOKEN",
+          "permissions": ["repo", "workflow"]
+        },
+        "artifacts": {
+          "server": "mcp-server-artifacts",
+          "storage": {
+            "type": "github-actions",
+            "retention_days": 90
+          }
+        }
+      }
+    }
+  },
+  "tool_schemas": {
+    "aria-verify": {
+      "name": "aria-verify",
+      "description": "Verify components against ARIA manifest",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "string",
+            "enum": ["minimal", "ci", "default", "full"],
+            "default": "default"
+          },
+          "category": {
+            "type": "string",
+            "description": "Specific category to verify"
+          }
+        }
+      },
+      "command": "python scripts/verify-manifest.py --profile ${profile}"
+    },
+    "build-phase": {
+      "name": "build-phase",
+      "description": "Execute a specific build phase",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 7
+          },
+          "profile": {
+            "type": "string",
+            "enum": ["minimal", "default", "full", "ci"]
+          }
+        },
+        "required": ["phase"]
+      },
+      "command": "./scripts/install-all.sh --phase ${phase}"
+    },
+    "service-control": {
+      "name": "service-control",
+      "description": "Control Docker Compose service stacks",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["start", "stop", "restart", "status"]
+          },
+          "stack": {
+            "type": "string",
+            "enum": [
+              "observability",
+              "messaging",
+              "automation",
+              "edge",
+              "inference",
+              "ui",
+              "llmops",
+              "identity",
+              "data"
+            ]
+          }
+        },
+        "required": ["action", "stack"]
+      },
+      "command": "docker compose -f docker/docker-compose.${stack}.yml ${action}"
+    }
+  },
+  "remote_sessions": {
+    "wsl2": {
+      "type": "wsl",
+      "distro": "NixOS-ROS2",
+      "user": "nixos",
+      "working_directory": "/home/nixos/ros2-humble-env"
+    },
+    "devcontainer": {
+      "type": "container",
+      "image": "ghcr.io/flexnetos/ros2-humble-builder:latest",
+      "mounts": [
+        {
+          "source": "${workspaceFolder}",
+          "target": "/workspace"
+        }
+      ]
+    },
+    "ssh": {
+      "type": "ssh",
+      "config_path": "~/.ssh/config",
+      "hosts": []
+    }
+  }
+}

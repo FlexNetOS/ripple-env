@@ -1,0 +1,156 @@
+{
+  "$schema": "https://ros2-humble-env.dev/schemas/wsl2-assets.schema.json",
+  "version": "1.0.0",
+  "description": "WSL2 binary assets and release artifacts for ros2-humble-env",
+  "build_targets": [
+    {
+      "id": "windows-msvc",
+      "name": "Windows MSVC",
+      "target_triple": "x86_64-pc-windows-msvc",
+      "runner": "windows-latest",
+      "toolchain": "stable-x86_64-pc-windows-msvc",
+      "native": true,
+      "outputs": [
+        {
+          "type": "executable",
+          "name": "ros2-humble-env-setup.exe",
+          "description": "Native Windows installer/bootstrapper"
+        }
+      ]
+    },
+    {
+      "id": "windows-gnu",
+      "name": "Windows GNU",
+      "target_triple": "x86_64-pc-windows-gnu",
+      "runner": "ubuntu-latest",
+      "toolchain": "stable-x86_64-unknown-linux-gnu",
+      "cross_compile": true,
+      "cross_packages": ["mingw-w64"],
+      "outputs": [
+        {
+          "type": "executable",
+          "name": "ros2-humble-env-setup-gnu.exe",
+          "description": "Cross-compiled Windows executable (GNU toolchain)"
+        }
+      ]
+    }
+  ],
+  "release_artifacts": [
+    {
+      "id": "standalone-msvc",
+      "name": "Standalone Executable (MSVC)",
+      "filename": "ros2-humble-env-setup-${version}-x86_64-msvc.exe",
+      "type": "executable",
+      "platform": "windows",
+      "architecture": "x86_64",
+      "checksum": "sha256"
+    },
+    {
+      "id": "standalone-gnu",
+      "name": "Standalone Executable (GNU)",
+      "filename": "ros2-humble-env-setup-${version}-x86_64-gnu.exe",
+      "type": "executable",
+      "platform": "windows",
+      "architecture": "x86_64",
+      "checksum": "sha256"
+    },
+    {
+      "id": "portable-zip",
+      "name": "Portable Package",
+      "filename": "ros2-humble-env-${version}-portable.zip",
+      "type": "archive",
+      "format": "zip",
+      "contents": [
+        "ros2-humble-env-setup.exe",
+        "bootstrap.ps1",
+        "README.md",
+        "LICENSE"
+      ],
+      "checksum": "sha256"
+    },
+    {
+      "id": "installer-msi",
+      "name": "Windows Installer",
+      "filename": "ros2-humble-env-${version}-setup.msi",
+      "type": "installer",
+      "format": "msi",
+      "features": [
+        "WSL2 setup automation",
+        "Start menu shortcuts",
+        "PATH configuration",
+        "Uninstaller"
+      ],
+      "checksum": "sha256"
+    },
+    {
+      "id": "bootstrap-bundle-zip",
+      "name": "Bootstrap Bundle (ZIP)",
+      "filename": "ros2-humble-env-${version}-bootstrap-bundle.zip",
+      "type": "bundle",
+      "format": "zip",
+      "contents": [
+        "bootstrap.ps1",
+        "bootstrap.sh",
+        "install-all.sh",
+        "manifests/build_phases.json",
+        "manifests/wsl2/distro.json",
+        "README.md",
+        "LICENSE"
+      ],
+      "checksum": "sha256"
+    },
+    {
+      "id": "bootstrap-bundle-tar",
+      "name": "Bootstrap Bundle (TAR.GZ)",
+      "filename": "ros2-humble-env-${version}-bootstrap-bundle.tar.gz",
+      "type": "bundle",
+      "format": "tar.gz",
+      "contents": [
+        "bootstrap.ps1",
+        "bootstrap.sh",
+        "install-all.sh",
+        "manifests/build_phases.json",
+        "manifests/wsl2/distro.json",
+        "README.md",
+        "LICENSE"
+      ],
+      "checksum": "sha256"
+    }
+  ],
+  "checksums": {
+    "algorithm": "sha256",
+    "manifest_file": "checksums.sha256",
+    "verify_command": "sha256sum -c checksums.sha256"
+  },
+  "release_channels": {
+    "stable": {
+      "description": "Production-ready releases",
+      "branch": "main",
+      "tag_pattern": "v*.*.*"
+    },
+    "preview": {
+      "description": "Pre-release builds for testing",
+      "branch": "develop",
+      "tag_pattern": "v*.*.*-preview.*"
+    },
+    "nightly": {
+      "description": "Automated nightly builds",
+      "branch": "main",
+      "schedule": "0 2 * * *",
+      "retention_days": 7
+    }
+  },
+  "distribution": {
+    "github_releases": true,
+    "winget": {
+      "enabled": false,
+      "package_id": "FlexNetOS.ROS2HumbleEnv",
+      "notes": "Future: Windows Package Manager integration"
+    },
+    "chocolatey": {
+      "enabled": false,
+      "package_id": "ros2-humble-env",
+      "notes": "Future: Chocolatey package"
+    }
+  }
+}

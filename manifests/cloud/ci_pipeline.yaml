@@ -1,0 +1,307 @@
+# CI Pipeline Configuration
+# Defines the cloud CI/CD pipeline structure for ros2-humble-env
+# Reference: BUILDKIT_STARTER_SPEC.md §12
+
+version: "1.0.0"
+description: "Cross-platform CI/CD pipeline configuration"
+
+# =============================================================================
+# PIPELINE STAGES
+# =============================================================================
+stages:
+  - name: validate
+    description: "Static analysis and configuration validation"
+    parallel: true
+    jobs:
+      - flake-check
+      - pre-commit
+      - yaml-lint
+
+  - name: build
+    description: "Build artifacts across platforms"
+    parallel: true
+    depends_on: [validate]
+    jobs:
+      - build-linux
+      - build-macos
+      - build-windows
+
+  - name: test
+    description: "Run test suites"
+    parallel: true
+    depends_on: [build]
+    jobs:
+      - test-ros2
+      - test-python
+      - test-integration
+
+  - name: security
+    description: "Security scanning and vulnerability checks"
+    parallel: true
+    depends_on: [build]
+    jobs:
+      - trivy-scan
+      - sbom-generate
+      - secret-scan
+
+  - name: package
+    description: "Create release packages"
+    parallel: false
+    depends_on: [test, security]
+    jobs:
+      - package-installer
+      - package-bundle
+
+  - name: release
+    description: "Publish releases"
+    parallel: false
+    depends_on: [package]
+    condition: "tag =~ /^v[0-9]+\\.[0-9]+\\.[0-9]+$/"
+    jobs:
+      - github-release
+      - update-changelog
+
+# =============================================================================
+# JOB DEFINITIONS
+# =============================================================================
+jobs:
+  # ---------------------------------------------------------------------------
+  # Validation Jobs
+  # ---------------------------------------------------------------------------
+  flake-check:
+    name: "Nix Flake Check"
+    runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: nix flake check
+
+  pre-commit:
+    name: "Pre-commit Hooks"
+    runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: pre-commit/action@v3.0.1
+
+  yaml-lint:
+    name: "YAML Validation"
+    runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install yamllint
+      - run: yamllint -c .yamllint.yml .
+
+  # ---------------------------------------------------------------------------
+  # Build Jobs
+  # ---------------------------------------------------------------------------
+  build-linux:
+    name: "Build Linux"
+    runner: ubuntu-latest
+    matrix:
+      arch: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: nix develop --command true
+      - run: pixi install
+      - run: ./scripts/verify-components.sh --profile ci
+
+  build-macos:
+    name: "Build macOS"
+    runner: macos-latest
+    matrix:
+      arch: [x86_64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: nix develop --command true
+
+  build-windows:
+    name: "Build Windows Binaries"
+    runner: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release
+        working-directory: rust/wsl2-setup
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: rust/wsl2-setup/target/release/*.exe
+
+  # ---------------------------------------------------------------------------
+  # Test Jobs
+  # ---------------------------------------------------------------------------
+  test-ros2:
+    name: "ROS2 Tests"
+    runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: pixi install
+      - run: pixi run colcon build --symlink-install
+        if: hashFiles('src/**/package.xml') != ''
+      - run: pixi run colcon test
+        if: hashFiles('src/**/package.xml') != ''
+
+  test-python:
+    name: "Python Tests"
+    runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: pixi install
+      - run: pixi run pytest test/ -v
+
+  test-integration:
+    name: "Integration Tests"
+    runner: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f docker/docker-compose.observability.yml up -d
+      - run: ./scripts/verify-components.sh --profile default
+      - run: docker compose down
+
+  # ---------------------------------------------------------------------------
+  # Security Jobs
+  # ---------------------------------------------------------------------------
+  trivy-scan:
+    name: "Trivy Security Scan"
+    runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: 1
+
+  sbom-generate:
+    name: "Generate SBOM"
+    runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: nix develop .#full --command syft dir:. -o spdx-json > sbom.spdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+
+  secret-scan:
+    name: "Secret Detection"
+    runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+  # ---------------------------------------------------------------------------
+  # Package Jobs
+  # ---------------------------------------------------------------------------
+  package-installer:
+    name: "Create Windows Installer"
+    runner: windows-latest
+    needs: [build-windows]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-binaries
+      - run: cargo install cargo-wix
+      - run: cargo wix --nocapture
+        working-directory: rust/wsl2-setup
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: rust/wsl2-setup/target/wix/*.msi
+
+  package-bundle:
+    name: "Create Bootstrap Bundle"
+    runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p dist
+          tar -czvf dist/ros2-humble-env-bootstrap-bundle.tar.gz \
+            bootstrap.sh bootstrap.ps1 \
+            scripts/install-all.sh \
+            manifests/build_phases.json \
+            manifests/wsl2/ \
+            README.md LICENSE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-bundle
+          path: dist/*.tar.gz
+
+  # ---------------------------------------------------------------------------
+  # Release Jobs
+  # ---------------------------------------------------------------------------
+  github-release:
+    name: "Create GitHub Release"
+    runner: ubuntu-latest
+    needs: [package-installer, package-bundle]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            windows-installer/*.msi
+            bootstrap-bundle/*.tar.gz
+            sbom/*.spdx.json
+          generate_release_notes: true
+
+# =============================================================================
+# PLATFORM MATRIX
+# =============================================================================
+platform_support:
+  linux:
+    runners: [ubuntu-latest, ubuntu-22.04]
+    architectures: [x86_64, aarch64]
+    full_support: true
+
+  macos:
+    runners: [macos-latest, macos-14]
+    architectures: [x86_64, arm64]
+    full_support: true
+
+  windows:
+    runners: [windows-latest, windows-2022]
+    architectures: [x86_64]
+    full_support: true
+    notes: "WSL2 required for full functionality"
+
+# =============================================================================
+# CACHING CONFIGURATION
+# =============================================================================
+caching:
+  nix:
+    key: "nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}"
+    paths:
+      - /nix/store
+      - ~/.cache/nix
+
+  pixi:
+    key: "pixi-${{ runner.os }}-${{ hashFiles('pixi.lock') }}"
+    paths:
+      - .pixi
+      - ~/.pixi
+
+  cargo:
+    key: "cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}"
+    paths:
+      - ~/.cargo/registry
+      - ~/.cargo/git
+      - target
