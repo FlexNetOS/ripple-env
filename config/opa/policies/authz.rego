@@ -34,10 +34,14 @@ allow if {
     input.resource.visibility == "public"
 }
 
-# Allow read access to authenticated users (GET method)
+# Allow read access via GET only to public or user-owned resources
 allow if {
     input.method == "GET"
     input.user.authenticated == true
+    input.action == "read"
+    some owner
+    owner := input.resource.owner
+    owner == input.user.id or input.resource.visibility == "public"
 }
 
 # Allow ROS2 topic access based on namespace
