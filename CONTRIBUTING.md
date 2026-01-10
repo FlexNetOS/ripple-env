@@ -173,6 +173,85 @@ commonPackages = with pkgs; [pixi git];  # No comments, hard to read
 - Include code examples
 - Update related docs when making changes
 
+## Naming Conventions
+
+Consistent naming improves code readability and maintainability. Follow these conventions:
+
+### Files and Directories
+
+| Type | Convention | Examples |
+|------|------------|----------|
+| Nix files | `lowercase-kebab.nix` | `flake.nix`, `default.nix` |
+| Shell scripts | `lowercase-kebab.sh` | `bootstrap.sh`, `health-check.sh` |
+| PowerShell | `PascalCase.ps1` | `Bootstrap.ps1` |
+| Python | `lowercase_snake.py` | `validate_manifest.py` |
+| Documentation | `UPPERCASE-KEBAB.md` or `lowercase-kebab.md` | `README.md`, `CONTRIBUTING.md` |
+| Config files | `lowercase` | `pixi.toml`, `.envrc` |
+| YAML manifests | `UPPERCASE_SNAKE.yaml` for root configs | `ARIA_MANIFEST.yaml` |
+| Docker Compose | `docker-compose.<service>.yml` | `docker-compose.observability.yml` |
+
+### Variables and Functions
+
+| Language | Variables | Functions/Methods | Constants |
+|----------|-----------|-------------------|-----------|
+| Nix | `camelCase` | `camelCase` | `UPPER_SNAKE` |
+| Bash | `lower_snake` or `UPPER_SNAKE` | `lower_snake` | `UPPER_SNAKE` |
+| PowerShell | `$PascalCase` | `Verb-Noun` | `$UPPER_SNAKE` |
+| Python | `lower_snake` | `lower_snake` | `UPPER_SNAKE` |
+| YAML keys | `lower_snake` or `kebab-case` | N/A | N/A |
+
+### PowerShell Specifics
+
+Follow [PowerShell Best Practices](https://docs.microsoft.com/en-us/powershell/scripting/developer/cmdlet/approved-verbs-for-windows-powershell-commands):
+
+```powershell
+# Functions use approved verbs
+function Test-WSLInstalled { }      # Good: Test-Noun
+function Install-Prerequisites { }  # Good: Install-Noun
+
+# Parameters use PascalCase
+param(
+    [string]$DistroName,
+    [int]$DiskSizeGB,
+    [switch]$Force
+)
+
+# Local variables use camelCase or PascalCase
+$distroPath = Join-Path $env:USERPROFILE "WSL"
+```
+
+### Bash Specifics
+
+```bash
+# Functions use lower_snake_case
+detect_system() { }
+install_nix() { }
+
+# Local variables use lower_snake_case
+local distro_name="ubuntu"
+
+# Environment/exported variables use UPPER_SNAKE_CASE
+export ROS_DISTRO="humble"
+ARCH="$(uname -m)"
+```
+
+### Nix Specifics
+
+```nix
+# Attribute names use camelCase
+{
+  commonPackages = [ ];
+  devShells = { };
+  homeManagerModules = { };
+}
+
+# Function parameters use camelCase
+{ config, lib, pkgs, ... }:
+
+# Options use camelCase with dots for hierarchy
+options.ros2.humble.enable = lib.mkEnableOption "ROS2 Humble";
+```
+
 ## Testing
 
 ### Before Submitting
