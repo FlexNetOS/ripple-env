@@ -54,9 +54,13 @@
 param(
     [string]$DistroName = "NixOS-ROS2",
     [string]$InstallPath = "$env:USERPROFILE\WSL\NixOS-ROS2",
+    [ValidateRange(64, 4096)]
     [int]$DiskSizeGB = 1024,
+    [ValidateRange(2, 256)]
     [int]$MemorySizeGB = 8,
+    [ValidateRange(1, 64)]
     [int]$SwapSizeGB = 8,
+    [ValidatePattern('^https?://')]
     [string]$RepoURL = "https://github.com/FlexNetOS/ros2-humble-env.git",
     [string]$RepoFetchRef = "",
     [switch]$SkipShells,

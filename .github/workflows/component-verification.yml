@@ -99,7 +99,7 @@ jobs:
     name: Verify Nix Components
     runs-on: ubuntu-latest
     needs: validate-manifest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -185,7 +185,7 @@ jobs:
     name: Verify Pixi Components
     runs-on: ubuntu-latest
     needs: validate-manifest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository

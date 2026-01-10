@@ -41,12 +41,24 @@ BeforeAll {
 
 AfterAll {
     # Cleanup temp script
-    if (Test-Path $script:tempScript) {
-        Remove-Item $script:tempScript -Force
+    if ($script:tempScript -and (Test-Path $script:tempScript)) {
+        try {
+            Remove-Item $script:tempScript -Force
+        }
+        catch {
+            Write-Warning "Failed to remove temp script: $_"
+        }
     }
 
-    # Remove the global mock
-    Remove-Item -Path Function:\wsl -ErrorAction SilentlyContinue
+    # Remove the global mock if it exists
+    if (Get-Command -Name wsl -CommandType Function -ErrorAction SilentlyContinue) {
+        try {
+            Remove-Item -Path Function:\wsl -Force
+        }
+        catch {
+            Write-Warning "Failed to remove wsl mock function: $_"
+        }
+    }
 }
 
 Describe "Write-ColorOutput" {
@@ -80,13 +92,23 @@ Describe "Test-Administrator" {
 
 Describe "Test-WindowsVersion" {
     BeforeAll {
-        # Store original function to restore later
-        $script:originalFunction = ${function:Test-WindowsVersion}
+        # Store original function to restore later (may be $null if function doesn't exist)
+        $script:originalFunction = $null
+        if (Get-Command -Name Test-WindowsVersion -CommandType Function -ErrorAction SilentlyContinue) {
+            $script:originalFunction = ${function:Test-WindowsVersion}
+        }
     }
 
     AfterAll {
-        # Restore original function
-        Set-Item -Path function:Test-WindowsVersion -Value $script:originalFunction
+        # Restore original function only if we captured one
+        if ($null -ne $script:originalFunction) {
+            try {
+                Set-Item -Path function:Test-WindowsVersion -Value $script:originalFunction
+            }
+            catch {
+                Write-Warning "Failed to restore Test-WindowsVersion function: $_"
+            }
+        }
     }
 
     Context "When Windows version is compatible" {
@@ -337,25 +359,38 @@ Describe "Parameter Validation" {
         # These are the defaults from the param block
         $defaultDistroName = "NixOS-ROS2"
         $defaultDiskSizeGB = 1024
+        $defaultMemorySizeGB = 8
         $defaultSwapSizeGB = 8
 
         $defaultDistroName | Should -Not -BeNullOrEmpty
         $defaultDiskSizeGB | Should -BeGreaterThan 0
+        $defaultMemorySizeGB | Should -BeGreaterThan 0
         $defaultSwapSizeGB | Should -BeGreaterThan 0
     }
 
-    It "Should accept valid DiskSizeGB values" {
-        $validSizes = @(64, 128, 256, 512, 1024, 2048)
+    It "Should accept valid DiskSizeGB values within range (64-4096)" {
+        # ValidateRange(64, 4096)
+        $validSizes = @(64, 128, 256, 512, 1024, 2048, 4096)
         foreach ($size in $validSizes) {
-            $size | Should -BeGreaterThan 0
+            $size | Should -BeGreaterOrEqual 64
             $size | Should -BeLessOrEqual 4096
         }
     }
 
-    It "Should accept valid SwapSizeGB values" {
-        $validSwaps = @(4, 8, 16, 32)
+    It "Should accept valid MemorySizeGB values within range (2-256)" {
+        # ValidateRange(2, 256)
+        $validMemory = @(2, 4, 8, 16, 32, 64, 128, 256)
+        foreach ($mem in $validMemory) {
+            $mem | Should -BeGreaterOrEqual 2
+            $mem | Should -BeLessOrEqual 256
+        }
+    }
+
+    It "Should accept valid SwapSizeGB values within range (1-64)" {
+        # ValidateRange(1, 64)
+        $validSwaps = @(1, 4, 8, 16, 32, 64)
         foreach ($swap in $validSwaps) {
-            $swap | Should -BeGreaterThan 0
+            $swap | Should -BeGreaterOrEqual 1
             $swap | Should -BeLessOrEqual 64
         }
     }

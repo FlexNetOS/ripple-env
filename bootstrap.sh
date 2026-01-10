@@ -162,11 +162,35 @@ detect_system() {
     OS="$(uname -s)"
     ARCH="$(uname -m)"
 
+    # Validate architecture
+    case "$ARCH" in
+        x86_64|amd64)
+            ARCH="x86_64"
+            ;;
+        aarch64|arm64)
+            ARCH="aarch64"
+            ;;
+        *)
+            log_error "Unsupported architecture: $ARCH"
+            log_error "Supported architectures: x86_64, aarch64"
+            exit 1
+            ;;
+    esac
+
     case "$OS" in
         Linux)
             if [ -f /etc/os-release ]; then
                 . /etc/os-release
                 DISTRO="$ID"
+
+                # Validate Ubuntu version if applicable
+                if [ "$ID" = "ubuntu" ]; then
+                    UBUNTU_VERSION="${VERSION_ID:-0}"
+                    UBUNTU_MAJOR="${UBUNTU_VERSION%%.*}"
+                    if [ "$UBUNTU_MAJOR" -lt 20 ] 2>/dev/null; then
+                        log_warn "Ubuntu $VERSION_ID detected. Ubuntu 20.04+ is recommended for best compatibility."
+                    fi
+                fi
             else
                 DISTRO="unknown"
             fi
