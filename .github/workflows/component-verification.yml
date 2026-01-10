@@ -1,0 +1,450 @@
+# Component Verification Workflow
+# ================================
+# Single source of truth for verifying all components defined in ARIA_MANIFEST.yaml
+#
+# This workflow:
+# 1. Validates the manifest against its JSON schema
+# 2. Generates verification scripts from the manifest
+# 3. Runs component verification for the specified profile
+#
+# Profiles:
+#   - minimal: Core tools only (fastest)
+#   - ci: CI verification (core + robotics + code-quality)
+#   - default: Standard development environment
+#   - full: Everything including optional tools
+
+name: Component Verification
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'ARIA_MANIFEST.yaml'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'pixi.toml'
+      - 'pixi.lock'
+      - 'scripts/validate-manifest.py'
+      - 'scripts/generate-verification.py'
+      - 'config/schemas/aria-manifest.schema.json'
+      - '.github/workflows/component-verification.yml'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Verification profile to run'
+        required: true
+        default: 'ci'
+        type: choice
+        options:
+          - minimal
+          - ci
+          - default
+          - full
+      verbose:
+        description: 'Enable verbose output'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NIXPKGS_ALLOW_UNFREE: "1"
+
+jobs:
+  # ===========================================
+  # Phase 1: Manifest Validation
+  # ===========================================
+  validate-manifest:
+    name: Validate Manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install validation dependencies
+        run: |
+          pip install pyyaml jsonschema
+
+      - name: Validate ARIA_MANIFEST.yaml
+        run: |
+          python scripts/validate-manifest.py \
+            --manifest ARIA_MANIFEST.yaml \
+            --schema config/schemas/aria-manifest.schema.json
+
+      - name: Generate verification script
+        run: |
+          python scripts/generate-verification.py \
+            --manifest ARIA_MANIFEST.yaml \
+            --output scripts/verify-components.sh
+
+      - name: Upload generated script
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-script
+          path: scripts/verify-components.sh
+          retention-days: 7
+
+  # ===========================================
+  # Phase 2: Nix Component Verification
+  # ===========================================
+  verify-nix-components:
+    name: Verify Nix Components
+    runs-on: ubuntu-latest
+    needs: validate-manifest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          df -h
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Verify flake
+        run: |
+          nix flake check --no-build --all-systems
+
+      - name: Enter default devshell and verify
+        run: |
+          nix develop .#default --command bash -c '
+            echo "=== Nix Infrastructure ==="
+            echo "Nix version: $(nix --version)"
+            echo "Direnv: $(direnv --version)"
+            echo "Git: $(git --version)"
+            echo "GitHub CLI: $(gh --version | head -1)"
+
+            echo ""
+            echo "=== Package Managers ==="
+            echo "Pixi: $(pixi --version)"
+
+            echo ""
+            echo "=== Nix Dev Tools ==="
+            echo "nom: $(nom --version 2>&1 | head -1 || echo not-found)"
+            echo "nixfmt: $(nixfmt --version 2>&1 || echo not-found)"
+
+            echo ""
+            echo "=== Core Tools ==="
+            echo "jq: $(jq --version)"
+            echo "curl: $(curl --version | head -1)"
+
+            echo ""
+            echo "=== Holochain ==="
+            echo "holochain: $(holochain --version 2>&1 || echo not-installed)"
+            echo "hc: $(hc --version 2>&1 || echo not-installed)"
+          '
+
+      - name: Verify full devshell (if profile is full)
+        if: github.event.inputs.profile == 'full' || github.event_name != 'workflow_dispatch'
+        continue-on-error: true
+        run: |
+          nix develop .#full --command bash -c '
+            echo "=== Full DevShell Tools ==="
+            echo "bat: $(bat --version 2>&1 || echo not-found)"
+            echo "eza: $(eza --version 2>&1 || echo not-found)"
+            echo "ripgrep: $(rg --version | head -1 2>&1 || echo not-found)"
+            echo "fd: $(fd --version 2>&1 || echo not-found)"
+
+            echo ""
+            echo "=== Security Tools ==="
+            echo "trivy: $(trivy --version 2>&1 | head -1 || echo not-found)"
+            echo "opa: $(opa version 2>&1 | head -1 || echo not-found)"
+            echo "syft: $(syft version 2>&1 | head -1 || echo not-found)"
+            echo "grype: $(grype version 2>&1 | head -1 || echo not-found)"
+
+            echo ""
+            echo "=== Kubernetes Tools ==="
+            echo "kubectl: $(kubectl version --client 2>&1 | head -1 || echo not-found)"
+            echo "helm: $(helm version --short 2>&1 || echo not-found)"
+
+            echo ""
+            echo "=== AI Tools ==="
+            echo "aichat: $(aichat --version 2>&1 || echo not-found)"
+            echo "local-ai: $(local-ai --version 2>&1 || echo not-found)"
+          '
+
+  # ===========================================
+  # Phase 3: Pixi Component Verification
+  # ===========================================
+  verify-pixi-components:
+    name: Verify Pixi Components
+    runs-on: ubuntu-latest
+    needs: validate-manifest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          df -h
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Install Pixi dependencies
+        run: |
+          nix develop .#default --command pixi install --frozen || \
+          nix develop .#default --command pixi install
+
+      - name: Verify Python & Core Packages
+        run: |
+          nix develop .#default --command pixi run python -c "
+          import sys
+          print(f'Python: {sys.version}')
+
+          # Core packages
+          import numpy; print(f'NumPy: {numpy.__version__}')
+          import pandas; print(f'Pandas: {pandas.__version__}')
+
+          # Code quality
+          import ruff; print(f'Ruff: available')
+          import black; print(f'Black: {black.__version__}')
+          import mypy; print(f'Mypy: {mypy.version.__version__}')
+
+          print('Core Python packages verified')
+          "
+
+      - name: Verify ROS2 (Linux only)
+        run: |
+          nix develop .#default --command bash -c '
+            echo "=== ROS2 Verification ==="
+            pixi run ros2 --help | head -5
+            pixi run colcon --help | head -5
+            echo "ROS2 tools verified"
+          '
+
+      - name: Verify ML Packages (optional)
+        continue-on-error: true
+        run: |
+          nix develop .#default --command pixi run python -c "
+          try:
+              import torch
+              print(f'PyTorch: {torch.__version__}')
+          except ImportError:
+              print('PyTorch: not in base environment')
+
+          try:
+              import transformers
+              print(f'Transformers: {transformers.__version__}')
+          except ImportError:
+              print('Transformers: not in base environment')
+
+          try:
+              import mlflow
+              print(f'MLflow: {mlflow.__version__}')
+          except ImportError:
+              print('MLflow: not in base environment')
+          "
+
+      - name: Verify LLMOps Environment (optional)
+        if: github.event.inputs.profile == 'full'
+        continue-on-error: true
+        run: |
+          nix develop .#default --command bash -c '
+            pixi install -e llmops
+            pixi run -e llmops python -c "
+            try:
+                import trulens
+                print(f\"TruLens: {trulens.__version__}\")
+            except ImportError:
+                try:
+                    import trulens_eval
+                    print(f\"TruLens (legacy): {trulens_eval.__version__}\")
+                except ImportError:
+                    print(\"TruLens: not installed\")
+            "
+          '
+
+  # ===========================================
+  # Phase 4: Configuration Consistency
+  # ===========================================
+  verify-config-consistency:
+    name: Verify Configuration Consistency
+    runs-on: ubuntu-latest
+    needs: validate-manifest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml toml
+
+      - name: Check required files exist
+        run: |
+          echo "Checking required configuration files..."
+
+          required_files=(
+            "flake.nix"
+            "flake.lock"
+            "pixi.toml"
+            "pixi.lock"
+            ".envrc"
+            "ARIA_MANIFEST.yaml"
+            "BUILDKIT_STARTER_SPEC.md"
+          )
+
+          missing=0
+          for file in "${required_files[@]}"; do
+            if [[ -f "$file" ]]; then
+              echo "  $file"
+            else
+              echo "  MISSING: $file"
+              ((missing++))
+            fi
+          done
+
+          if [[ $missing -gt 0 ]]; then
+            echo "ERROR: $missing required file(s) missing"
+            exit 1
+          fi
+
+          echo "All required files present"
+
+      - name: Validate YAML files
+        run: |
+          python3 << 'EOF'
+          import yaml
+          import sys
+          from pathlib import Path
+
+          errors = []
+          for f in Path('.').rglob('*.yml'):
+              if '.git' in str(f) or '.pixi' in str(f):
+                  continue
+              try:
+                  with open(f) as fp:
+                      yaml.safe_load(fp)
+              except Exception as e:
+                  errors.append(f"{f}: {e}")
+
+          for f in Path('.').rglob('*.yaml'):
+              if '.git' in str(f) or '.pixi' in str(f):
+                  continue
+              try:
+                  with open(f) as fp:
+                      yaml.safe_load(fp)
+              except Exception as e:
+                  errors.append(f"{f}: {e}")
+
+          if errors:
+              print("YAML validation errors:")
+              for e in errors:
+                  print(f"  {e}")
+              sys.exit(1)
+
+          print("All YAML files valid")
+          EOF
+
+      - name: Validate TOML files
+        run: |
+          python3 << 'EOF'
+          import toml
+          import sys
+          from pathlib import Path
+
+          errors = []
+          for f in Path('.').rglob('*.toml'):
+              if '.git' in str(f) or '.pixi' in str(f):
+                  continue
+              try:
+                  with open(f) as fp:
+                      toml.load(fp)
+              except Exception as e:
+                  errors.append(f"{f}: {e}")
+
+          if errors:
+              print("TOML validation errors:")
+              for e in errors:
+                  print(f"  {e}")
+              sys.exit(1)
+
+          print("All TOML files valid")
+          EOF
+
+  # ===========================================
+  # Summary
+  # ===========================================
+  verification-summary:
+    name: Verification Summary
+    runs-on: ubuntu-latest
+    needs: [validate-manifest, verify-nix-components, verify-pixi-components, verify-config-consistency]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Component Verification Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Manifest validation
+          if [ "${{ needs.validate-manifest.result }}" == "success" ]; then
+            echo "| Manifest Validation | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Manifest Validation | :x: |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Nix components
+          if [ "${{ needs.verify-nix-components.result }}" == "success" ]; then
+            echo "| Nix Components | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Nix Components | :x: |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Pixi components
+          if [ "${{ needs.verify-pixi-components.result }}" == "success" ]; then
+            echo "| Pixi Components | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Pixi Components | :x: |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Config consistency
+          if [ "${{ needs.verify-config-consistency.result }}" == "success" ]; then
+            echo "| Configuration Consistency | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Configuration Consistency | :x: |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Profile**: ${{ github.event.inputs.profile || 'ci' }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for failures
+        run: |
+          if [ "${{ needs.validate-manifest.result }}" != "success" ] || \
+             [ "${{ needs.verify-nix-components.result }}" != "success" ] || \
+             [ "${{ needs.verify-pixi-components.result }}" != "success" ] || \
+             [ "${{ needs.verify-config-consistency.result }}" != "success" ]; then
+            echo "One or more verification phases failed"
+            exit 1
+          fi
+
+          echo "All verification phases passed"

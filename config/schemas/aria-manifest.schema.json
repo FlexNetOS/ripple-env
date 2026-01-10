@@ -1,0 +1,406 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ros2-humble-env.dev/schemas/aria-manifest.schema.json",
+  "title": "ARIA Manifest Schema",
+  "description": "Schema for validating ARIA_MANIFEST.yaml - Single Source of Truth for component verification",
+  "type": "object",
+  "required": ["version", "metadata", "profiles"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the manifest"
+    },
+    "schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "URI to the JSON schema"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/profile"
+      },
+      "description": "Verification profiles for different contexts"
+    },
+    "nix_components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nix_component"
+      },
+      "description": "Components installed via Nix"
+    },
+    "pixi_components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pixi_component"
+      },
+      "description": "Components installed via Pixi"
+    },
+    "docker_services": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/docker_service"
+      },
+      "description": "Docker services from docker-compose files"
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/command"
+      },
+      "description": "Shell command wrappers from flake.nix"
+    },
+    "validation": {
+      "$ref": "#/$defs/validation"
+    },
+    "devshells": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/devshell"
+      },
+      "description": "Nix development shells"
+    }
+  },
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "required": ["project", "description"],
+      "properties": {
+        "project": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string",
+          "format": "uri"
+        },
+        "maintainers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "devshell": {
+          "type": "string"
+        },
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "include_docker": {
+          "type": "boolean"
+        },
+        "docker_stacks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "verify_spec": {
+      "type": "object",
+      "required": ["command"],
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Command to run for verification"
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Regex pattern to match in output"
+        },
+        "expected": {
+          "type": "string",
+          "description": "Expected exact output"
+        },
+        "fallback": {
+          "type": "string",
+          "description": "Fallback command if primary fails"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["command", "http"],
+          "default": "command"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for HTTP health checks"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5,
+          "description": "Timeout in seconds"
+        }
+      }
+    },
+    "nix_component": {
+      "type": "object",
+      "required": ["id", "name", "category", "source", "verify"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "Unique identifier (kebab-case)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "infrastructure",
+            "package-manager",
+            "dev-tools",
+            "security",
+            "kubernetes",
+            "ai-tools",
+            "p2p",
+            "messaging",
+            "rust",
+            "runtime"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "description": "Location in flake.nix"
+        },
+        "verify": {
+          "$ref": "#/$defs/verify_spec"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "devshell": {
+          "type": "string",
+          "enum": ["default", "full", "cuda", "identity"],
+          "default": "default"
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["linux", "darwin", "wsl2"]
+          }
+        }
+      }
+    },
+    "pixi_component": {
+      "type": "object",
+      "required": ["id", "name", "category", "source", "verify"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "robotics",
+            "runtime",
+            "data-science",
+            "code-quality",
+            "testing",
+            "ml",
+            "llmops",
+            "agents"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string",
+          "enum": ["conda-forge", "robostack-humble", "pytorch", "pypi"]
+        },
+        "environment": {
+          "type": "string",
+          "default": "default"
+        },
+        "verify": {
+          "$ref": "#/$defs/verify_spec"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["linux", "darwin", "wsl2"]
+          }
+        }
+      }
+    },
+    "docker_service": {
+      "type": "object",
+      "required": ["id", "name", "category", "source"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "observability",
+            "identity",
+            "messaging",
+            "ai",
+            "edge",
+            "state",
+            "database"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "description": "Path to docker-compose file"
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "verify": {
+          "$ref": "#/$defs/verify_spec"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "required": ["id", "name", "category", "source"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "verify": {
+          "$ref": "#/$defs/verify_spec"
+        },
+        "devshell": {
+          "type": "string",
+          "enum": ["default", "full", "cuda", "identity"]
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "description", "check"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "check": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required_files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "description"],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "devshell": {
+      "type": "object",
+      "required": ["id", "name", "description", "entry"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "entry": {
+          "type": "string",
+          "description": "Command to enter the devshell"
+        },
+        "requires": {
+          "type": "string"
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "categories_included": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

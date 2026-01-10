@@ -10,9 +10,11 @@
 # - zsh and nushell shells
 # - git and gh cli
 #
-# Usage: ./bootstrap.sh [--ci] [--skip-shells]
+# Usage: ./bootstrap.sh [--ci] [--skip-shells] [--verify] [--profile PROFILE]
 #   --ci          : Run in CI mode (non-interactive, skip optional components)
 #   --skip-shells : Skip installing zsh and nushell
+#   --verify      : Run post-install verification using ARIA manifest
+#   --profile     : Verification profile (minimal, ci, default, full)
 #
 
 set -euo pipefail
@@ -40,24 +42,43 @@ NC='\033[0m' # No Color
 # Configuration
 CI_MODE=false
 SKIP_SHELLS=false
+RUN_VERIFY=false
+VERIFY_PROFILE="default"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MANIFEST_FILE="$SCRIPT_DIR/ARIA_MANIFEST.yaml"
+VERIFY_SCRIPT="$SCRIPT_DIR/scripts/verify-components.sh"
 
 # Parse arguments
-for arg in "$@"; do
-    case $arg in
+while [[ $# -gt 0 ]]; do
+    case $1 in
         --ci)
             CI_MODE=true
+            VERIFY_PROFILE="ci"
             shift
             ;;
         --skip-shells)
             SKIP_SHELLS=true
             shift
             ;;
+        --verify)
+            RUN_VERIFY=true
+            shift
+            ;;
+        --profile)
+            VERIFY_PROFILE="$2"
+            shift 2
+            ;;
         --help|-h)
-            echo "Usage: $0 [--ci] [--skip-shells]"
+            echo "Usage: $0 [--ci] [--skip-shells] [--verify] [--profile PROFILE]"
             echo "  --ci          : Run in CI mode (non-interactive)"
             echo "  --skip-shells : Skip installing zsh and nushell"
+            echo "  --verify      : Run post-install verification using ARIA manifest"
+            echo "  --profile     : Verification profile (minimal, ci, default, full)"
             exit 0
+            ;;
+        *)
+            log_warn "Unknown argument: $1"
+            shift
             ;;
     esac
 done
@@ -380,6 +401,105 @@ verify_pixi() {
     log_success "pixi setup verified"
 }
 
+# Verify components using ARIA manifest (Single Source of Truth)
+verify_manifest_components() {
+    log_info "Running ARIA manifest-based verification (profile: $VERIFY_PROFILE)..."
+
+    cd "$SCRIPT_DIR"
+
+    # Check if manifest exists
+    if [ ! -f "$MANIFEST_FILE" ]; then
+        log_warn "ARIA_MANIFEST.yaml not found, skipping manifest verification"
+        return 0
+    fi
+
+    # Check for Python (needed for manifest validation)
+    if ! check_command python3; then
+        log_warn "Python3 not available, skipping manifest validation"
+        return 0
+    fi
+
+    # Validate manifest first (if validation script exists)
+    local validate_script="$SCRIPT_DIR/scripts/validate-manifest.py"
+    if [ -f "$validate_script" ]; then
+        log_info "Validating ARIA_MANIFEST.yaml..."
+        if python3 "$validate_script" --manifest "$MANIFEST_FILE" 2>/dev/null; then
+            log_success "Manifest validation passed"
+        else
+            log_warn "Manifest validation had issues (non-fatal)"
+        fi
+    fi
+
+    # Generate verification script if generator exists
+    local generator_script="$SCRIPT_DIR/scripts/generate-verification.py"
+    if [ -f "$generator_script" ]; then
+        log_info "Generating verification script from manifest..."
+        python3 "$generator_script" --manifest "$MANIFEST_FILE" --output "$VERIFY_SCRIPT" 2>/dev/null || true
+    fi
+
+    # Run verification script if it exists
+    if [ -f "$VERIFY_SCRIPT" ] && [ -x "$VERIFY_SCRIPT" ]; then
+        log_info "Running component verification..."
+        nix develop --command bash -c "$VERIFY_SCRIPT --profile $VERIFY_PROFILE" || {
+            log_warn "Some verifications failed (non-fatal in bootstrap)"
+            return 0
+        }
+        log_success "Component verification complete"
+    else
+        # Fallback to basic inline verification
+        log_info "Running basic component verification..."
+        verify_basic_components
+    fi
+}
+
+# Basic component verification (fallback if no manifest/scripts)
+verify_basic_components() {
+    local failed=0
+
+    log_info "Checking core components..."
+
+    # Nix infrastructure
+    if check_command nix; then
+        log_success "  nix: $(nix --version)"
+    else
+        log_error "  nix: NOT FOUND"
+        ((failed++))
+    fi
+
+    if check_command direnv; then
+        log_success "  direnv: $(direnv --version)"
+    else
+        log_warn "  direnv: NOT FOUND"
+    fi
+
+    if check_command git; then
+        log_success "  git: $(git --version | head -1)"
+    else
+        log_warn "  git: NOT FOUND"
+    fi
+
+    if check_command gh; then
+        log_success "  gh: $(gh --version | head -1)"
+    else
+        log_warn "  gh: NOT FOUND"
+    fi
+
+    # Check in nix develop environment
+    log_info "Checking devshell components..."
+    nix develop --command bash -c '
+        echo "  pixi: $(pixi --version 2>/dev/null || echo NOT FOUND)"
+        echo "  jq: $(jq --version 2>/dev/null || echo NOT FOUND)"
+        echo "  curl: $(curl --version 2>/dev/null | head -1 || echo NOT FOUND)"
+    ' 2>/dev/null || log_warn "Could not verify devshell components"
+
+    if [ $failed -gt 0 ]; then
+        log_error "Some required components are missing"
+        return 1
+    fi
+
+    log_success "Basic component verification complete"
+}
+
 # Print summary
 print_summary() {
     echo ""
@@ -408,6 +528,10 @@ print_summary() {
     echo ""
     echo "Prefered Option (nicer output):"
     echo "  nom develop"
+    echo ""
+    echo "To run component verification:"
+    echo "  ./bootstrap.sh --verify --profile default"
+    echo "  # Profiles: minimal, ci, default, full"
     echo ""
 }
 
@@ -446,6 +570,11 @@ main() {
     # Verify environment
     verify_environment
     verify_pixi
+
+    # Run manifest-based verification if requested or in CI mode
+    if [ "$RUN_VERIFY" = true ] || [ "$CI_MODE" = true ]; then
+        verify_manifest_components
+    fi
 
     print_summary
 }

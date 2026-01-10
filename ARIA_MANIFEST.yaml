@@ -1,0 +1,959 @@
+# ARIA_MANIFEST.yaml - Single Source of Truth for Component Verification
+# =========================================================================
+# This manifest defines ALL components in the ros2-humble-env project and
+# provides verification commands for CI/CD and local development.
+#
+# Usage:
+#   - CI: python scripts/verify-manifest.py --profile ci
+#   - Local: ./scripts/verify-components.sh --profile default
+#   - Full: ./scripts/verify-components.sh --profile full
+#
+# Generated from: flake.nix, pixi.toml, docker-compose.*.yml
+# Last updated: 2026-01-10
+# Version: 1.0.0
+
+version: "1.0.0"
+schema: "https://ros2-humble-env.dev/schemas/aria-manifest.schema.json"
+
+# =============================================================================
+# METADATA
+# =============================================================================
+metadata:
+  project: "ros2-humble-env"
+  description: "ROS2 Humble development environment with Nix, Pixi, and Docker"
+  repository: "https://github.com/FlexNetOS/ros2-humble-env"
+  maintainers:
+    - "FlexNetOS Team"
+
+# =============================================================================
+# VERIFICATION PROFILES
+# =============================================================================
+profiles:
+  minimal:
+    description: "Core tools only - fastest verification"
+    categories: [infrastructure, package-manager]
+
+  ci:
+    description: "CI verification - core + robotics + code-quality"
+    categories: [infrastructure, package-manager, robotics, code-quality, testing]
+
+  default:
+    description: "Standard development - everything in default devshell"
+    devshell: default
+    environments: [default]
+
+  full:
+    description: "Complete verification - all tools and services"
+    devshell: full
+    environments: [default, llmops, aios]
+    include_docker: true
+
+  identity:
+    description: "Identity/Auth stack verification"
+    devshell: identity
+    docker_stacks: [identity]
+
+# =============================================================================
+# NIX COMPONENTS (from flake.nix)
+# =============================================================================
+nix_components:
+  # ---------------------------------------------------------------------------
+  # Infrastructure (Required)
+  # ---------------------------------------------------------------------------
+  - id: nix
+    name: "Nix Package Manager"
+    category: infrastructure
+    source: "system"
+    verify:
+      command: "nix --version"
+      pattern: "nix.*\\d+\\.\\d+"
+    required: true
+    platforms: [linux, darwin, wsl2]
+
+  - id: direnv
+    name: "direnv"
+    category: infrastructure
+    source: "flake.nix:basePackages"
+    verify:
+      command: "direnv --version"
+      pattern: "\\d+\\.\\d+"
+    required: true
+
+  - id: git
+    name: "Git"
+    category: infrastructure
+    source: "flake.nix:basePackages"
+    verify:
+      command: "git --version"
+      pattern: "git version"
+    required: true
+
+  - id: gh
+    name: "GitHub CLI"
+    category: infrastructure
+    source: "flake.nix:basePackages"
+    verify:
+      command: "gh --version"
+      pattern: "gh version"
+    required: true
+
+  # ---------------------------------------------------------------------------
+  # Package Managers
+  # ---------------------------------------------------------------------------
+  - id: pixi
+    name: "Pixi Package Manager"
+    category: package-manager
+    source: "flake.nix:basePackages"
+    verify:
+      command: "pixi --version"
+      pattern: "pixi \\d+"
+    required: true
+
+  - id: pnpm
+    name: "pnpm"
+    category: package-manager
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "pnpm --version"
+      pattern: "\\d+\\.\\d+"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Nix Development Tools
+  # ---------------------------------------------------------------------------
+  - id: nom
+    name: "Nix Output Monitor"
+    category: dev-tools
+    source: "flake.nix:basePackages"
+    verify:
+      command: "nom --version"
+      pattern: "nom"
+    required: true
+
+  - id: nixfmt
+    name: "Nix Formatter"
+    category: dev-tools
+    source: "flake.nix:basePackages"
+    verify:
+      command: "nixfmt --version"
+      pattern: "nixfmt"
+    required: true
+
+  - id: nil
+    name: "Nix Language Server"
+    category: dev-tools
+    source: "flake.nix:basePackages"
+    verify:
+      command: "nil --version"
+      pattern: "nil"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # CLI Tools (Full DevShell)
+  # ---------------------------------------------------------------------------
+  - id: bat
+    name: "bat (cat alternative)"
+    category: dev-tools
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "bat --version"
+    required: false
+
+  - id: eza
+    name: "eza (ls alternative)"
+    category: dev-tools
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "eza --version"
+    required: false
+
+  - id: fd
+    name: "fd (find alternative)"
+    category: dev-tools
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "fd --version"
+    required: false
+
+  - id: ripgrep
+    name: "ripgrep"
+    category: dev-tools
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "rg --version"
+    required: false
+
+  - id: jq
+    name: "jq"
+    category: dev-tools
+    source: "flake.nix:basePackages"
+    verify:
+      command: "jq --version"
+    required: true
+
+  - id: yq
+    name: "yq"
+    category: dev-tools
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "yq --version"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Security Tools
+  # ---------------------------------------------------------------------------
+  - id: trivy
+    name: "Trivy Security Scanner"
+    category: security
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "trivy --version"
+    required: false
+
+  - id: opa
+    name: "Open Policy Agent"
+    category: security
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "opa version"
+    required: false
+
+  - id: syft
+    name: "Syft SBOM Generator"
+    category: security
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "syft version"
+    required: false
+
+  - id: grype
+    name: "Grype Vulnerability Scanner"
+    category: security
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "grype version"
+    required: false
+
+  - id: cosign
+    name: "Cosign Image Signing"
+    category: security
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "cosign version"
+    required: false
+
+  - id: vault
+    name: "HashiCorp Vault"
+    category: security
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "vault version"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Kubernetes & Container Tools
+  # ---------------------------------------------------------------------------
+  - id: kubectl
+    name: "kubectl"
+    category: kubernetes
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "kubectl version --client"
+    required: false
+
+  - id: helm
+    name: "Helm"
+    category: kubernetes
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "helm version"
+    required: false
+
+  - id: kustomize
+    name: "Kustomize"
+    category: kubernetes
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "kustomize version"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # AI Tools
+  # ---------------------------------------------------------------------------
+  - id: aichat
+    name: "aichat CLI"
+    category: ai-tools
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "aichat --version"
+    required: false
+
+  - id: aider
+    name: "aider-chat"
+    category: ai-tools
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "aider --version"
+      fallback: "aider-chat --version"
+    required: false
+
+  - id: local-ai
+    name: "LocalAI"
+    category: ai-tools
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "local-ai --version"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Holochain (P2P Coordination)
+  # ---------------------------------------------------------------------------
+  - id: holochain
+    name: "Holochain Conductor"
+    category: p2p
+    source: "flake.nix:holochainPackages"
+    verify:
+      command: "holochain --version"
+    required: false
+
+  - id: hc
+    name: "Holochain CLI"
+    category: p2p
+    source: "flake.nix:holochainPackages"
+    verify:
+      command: "hc --version"
+    required: false
+
+  - id: lair-keystore
+    name: "Lair Keystore"
+    category: p2p
+    source: "flake.nix:holochainPackages"
+    verify:
+      command: "lair-keystore --version"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Messaging & Infrastructure
+  # ---------------------------------------------------------------------------
+  - id: nats-server
+    name: "NATS Server"
+    category: messaging
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "nats-server --version"
+    required: false
+
+  - id: natscli
+    name: "NATS CLI"
+    category: messaging
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "nats --version"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Rust Toolchain
+  # ---------------------------------------------------------------------------
+  - id: cargo
+    name: "Cargo"
+    category: rust
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "cargo --version"
+    required: false
+
+  - id: rustc
+    name: "Rust Compiler"
+    category: rust
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "rustc --version"
+    required: false
+
+  - id: rust-analyzer
+    name: "Rust Analyzer"
+    category: rust
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "rust-analyzer --version"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Node.js
+  # ---------------------------------------------------------------------------
+  - id: nodejs
+    name: "Node.js"
+    category: runtime
+    source: "flake.nix:fullExtras"
+    devshell: full
+    verify:
+      command: "node --version"
+      pattern: "v22\\."
+    required: false
+
+# =============================================================================
+# PIXI COMPONENTS (from pixi.toml)
+# =============================================================================
+pixi_components:
+  # ---------------------------------------------------------------------------
+  # Robotics (ROS2)
+  # ---------------------------------------------------------------------------
+  - id: ros2
+    name: "ROS2 Humble"
+    category: robotics
+    source: "pixi.toml:dependencies"
+    channel: robostack-humble
+    environment: default
+    verify:
+      command: "pixi run ros2 --help"
+      pattern: "usage: ros2"
+    required: true
+    platforms: [linux]
+
+  - id: colcon
+    name: "Colcon Build Tool"
+    category: robotics
+    source: "pixi.toml:dependencies"
+    channel: robostack-humble
+    environment: default
+    verify:
+      command: "pixi run colcon --help"
+      pattern: "colcon"
+    required: true
+    platforms: [linux]
+
+  - id: rosdep
+    name: "rosdep"
+    category: robotics
+    source: "pixi.toml:dependencies"
+    channel: robostack-humble
+    environment: default
+    verify:
+      command: "pixi run rosdep --version"
+    required: true
+    platforms: [linux]
+
+  # ---------------------------------------------------------------------------
+  # Python Core
+  # ---------------------------------------------------------------------------
+  - id: python
+    name: "Python"
+    category: runtime
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run python --version"
+      pattern: "Python 3\\.1[12]"
+    required: true
+
+  - id: numpy
+    name: "NumPy"
+    category: data-science
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run python -c 'import numpy; print(numpy.__version__)'"
+    required: true
+
+  - id: pandas
+    name: "Pandas"
+    category: data-science
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run python -c 'import pandas; print(pandas.__version__)'"
+    required: true
+
+  # ---------------------------------------------------------------------------
+  # Code Quality
+  # ---------------------------------------------------------------------------
+  - id: ruff
+    name: "Ruff Linter"
+    category: code-quality
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run ruff --version"
+    required: true
+
+  - id: black
+    name: "Black Formatter"
+    category: code-quality
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run black --version"
+    required: true
+
+  - id: mypy
+    name: "Mypy Type Checker"
+    category: testing
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run mypy --version"
+    required: true
+
+  - id: pytest
+    name: "Pytest"
+    category: testing
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run pytest --version"
+    required: true
+
+  # ---------------------------------------------------------------------------
+  # ML/AI
+  # ---------------------------------------------------------------------------
+  - id: pytorch
+    name: "PyTorch"
+    category: ml
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run python -c 'import torch; print(torch.__version__)'"
+    required: false
+
+  - id: transformers
+    name: "Transformers"
+    category: ml
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run python -c 'import transformers; print(transformers.__version__)'"
+    required: false
+
+  - id: mlflow
+    name: "MLflow"
+    category: ml
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run mlflow --version"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # LLMOps Environment
+  # ---------------------------------------------------------------------------
+  - id: trulens
+    name: "TruLens Evaluation"
+    category: llmops
+    source: "pixi.toml:feature.llmops"
+    channel: conda-forge
+    environment: llmops
+    verify:
+      command: "pixi run -e llmops python -c 'import trulens; print(trulens.__version__)'"
+      fallback: "pixi run -e llmops python -c 'import trulens_eval; print(trulens_eval.__version__)'"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # AIOS Environment
+  # ---------------------------------------------------------------------------
+  - id: litellm
+    name: "LiteLLM"
+    category: agents
+    source: "pixi.toml:feature.aios"
+    channel: conda-forge
+    environment: aios
+    verify:
+      command: "pixi run -e aios python -c 'import litellm; print(litellm.__version__)'"
+    required: false
+
+  - id: chromadb
+    name: "ChromaDB"
+    category: agents
+    source: "pixi.toml:feature.aios"
+    channel: conda-forge
+    environment: aios
+    verify:
+      command: "pixi run -e aios python -c 'import chromadb; print(chromadb.__version__)'"
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Jupyter
+  # ---------------------------------------------------------------------------
+  - id: jupyterlab
+    name: "JupyterLab"
+    category: data-science
+    source: "pixi.toml:dependencies"
+    channel: conda-forge
+    environment: default
+    verify:
+      command: "pixi run jupyter --version"
+    required: false
+
+# =============================================================================
+# DOCKER SERVICES (from docker-compose.*.yml)
+# =============================================================================
+docker_services:
+  # ---------------------------------------------------------------------------
+  # Observability Stack
+  # ---------------------------------------------------------------------------
+  - id: prometheus
+    name: "Prometheus"
+    category: observability
+    source: "docker/docker-compose.observability.yml"
+    ports: [9090]
+    verify:
+      type: http
+      url: "http://localhost:9090/-/healthy"
+      timeout: 5
+    required: false
+
+  - id: grafana
+    name: "Grafana"
+    category: observability
+    source: "docker/docker-compose.observability.yml"
+    ports: [3000]
+    verify:
+      type: http
+      url: "http://localhost:3000/api/health"
+      timeout: 5
+    required: false
+
+  - id: loki
+    name: "Loki"
+    category: observability
+    source: "docker/docker-compose.observability.yml"
+    ports: [3100]
+    verify:
+      type: http
+      url: "http://localhost:3100/ready"
+      timeout: 5
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Identity Stack
+  # ---------------------------------------------------------------------------
+  - id: keycloak
+    name: "Keycloak"
+    category: identity
+    source: "docker/docker-compose.identity.yml"
+    ports: [8080, 8443]
+    verify:
+      type: http
+      url: "http://localhost:8080/health/ready"
+      timeout: 30
+    required: false
+
+  - id: vault-docker
+    name: "HashiCorp Vault (Docker)"
+    category: identity
+    source: "docker/docker-compose.identity.yml"
+    ports: [8200]
+    verify:
+      type: http
+      url: "http://localhost:8200/v1/sys/health"
+      timeout: 10
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Messaging Stack
+  # ---------------------------------------------------------------------------
+  - id: nats-docker
+    name: "NATS (Docker)"
+    category: messaging
+    source: "docker/docker-compose.messaging.yml"
+    ports: [4222, 8222]
+    verify:
+      type: http
+      url: "http://localhost:8222/healthz"
+      timeout: 5
+    required: false
+
+  - id: temporal
+    name: "Temporal"
+    category: messaging
+    source: "docker/docker-compose.messaging.yml"
+    ports: [7233]
+    verify:
+      type: command
+      command: "temporal workflow list --limit 1"
+      timeout: 10
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # AI/Inference Stack
+  # ---------------------------------------------------------------------------
+  - id: localai-docker
+    name: "LocalAI (Docker)"
+    category: ai
+    source: "docker/docker-compose.inference.yml"
+    ports: [8080]
+    verify:
+      type: http
+      url: "http://localhost:8080/readyz"
+      timeout: 30
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # Edge/Gateway Stack
+  # ---------------------------------------------------------------------------
+  - id: kong
+    name: "Kong API Gateway"
+    category: edge
+    source: "docker/docker-compose.edge.yml"
+    ports: [8000, 8001]
+    verify:
+      type: http
+      url: "http://localhost:8001/status"
+      timeout: 10
+    required: false
+
+  # ---------------------------------------------------------------------------
+  # State Stack
+  # ---------------------------------------------------------------------------
+  - id: redis
+    name: "Redis"
+    category: state
+    source: "docker/docker-compose.state.yml"
+    ports: [6379]
+    verify:
+      type: command
+      command: "redis-cli ping"
+      expected: "PONG"
+      timeout: 5
+    required: false
+
+  - id: minio
+    name: "MinIO"
+    category: state
+    source: "docker/docker-compose.state.yml"
+    ports: [9000, 9001]
+    verify:
+      type: http
+      url: "http://localhost:9000/minio/health/live"
+      timeout: 5
+    required: false
+
+# =============================================================================
+# COMMAND WRAPPERS (from flake.nix)
+# =============================================================================
+commands:
+  # ---------------------------------------------------------------------------
+  # Core ROS2 Commands
+  # ---------------------------------------------------------------------------
+  - id: cb
+    name: "colcon build"
+    category: robotics
+    source: "flake.nix:coreCommandWrappers"
+    verify:
+      command: "cb --help"
+    devshell: default
+
+  - id: ct
+    name: "colcon test"
+    category: robotics
+    source: "flake.nix:coreCommandWrappers"
+    verify:
+      command: "ct --help"
+    devshell: default
+
+  # ---------------------------------------------------------------------------
+  # AI Commands
+  # ---------------------------------------------------------------------------
+  - id: ai
+    name: "AI Chat"
+    category: ai-tools
+    source: "flake.nix:aiCommandWrappers"
+    verify:
+      command: "type ai"
+    devshell: full
+
+  - id: pair
+    name: "AI Pair Programming"
+    category: ai-tools
+    source: "flake.nix:aiCommandWrappers"
+    verify:
+      command: "type pair"
+    devshell: full
+
+  - id: localai
+    name: "LocalAI Management"
+    category: ai-tools
+    source: "flake.nix:aiCommandWrappers"
+    verify:
+      command: "localai help"
+    devshell: full
+
+  - id: aios
+    name: "AIOS Management"
+    category: ai-tools
+    source: "flake.nix:aiCommandWrappers"
+    verify:
+      command: "aios help"
+    devshell: full
+
+  - id: agixt
+    name: "AGiXT Management"
+    category: ai-tools
+    source: "flake.nix:aiCommandWrappers"
+    verify:
+      command: "agixt help"
+    devshell: full
+
+  # ---------------------------------------------------------------------------
+  # Security Commands
+  # ---------------------------------------------------------------------------
+  - id: sbom
+    name: "SBOM Generation"
+    category: security
+    source: "flake.nix:securityCommandWrappers"
+    verify:
+      command: "sbom --help"
+    devshell: full
+
+  - id: vuln-scan
+    name: "Vulnerability Scan"
+    category: security
+    source: "flake.nix:securityCommandWrappers"
+    verify:
+      command: "vuln-scan --help"
+    devshell: full
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure Commands
+  # ---------------------------------------------------------------------------
+  - id: nats-ctl
+    name: "NATS Control"
+    category: messaging
+    source: "flake.nix:infraCommandWrappers"
+    verify:
+      command: "nats-ctl help"
+    devshell: full
+
+  - id: ipfs-ctl
+    name: "IPFS Control"
+    category: p2p
+    source: "flake.nix:infraCommandWrappers"
+    verify:
+      command: "ipfs-ctl help"
+    devshell: full
+
+  # ---------------------------------------------------------------------------
+  # Development Commands
+  # ---------------------------------------------------------------------------
+  - id: fmt-nix
+    name: "Format Nix Files"
+    category: dev-tools
+    source: "flake.nix:devCommandWrappers"
+    verify:
+      command: "fmt-nix --help"
+    devshell: default
+
+  - id: dev-check
+    name: "Development Checks"
+    category: dev-tools
+    source: "flake.nix:devCommandWrappers"
+    verify:
+      command: "dev-check --help"
+    devshell: default
+
+# =============================================================================
+# VALIDATION RULES
+# =============================================================================
+validation:
+  # Cross-reference rules
+  rules:
+    - id: nix-pixi-no-overlap
+      description: "System tools should be in Nix, not Pixi"
+      check: "System packages (git, curl, jq) should not appear in pixi.toml"
+
+    - id: ros2-in-pixi
+      description: "ROS2 packages must use RoboStack channel in Pixi"
+      check: "All ros-humble-* packages should be in pixi.toml with robostack-humble channel"
+
+    - id: docker-has-healthcheck
+      description: "Docker services should have health checks"
+      check: "Every docker-compose service should define a healthcheck"
+
+  # Required files
+  required_files:
+    - path: "flake.nix"
+      description: "Nix flake configuration"
+    - path: "flake.lock"
+      description: "Nix flake lock file"
+    - path: "pixi.toml"
+      description: "Pixi package configuration"
+    - path: "pixi.lock"
+      description: "Pixi lock file"
+    - path: ".envrc"
+      description: "direnv configuration"
+
+# =============================================================================
+# DEVSHELLS
+# =============================================================================
+devshells:
+  - id: default
+    name: "Default Development Shell"
+    description: "Lightweight shell for fast direnv loading"
+    entry: "nix develop .#default"
+    categories_included:
+      - infrastructure
+      - package-manager
+      - dev-tools
+      - robotics
+      - p2p
+
+  - id: full
+    name: "Full Development Shell"
+    description: "Complete shell with all tools"
+    entry: "nix develop .#full"
+    categories_included:
+      - infrastructure
+      - package-manager
+      - dev-tools
+      - robotics
+      - p2p
+      - ai-tools
+      - security
+      - kubernetes
+      - messaging
+      - rust
+
+  - id: cuda
+    name: "CUDA Development Shell"
+    description: "GPU-enabled shell for CUDA workloads"
+    entry: "nix develop .#cuda"
+    requires: "NVIDIA GPU with drivers"
+    platforms: [linux]
+
+  - id: identity
+    name: "Identity Development Shell"
+    description: "Shell for Keycloak/Vault development"
+    entry: "nix develop .#identity"
+    platforms: [linux]
