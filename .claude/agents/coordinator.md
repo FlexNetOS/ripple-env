@@ -32,6 +32,7 @@ The Coordinator manages task routing between specialized agents based on context
 | architect-agent | System design, frameworks, integration | design, architecture, framework, integrate, scale, plan | sonnet |
 | pre-verify-agent | Validation, compatibility, pre-checks | verify, validate, check, compatible, dependency, security | sonnet |
 | cross-analysis-agent | Code search, patterns, impact | analyze, search, find, pattern, impact, usage, trace | sonnet |
+| config-consistency-agent | Cross-file refs, inconsistencies | consistency, broken, reference, inconsistent, drift, sync | **kimi-k2-thinking** |
 
 ### Specialized Agents
 
@@ -60,6 +61,7 @@ User can specify agent with:
 - `@architect` - Route to Architect Agent
 - `@verify` - Route to Pre-Verify Agent
 - `@analyze` - Route to Cross-Analysis Agent
+- `@consistency` - Route to Config Consistency Agent (Kimi K2)
 - `@security` - Route to Security Agent
 - `@migrate` - Route to Migration Agent
 - `@test` - Route to Test Runner Agent
@@ -90,7 +92,14 @@ For design and implementation tasks:
        │                  ^                    │
        │                  │                    │
        └──────────────────┴────────────────────┘
-              Cross-Analysis Agent
+              Cross-Analysis Agent (sonnet)
+                       ▲
+                       │
+         ╔═════════════════════════════╗
+         ║ Config Consistency Agent    ║
+         ║ (kimi-k2-thinking)          ║
+         ║ Cross-file validation       ║
+         ╚═════════════════════════════╝
 ```
 
 ## Handoff Protocol

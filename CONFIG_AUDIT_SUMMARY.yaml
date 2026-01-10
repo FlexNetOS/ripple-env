@@ -1,0 +1,224 @@
+config_summary:
+  flake_nix:
+    base_packages_count: 15
+    full_extras_count: 63
+    holochain_packages_count: 3
+    key_packages:
+      - pixi
+      - git
+      - python313
+      - curl
+      - direnv
+      - nixfmt-rfc-style
+      - gh
+      - jujutsu
+      - nix-direnv
+      - jq
+  pixi_toml:
+    dependencies_count: 45
+    pypi_dependencies_count: 3
+    features:
+      - cuda
+      - aios
+      - aios-cuda
+      - llmops
+      - finetuning
+      - caching
+  docker_compose:
+    total_files: 15
+    total_services: 59
+    services_by_file:
+      - file: "docker-compose.automation.yml"
+        services: ["n8n", "n8n-db", "opa", "opa-bundle-server"]
+      - file: "docker-compose.state.yml"
+        services: ["redis", "minio", "mc"]
+      - file: "docker-compose.argo.yml"
+        services: ["k3s-server", "argocd-installer"]
+      - file: "docker-compose.messaging.yml"
+        services: ["nats", "temporal", "temporal-db", "temporal-ui", "temporal-admin-tools"]
+      - file: "docker-compose.observability.yml"
+        services: ["prometheus", "grafana", "loki", "promtail", "alertmanager", "node-exporter", "cadvisor", "otel-collector", "netdata", "umami", "umami-db"]
+      - file: "docker-compose.refact.yml"
+        services: ["refact"]
+      - file: "docker-compose.localai.yml"
+        services: ["localai"]
+      - file: "docker-compose.llmops.yml"
+        services: ["tensorzero", "tensorzero-ui", "tensorzero-clickhouse", "mlflow", "mlflow-db"]
+      - file: "docker-compose.data.yml"
+        services: ["mindsdb", "mindsdb-db", "neo4j"]
+      - file: "docker-compose.edge.yml"
+        services: ["kong-database", "kong-migrations", "kong", "agentgateway", "konga-prepare", "konga"]
+      - file: "docker-compose.agixt.yml"
+        services: ["agixt", "agixt-interactive", "postgres", "minio", "minio-setup"]
+      - file: "docker-compose.temporal.yml"
+        services: ["temporal-postgresql", "temporal", "temporal-ui", "temporal-admin-tools"]
+      - file: "docker-compose.ui.yml"
+        services: ["lobe-chat", "lobe-db", "minio", "open-lovable"]
+      - file: "docker-compose.identity.yml"
+        services: ["step-ca", "keycloak", "keycloak-db", "vaultwarden"]
+      - file: "docker-compose.inference.yml"
+        services: ["localai"]
+
+config_details:
+  flake_nix_basePackages:
+    - pixi
+    - git
+    - gh
+    - jujutsu
+    - python313
+    - python313Packages.pip
+    - python313Packages.virtualenv
+    - nix-output-monitor
+    - nix-tree
+    - nixfmt-rfc-style
+    - nil
+    - curl
+    - jq
+    - direnv
+    - nix-direnv
+
+  flake_nix_fullExtras:
+    - nix-output-monitor
+    - nix-tree
+    - bat
+    - eza
+    - fd
+    - ripgrep
+    - fzf
+    - yq
+    - gnutar
+    - wget
+    - unzip
+    - gzip
+    - zoxide
+    - btop
+    - htop
+    - prometheus
+    - natscli
+    - nats-server
+    - trippy
+    - trivy
+    - opa
+    - syft
+    - grype
+    - cosign
+    - kubectl
+    - helm
+    - kustomize
+    - containerd
+    - neovim
+    - sqlite
+    - vault
+    - kubo
+    - step-cli
+    - firecracker
+    - runc
+    - kata-runtime
+    - zsh
+    - nushell
+    - helix
+    - starship
+    - aichat
+    - aider-chat
+    - local-ai
+    - portaudio
+    - ccache
+    - sccache
+    - mold
+    - maturin
+    - cargo
+    - rustc
+    - rust-analyzer
+    - rustfmt
+    - clippy
+    - sqlx-cli
+    - tree-sitter
+    - nodejs_22
+    - nodePackages.pnpm
+    - lazygit
+    - devpod
+
+  flake_nix_holochainPackages:
+    - holochain
+    - hc
+    - lair-keystore
+
+  pixi_dependencies:
+    - python
+    - compilers
+    - cmake
+    - pkg-config
+    - make
+    - ninja
+    - ccache
+    - sccache
+    - tar
+    - curl
+    - nodejs
+    - pnpm
+    - rosdep
+    - colcon-common-extensions
+    - ros-humble-desktop
+    - catkin_tools
+    - ruff
+    - pyupgrade
+    - flynt
+    - pytest
+    - pytest-cov
+    - mypy
+    - black
+    - isort
+    - numpy
+    - pandas
+    - scikit-learn
+    - jupyterlab
+    - ipython
+    - ipywidgets
+    - notebook
+    - mlflow
+    - tensorboard
+    - wandb
+    - transformers
+    - accelerate
+    - sentence-transformers
+    - datasets
+    - tokenizers
+    - nats-py
+    - temporalio
+    - agno
+    - pytorch
+    - torchvision
+    - torchaudio
+
+  pixi_pypi_dependencies:
+    - esbuild
+    - datafusion
+    - polars
+
+  feature_specifications:
+    cuda:
+      platforms: ["linux-64"]
+      channels: ["pytorch", "nvidia", "conda-forge"]
+      packages: ["pytorch-cuda", "pytorch", "torchvision", "torchaudio"]
+
+    aios:
+      platforms: ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+      core_packages: ["pydantic", "numpy", "litellm", "transformers", "accelerate", "sentence-transformers"]
+      pypi_packages: ["aios-agent-sdk"]
+
+    aios_cuda:
+      platforms: ["linux-64"]
+      note: "AIOS with GPU acceleration via vLLM"
+
+    llmops:
+      platforms: ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+      packages: ["trulens-eval", "mlflow", "opentelemetry-api", "opentelemetry-sdk", "opentelemetry-exporter-otlp"]
+
+    finetuning:
+      platforms: ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+      conda_packages: ["pytorch", "transformers", "accelerate", "datasets", "tokenizers", "tqdm", "peft", "bitsandbytes"]
+      pypi_packages: ["unsloth"]
+
+    caching:
+      platforms: ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+      packages: ["redis-py", "openai", "numpy"]
