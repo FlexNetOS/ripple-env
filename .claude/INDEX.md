@@ -133,21 +133,21 @@ ros2-humble-env/
 │   ├── settings.local.json           # Local overrides (gitignored)
 │   ├── skills/                       # Structured skill definitions
 │   │   ├── ros2-development/
-│   │   │   └── README.md
+│   │   │   └── SKILL.md
 │   │   ├── devops/
-│   │   │   └── README.md
+│   │   │   └── SKILL.md
 │   │   ├── nix-environment/
-│   │   │   └── README.md
+│   │   │   └── SKILL.md
 │   │   ├── ai-assistants/
-│   │   │   └── README.md
+│   │   │   └── SKILL.md
 │   │   ├── distributed-systems/
-│   │   │   └── README.md
+│   │   │   └── SKILL.md
 │   │   ├── rust-tooling/
-│   │   │   └── README.md
+│   │   │   └── SKILL.md
 │   │   ├── observability/
-│   │   │   └── README.md
+│   │   │   └── SKILL.md
 │   │   └── llm-evaluation/
-│   │       └── README.md
+│   │       └── SKILL.md
 │   ├── commands/                     # Slash command definitions
 │   │   ├── build.md
 │   │   ├── test.md

@@ -233,7 +233,7 @@ docker-compose -f docker/docker-compose.messaging.yml up -d nats
 
 - **Detailed analysis:** See `WAVE3-CROSS-ANALYSIS.yaml`
 - **Task specifications:** See `P0-TASK-SPECIFICATIONS.yaml`, `P1_TASKS.yaml`, `ARIA_TASK_SPECS.yaml`
-- **Dependency graph:** See `DEPENDENCY_VALIDATION_REPORT.yaml`
+- **Dependency graph:** See `../docs/reports/DEPENDENCY_VALIDATION_REPORT.yaml`
 - **Original audit:** See `docs/audits/ARIA-AUDIT-2026-01-10-v2.md`
 
 ---

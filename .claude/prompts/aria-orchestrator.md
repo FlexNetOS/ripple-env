@@ -64,7 +64,7 @@ Use claude-code-router for multi-model dispatch:
 
 **Primary Configuration Sources:**
 - `README.md` — Project overview and repository links
-- `docs/BUILDKIT_STARTER_SPEC.md` — Single Source of Truth (SSoT) for the full agentic OS stack
+- `BUILDKIT_STARTER_SPEC.md` — Single Source of Truth (SSoT) for the full agentic OS stack
 
 **Configuration Files:**
 - `flake.nix` — Nix flake configuration
@@ -125,7 +125,7 @@ Use claude-code-router for multi-model dispatch:
 - `python-pyupgrade-tool/` — Python syntax upgrader
 - `python-flynt-tool/` — F-string converter
 
-## Target Stack (from docs/BUILDKIT_STARTER_SPEC.md)
+## Target Stack (from BUILDKIT_STARTER_SPEC.md)
 
 **14 Domains (13 Architectural Layers + 1 Cross-cutting):**
 1. Host OS & Environment (NixOS/Pixi/Nushell)
@@ -154,7 +154,7 @@ Use claude-code-router for multi-model dispatch:
 Execute a **wide research audit** on every file and reference link in the codebase, then produce a task list that ensures:
 
 ### 1. Proper Configurations & Installations
-- All repositories from README.md and docs/BUILDKIT_STARTER_SPEC.md identified
+- All repositories from README.md and BUILDKIT_STARTER_SPEC.md identified
 - Dependencies mapped and installation methods determined
 - Configuration files created/updated for each component
 
@@ -185,7 +185,7 @@ Execute a **wide research audit** on every file and reference link in the codeba
 ## Success Criteria
 
 - [ ] 100% of repositories from README.md cataloged
-- [ ] 100% of repositories from docs/BUILDKIT_STARTER_SPEC.md cataloged
+- [ ] 100% of repositories from BUILDKIT_STARTER_SPEC.md cataloged
 - [ ] Reference link census complete with validation status
 - [ ] Installation mapping complete (Nix/Pixi/Docker/Cargo/NPM)
 - [ ] Feature conflict matrix with A/B flags defined
@@ -338,7 +338,7 @@ file_types:
 ### Step 1.2: Repository Extraction (Model: `haiku`)
 Extract ALL GitHub repository URLs from:
 - `README.md`
-- `docs/BUILDKIT_STARTER_SPEC.md`
+- `BUILDKIT_STARTER_SPEC.md`
 - Any other `.md` files
 - Configuration files
 
@@ -353,7 +353,7 @@ repositories:
 ```
 
 ### Step 1.3: Subject Identification (Model: `sonnet`)
-Identify domains from docs/BUILDKIT_STARTER_SPEC.md layers:
+Identify domains from BUILDKIT_STARTER_SPEC.md layers:
 1. Host OS & Environment
 2. Isolation & Runtime
 3. Cluster & Delivery
@@ -534,7 +534,7 @@ feature_flags:
 
 ### Step 4.1: Identify Overlaps
 
-From docs/BUILDKIT_STARTER_SPEC.md Rule #10: "If two components compete for the same responsibility, one must become primary or be removed."
+From BUILDKIT_STARTER_SPEC.md Rule #10: "If two components compete for the same responsibility, one must become primary or be removed."
 
 **Do NOT remove** — instead, feature flag:
 
@@ -623,7 +623,7 @@ ci_workflow_checks:
 ```markdown
 ### [P0/P1/P2/P3] Task: <Title>
 
-**Domain**: <Layer from docs/BUILDKIT_STARTER_SPEC.md>
+**Domain**: <Layer from BUILDKIT_STARTER_SPEC.md>
 **Repository**: <GitHub URL>
 **Issue**: <What's missing or broken>
 **Location**: `<file:line>` or `<new file to create>`
@@ -790,7 +790,7 @@ If symlinks found: **Delete them and update file references instead.**
 
 **Total Repositories Found**: X
 **Source: README.md**: Y
-**Source: docs/BUILDKIT_STARTER_SPEC.md**: Z
+**Source: BUILDKIT_STARTER_SPEC.md**: Z
 
 | # | Repository | Layer | Status | Installation | Feature Flag |
 |---|------------|-------|--------|--------------|--------------|
@@ -928,7 +928,7 @@ cache_config:
     ttl: "24h"
     invalidate_on:
       - "README.md"
-      - "docs/BUILDKIT_STARTER_SPEC.md"
+      - "BUILDKIT_STARTER_SPEC.md"
 
   url_validation:
     file: "urls.json"
@@ -1049,7 +1049,7 @@ Execute agents in dependency-ordered waves for optimal parallelism:
 <thinking_guidance>
 ## Before Launching Teams
 
-1. Read `docs/BUILDKIT_STARTER_SPEC.md` completely — it's the SSoT
+1. Read `BUILDKIT_STARTER_SPEC.md` completely — it's the SSoT
 2. Extract the 14-domain architecture (13 layers + security cross-cutting)
 3. Identify all repositories by domain
 4. Note which are "Primary" vs "Secondary" vs "Candidate"
@@ -1062,14 +1062,14 @@ Execute agents in dependency-ordered waves for optimal parallelism:
 
 ## When Resolving Conflicts
 
-1. Check docs/BUILDKIT_STARTER_SPEC.md Rule #10 for guidance
+1. Check BUILDKIT_STARTER_SPEC.md Rule #10 for guidance
 2. Create feature flags, never remove components
 3. Define clear A/B switching mechanism
 4. Document which is default
 
 ## When Generating Tasks
 
-1. Link every task to a docs/BUILDKIT_STARTER_SPEC.md layer
+1. Link every task to a BUILDKIT_STARTER_SPEC.md layer
 2. Include verification commands
 3. Specify installation method explicitly
 4. Note dependencies between tasks
@@ -1084,7 +1084,7 @@ Execute agents in dependency-ordered waves for optimal parallelism:
 
 ### Immediate Actions
 
-1. **Read** `docs/BUILDKIT_STARTER_SPEC.md` completely
+1. **Read** `BUILDKIT_STARTER_SPEC.md` completely
 2. **Read** `README.md` repository links section
 3. **Count** total repositories across both files
 4. **Identify** the 14 domains and their components
@@ -1099,7 +1099,7 @@ Execute agents in dependency-ordered waves for optimal parallelism:
 Task(subagent_type="general-purpose", model="haiku",
      prompt="Count all files by type in codebase...", description="File census")
 Task(subagent_type="general-purpose", model="haiku",
-     prompt="Extract all GitHub URLs from README.md and docs/BUILDKIT_STARTER_SPEC.md...", description="URL extraction")
+     prompt="Extract all GitHub URLs from README.md and BUILDKIT_STARTER_SPEC.md...", description="URL extraction")
 Task(subagent_type="general-purpose", model="haiku",
      prompt="Parse config files: flake.nix, pixi.toml, Cargo.toml...", description="Config parsing")
 
@@ -1133,7 +1133,7 @@ Task(subagent_type="general-purpose", model="haiku",
 4. **Installation Map** — All repositories → installation method
 5. **Task Backlog** — Prioritized with P0/P1/P2/P3
 
-Begin by reading `docs/BUILDKIT_STARTER_SPEC.md` and reporting the initial repository census.
+Begin by reading `BUILDKIT_STARTER_SPEC.md` and reporting the initial repository census.
 </execution>
 
 ---
@@ -1164,5 +1164,5 @@ Begin by reading `docs/BUILDKIT_STARTER_SPEC.md` and reporting the initial repos
 |---------|------|---------|
 | 2.2.0 | 2026-01 | Added Kimi K2 Thinking for cross-analysis, Phase 0 consistency validation, config-consistency-agent, OPA policies, analysis tools (TheAuditor, ast-grep, Conftest, Semgrep) |
 | 2.1.0 | 2026-01 | Fixed 13/14 layer inconsistency, added caching strategy, parallel execution wave model, corrected Task tool patterns, model optimization matrix |
-| 2.0.0 | 2026-01 | Major rewrite: Added model specifications, 14 domain teams, feature flag handling, installation mapping, docs/BUILDKIT_STARTER_SPEC.md integration |
+| 2.0.0 | 2026-01 | Major rewrite: Added model specifications, 14 domain teams, feature flag handling, installation mapping, BUILDKIT_STARTER_SPEC.md integration |
 | 1.0.0 | 2026-01 | Initial release |

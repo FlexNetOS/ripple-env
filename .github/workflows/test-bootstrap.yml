@@ -1,3 +1,14 @@
+# Test Bootstrap Scripts Workflow
+# ================================
+# Purpose: Formal testing and security validation of bootstrap scripts
+# Focus: Script quality, unit tests, integration tests, and security scanning
+# Complements: bootstrap-test.yml (which focuses on end-to-end environment verification)
+#
+# Test Tiers:
+#   Tier 1 (Unit): PowerShell Pester tests, Bash shellcheck validation
+#   Tier 2 (Integration): WSL setup tests using Vampire/setup-wsl
+#   Tier 3 (E2E): Full bootstrap on self-hosted WSL2 runner
+
 name: Test Bootstrap Scripts
 
 on:

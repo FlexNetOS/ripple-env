@@ -11,7 +11,7 @@ Read and follow the complete orchestration prompt at `.claude/prompts/aria-orche
 ## Mission Parameters
 
 - **Mode**: Full Audit
-- **Scope**: All repositories from README.md and docs/BUILDKIT_STARTER_SPEC.md
+- **Scope**: All repositories from README.md and BUILDKIT_STARTER_SPEC.md
 - **Output**: Complete deliverables (census, installation mapping, feature flags, tasks)
 
 ## Critical Requirements
@@ -25,7 +25,7 @@ Read and follow the complete orchestration prompt at `.claude/prompts/aria-orche
 
 ### Phase 1: Discovery
 1. Read `.claude/prompts/aria-orchestrator.md` for complete methodology
-2. Read `docs/BUILDKIT_STARTER_SPEC.md` — the Single Source of Truth (SSoT)
+2. Read `BUILDKIT_STARTER_SPEC.md` — the Single Source of Truth (SSoT)
 3. Read `README.md` repository links section
 4. Count ALL GitHub repository URLs
 5. Identify the 14-domain architecture (13 layers + security cross-cutting)
@@ -59,13 +59,13 @@ For each team:
 
 ### Phase 4: Task Generation
 1. Create prioritized task backlog (P0/P1/P2/P3)
-2. Link each task to docs/BUILDKIT_STARTER_SPEC.md layer
+2. Link each task to BUILDKIT_STARTER_SPEC.md layer
 3. Include verification commands
 4. Note dependencies
 
 ## Required Deliverables
 
-1. **Repository Census** — 100% of repos from README.md + docs/BUILDKIT_STARTER_SPEC.md
+1. **Repository Census** — 100% of repos from README.md + BUILDKIT_STARTER_SPEC.md
 2. **Reference Link Audit** — All URLs validated
 3. **Installation Mapping** — Every repo mapped to installation method
 4. **Feature Flag Matrix** — All conflicts resolved with A/B flags
@@ -79,4 +79,4 @@ For each team:
 - **Evidence-Based** — Cite file:line or URL for findings
 - **Read-Only Audit** — Do not modify files during discovery
 
-Begin by reading `docs/BUILDKIT_STARTER_SPEC.md` and reporting the initial repository census.
+Begin by reading `BUILDKIT_STARTER_SPEC.md` and reporting the initial repository census.

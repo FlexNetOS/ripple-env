@@ -1,3 +1,16 @@
+# Bootstrap End-to-End Test Workflow
+# =====================================
+# Purpose: Verify that the development environment can be bootstrapped and used
+# Focus: Practical validation that tools work across Linux, macOS, and Windows
+# Complements: test-bootstrap.yml (which focuses on script quality and formal testing)
+#
+# Jobs:
+#   - bootstrap-linux: Full Nix + Pixi environment on Linux
+#   - bootstrap-macos: Full Nix + Pixi environment on macOS
+#   - bootstrap-windows-syntax: PowerShell syntax validation
+#   - bootstrap-windows-e2e: Full WSL2 bootstrap (self-hosted runner)
+#   - bootstrap-script-test: Run bootstrap.sh in CI mode
+
 name: Bootstrap End-to-End Test
 
 on:

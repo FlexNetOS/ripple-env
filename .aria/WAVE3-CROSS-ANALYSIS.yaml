@@ -791,9 +791,9 @@ metadata:
 
   source_documents:
     - "/home/user/ros2-humble-env/docs/P0-TASK-SPECIFICATIONS.yaml"
-    - "/home/user/ros2-humble-env/P1_TASKS.yaml"
-    - "/home/user/ros2-humble-env/ARIA_TASK_SPECS.yaml"
-    - "/home/user/ros2-humble-env/DEPENDENCY_VALIDATION_REPORT.yaml"
+    - "/home/user/ros2-humble-env/.aria/P1_TASKS.yaml"
+    - "/home/user/ros2-humble-env/.aria/ARIA_TASK_SPECS.yaml"
+    - "/home/user/ros2-humble-env/docs/reports/DEPENDENCY_VALIDATION_REPORT.yaml"
     - "/home/user/ros2-humble-env/docs/audits/ARIA-AUDIT-2026-01-10-v2.md"
     - "/home/user/ros2-humble-env/.aria/audit-domain-1-host-os.yaml"
     - "/home/user/ros2-humble-env/.aria/cross-analysis-synthesis.yaml"

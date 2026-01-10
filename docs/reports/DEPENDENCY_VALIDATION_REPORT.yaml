@@ -505,7 +505,7 @@ metadata:
   confidence_level: "HIGH"
   source_documents:
     - "/home/user/ros2-humble-env/docs/P0-TASK-SPECIFICATIONS.yaml"
-    - "/home/user/ros2-humble-env/P1_TASKS.yaml"
-    - "/home/user/ros2-humble-env/ARIA_TASK_SPECS.yaml"
+    - "/home/user/ros2-humble-env/.aria/P1_TASKS.yaml"
+    - "/home/user/ros2-humble-env/.aria/ARIA_TASK_SPECS.yaml"
   validation_method: "Manual dependency tracing + critical path analysis"
   next_review: "After Wave 1 completion"
