@@ -57,7 +57,7 @@ nix develop --rebuild
 
 **Solution**:
 - Use binary cache (already configured in flake.nix)
-- Use `nix develop .#minimal` for faster startup
+- Use `nix develop` (default shell) for faster startup
 - Check your internet connection
 - Be patient on first run (10-15 minutes is normal)
 
