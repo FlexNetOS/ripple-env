@@ -18,6 +18,9 @@ This is a **ROS2 Humble development environment** built with Nix flakes and Pixi
 | `bootstrap.ps1` | Windows PowerShell setup script |
 | `.envrc` | direnv configuration |
 | `modules/` | Home-manager configuration modules |
+| `docs/NIX_FLAKE_MODULARIZATION.md` | Flake modularization plan |
+| `docs/GETTING_STARTED.md` | Quick start guide |
+| `docs/TROUBLESHOOTING.md` | Common issues and solutions |
 
 ## Working with This Repository
 
@@ -222,6 +225,68 @@ This flake exports modules for use in other projects:
 - Test on multiple platforms when possible
 - Use platform-specific modules in `modules/linux/` and `modules/macos/`
 
+## NixOS Image Generation
+
+The flake supports generating deployable NixOS images for various targets.
+
+### Available Image Formats
+
+| Format | Use Case | Tool |
+|--------|----------|------|
+| WSL2 tarball | Windows development | NixOS-WSL |
+| ISO installer | Bare metal installation | nixos-generators |
+| QEMU VM | Local testing | nixos-generators |
+| Docker image | Container deployment | nixos-generators |
+| SD card image | Raspberry Pi/embedded | nixos-generators |
+
+### Building Images
+
+```bash
+# WSL2 tarball (import with wsl --import)
+nix build .#nixosConfigurations.wsl-ros2.config.system.build.tarballBuilder
+
+# ISO installer
+nix build .#nixosConfigurations.iso-ros2.config.system.build.isoImage
+
+# QEMU VM
+nix build .#nixosConfigurations.vm-ros2.config.system.build.vm
+```
+
+### WSL2 Import
+
+```powershell
+# Import the tarball
+wsl --import NixOS-ROS2 $env:USERPROFILE\WSL\NixOS-ROS2 result/nixos-wsl.tar.gz
+
+# Launch
+wsl -d NixOS-ROS2
+```
+
+See [NIX_FLAKE_MODULARIZATION.md](docs/NIX_FLAKE_MODULARIZATION.md) for the complete modularization plan.
+
+## Flake Modularization
+
+The `flake.nix` is planned for modularization to improve maintainability. The target structure:
+
+```
+nix/
+├── packages/     # Package collections by category
+├── shells/       # DevShell definitions
+├── commands/     # Command wrapper scripts
+├── overlays/     # Package overrides
+├── modules/      # NixOS/Darwin/Home-manager modules
+├── images/       # NixOS image builders
+└── lib/          # Utility functions
+```
+
+Key benefits:
+- Smaller, focused files (~300-600 lines each)
+- Independent testing of components
+- Parallel development without conflicts
+- Faster Nix evaluation
+
+See [NIX_FLAKE_MODULARIZATION.md](docs/NIX_FLAKE_MODULARIZATION.md) for the migration strategy.
+
 ## Debugging
 
 ### Nix Issues
@@ -250,7 +315,18 @@ pixi info
 
 ## Resources
 
+### Project Documentation
+
+- [Getting Started Guide](docs/GETTING_STARTED.md) - Quick start for new users
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [Flake Modularization Plan](docs/NIX_FLAKE_MODULARIZATION.md) - Architecture roadmap
+- [Documentation Index](docs/README.md) - All documentation files
+
+### External Resources
+
 - [Nix Manual](https://nixos.org/manual/nix/stable/)
 - [Home Manager Options](https://home-manager-options.extranix.com/)
 - [ROS2 Humble Docs](https://docs.ros.org/en/humble/)
 - [Pixi Documentation](https://pixi.sh)
+- [nixos-generators](https://github.com/nix-community/nixos-generators) - Image generation
+- [NixOS-WSL](https://github.com/nix-community/NixOS-WSL) - WSL integration

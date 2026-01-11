@@ -90,6 +90,12 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | [BRANCH-PROTECTION.md](BRANCH-PROTECTION.md) | Git branch protection rules |
 | [GITHUB-RESOURCES.md](GITHUB-RESOURCES.md) | GitHub resource documentation |
 
+### Nix & Flake Architecture
+
+| Document | Description |
+|----------|-------------|
+| [NIX_FLAKE_MODULARIZATION.md](NIX_FLAKE_MODULARIZATION.md) | Flake modularization plan and image generation |
+
 ### Architecture & Planning
 
 | Document | Description |
