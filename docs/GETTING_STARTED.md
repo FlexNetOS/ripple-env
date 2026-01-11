@@ -125,8 +125,8 @@ nix develop .#minimal
 # CUDA-enabled shell (Linux with NVIDIA GPU)
 nix develop .#cuda
 
-# CI shell (for automated testing)
-nix develop .#ci
+# Full shell (CI / extra tooling)
+nix develop .#full
 ```
 
 ## Working with ROS2
