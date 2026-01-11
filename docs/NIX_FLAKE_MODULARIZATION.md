@@ -2,6 +2,26 @@
 
 This document outlines the strategy for modularizing the monolithic `flake.nix` (155KB, ~3000 lines) into a maintainable, well-organized structure.
 
+## Architecture Clarification
+
+> **Important**: This is a **single flake that loads other flakes** (via inputs), NOT multiple separate flakes or distros. The modularization approach keeps everything in ONE flake while splitting code into multiple files for maintainability.
+
+This pattern follows the [Holo-Host](https://github.com/Holo-Host/holo-host) architecture where:
+- One unified flake defines multiple services/configurations
+- Uses `flake-parts` for modular composition
+- Imports other flakes as inputs (home-manager, nixpkgs, etc.)
+- Exports multiple `nixosConfigurations` for different deployment targets
+
+## Reference Projects
+
+| Project | Pattern | URL |
+|---------|---------|-----|
+| **Holo-Host** | Multi-service monorepo with NixOS containers | [github.com/Holo-Host/holo-host](https://github.com/Holo-Host/holo-host) |
+| **kickstart.nix** | flake-parts template aggregating modules | [github.com/ALT-F4-LLC/kickstart.nix](https://github.com/ALT-F4-LLC/kickstart.nix) |
+| **Holochain Core** | flake-parts auto-importing modules | [github.com/holochain/holochain](https://github.com/holochain/holochain) |
+| **NixOS-WSL** | WSL2 image generation | [github.com/nix-community/NixOS-WSL](https://github.com/nix-community/NixOS-WSL) |
+| **kenlasko/nixos-wsl** | Personal config example | [github.com/kenlasko/nixos-wsl](https://github.com/kenlasko/nixos-wsl) |
+
 ## Current State
 
 The current `flake.nix` contains multiple concerns in a single file:
@@ -157,7 +177,59 @@ pkgs.mkShell {
 
 ## Image Generation
 
-### NixOS-WSL Image
+### Tools Overview
+
+| Tool | Purpose | Output Format |
+|------|---------|---------------|
+| `nixos-rebuild` | Build NixOS system closures | System activation, tarballs |
+| `nixos-generators` | Generate various image formats | ISO, VM, Docker, SD card |
+| `NixOS-WSL` | WSL2-specific image generation | ext4 filesystem tarball |
+
+### Generation Methods
+
+#### Method 1: nixos-rebuild (Native)
+
+```bash
+# Build a WSL-compatible NixOS image
+nixos-rebuild build --flake .#wsl-ros2
+
+# Build and switch (on running NixOS)
+nixos-rebuild switch --flake .#wsl-ros2
+```
+
+#### Method 2: nixos-generators (Multi-format)
+
+```bash
+# Install nixos-generators
+nix-env -iA nixpkgs.nixos-generators
+
+# Generate ISO installer
+nixos-generate -f iso -c ./nix/images/iso.nix
+
+# Generate QEMU VM image
+nixos-generate -f qcow -c ./nix/images/vm.nix
+
+# Generate Docker image
+nixos-generate -f docker -c ./nix/images/docker.nix
+
+# Generate SD card image (Raspberry Pi)
+nixos-generate -f sd-aarch64-installer -c ./nix/images/rpi.nix
+```
+
+#### Method 3: Flake Outputs (Recommended)
+
+```bash
+# Build WSL image via flake output
+nix build .#nixosConfigurations.wsl-ros2.config.system.build.tarballBuilder
+
+# Build ISO via flake output
+nix build .#nixosConfigurations.iso-ros2.config.system.build.isoImage
+
+# Build VM via flake output
+nix build .#nixosConfigurations.vm-ros2.config.system.build.vm
+```
+
+### NixOS-WSL Image Configuration
 
 ```nix
 # nix/images/wsl.nix
@@ -188,22 +260,30 @@ nixos-wsl.lib.nixosSystem {
 }
 ```
 
-### Building Images
+### WSL Import Commands
 
-```bash
-# Build WSL image
-nix build .#nixosConfigurations.wsl-ros2.config.system.build.tarballBuilder
-# Output: result/nixos-wsl.tar.gz
-
-# Import to WSL
+```powershell
+# Import the tarball into WSL
 wsl --import NixOS-ROS2 $env:USERPROFILE\WSL\NixOS-ROS2 result/nixos-wsl.tar.gz
 
-# Build ISO installer
-nix build .#nixosConfigurations.iso-ros2.config.system.build.isoImage
+# Launch the new distro
+wsl -d NixOS-ROS2
 
-# Build VM image
-nix build .#nixosConfigurations.vm-ros2.config.system.build.vm
+# Set as default (optional)
+wsl --set-default NixOS-ROS2
 ```
+
+### Available Image Formats
+
+| Format | Command | Use Case |
+|--------|---------|----------|
+| WSL2 tarball | `nix build .#images.wsl` | Windows development |
+| ISO installer | `nix build .#images.iso` | Bare metal installation |
+| QEMU/qcow2 | `nix build .#images.vm` | Local testing |
+| Docker | `nixos-generate -f docker` | Container deployment |
+| SD card | `nixos-generate -f sd-aarch64` | Raspberry Pi/embedded |
+| VirtualBox | `nixos-generate -f virtualbox` | Desktop virtualization |
+| Amazon EC2 | `nixos-generate -f amazon` | Cloud deployment |
 
 ## Migration Strategy
 
@@ -288,10 +368,47 @@ nix build .#images.wsl --dry-run
 
 **Total: 11-19 hours of focused work**
 
+## Deployment Tools
+
+For deploying NixOS configurations to multiple machines:
+
+| Tool | Purpose | Use Case |
+|------|---------|----------|
+| [deploy-rs](https://github.com/serokell/deploy-rs) | Multi-host deployment | Fleet management |
+| [Colmena](https://github.com/zhaofengli/colmena) | NixOS deployment tool | Parallel deployment |
+| [NixOps](https://github.com/NixOS/nixops) | NixOS cloud deployment | Infrastructure as code |
+
+```bash
+# Example: Colmena deployment
+colmena apply --on @ros2-nodes
+
+# Example: deploy-rs
+deploy .#ros2-server
+```
+
 ## References
 
-- [Nix Flakes](https://nixos.wiki/wiki/Flakes)
-- [flake-parts](https://flake.parts/) - Modular flake framework
+### Architecture Patterns
+
+- [Holo-Host Architecture](https://github.com/Holo-Host/holo-host) - Multi-service NixOS flake monorepo
+- [ALT-F4-LLC/kickstart.nix](https://github.com/ALT-F4-LLC/kickstart.nix) - flake-parts template
+- [Holochain Flake](https://github.com/holochain/holochain) - flake-parts auto-importing
+
+### NixOS Discourse Discussions
+
+- [Breaking up a monolithic flake](https://discourse.nixos.org/t/breaking-up-a-monolithic-flake/30475)
+- [Improve Flake Performance in Monorepo](https://discourse.nixos.org/t/improve-flake-performance-in-absurdly-bloated-monorepo/21282)
+- [Multiple Nix Flake Packages](https://discourse.nixos.org/t/is-there-advantages-to-multiple-nix-flake-packages/14344)
+
+### Tools Documentation
+
+- [Nix Flakes](https://nixos.wiki/wiki/Flakes) - Flake system overview
+- [flake-parts](https://flake.parts/) - Modular flake framework (currently used)
 - [nixos-generators](https://github.com/nix-community/nixos-generators) - Image generation
 - [NixOS-WSL](https://github.com/nix-community/NixOS-WSL) - WSL integration
-- [Nix Module System](https://nixos.wiki/wiki/NixOS_modules)
+- [Nix Module System](https://nixos.wiki/wiki/NixOS_modules) - Module patterns
+
+### WSL Resources
+
+- [kenlasko/nixos-wsl](https://github.com/kenlasko/nixos-wsl) - Example WSL configuration
+- [NixOS on WSL Guide](https://medium.com/@piyushkumarsingh.nmims/nixos-on-wsl-the-best-of-both-worlds-bdcaba54ee58)

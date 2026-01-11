@@ -229,6 +229,8 @@ This flake exports modules for use in other projects:
 
 The flake supports generating deployable NixOS images for various targets.
 
+> **Architecture Note**: This is a **single flake that loads other flakes** (via inputs), following the [Holo-Host](https://github.com/Holo-Host/holo-host) pattern. We use `flake-parts` for modular composition.
+
 ### Available Image Formats
 
 | Format | Use Case | Tool |
@@ -242,6 +244,10 @@ The flake supports generating deployable NixOS images for various targets.
 ### Building Images
 
 ```bash
+# Method 1: nixos-rebuild (native)
+nixos-rebuild build --flake .#wsl-ros2
+
+# Method 2: Flake outputs (recommended)
 # WSL2 tarball (import with wsl --import)
 nix build .#nixosConfigurations.wsl-ros2.config.system.build.tarballBuilder
 
@@ -250,6 +256,10 @@ nix build .#nixosConfigurations.iso-ros2.config.system.build.isoImage
 
 # QEMU VM
 nix build .#nixosConfigurations.vm-ros2.config.system.build.vm
+
+# Method 3: nixos-generators (multi-format)
+nixos-generate -f iso -c ./nix/images/iso.nix
+nixos-generate -f qcow -c ./nix/images/vm.nix
 ```
 
 ### WSL2 Import
