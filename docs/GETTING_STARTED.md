@@ -217,10 +217,10 @@ The environment includes Docker Compose configurations for various services:
 
 ```bash
 # Start observability stack (Prometheus, Grafana, etc.)
-docker-compose -f docker/docker-compose.observability.yml up -d
+docker compose -f docker/docker-compose.observability.yml up -d
 
 # Start LocalAI for local LLM inference
-docker-compose -f docker/docker-compose.localai.yml up -d
+docker compose -f docker/docker-compose.localai.yml up -d
 
 # View all available stacks
 ls docker/docker-compose.*.yml

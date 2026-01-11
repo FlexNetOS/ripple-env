@@ -232,7 +232,7 @@ sudo usermod -aG docker $USER
 **Solution**:
 ```bash
 # Use docker compose (v2 syntax)
-docker compose -f docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml up -d
 
 # Or install standalone
 sudo apt install docker-compose-plugin
@@ -261,7 +261,7 @@ docker logs <container-name>
 docker network create agentic-network
 
 # Then start services
-docker compose -f docker-compose.observability.yml up -d
+docker compose -f docker/docker-compose.observability.yml up -d
 ```
 
 ### Port already in use
@@ -274,9 +274,9 @@ docker compose -f docker-compose.observability.yml up -d
 sudo lsof -i :8080
 
 # Kill the process or change port in docker-compose
-docker compose -f docker-compose.yml down
+docker compose -f docker/docker-compose.yml down
 # Edit the port mapping, then:
-docker compose -f docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml up -d
 ```
 
 ---
