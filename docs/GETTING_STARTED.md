@@ -116,15 +116,17 @@ You're ready to develop ROS2 applications.
 The environment provides multiple shells for different use cases:
 
 ```bash
-# Default development shell (recommended)
+# Default (minimal) development shell (recommended)
 nix develop
 
-# Minimal shell (faster startup)
-nix develop .#minimal
+# Full shell (extra tooling)
+nix develop .#full
 
 # CUDA-enabled shell (Linux with NVIDIA GPU)
 nix develop .#cuda
 
+# Identity shell (base system tools only)
+nix develop .#identity
 # Full shell (CI / extra tooling)
 nix develop .#full
 ```
