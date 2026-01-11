@@ -348,6 +348,40 @@ The modules can be imported into other flakes:
 }
 ```
 
+## NixOS Image Generation
+
+This flake supports generating various NixOS image formats for deployment:
+
+### WSL2 Image
+
+Generate a WSL2-compatible NixOS tarball with ROS2 pre-configured:
+
+```bash
+# Build WSL tarball (future capability)
+nix build .#images.wsl
+
+# Import to Windows WSL
+wsl --import NixOS-ROS2-Custom $env:USERPROFILE\WSL\NixOS-ROS2 result/nixos-wsl.tar.gz
+```
+
+### Other Image Formats
+
+Using [nixos-generators](https://github.com/nix-community/nixos-generators), you can create:
+
+| Format | Command | Use Case |
+|--------|---------|----------|
+| WSL | `nix build .#images.wsl` | Windows Subsystem for Linux |
+| ISO | `nix build .#images.iso` | Bootable installer |
+| VM (QEMU) | `nix build .#images.vm` | Virtual machine image |
+| Docker | `nix build .#images.docker` | Container image |
+| SD Card | `nix build .#images.sd-aarch64` | Raspberry Pi / ARM devices |
+
+### Architecture Documentation
+
+For detailed information about the flake architecture and planned modularization:
+
+- **[NIX_FLAKE_MODULARIZATION.md](docs/NIX_FLAKE_MODULARIZATION.md)** - Modularization strategy and image generation details
+
 ## Adding Packages
 
 ### ROS2 Packages (via Pixi)

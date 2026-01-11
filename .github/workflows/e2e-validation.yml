@@ -202,6 +202,10 @@ jobs:
         run: |
           docker network create agentic-network || true
 
+      - name: Prepare health check script
+        run: |
+          chmod +x scripts/health-check.sh
+
       - name: Start Observability Stack
         run: |
           docker-compose -f docker-compose.observability.yml up -d
@@ -209,13 +213,11 @@ jobs:
 
       - name: Test Prometheus
         run: |
-          curl -sf http://localhost:9090/-/healthy || exit 1
-          echo "✅ Prometheus is healthy"
+          ./scripts/health-check.sh http://localhost:9090/-/healthy 5 5 "Prometheus"
 
       - name: Test Grafana
         run: |
-          curl -sf http://localhost:3000/api/health || exit 1
-          echo "✅ Grafana is healthy"
+          ./scripts/health-check.sh http://localhost:3000/api/health 5 5 "Grafana"
 
       - name: Start Messaging Stack
         run: |
@@ -224,16 +226,13 @@ jobs:
 
       - name: Test NATS
         run: |
-          curl -sf http://localhost:8222/healthz || exit 1
-          echo "✅ NATS is healthy"
+          ./scripts/health-check.sh http://localhost:8222/healthz 5 5 "NATS"
 
       - name: Test Temporal
         run: |
-          # Temporal frontend service health check
-          curl -sf http://localhost:7233 || echo "Temporal gRPC endpoint available"
-          # Check Temporal UI if available
-          curl -sf http://localhost:8088/api/v1/cluster-info 2>/dev/null || echo "Temporal UI check (may not be available)"
-          echo "✅ Temporal messaging stack healthy"
+          # Temporal frontend service health check (gRPC, may not respond to HTTP)
+          ./scripts/health-check.sh http://localhost:8088/api/v1/cluster-info 3 10 "Temporal UI" || echo "Temporal UI not available (optional)"
+          echo "✅ Temporal messaging stack checked"
 
       - name: Start Automation Stack
         run: |
@@ -242,9 +241,8 @@ jobs:
 
       - name: Test OPA
         run: |
-          curl -sf http://localhost:8181/health || exit 1
-          echo "✅ OPA is healthy"
-          
+          ./scripts/health-check.sh http://localhost:8181/health 5 5 "OPA"
+
           # Test policy evaluation
           curl -sf -X POST http://localhost:8181/v1/data/ros2/authz \
             -H "Content-Type: application/json" \
@@ -253,8 +251,7 @@ jobs:
 
       - name: Test n8n
         run: |
-          curl -sf http://localhost:5678/healthz || exit 1
-          echo "✅ n8n is healthy"
+          ./scripts/health-check.sh http://localhost:5678/healthz 5 5 "n8n"
 
       - name: Start Edge Stack
         run: |
@@ -263,18 +260,17 @@ jobs:
 
       - name: Test Kong Gateway
         run: |
-          curl -sf http://localhost:8001/status || exit 1
-          echo "✅ Kong is healthy"
+          ./scripts/health-check.sh http://localhost:8001/status 5 5 "Kong Gateway"
 
       - name: Start LocalAI
         run: |
           docker-compose -f docker-compose.localai.yml up -d
-          sleep 60  # LocalAI needs more time to initialize
+          # LocalAI initialization is handled by health check retries
 
       - name: Test LocalAI
         run: |
-          curl -sf http://localhost:8080/readyz || exit 1
-          echo "✅ LocalAI is healthy"
+          # LocalAI needs more time to initialize, use longer retries
+          ./scripts/health-check.sh http://localhost:8080/readyz 8 15 "LocalAI"
 
           # Test model listing
           curl -sf http://localhost:8080/v1/models || exit 1
@@ -283,13 +279,13 @@ jobs:
       - name: Start AGiXT Stack
         run: |
           docker-compose -f docker-compose.agixt.yml up -d
-          sleep 45  # AGiXT needs time to initialize
+          # AGiXT initialization is handled by health check retries
 
       - name: Test AGiXT
         run: |
-          curl -sf http://localhost:7437/api/docs 2>/dev/null || echo "AGiXT API docs check"
-          curl -sf http://localhost:7437/api/agent 2>/dev/null || echo "AGiXT agent endpoint check"
-          echo "✅ AGiXT stack healthy"
+          # AGiXT needs time to initialize, use longer retries
+          ./scripts/health-check.sh http://localhost:7437/api/health 6 15 "AGiXT" || echo "AGiXT health endpoint not available"
+          echo "✅ AGiXT stack checked"
 
       - name: Collect service logs on failure
         if: failure()

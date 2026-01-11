@@ -102,6 +102,11 @@ services:
       - ./config/opa/bundles:/usr/share/nginx/html:ro
     networks:
       - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
 volumes:

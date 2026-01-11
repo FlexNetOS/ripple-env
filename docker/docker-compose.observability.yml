@@ -114,6 +114,11 @@ services:
       - loki
     networks:
       - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9080/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -158,6 +163,11 @@ services:
       - alertmanager-data:/alertmanager
     networks:
       - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -179,6 +189,11 @@ services:
       - /:/rootfs:ro
     networks:
       - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -200,6 +215,11 @@ services:
       - /dev/kmsg
     networks:
       - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -261,6 +281,11 @@ services:
     environment:
       - NETDATA_CLAIM_TOKEN=${NETDATA_CLAIM_TOKEN:-}
       - NETDATA_CLAIM_URL=https://app.netdata.cloud
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:19999/api/v1/info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------

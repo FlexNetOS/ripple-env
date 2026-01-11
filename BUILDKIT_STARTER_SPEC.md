@@ -523,6 +523,55 @@ Smoke test images are non-negotiable. Keeping them in a separate file prevents a
 - Existing machine: Binary upgrades/repairs + passes smoke tests.
 - Offline mode: Completes with `--assets-dir` without network.
 
+### 7.2.1 NixOS Image Generation
+
+**Goal:** Generate reproducible NixOS images in multiple formats using `nixos-generators` and `NixOS-WSL`.
+
+**Supported Output Formats:**
+
+| Format | Tool | Output | Use Case |
+|--------|------|--------|----------|
+| WSL2 tarball | NixOS-WSL | `nixos-wsl.tar.gz` | Windows WSL2 import |
+| ISO installer | nixos-generators | `nixos.iso` | Bare metal / VM install |
+| QEMU VM | nixos-generators | `nixos.qcow2` | Virtual machine testing |
+| Docker image | nixos-generators | `nixos.tar.gz` | Container deployment |
+| SD card (ARM) | nixos-generators | `nixos-sd.img` | Raspberry Pi / edge devices |
+
+**Build Commands:**
+
+```bash
+# WSL2 tarball (primary)
+nix build .#images.wsl
+# Output: result/nixos-wsl.tar.gz
+
+# ISO installer
+nix build .#images.iso
+# Output: result/iso/nixos-*.iso
+
+# VM image
+nix build .#images.vm
+# Output: result/nixos.qcow2
+```
+
+**Architecture Notes:**
+
+The flake.nix is planned for modularization (see `docs/NIX_FLAKE_MODULARIZATION.md`) to:
+1. Separate concerns: packages, shells, commands, images
+2. Enable independent testing of each module
+3. Support parallel development on different components
+4. Improve evaluation performance
+
+**Image Configuration Location:**
+
+```
+nix/
+└── images/
+    ├── default.nix       # Image builders aggregator
+    ├── wsl.nix           # WSL2-specific configuration
+    ├── iso.nix           # ISO installer configuration
+    └── vm.nix            # QEMU/VirtualBox configuration
+```
+
 ### 7.3 Neovim requirement
 
 **Requirement:** Neovim is a **required** tool in the base stack.

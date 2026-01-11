@@ -73,6 +73,11 @@ services:
       - "8088:8080"
     networks:
       - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Temporal Admin Tools (optional)
   temporal-admin-tools:
