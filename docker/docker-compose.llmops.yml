@@ -53,6 +53,11 @@ services:
       - tensorzero
     networks:
       - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   # ClickHouse - Analytics database for TensorZero
