@@ -1,0 +1,198 @@
+# Umami Web Analytics
+# P1-011: Privacy-focused web analytics
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: umami-secrets
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: umami
+    app.kubernetes.io/component: observability
+type: Opaque
+stringData:
+  # P1-011: Umami database credentials
+  DATABASE_URL: "postgresql://umami:umami_password@postgres:5432/umami"
+  # Hash salt for security (generate with: openssl rand -hex 32)
+  HASH_SALT: "change_me_generate_with_openssl_rand_hex_32"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: umami-config
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: umami
+    app.kubernetes.io/component: observability
+data:
+  APP_URL: "http://umami.local:3000"
+  DATABASE_TYPE: "postgresql"
+  # Disable telemetry
+  DISABLE_TELEMETRY: "1"
+  # Log queries for debugging
+  LOG_QUERY: "0"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-umami-data
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: postgres-umami
+    app.kubernetes.io/component: observability
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-umami
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: postgres-umami
+    app.kubernetes.io/component: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres-umami
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres-umami
+        app.kubernetes.io/component: observability
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          env:
+            - name: POSTGRES_DB
+              value: umami
+            - name: POSTGRES_USER
+              value: umami
+            - name: POSTGRES_PASSWORD
+              value: umami_password
+          ports:
+            - containerPort: 5432
+              name: postgres
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "250m"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-umami-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: postgres-umami
+    app.kubernetes.io/component: observability
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+  selector:
+    app.kubernetes.io/name: postgres-umami
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: umami
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: umami
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/part-of: flexstack
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: umami
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: umami
+        app.kubernetes.io/component: observability
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgres 5432; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+      containers:
+        - name: umami
+          image: ghcr.io/umami-software/umami:postgresql-v2.15.0
+          ports:
+            - containerPort: 3000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: umami-config
+            - secretRef:
+                name: umami-secrets
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /api/heartbeat
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/heartbeat
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: umami
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: umami
+    app.kubernetes.io/component: observability
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: umami

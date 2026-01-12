@@ -19,3 +19,5 @@ resources:
   - loki.yaml
   - tempo.yaml
   - alertmanager.yaml
+  - netdata.yaml
+  - umami.yaml
