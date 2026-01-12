@@ -177,6 +177,14 @@
       perSystem =
         { pkgs, system, ... }:
         let
+          # Import NixOS image tests
+          imageTests = import ./nix/tests {
+            inherit inputs system;
+            pkgs = nixpkgs.legacyPackages.${system};
+            lib = nixpkgs.lib;
+          };
+        in
+        let
           # Holochain overlay source (pinned commit)
           holochainSrc = inputs.nixpkgs.legacyPackages.${system}.fetchFromGitHub {
             owner = "spartan-holochain-counsel";
@@ -272,6 +280,11 @@
               '';
             };
           };
+
+          # Flake checks including image tests
+          # Run with: nix flake check
+          # Individual tests: nix build .#checks.x86_64-linux.basic-services
+          checks = pkgs.lib.optionalAttrs (system == "x86_64-linux") imageTests;
         };
     };
 }

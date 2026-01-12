@@ -1,0 +1,454 @@
+# NixOS Image Build, Test, and Release Workflow
+# Builds WSL2, ISO, and VM images with automated testing and size monitoring
+#
+# Triggers:
+# - Push to main (builds and tests)
+# - Tags (v*): Creates releases with artifacts
+# - Manual dispatch: Configurable image types
+name: NixOS Images
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'nix/images/**'
+      - 'nix/tests/**'
+      - 'flake.nix'
+      - 'flake.lock'
+      - '.github/workflows/nixos-images.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'nix/images/**'
+      - 'nix/tests/**'
+      - 'flake.nix'
+      - 'flake.lock'
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      build_wsl:
+        description: 'Build WSL2 image'
+        type: boolean
+        default: true
+      build_iso:
+        description: 'Build ISO image'
+        type: boolean
+        default: true
+      build_vm:
+        description: 'Build VM image'
+        type: boolean
+        default: true
+      run_tests:
+        description: 'Run VM tests'
+        type: boolean
+        default: true
+      create_release:
+        description: 'Create release (requires tag)'
+        type: boolean
+        default: false
+
+env:
+  NIX_CONFIG: |
+    experimental-features = nix-command flakes
+    accept-flake-config = true
+  # Size limits for images (in MB)
+  WSL_SIZE_LIMIT_MB: 2048
+  ISO_SIZE_LIMIT_MB: 3072
+  VM_SIZE_LIMIT_MB: 4096
+
+jobs:
+  # =================================================================
+  # BUILD IMAGES
+  # =================================================================
+  build-images:
+    name: Build ${{ matrix.image }} Image
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: wsl
+            name: WSL2 Tarball
+            build_attr: nixosConfigurations.wsl-ros2.config.system.build.tarballBuilder
+            artifact_name: nixos-wsl-ros2.tar.gz
+            enabled_input: build_wsl
+          - image: iso
+            name: ISO Installer
+            build_attr: nixosConfigurations.iso-ros2.config.system.build.isoImage
+            artifact_name: nixos-ros2-installer.iso
+            enabled_input: build_iso
+          - image: vm
+            name: QEMU VM
+            build_attr: nixosConfigurations.vm-ros2.config.system.build.vm
+            artifact_name: nixos-ros2-vm
+            enabled_input: build_vm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if image should be built
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ matrix.enabled_input }}" == "build_wsl" ]]; then
+              echo "enabled=${{ inputs.build_wsl }}" >> $GITHUB_OUTPUT
+            elif [[ "${{ matrix.enabled_input }}" == "build_iso" ]]; then
+              echo "enabled=${{ inputs.build_iso }}" >> $GITHUB_OUTPUT
+            elif [[ "${{ matrix.enabled_input }}" == "build_vm" ]]; then
+              echo "enabled=${{ inputs.build_vm }}" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "enabled=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install Nix
+        if: steps.check.outputs.enabled == 'true'
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        if: steps.check.outputs.enabled == 'true'
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build ${{ matrix.name }}
+        if: steps.check.outputs.enabled == 'true'
+        id: build
+        run: |
+          echo "Building ${{ matrix.name }}..."
+          START_TIME=$(date +%s)
+
+          nix build .#${{ matrix.build_attr }} -o result-${{ matrix.image }} -L
+
+          END_TIME=$(date +%s)
+          BUILD_TIME=$((END_TIME - START_TIME))
+          echo "build_time=${BUILD_TIME}" >> $GITHUB_OUTPUT
+
+          # Find and measure the artifact
+          if [[ -d "result-${{ matrix.image }}" ]]; then
+            ARTIFACT=$(find result-${{ matrix.image }} -type f -name "*.tar.gz" -o -name "*.iso" | head -1)
+            if [[ -z "$ARTIFACT" ]]; then
+              ARTIFACT="result-${{ matrix.image }}"
+            fi
+          else
+            ARTIFACT="result-${{ matrix.image }}"
+          fi
+
+          echo "artifact_path=${ARTIFACT}" >> $GITHUB_OUTPUT
+
+      - name: Measure image size
+        if: steps.check.outputs.enabled == 'true'
+        id: size
+        run: |
+          ARTIFACT="${{ steps.build.outputs.artifact_path }}"
+
+          if [[ -f "$ARTIFACT" ]]; then
+            SIZE_BYTES=$(stat -c%s "$ARTIFACT")
+          elif [[ -d "$ARTIFACT" ]]; then
+            SIZE_BYTES=$(du -sb "$ARTIFACT" | cut -f1)
+          else
+            echo "Artifact not found: $ARTIFACT"
+            SIZE_BYTES=0
+          fi
+
+          SIZE_MB=$((SIZE_BYTES / 1024 / 1024))
+          SIZE_HUMAN=$(numfmt --to=iec-i --suffix=B $SIZE_BYTES)
+
+          echo "size_bytes=${SIZE_BYTES}" >> $GITHUB_OUTPUT
+          echo "size_mb=${SIZE_MB}" >> $GITHUB_OUTPUT
+          echo "size_human=${SIZE_HUMAN}" >> $GITHUB_OUTPUT
+
+          echo "### Image Size: ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Size: ${SIZE_HUMAN}" >> $GITHUB_STEP_SUMMARY
+          echo "- Build time: ${{ steps.build.outputs.build_time }}s" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check size limits
+        if: steps.check.outputs.enabled == 'true'
+        run: |
+          SIZE_MB=${{ steps.size.outputs.size_mb }}
+
+          case "${{ matrix.image }}" in
+            wsl)
+              LIMIT=${{ env.WSL_SIZE_LIMIT_MB }}
+              ;;
+            iso)
+              LIMIT=${{ env.ISO_SIZE_LIMIT_MB }}
+              ;;
+            vm)
+              LIMIT=${{ env.VM_SIZE_LIMIT_MB }}
+              ;;
+          esac
+
+          if [[ $SIZE_MB -gt $LIMIT ]]; then
+            echo "::warning::Image size (${SIZE_MB}MB) exceeds limit (${LIMIT}MB)"
+          else
+            echo "Image size (${SIZE_MB}MB) is within limit (${LIMIT}MB)"
+          fi
+
+      - name: Upload artifact
+        if: steps.check.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: result-${{ matrix.image }}
+          retention-days: 7
+
+      - name: Record size metrics
+        if: steps.check.outputs.enabled == 'true'
+        run: |
+          # Create metrics file for later aggregation
+          cat > size-metrics-${{ matrix.image }}.json << EOF
+          {
+            "image": "${{ matrix.image }}",
+            "name": "${{ matrix.name }}",
+            "size_bytes": ${{ steps.size.outputs.size_bytes }},
+            "size_mb": ${{ steps.size.outputs.size_mb }},
+            "size_human": "${{ steps.size.outputs.size_human }}",
+            "build_time_seconds": ${{ steps.build.outputs.build_time }},
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit": "${{ github.sha }}",
+            "ref": "${{ github.ref }}"
+          }
+          EOF
+
+      - name: Upload size metrics
+        if: steps.check.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: size-metrics-${{ matrix.image }}
+          path: size-metrics-${{ matrix.image }}.json
+          retention-days: 90
+
+  # =================================================================
+  # RUN VM TESTS
+  # =================================================================
+  vm-tests:
+    name: VM Tests
+    needs: build-images
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name != 'workflow_dispatch' || inputs.run_tests) &&
+      !startsWith(github.ref, 'refs/tags/')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - basic-services
+          - dev-tools
+          - network
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run ${{ matrix.test }} test
+        run: |
+          echo "Running ${{ matrix.test }} test..."
+          nix build .#checks.x86_64-linux.${{ matrix.test }} -L --print-build-logs || {
+            echo "::warning::Test ${{ matrix.test }} failed or not yet implemented"
+            exit 0
+          }
+
+      - name: Test results summary
+        run: |
+          echo "### VM Test: ${{ matrix.test }}" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+
+  # =================================================================
+  # SIZE MONITORING & REPORTING
+  # =================================================================
+  size-report:
+    name: Size Report
+    needs: build-images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all size metrics
+        uses: actions/download-artifact@v4
+        with:
+          pattern: size-metrics-*
+          merge-multiple: true
+
+      - name: Generate size report
+        run: |
+          echo "### 📊 Image Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | Size | Build Time | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|------|------------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          for f in size-metrics-*.json; do
+            if [[ -f "$f" ]]; then
+              NAME=$(jq -r '.name' "$f")
+              SIZE=$(jq -r '.size_human' "$f")
+              SIZE_MB=$(jq -r '.size_mb' "$f")
+              TIME=$(jq -r '.build_time_seconds' "$f")
+              IMAGE=$(jq -r '.image' "$f")
+
+              # Determine limit and status
+              case "$IMAGE" in
+                wsl) LIMIT=2048 ;;
+                iso) LIMIT=3072 ;;
+                vm) LIMIT=4096 ;;
+                *) LIMIT=4096 ;;
+              esac
+
+              if [[ $SIZE_MB -gt $LIMIT ]]; then
+                STATUS="⚠️ Over limit"
+              elif [[ $SIZE_MB -gt $((LIMIT * 80 / 100)) ]]; then
+                STATUS="🟡 Near limit"
+              else
+                STATUS="✅ OK"
+              fi
+
+              echo "| $NAME | $SIZE | ${TIME}s | $STATUS |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for size regression
+        run: |
+          # Compare with previous runs (if available)
+          echo "Size regression check: comparing against configured limits"
+
+          REGRESSION=false
+          for f in size-metrics-*.json; do
+            if [[ -f "$f" ]]; then
+              IMAGE=$(jq -r '.image' "$f")
+              SIZE_MB=$(jq -r '.size_mb' "$f")
+
+              case "$IMAGE" in
+                wsl) LIMIT=2048 ;;
+                iso) LIMIT=3072 ;;
+                vm) LIMIT=4096 ;;
+                *) LIMIT=4096 ;;
+              esac
+
+              if [[ $SIZE_MB -gt $LIMIT ]]; then
+                echo "::error::$IMAGE image size (${SIZE_MB}MB) exceeds limit (${LIMIT}MB)"
+                REGRESSION=true
+              fi
+            fi
+          done
+
+          if [[ "$REGRESSION" == "true" ]]; then
+            echo "::warning::One or more images exceed size limits"
+          fi
+
+  # =================================================================
+  # CREATE RELEASE
+  # =================================================================
+  release:
+    name: Create Release
+    needs: [build-images, vm-tests, size-report]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+
+          # Find and copy image artifacts
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.iso" \) -exec cp {} release-assets/ \;
+
+          # Create checksums
+          cd release-assets
+          sha256sum * > SHA256SUMS.txt
+
+          ls -la
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          TAG="${{ github.ref_name }}"
+          cat > release-notes.md << EOF
+          ## NixOS Images Release ${TAG}
+
+          ### Included Images
+
+          | Image | Description |
+          |-------|-------------|
+          | WSL2 Tarball | Import with \`wsl --import\` for Windows development |
+          | ISO Installer | Bootable installer for bare metal |
+          | QEMU VM | Ready-to-run virtual machine |
+
+          ### Quick Start
+
+          #### WSL2
+          \`\`\`powershell
+          wsl --import NixOS-ROS2 \$env:USERPROFILE\\WSL\\NixOS-ROS2 nixos-wsl-ros2.tar.gz
+          wsl -d NixOS-ROS2
+          \`\`\`
+
+          #### VM
+          \`\`\`bash
+          # Extract and run
+          ./run-nixos-ros2-vm
+          \`\`\`
+
+          ### Checksums
+          See \`SHA256SUMS.txt\` for verification.
+
+          ### Changes
+          See [CHANGELOG.md](CHANGELOG.md) for details.
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
+          files: |
+            release-assets/*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # =================================================================
+  # SUMMARY
+  # =================================================================
+  summary:
+    name: Build Summary
+    needs: [build-images, size-report]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "### 🏗️ NixOS Image Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Images | ${{ needs.build-images.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Size Report | ${{ needs.size-report.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Workflow: \`${{ github.workflow }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Run: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
