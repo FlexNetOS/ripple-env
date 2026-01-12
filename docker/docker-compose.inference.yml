@@ -16,6 +16,15 @@ services:
       - ./data/localai/models:/models:cached
       - ./data/localai/images:/tmp/generated/images:cached
     restart: unless-stopped
+    # Resource limits for performance monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
       interval: 30s

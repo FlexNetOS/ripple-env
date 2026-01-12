@@ -7,7 +7,9 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | Resource | Description |
 |----------|-------------|
 | [Getting Started](GETTING_STARTED.md) | New user setup guide |
+| [Onboarding Tutorial](ONBOARDING_TUTORIAL.md) | Interactive step-by-step tutorial |
 | [Troubleshooting](TROUBLESHOOTING.md) | Common issues and solutions |
+| [Network Requirements](NETWORK_REQUIREMENTS.md) | Network dependencies and offline mode |
 | [Contributing](../CONTRIBUTING.md) | How to contribute |
 | [Project README](../README.md) | Project overview |
 
@@ -15,10 +17,24 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 
 ## Documentation Categories
 
-### Getting Started
+### Getting Started & Onboarding
 
-- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete setup guide for new users
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Solutions to common problems
+New to the project? Start here:
+
+| Document | Description | Time |
+|----------|-------------|------|
+| [GETTING_STARTED.md](GETTING_STARTED.md) | Quick setup reference | 5-10 min |
+| [ONBOARDING_TUTORIAL.md](ONBOARDING_TUTORIAL.md) | Interactive tutorial with checkpoints | 30-45 min |
+| [PROGRESSIVE_EXAMPLES.md](PROGRESSIVE_EXAMPLES.md) | Examples from beginner to advanced | Varies |
+| [VIDEO_WALKTHROUGHS.md](VIDEO_WALKTHROUGHS.md) | Video tutorials and external resources | Varies |
+| [COMMON_PITFALLS.md](COMMON_PITFALLS.md) | Common mistakes and how to avoid them | Reference |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Solutions to common problems | Reference |
+
+**Recommended learning path:**
+1. [Getting Started](GETTING_STARTED.md) - Get the environment running
+2. [Onboarding Tutorial](ONBOARDING_TUTORIAL.md) - Learn the basics interactively
+3. [Progressive Examples](PROGRESSIVE_EXAMPLES.md) - Build your skills
+4. [Common Pitfalls](COMMON_PITFALLS.md) - Learn what to avoid
 
 ### Core Infrastructure
 
@@ -33,6 +49,7 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 
 | Document | Description |
 |----------|-------------|
+| [SECRETS.md](SECRETS.md) | Secrets management with agenix and detect-secrets |
 | [MTLS_SETUP.md](MTLS_SETUP.md) | Mutual TLS configuration |
 | [MTLS-IMPLEMENTATION-CHECKLIST.md](MTLS-IMPLEMENTATION-CHECKLIST.md) | mTLS implementation checklist |
 
@@ -66,8 +83,16 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | Document | Description |
 |----------|-------------|
 | [PYTHON-ENVIRONMENTS.md](PYTHON-ENVIRONMENTS.md) | Python environment management |
+| [CONFLICTS.md](CONFLICTS.md) | Version coupling and dependency conflicts |
 | [NODEJS-AGENTS.md](NODEJS-AGENTS.md) | Node.js agent development |
 | [TOOLING-ANALYSIS.md](TOOLING-ANALYSIS.md) | Development tooling analysis |
+
+#### Python Dependency Utilities
+
+| Script | Description |
+|--------|-------------|
+| [`scripts/check-python-deps.sh`](../scripts/check-python-deps.sh) | Check for Python dependency conflicts |
+| [`scripts/upgrade-python-deps.sh`](../scripts/upgrade-python-deps.sh) | Python version upgrade automation |
 
 ### Platform-Specific
 
@@ -103,6 +128,15 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | Document | Description |
 |----------|-------------|
 | [NIX_FLAKE_MODULARIZATION.md](NIX_FLAKE_MODULARIZATION.md) | Flake modularization plan and image generation |
+| [NIX_EVALUATION_OPTIMIZATION.md](NIX_EVALUATION_OPTIMIZATION.md) | Nix evaluation performance optimization |
+
+### Network & Offline
+
+| Document | Description |
+|----------|-------------|
+| [NETWORK_REQUIREMENTS.md](NETWORK_REQUIREMENTS.md) | Network dependencies and firewall rules |
+| [SUPPLY_CHAIN_SECURITY.md](SUPPLY_CHAIN_SECURITY.md) | Supply chain security measures |
+| [AI_RESOURCE_REQUIREMENTS.md](AI_RESOURCE_REQUIREMENTS.md) | AI service resource requirements |
 
 ### Architecture & Planning
 
