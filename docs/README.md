@@ -66,8 +66,16 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | Document | Description |
 |----------|-------------|
 | [PYTHON-ENVIRONMENTS.md](PYTHON-ENVIRONMENTS.md) | Python environment management |
+| [CONFLICTS.md](CONFLICTS.md) | Version coupling and dependency conflicts |
 | [NODEJS-AGENTS.md](NODEJS-AGENTS.md) | Node.js agent development |
 | [TOOLING-ANALYSIS.md](TOOLING-ANALYSIS.md) | Development tooling analysis |
+
+#### Python Dependency Utilities
+
+| Script | Description |
+|--------|-------------|
+| [`scripts/check-python-deps.sh`](../scripts/check-python-deps.sh) | Check for Python dependency conflicts |
+| [`scripts/upgrade-python-deps.sh`](../scripts/upgrade-python-deps.sh) | Python version upgrade automation |
 
 ### Platform-Specific
 
