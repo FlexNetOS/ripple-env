@@ -15,7 +15,7 @@ Implemented **P1-005 (smallstep/cli)** and **SEC-003 (mTLS configuration)** for 
 
 ### Status: ✅ Already Present
 
-**File**: `/home/user/ros2-humble-env/flake.nix`
+**File**: `/home/user/ripple-env/flake.nix`
 
 **No changes needed** - `step-cli` already included at line 209:
 
@@ -43,7 +43,7 @@ pki-cert help
 
 ## 2. Step-CA Configuration Files
 
-### File: `/home/user/ros2-humble-env/config/step-ca/ca.json`
+### File: `/home/user/ripple-env/config/step-ca/ca.json`
 
 **Status**: ✅ Created
 
@@ -111,7 +111,7 @@ Complete Step-CA configuration with:
 ```
 </details>
 
-### File: `/home/user/ros2-humble-env/config/step-ca/defaults.json`
+### File: `/home/user/ripple-env/config/step-ca/defaults.json`
 
 **Status**: ✅ Created
 
@@ -124,7 +124,7 @@ Complete Step-CA configuration with:
 }
 ```
 
-### File: `/home/user/ros2-humble-env/config/step-ca/.gitignore`
+### File: `/home/user/ripple-env/config/step-ca/.gitignore`
 
 **Status**: ✅ Created
 
@@ -134,13 +134,13 @@ Protects sensitive files from being committed:
 - `secrets/` - Password and provisioner keys
 - `pki/` - Generated certificates
 
-### File: `/home/user/ros2-humble-env/config/step-ca/README.md`
+### File: `/home/user/ripple-env/config/step-ca/README.md`
 
 **Status**: ✅ Created
 
 Comprehensive configuration documentation (102 lines).
 
-### File: `/home/user/ros2-humble-env/config/step-ca/QUICKSTART.md`
+### File: `/home/user/ripple-env/config/step-ca/QUICKSTART.md`
 
 **Status**: ✅ Created
 
@@ -150,7 +150,7 @@ Quick reference guide for getting started (217 lines).
 
 ## 3. Initialization Scripts
 
-### File: `/home/user/ros2-humble-env/scripts/init-step-ca.sh`
+### File: `/home/user/ripple-env/scripts/init-step-ca.sh`
 
 **Status**: ✅ Created (executable)
 
@@ -173,7 +173,7 @@ Quick reference guide for getting started (217 lines).
 ```
 🔐 Initializing Step-CA for ARIA
 =================================
-PKI Directory: /home/user/ros2-humble-env/config/step-ca/pki
+PKI Directory: /home/user/ripple-env/config/step-ca/pki
 
 📝 Generating CA password...
    ✓ Password saved to: config/step-ca/secrets/password.txt
@@ -191,7 +191,7 @@ PKI Directory: /home/user/ros2-humble-env/config/step-ca/pki
 ✅ Step-CA initialization complete!
 ```
 
-### File: `/home/user/ros2-humble-env/scripts/generate-service-certs.sh`
+### File: `/home/user/ripple-env/scripts/generate-service-certs.sh`
 
 **Status**: ✅ Created (executable)
 
@@ -218,7 +218,7 @@ docker-compose -f docker-compose.identity.yml up -d step-ca
 
 **Output**: Certificates in `data/certs/<service>/<service>.{crt,key}`
 
-### File: `/home/user/ros2-humble-env/scripts/verify-mtls-setup.sh`
+### File: `/home/user/ripple-env/scripts/verify-mtls-setup.sh`
 
 **Status**: ✅ Created (executable)
 
@@ -243,7 +243,7 @@ docker-compose -f docker-compose.identity.yml up -d step-ca
 
 ## 4. Docker Compose Changes
 
-### File: `/home/user/ros2-humble-env/docker-compose.identity.yml`
+### File: `/home/user/ripple-env/docker-compose.identity.yml`
 
 **Status**: ✅ Modified
 
@@ -343,7 +343,7 @@ vaultwarden:
 
 ## 5. Documentation
 
-### File: `/home/user/ros2-humble-env/docs/MTLS_SETUP.md`
+### File: `/home/user/ripple-env/docs/MTLS_SETUP.md`
 
 **Status**: ✅ Created
 
@@ -358,7 +358,7 @@ Comprehensive mTLS setup guide (532 lines) covering:
 - Troubleshooting
 - Advanced usage (templates, webhooks, monitoring)
 
-### File: `/home/user/ros2-humble-env/P1-005-IMPLEMENTATION-SUMMARY.md`
+### File: `/home/user/ripple-env/P1-005-IMPLEMENTATION-SUMMARY.md`
 
 **Status**: ✅ Created
 
@@ -373,7 +373,7 @@ Complete implementation summary (550+ lines) with:
 - Success metrics
 - Next steps
 
-### File: `/home/user/ros2-humble-env/P1-005-CODE-CHANGES.md`
+### File: `/home/user/ripple-env/P1-005-CODE-CHANGES.md`
 
 **Status**: ✅ Created (this file)
 

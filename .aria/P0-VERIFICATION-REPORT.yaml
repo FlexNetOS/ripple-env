@@ -21,26 +21,26 @@ verification_report:
     status: "PASS"
     task_description: "Integrate HashiCorp Vault for secrets management"
     files_inspected:
-      - "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
-      - "/home/user/ros2-humble-env/config/vault/vault.hcl"
+      - "/home/user/ripple-env/docker/docker-compose.identity.yml"
+      - "/home/user/ripple-env/config/vault/vault.hcl"
 
     checks:
       - check: "Vault service exists in docker-compose.identity.yml"
         result: "PASS"
         evidence: "Line 186: 'vault:' service definition found"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.identity.yml"
         line_number: 186
 
       - check: "Vault image is hashicorp/vault:1.18"
         result: "PASS"
         evidence: "Line 187: 'image: hashicorp/vault:1.18'"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.identity.yml"
         line_number: 187
 
       - check: "Port 8200 is exposed"
         result: "PASS"
         evidence: "Line 206: ports section contains '8200:8200'"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.identity.yml"
         line_number: 206
 
       - check: "Health check is configured"
@@ -52,13 +52,13 @@ verification_report:
             - timeout: 10s
             - retries: 5
             - start_period: 10s
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.identity.yml"
         line_number: 214-219
 
       - check: "IPC_LOCK capability is added"
         result: "PASS"
         evidence: "Lines 207-208: cap_add section contains 'IPC_LOCK'"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.identity.yml"
         line_number: 207-208
 
       - check: "Environment variables for dev mode are set"
@@ -69,7 +69,7 @@ verification_report:
             - VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
             - VAULT_ADDR: "http://0.0.0.0:8200"
             - VAULT_SKIP_VERIFY: "true"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.identity.yml"
         line_number: 189-196
 
       - check: "Vault configuration file exists at config/vault/vault.hcl"
@@ -82,7 +82,7 @@ verification_report:
             - UI enabled
             - Proper logging configuration
             - Production configuration templates commented out
-        file_path: "/home/user/ros2-humble-env/config/vault/vault.hcl"
+        file_path: "/home/user/ripple-env/config/vault/vault.hcl"
         line_number: 1-89
 
     issues: []
@@ -96,20 +96,20 @@ verification_report:
     status: "PASS"
     task_description: "Enable NATS authentication with multiple service users"
     files_inspected:
-      - "/home/user/ros2-humble-env/docker/docker-compose.messaging.yml"
-      - "/home/user/ros2-humble-env/config/nats/nats.conf"
+      - "/home/user/ripple-env/docker/docker-compose.messaging.yml"
+      - "/home/user/ripple-env/config/nats/nats.conf"
 
     checks:
       - check: "NATS config volume is mounted at ./config/nats:/etc/nats:ro"
         result: "PASS"
         evidence: "Line 28: Volume mount '- ./config/nats:/etc/nats:ro' configured with read-only flag"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.messaging.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.messaging.yml"
         line_number: 28
 
       - check: "NATS command uses --config /etc/nats/nats.conf"
         result: "PASS"
         evidence: "Line 25: command: --config /etc/nats/nats.conf"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.messaging.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.messaging.yml"
         line_number: 25
 
       - check: "Environment variables for passwords are set"
@@ -120,7 +120,7 @@ verification_report:
             - NATS_TEMPORAL_PASS=${NATS_TEMPORAL_PASS:-changeme}
             - NATS_N8N_PASS=${NATS_N8N_PASS:-changeme}
             - NATS_AGIXT_PASS=${NATS_AGIXT_PASS:-changeme}
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.messaging.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.messaging.yml"
         line_number: 20-24
 
       - check: "Authorization block with users is defined in nats.conf"
@@ -135,7 +135,7 @@ verification_report:
                     { user: "agixt", password: "$NATS_AGIXT_PASS" }
                 ]
             }
-        file_path: "/home/user/ros2-humble-env/config/nats/nats.conf"
+        file_path: "/home/user/ripple-env/config/nats/nats.conf"
         line_number: 14-22
 
       - check: "JetStream is enabled in nats.conf"
@@ -147,7 +147,7 @@ verification_report:
                 max_memory_store: 1G
                 max_file_store: 10G
             }
-        file_path: "/home/user/ros2-humble-env/config/nats/nats.conf"
+        file_path: "/home/user/ripple-env/config/nats/nats.conf"
         line_number: 7-12
 
       - check: "At least 4 users are configured (admin, temporal, n8n, agixt)"
@@ -158,7 +158,7 @@ verification_report:
             2. temporal (line 18)
             3. n8n (line 19)
             4. agixt (line 20)
-        file_path: "/home/user/ros2-humble-env/config/nats/nats.conf"
+        file_path: "/home/user/ripple-env/config/nats/nats.conf"
         line_number: 17-20
 
     issues: []
@@ -172,32 +172,32 @@ verification_report:
     status: "PASS"
     task_description: "Migrate all services to unified agentic-network for service mesh"
     files_inspected:
-      - "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
-      - "/home/user/ros2-humble-env/config/mesh/service-routes.yaml"
+      - "/home/user/ripple-env/docker/docker-compose.temporal.yml"
+      - "/home/user/ripple-env/config/mesh/service-routes.yaml"
 
     checks:
       - check: "temporal-postgresql service uses agentic-network"
         result: "PASS"
         evidence: "Line 33: networks section contains '- agentic-network'"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.temporal.yml"
         line_number: 33
 
       - check: "temporal service uses agentic-network"
         result: "PASS"
         evidence: "Line 60: networks section contains '- agentic-network'"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.temporal.yml"
         line_number: 60
 
       - check: "temporal-ui service uses agentic-network"
         result: "PASS"
         evidence: "Line 75: networks section contains '- agentic-network'"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.temporal.yml"
         line_number: 75
 
       - check: "temporal-admin-tools service uses agentic-network"
         result: "PASS"
         evidence: "Line 89: networks section contains '- agentic-network'"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.temporal.yml"
         line_number: 89
 
       - check: "Network is defined as external: true"
@@ -207,25 +207,25 @@ verification_report:
             networks:
               agentic-network:
                 external: true
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.temporal.yml"
         line_number: 94-96
 
       - check: "PostgreSQL uses 17.2-alpine (P1-009 dependency)"
         result: "PASS"
         evidence: "Line 18: image: postgres:17.2-alpine"
-        file_path: "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
+        file_path: "/home/user/ripple-env/docker/docker-compose.temporal.yml"
         line_number: 18
 
       - check: "Service mesh configuration file exists"
         result: "PASS"
         evidence: |
-          File exists at /home/user/ros2-humble-env/config/mesh/service-routes.yaml
+          File exists at /home/user/ripple-env/config/mesh/service-routes.yaml
           Contains service mesh configuration for:
             - NATS (network: agentic-network, ports: 4222, 8222)
             - Temporal (network: agentic-network, ports: 7233, 8088)
             - n8n (network: agentic-network, port: 5678)
           Includes NATS integration configuration for temporal and n8n
-        file_path: "/home/user/ros2-humble-env/config/mesh/service-routes.yaml"
+        file_path: "/home/user/ripple-env/config/mesh/service-routes.yaml"
         line_number: 1-36
 
     issues: []
@@ -273,7 +273,7 @@ verification_report:
       priority: "MEDIUM"
       action: "Follow commented production configuration in vault.hcl"
       rationale: "Dev mode uses HTTP without encryption"
-      reference: "Lines 45-89 in /home/user/ros2-humble-env/config/vault/vault.hcl"
+      reference: "Lines 45-89 in /home/user/ripple-env/config/vault/vault.hcl"
 
     - recommendation: "Verify config/nats directory exists before starting NATS"
       priority: "MEDIUM"

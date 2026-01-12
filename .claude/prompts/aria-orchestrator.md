@@ -700,7 +700,7 @@ ci_workflow_checks:
 ### Current Tree Structure
 
 \`\`\`
-ros2-humble-env/
+ripple-env/
 ├── .claude/                    # 🤖 Agent System
 │   ├── agents/                 # Agent definitions (14 total)
 │   │   ├── coordinator.md

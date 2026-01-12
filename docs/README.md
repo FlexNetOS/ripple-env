@@ -75,8 +75,16 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | Document | Description |
 |----------|-------------|
 | [WSL2_BUILD_PIPELINE.md](WSL2_BUILD_PIPELINE.md) | Windows WSL2 build pipeline |
+| [TROUBLESHOOTING.md#wsl2-disk-space-management](TROUBLESHOOTING.md#wsl2-disk-space-management) | WSL2 disk space management |
 | [KATA_CONTAINERS_INSTALL.md](KATA_CONTAINERS_INSTALL.md) | Kata containers installation |
 | [SANDBOX_RUNTIME_INSTALL.md](SANDBOX_RUNTIME_INSTALL.md) | Sandbox runtime setup |
+
+#### WSL2 Disk Utilities
+
+| Script | Description |
+|--------|-------------|
+| [`scripts/wsl-cleanup.sh`](../scripts/wsl-cleanup.sh) | Cleanup utility for inside WSL |
+| [`scripts/Cleanup-WSL.ps1`](../scripts/Cleanup-WSL.ps1) | Windows PowerShell cleanup utility |
 
 ### ROS2 Specific
 

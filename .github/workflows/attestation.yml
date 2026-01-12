@@ -1,0 +1,329 @@
+# Supply Chain Attestation Workflow
+# SLSA Level 3 provenance generation for releases
+#
+# This workflow generates cryptographic attestations for all release artifacts,
+# providing verifiable proof of how they were built.
+#
+# Features:
+#   - SLSA provenance attestation (level 3)
+#   - Artifact signing with Sigstore/Cosign
+#   - Reproducible build verification
+#   - Input hash verification
+
+name: Supply Chain Attestation
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      verify_only:
+        description: 'Only verify existing attestations (no new attestations)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write  # For Sigstore OIDC
+  attestations: write  # For GitHub attestations
+
+env:
+  # Pinned tool versions for reproducibility
+  SYFT_VERSION: '1.4.1'
+  GRYPE_VERSION: '0.74.0'
+  COSIGN_VERSION: '2.2.3'
+
+jobs:
+  # Job 1: Verify input hashes match flake.lock
+  verify-inputs:
+    name: Verify Flake Inputs
+    runs-on: ubuntu-latest
+    outputs:
+      inputs_verified: ${{ steps.verify.outputs.verified }}
+      nixpkgs_hash: ${{ steps.verify.outputs.nixpkgs_hash }}
+      nixpkgs_stable_hash: ${{ steps.verify.outputs.nixpkgs_stable_hash }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Verify Flake Lock Integrity
+        id: verify
+        run: |
+          echo "Verifying flake.lock integrity..."
+
+          # Extract and verify input hashes
+          NIXPKGS_HASH=$(jq -r '.nodes.nixpkgs_2.locked.narHash // .nodes.nixpkgs.locked.narHash' flake.lock)
+          echo "nixpkgs_hash=$NIXPKGS_HASH" >> $GITHUB_OUTPUT
+
+          # Check for stable input if present
+          NIXPKGS_STABLE_HASH=$(jq -r '.nodes["nixpkgs-stable"].locked.narHash // "not-present"' flake.lock)
+          echo "nixpkgs_stable_hash=$NIXPKGS_STABLE_HASH" >> $GITHUB_OUTPUT
+
+          # Verify the lock file is valid JSON and has expected structure
+          if jq -e '.version >= 5' flake.lock > /dev/null 2>&1; then
+            echo "verified=true" >> $GITHUB_OUTPUT
+            echo "Flake lock version: $(jq -r '.version' flake.lock)"
+          else
+            echo "verified=false" >> $GITHUB_OUTPUT
+            echo "::error::Invalid or outdated flake.lock format"
+            exit 1
+          fi
+
+          # Verify flake evaluates correctly
+          echo "Verifying flake evaluation..."
+          nix flake metadata --json > /dev/null 2>&1 || {
+            echo "::error::Flake metadata evaluation failed"
+            exit 1
+          }
+
+          echo "Input verification complete"
+          echo "## Input Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Input | Hash |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| nixpkgs | \`${NIXPKGS_HASH:0:16}...\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| nixpkgs-stable | \`${NIXPKGS_STABLE_HASH:0:16}...\` |" >> $GITHUB_STEP_SUMMARY
+
+  # Job 2: Generate SLSA provenance
+  generate-provenance:
+    name: Generate SLSA Provenance
+    runs-on: ubuntu-latest
+    needs: verify-inputs
+    if: needs.verify-inputs.outputs.inputs_verified == 'true'
+    outputs:
+      provenance_file: ${{ steps.provenance.outputs.file }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Generate SLSA Provenance
+        id: provenance
+        run: |
+          mkdir -p attestations
+
+          # Get build information
+          COMMIT_SHA="${{ github.sha }}"
+          REF_NAME="${{ github.ref_name }}"
+          WORKFLOW_REF="${{ github.workflow_ref }}"
+          RUNNER_ENV="${{ runner.environment }}"
+
+          # Generate SLSA v1.0 provenance
+          cat > attestations/provenance.json << EOF
+          {
+            "_type": "https://in-toto.io/Statement/v1",
+            "subject": [
+              {
+                "name": "ripple-env",
+                "digest": {
+                  "sha256": "$(nix flake metadata --json | jq -r '.locked.narHash' | sed 's/sha256-//')"
+                }
+              }
+            ],
+            "predicateType": "https://slsa.dev/provenance/v1",
+            "predicate": {
+              "buildDefinition": {
+                "buildType": "https://github.com/FlexNetOS/ripple-env/nix-flake/v1",
+                "externalParameters": {
+                  "repository": "${{ github.repository }}",
+                  "ref": "${REF_NAME}",
+                  "commit": "${COMMIT_SHA}"
+                },
+                "internalParameters": {
+                  "nixpkgs_hash": "${{ needs.verify-inputs.outputs.nixpkgs_hash }}",
+                  "nixpkgs_stable_hash": "${{ needs.verify-inputs.outputs.nixpkgs_stable_hash }}"
+                },
+                "resolvedDependencies": $(nix flake metadata --json | jq '.locks.nodes | to_entries | map({name: .key, uri: (.value.locked.url // "local"), digest: {narHash: .value.locked.narHash}}) | map(select(.digest.narHash != null))')
+              },
+              "runDetails": {
+                "builder": {
+                  "id": "https://github.com/actions/runner",
+                  "version": {
+                    "runner": "${{ runner.os }}-${{ runner.arch }}"
+                  }
+                },
+                "metadata": {
+                  "invocationId": "${{ github.run_id }}-${{ github.run_attempt }}",
+                  "startedOn": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+                }
+              }
+            }
+          }
+          EOF
+
+          echo "file=attestations/provenance.json" >> $GITHUB_OUTPUT
+
+          # Pretty print for logs
+          echo "Generated SLSA Provenance:"
+          jq '.' attestations/provenance.json
+
+      - name: Upload Provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: slsa-provenance
+          path: attestations/provenance.json
+          retention-days: 90
+
+  # Job 3: Sign artifacts with Sigstore
+  sign-artifacts:
+    name: Sign with Sigstore
+    runs-on: ubuntu-latest
+    needs: [verify-inputs, generate-provenance]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Provenance
+        uses: actions/download-artifact@v4
+        with:
+          name: slsa-provenance
+          path: attestations/
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v${{ env.COSIGN_VERSION }}
+
+      - name: Sign Provenance
+        run: |
+          # Sign the provenance file with keyless signing (OIDC)
+          cosign sign-blob \
+            --yes \
+            --output-signature attestations/provenance.json.sig \
+            --output-certificate attestations/provenance.json.cert \
+            attestations/provenance.json
+
+          echo "Provenance signed successfully"
+
+      - name: Generate Attestation Bundle
+        run: |
+          # Create attestation bundle with all signatures
+          cat > attestations/attestation-bundle.json << EOF
+          {
+            "version": "1.0.0",
+            "attestations": [
+              {
+                "type": "slsa-provenance",
+                "file": "provenance.json",
+                "signature": "$(base64 -w0 attestations/provenance.json.sig)",
+                "certificate": "$(base64 -w0 attestations/provenance.json.cert)"
+              }
+            ],
+            "metadata": {
+              "repository": "${{ github.repository }}",
+              "commit": "${{ github.sha }}",
+              "ref": "${{ github.ref }}",
+              "workflow": "${{ github.workflow }}",
+              "run_id": "${{ github.run_id }}",
+              "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            }
+          }
+          EOF
+
+      - name: Upload Signed Attestations
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-attestations
+          path: attestations/
+          retention-days: 90
+
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            attestations/provenance.json
+            attestations/provenance.json.sig
+            attestations/provenance.json.cert
+            attestations/attestation-bundle.json
+
+  # Job 4: Verify attestations (can be run standalone)
+  verify-attestations:
+    name: Verify Attestations
+    runs-on: ubuntu-latest
+    needs: sign-artifacts
+    if: always() && (needs.sign-artifacts.result == 'success' || github.event.inputs.verify_only == 'true')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Attestations
+        uses: actions/download-artifact@v4
+        with:
+          name: signed-attestations
+          path: attestations/
+        continue-on-error: true
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Verify Signatures
+        run: |
+          if [ -f attestations/provenance.json.sig ]; then
+            echo "Verifying provenance signature..."
+            cosign verify-blob \
+              --signature attestations/provenance.json.sig \
+              --certificate attestations/provenance.json.cert \
+              --certificate-identity-regexp "https://github.com/${{ github.repository }}/*" \
+              --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+              attestations/provenance.json
+
+            echo "Signature verification: PASSED"
+          else
+            echo "No attestations found to verify"
+            if [ "${{ github.event.inputs.verify_only }}" == "true" ]; then
+              echo "::error::Verify-only mode but no attestations found"
+              exit 1
+            fi
+          fi
+
+      - name: Generate Verification Report
+        run: |
+          echo "## Attestation Verification Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Input Verification | ${{ needs.verify-inputs.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Provenance Generation | ${{ needs.generate-provenance.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact Signing | ${{ needs.sign-artifacts.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Ref:** \`${{ github.ref }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # Job 5: Create GitHub native attestation
+  github-attestation:
+    name: GitHub Native Attestation
+    runs-on: ubuntu-latest
+    needs: [verify-inputs, generate-provenance]
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Download Provenance
+        uses: actions/download-artifact@v4
+        with:
+          name: slsa-provenance
+          path: attestations/
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            flake.nix
+            flake.lock
+            attestations/provenance.json

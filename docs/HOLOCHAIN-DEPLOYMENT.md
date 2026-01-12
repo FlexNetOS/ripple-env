@@ -51,7 +51,7 @@ docker network create agentic-network
 
 ```bash
 # Navigate to project root
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 
 # Deploy Holochain services
 docker-compose -f docker/docker-compose.holochain.yml up -d

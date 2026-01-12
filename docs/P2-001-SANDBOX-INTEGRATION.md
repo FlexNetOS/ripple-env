@@ -12,7 +12,7 @@ This implementation provides a comprehensive sandboxing system for executing unt
 
 ### 1. Sandbox Profiles
 
-Location: `/home/user/ros2-humble-env/config/sandbox/profiles/`
+Location: `/home/user/ripple-env/config/sandbox/profiles/`
 
 #### Low Risk Profile (`low-risk.yaml`)
 - **Use Case**: Trusted agents, development, debugging
@@ -45,7 +45,7 @@ Location: `/home/user/ros2-humble-env/config/sandbox/profiles/`
 
 ### 2. Sandbox Agent Executor
 
-Location: `/home/user/ros2-humble-env/scripts/sandbox-agent.sh` (403 lines)
+Location: `/home/user/ripple-env/scripts/sandbox-agent.sh` (403 lines)
 
 **Purpose**: Main entry point for executing agent code with risk-based profiles
 
@@ -76,7 +76,7 @@ Location: `/home/user/ros2-humble-env/scripts/sandbox-agent.sh` (403 lines)
 
 ### 3. AGiXT Integration Configuration
 
-Location: `/home/user/ros2-humble-env/config/agixt/sandbox-config.yaml` (281 lines)
+Location: `/home/user/ripple-env/config/agixt/sandbox-config.yaml` (281 lines)
 
 **Purpose**: Complete AGiXT integration for sandbox-based agent execution
 
@@ -246,7 +246,7 @@ print(f"sqrt(42) = {math.sqrt(42)}")
 EOF
 
 # Execute in high-risk sandbox
-/home/user/ros2-humble-env/scripts/sandbox-agent.sh \
+/home/user/ripple-env/scripts/sandbox-agent.sh \
   --risk-level high \
   --language python \
   --code /tmp/my-agent.py \
@@ -258,7 +258,7 @@ EOF
 # In AGiXT agent code
 from agixt.sandbox import SandboxExecutor
 
-executor = SandboxExecutor(config="/home/user/ros2-humble-env/config/agixt/sandbox-config.yaml")
+executor = SandboxExecutor(config="/home/user/ripple-env/config/agixt/sandbox-config.yaml")
 
 # Execute with automatic risk detection
 result = executor.execute(
@@ -341,12 +341,12 @@ Timestamp: 2026-01-10 02:27:34
 
 | File | Path | Lines | Purpose |
 |------|------|-------|---------|
-| **low-risk.yaml** | `/home/user/ros2-humble-env/config/sandbox/profiles/` | 81 | Low-risk profile configuration |
-| **medium-risk.yaml** | `/home/user/ros2-humble-env/config/sandbox/profiles/` | 117 | Medium-risk profile configuration |
-| **high-risk.yaml** | `/home/user/ros2-humble-env/config/sandbox/profiles/` | 167 | High-risk profile configuration |
-| **sandbox-agent.sh** | `/home/user/ros2-humble-env/scripts/` | 403 | Main agent execution script |
-| **sandbox-config.yaml** | `/home/user/ros2-humble-env/config/agixt/` | 281 | AGiXT integration configuration |
-| **sandbox-wrapper.sh** | `/home/user/ros2-humble-env/scripts/` | 323 | Docker sandbox wrapper (existing) |
+| **low-risk.yaml** | `/home/user/ripple-env/config/sandbox/profiles/` | 81 | Low-risk profile configuration |
+| **medium-risk.yaml** | `/home/user/ripple-env/config/sandbox/profiles/` | 117 | Medium-risk profile configuration |
+| **high-risk.yaml** | `/home/user/ripple-env/config/sandbox/profiles/` | 167 | High-risk profile configuration |
+| **sandbox-agent.sh** | `/home/user/ripple-env/scripts/` | 403 | Main agent execution script |
+| **sandbox-config.yaml** | `/home/user/ripple-env/config/agixt/` | 281 | AGiXT integration configuration |
+| **sandbox-wrapper.sh** | `/home/user/ripple-env/scripts/` | 323 | Docker sandbox wrapper (existing) |
 
 **Total**: 1,372 lines of configuration and code
 

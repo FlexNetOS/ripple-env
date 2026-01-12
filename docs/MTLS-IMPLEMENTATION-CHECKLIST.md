@@ -25,9 +25,9 @@ This checklist guides you through enabling mutual TLS (mTLS) on all ARIA service
 ```
 
 **Verification:**
-- [ ] File exists: `/home/user/ros2-humble-env/config/step-ca/pki/root_ca.crt`
-- [ ] File exists: `/home/user/ros2-humble-env/config/step-ca/pki/intermediate_ca.crt`
-- [ ] File exists: `/home/user/ros2-humble-env/config/step-ca/secrets/password.txt`
+- [ ] File exists: `/home/user/ripple-env/config/step-ca/pki/root_ca.crt`
+- [ ] File exists: `/home/user/ripple-env/config/step-ca/pki/intermediate_ca.crt`
+- [ ] File exists: `/home/user/ripple-env/config/step-ca/secrets/password.txt`
 
 ### 1.2 Start Step-CA
 
@@ -69,9 +69,9 @@ step ca health \
 ```
 
 **Verification:**
-- [ ] Certificates created in `/home/user/ros2-humble-env/data/certs/<service>/`
+- [ ] Certificates created in `/home/user/ripple-env/data/certs/<service>/`
 - [ ] Each service has `.crt` and `.key` files
-- [ ] Root CA copied to `/home/user/ros2-humble-env/data/certs/aria-root-ca.crt`
+- [ ] Root CA copied to `/home/user/ripple-env/data/certs/aria-root-ca.crt`
 - [ ] Key files have 600 permissions
 - [ ] Certificate files have 644 permissions
 
@@ -255,7 +255,7 @@ crontab -l | grep rotate-certs
 
 **Verification:**
 - [ ] Cron job installed (runs daily at 2 AM)
-- [ ] Logs directory exists: `/home/user/ros2-humble-env/logs/`
+- [ ] Logs directory exists: `/home/user/ripple-env/logs/`
 - [ ] Rotation threshold set to 30 days
 
 ### 5.3 Alternative: Systemd Timer

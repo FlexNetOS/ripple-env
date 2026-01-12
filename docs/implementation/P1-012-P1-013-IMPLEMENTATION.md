@@ -13,7 +13,7 @@ This implementation adds support for SWC compiler (P1-012) and PixiJS (P1-013) t
 
 ### 1. P1-012: SWC Compiler Integration
 
-**File Modified**: `/home/user/ros2-humble-env/flake.nix`
+**File Modified**: `/home/user/ripple-env/flake.nix`
 
 **Changes**:
 - Added SWC wrapper script to `devCommandWrappers` section (lines 1293-1306)
@@ -35,7 +35,7 @@ This implementation adds support for SWC compiler (P1-012) and PixiJS (P1-013) t
 
 ### 2. P1-013: PixiJS Integration
 
-**File Created**: `/home/user/ros2-humble-env/package.json`
+**File Created**: `/home/user/ripple-env/package.json`
 
 **Changes**:
 - Created package.json with PixiJS v8.0.0 as dependency
@@ -46,7 +46,7 @@ This implementation adds support for SWC compiler (P1-012) and PixiJS (P1-013) t
 **Package.json Contents**:
 ```json
 {
-  "name": "ros2-humble-env",
+  "name": "ripple-env",
   "version": "1.0.0",
   "dependencies": {
     "pixi.js": "^8.0.0"
@@ -65,7 +65,7 @@ This implementation adds support for SWC compiler (P1-012) and PixiJS (P1-013) t
 
 ### 3. SWC Configuration
 
-**File Created**: `/home/user/ros2-humble-env/.swcrc`
+**File Created**: `/home/user/ripple-env/.swcrc`
 
 **Purpose**: Provides default SWC configuration for TypeScript/JSX compilation
 
@@ -166,7 +166,7 @@ The additions complement existing build tools:
 
 ### File Structure
 ```
-/home/user/ros2-humble-env/
+/home/user/ripple-env/
 ├── flake.nix                  # Modified: Added swc wrapper
 ├── package.json               # Created: npm dependencies
 ├── .swcrc                     # Created: SWC configuration
@@ -221,9 +221,9 @@ nix develop --command bash -c "
 
 ## Related Files
 
-- `/home/user/ros2-humble-env/flake.nix` - Main Nix flake configuration
-- `/home/user/ros2-humble-env/package.json` - npm package configuration
-- `/home/user/ros2-humble-env/.swcrc` - SWC compiler configuration
+- `/home/user/ripple-env/flake.nix` - Main Nix flake configuration
+- `/home/user/ripple-env/package.json` - npm package configuration
+- `/home/user/ripple-env/.swcrc` - SWC compiler configuration
 
 ---
 
