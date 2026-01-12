@@ -1,0 +1,134 @@
+# Staging Environment Overlay
+# P1-018: Production-like staging environment configuration
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: flexstack-staging
+
+namespace: flexstack-staging
+
+# Reference base configurations
+bases:
+  - ../../base/messaging
+  - ../../base/identity
+  - ../../base/observability
+  - ../../base/delivery
+
+# Common labels for staging environment
+commonLabels:
+  environment: staging
+  managed-by: kustomize
+  app.kubernetes.io/part-of: flexstack
+
+# Resource name prefix
+namePrefix: staging-
+
+# Common annotations
+commonAnnotations:
+  deployment.kubernetes.io/revision: "1"
+  flexstack.io/environment: staging
+
+# Namespace transformation
+namespace: flexstack-staging
+
+# Resource modifications
+patches:
+  # Production-like replicas for staging
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+    target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/component=observability
+
+  # Production-like resources for staging
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 256Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 250m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 512Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1"
+    target:
+      kind: Deployment
+
+  # Production-like storage for staging
+  - patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 20Gi
+    target:
+      kind: PersistentVolumeClaim
+
+  # Add node affinity for staging workloads
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/affinity
+        value:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                preference:
+                  matchExpressions:
+                    - key: node-role.kubernetes.io/staging
+                      operator: In
+                      values:
+                        - "true"
+    target:
+      kind: Deployment
+
+# ConfigMap generator for staging-specific config
+configMapGenerator:
+  - name: staging-config
+    literals:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=info
+      - ENABLE_DEBUG=false
+      - METRICS_ENABLED=true
+      - TRACING_ENABLED=true
+      - BACKUP_ENABLED=true
+
+# Secret generator for staging credentials
+secretGenerator:
+  - name: staging-secrets
+    literals:
+      - DATABASE_PASSWORD=staging_password_change_me
+      - API_KEY=staging_api_key_change_me
+
+# Images - use release candidate tags for staging
+images:
+  - name: grafana/tempo
+    newTag: 2.7.2
+  - name: grafana/grafana
+    newTag: 11.4.0
+  - name: prom/prometheus
+    newTag: v3.1.0
+  - name: grafana/loki
+    newTag: 3.3.2
+  - name: nats
+    newTag: 2.10.24-alpine
+  - name: quay.io/argoproj/argo-rollouts
+    newTag: v1.7.2
+
+# Replica configuration
+replicas:
+  - name: tempo
+    count: 2
+  - name: grafana
+    count: 2
+  - name: prometheus
+    count: 2
+  - name: loki
+    count: 2
+  - name: nats
+    count: 2
+  - name: argo-rollouts
+    count: 2
