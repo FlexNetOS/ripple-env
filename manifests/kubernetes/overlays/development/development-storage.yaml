@@ -1,0 +1,42 @@
+# Development Storage Overrides
+# Reduced storage for development environment
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: flexstack
+spec:
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data
+  namespace: flexstack
+spec:
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-data
+  namespace: flexstack
+spec:
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: localai-models
+  namespace: flexstack-ai
+spec:
+  resources:
+    requests:
+      storage: 20Gi

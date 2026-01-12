@@ -1,0 +1,339 @@
+name: Kubernetes Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'manifests/kubernetes/**/*.yaml'
+      - 'manifests/kubernetes/**/*.yml'
+      - 'charts/**'
+      - '.github/workflows/k8s-validation.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'manifests/kubernetes/**/*.yaml'
+      - 'manifests/kubernetes/**/*.yml'
+      - 'charts/**'
+  workflow_dispatch:
+
+env:
+  KUBECONFORM_VERSION: "0.6.4"
+  KUSTOMIZE_VERSION: "5.3.0"
+  HELM_VERSION: "3.14.0"
+
+jobs:
+  validate-yaml-syntax:
+    name: Validate YAML Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Validate YAML files
+        run: |
+          python3 << 'PYEOF'
+          import yaml
+          import sys
+          import glob
+          import os
+
+          errors = []
+          valid_count = 0
+
+          for pattern in ['manifests/kubernetes/**/*.yaml', 'manifests/kubernetes/**/*.yml']:
+              for file in glob.glob(pattern, recursive=True):
+                  try:
+                      with open(file, 'r') as f:
+                          # Handle multi-document YAML files
+                          docs = list(yaml.safe_load_all(f))
+                          valid_count += 1
+                          print(f"✅ {file}: Valid ({len(docs)} documents)")
+                  except yaml.YAMLError as e:
+                      errors.append(f"{file}: {str(e)}")
+                  except Exception as e:
+                      errors.append(f"{file}: {str(e)}")
+
+          if errors:
+              print("\n❌ YAML validation failed:")
+              for error in errors:
+                  print(f"  - {error}")
+              sys.exit(1)
+          else:
+              print(f"\n✅ All {valid_count} YAML files valid")
+          PYEOF
+
+  validate-kubeconform:
+    name: Validate with Kubeconform
+    runs-on: ubuntu-latest
+    needs: validate-yaml-syntax
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install kubeconform
+        run: |
+          curl -L -o kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/v${{ env.KUBECONFORM_VERSION }}/kubeconform-linux-amd64.tar.gz"
+          tar xzf kubeconform.tar.gz
+          chmod +x kubeconform
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Validate base manifests
+        run: |
+          echo "## Validating base Kubernetes manifests"
+          find manifests/kubernetes/base -name "*.yaml" -type f | while read -r file; do
+            # Skip kustomization.yaml files
+            if [[ "$file" == *"kustomization.yaml" ]]; then
+              continue
+            fi
+            echo "Validating: $file"
+            kubeconform -strict -summary -output json "$file" || true
+          done
+
+      - name: Validate with strict mode
+        run: |
+          kubeconform \
+            -strict \
+            -summary \
+            -skip kustomization.yaml \
+            -output text \
+            manifests/kubernetes/base/**/*.yaml 2>&1 || true
+
+      - name: Generate validation report
+        run: |
+          echo "## Kubernetes Manifest Validation Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Base Manifests" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          find manifests/kubernetes/base -name "*.yaml" -type f ! -name "kustomization.yaml" | wc -l | xargs echo "Total manifests:"
+          kubeconform -summary manifests/kubernetes/base/**/*.yaml 2>&1 | tail -5 >> $GITHUB_STEP_SUMMARY || true
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  validate-kustomize:
+    name: Validate Kustomize Builds
+    runs-on: ubuntu-latest
+    needs: validate-yaml-syntax
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install kustomize
+        run: |
+          curl -L -o kustomize.tar.gz "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${{ env.KUSTOMIZE_VERSION }}/kustomize_v${{ env.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz"
+          tar xzf kustomize.tar.gz
+          chmod +x kustomize
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Build base manifests
+        run: |
+          echo "Building base kustomization..."
+          kustomize build manifests/kubernetes/base > /tmp/base-manifests.yaml
+          echo "✅ Base kustomization builds successfully"
+          echo "Generated $(grep -c '^---' /tmp/base-manifests.yaml 2>/dev/null || echo 0) resources"
+
+      - name: Build development overlay
+        run: |
+          echo "Building development overlay..."
+          kustomize build manifests/kubernetes/overlays/development > /tmp/dev-manifests.yaml
+          echo "✅ Development overlay builds successfully"
+          echo "Generated $(grep -c '^---' /tmp/dev-manifests.yaml 2>/dev/null || echo 0) resources"
+
+      - name: Build production overlay
+        run: |
+          echo "Building production overlay..."
+          kustomize build manifests/kubernetes/overlays/production > /tmp/prod-manifests.yaml
+          echo "✅ Production overlay builds successfully"
+          echo "Generated $(grep -c '^---' /tmp/prod-manifests.yaml 2>/dev/null || echo 0) resources"
+
+      - name: Validate built manifests
+        run: |
+          echo "## Kustomize Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Overlay | Resources | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Base | $(grep -c '^---' /tmp/base-manifests.yaml 2>/dev/null || echo 0) | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Development | $(grep -c '^---' /tmp/dev-manifests.yaml 2>/dev/null || echo 0) | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | $(grep -c '^---' /tmp/prod-manifests.yaml 2>/dev/null || echo 0) | ✅ |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload built manifests
+        uses: actions/upload-artifact@v6
+        with:
+          name: kustomize-builds
+          path: |
+            /tmp/base-manifests.yaml
+            /tmp/dev-manifests.yaml
+            /tmp/prod-manifests.yaml
+          retention-days: 7
+
+  validate-helm-charts:
+    name: Validate Helm Charts
+    runs-on: ubuntu-latest
+    if: hashFiles('charts/**') != ''
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v${{ env.HELM_VERSION }}
+
+      - name: Lint Helm charts
+        run: |
+          if [ -d "charts" ]; then
+            for chart in charts/*/; do
+              if [ -f "${chart}Chart.yaml" ]; then
+                echo "Linting: $chart"
+                helm lint "$chart" || true
+              fi
+            done
+          else
+            echo "No charts directory found"
+          fi
+
+      - name: Template Helm charts
+        run: |
+          if [ -d "charts" ]; then
+            for chart in charts/*/; do
+              if [ -f "${chart}Chart.yaml" ]; then
+                chart_name=$(basename "$chart")
+                echo "Templating: $chart"
+                helm template "$chart_name" "$chart" > "/tmp/${chart_name}-template.yaml" || true
+              fi
+            done
+          fi
+
+  security-scan:
+    name: Security Scan Manifests
+    runs-on: ubuntu-latest
+    needs: validate-kustomize
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download built manifests
+        uses: actions/download-artifact@v6
+        with:
+          name: kustomize-builds
+          path: /tmp
+
+      - name: Install kubesec
+        run: |
+          curl -L -o kubesec.tar.gz "https://github.com/controlplaneio/kubesec/releases/download/v2.14.1/kubesec_linux_amd64.tar.gz"
+          tar xzf kubesec.tar.gz
+          chmod +x kubesec
+          sudo mv kubesec /usr/local/bin/
+
+      - name: Run security scan
+        run: |
+          echo "## Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Scan individual resources from base manifests
+          for manifest in manifests/kubernetes/base/**/*.yaml; do
+            if [[ "$manifest" != *"kustomization.yaml" ]]; then
+              echo "Scanning: $manifest"
+              kubesec scan "$manifest" 2>/dev/null || true
+            fi
+          done
+
+      - name: Check for security issues
+        run: |
+          # Extract and check critical security patterns
+          if grep -r "privileged: true" manifests/kubernetes/; then
+            echo "⚠️  Warning: Found privileged containers"
+          fi
+
+          if grep -r "hostNetwork: true" manifests/kubernetes/; then
+            echo "⚠️  Warning: Found hostNetwork usage"
+          fi
+
+          if grep -r "hostPID: true" manifests/kubernetes/; then
+            echo "⚠️  Warning: Found hostPID usage"
+          fi
+
+          echo "Security scan complete"
+
+  resource-analysis:
+    name: Resource Analysis
+    runs-on: ubuntu-latest
+    needs: validate-kustomize
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download built manifests
+        uses: actions/download-artifact@v6
+        with:
+          name: kustomize-builds
+          path: /tmp
+
+      - name: Analyze resources
+        run: |
+          echo "## Resource Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count resource types
+          echo "### Resource Types in Base Manifests" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          grep "^kind:" /tmp/base-manifests.yaml | sort | uniq -c | sort -rn >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          # Calculate total requested resources
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Namespaces" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          grep -A1 "kind: Namespace" /tmp/base-manifests.yaml | grep "name:" | awk '{print $2}' >> $GITHUB_STEP_SUMMARY || echo "No namespaces found"
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  generate-report:
+    name: Generate Validation Report
+    runs-on: ubuntu-latest
+    needs:
+      [
+        validate-yaml-syntax,
+        validate-kubeconform,
+        validate-kustomize,
+        security-scan,
+        resource-analysis,
+      ]
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Generate final report
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+
+          ---
+
+          ## Validation Summary
+
+          | Check | Status |
+          |-------|--------|
+          | YAML Syntax | ${{ needs.validate-yaml-syntax.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Kubeconform | ${{ needs.validate-kubeconform.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Kustomize Build | ${{ needs.validate-kustomize.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Security Scan | ${{ needs.security-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Resource Analysis | ${{ needs.resource-analysis.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+
+          ---
+          *Generated by GitHub Actions on $(date -u +"%Y-%m-%d %H:%M:%S UTC")*
+          EOF
+
+      - name: Check overall status
+        run: |
+          if [[ "${{ needs.validate-yaml-syntax.result }}" != "success" ]] || \
+             [[ "${{ needs.validate-kustomize.result }}" != "success" ]]; then
+            echo "❌ Kubernetes validation failed"
+            exit 1
+          fi
+          echo "✅ Kubernetes validation passed"

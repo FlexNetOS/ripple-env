@@ -1,0 +1,114 @@
+# OPA (Open Policy Agent) Deployment for FlexStack
+# Policy enforcement
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opa-policies
+  namespace: flexstack
+  labels:
+    app.kubernetes.io/name: opa
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: flexstack
+data:
+  default.rego: |
+    package system
+
+    # Default deny
+    default allow = false
+
+    # Allow access based on role
+    allow {
+      input.user.role == "admin"
+    }
+
+    allow {
+      input.user.role == "developer"
+      input.action == "read"
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opa
+  namespace: flexstack
+  labels:
+    app.kubernetes.io/name: opa
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: flexstack
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opa
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opa
+        app.kubernetes.io/component: policy
+        app.kubernetes.io/part-of: flexstack
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8181"
+    spec:
+      containers:
+        - name: opa
+          image: openpolicyagent/opa:0.71.0-rootless
+          args:
+            - run
+            - --server
+            - --addr=0.0.0.0:8181
+            - --log-level=info
+            - --log-format=json
+            - /policies
+          ports:
+            - containerPort: 8181
+              name: http
+          volumeMounts:
+            - name: opa-policies
+              mountPath: /policies
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: "500m"
+            requests:
+              memory: 64Mi
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8181
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8181
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: opa-policies
+          configMap:
+            name: opa-policies
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opa
+  namespace: flexstack
+  labels:
+    app.kubernetes.io/name: opa
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: flexstack
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8181
+      targetPort: 8181
+      name: http
+  selector:
+    app.kubernetes.io/name: opa

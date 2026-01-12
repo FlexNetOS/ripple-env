@@ -1,0 +1,83 @@
+FlexStack has been deployed successfully!
+
+Release Name: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+=============================================================================
+SERVICES DEPLOYED
+=============================================================================
+
+{{- if .Values.postgresql.enabled }}
+PostgreSQL:
+  - Host: {{ include "flexstack.postgresql.host" . }}
+  - Port: 5432
+  - Username: {{ .Values.postgresql.auth.username }}
+{{- end }}
+
+{{- if .Values.redis.enabled }}
+Redis:
+  - Host: {{ include "flexstack.redis.host" . }}
+  - Port: 6379
+{{- end }}
+
+{{- if .Values.minio.enabled }}
+MinIO:
+  - API Endpoint: {{ include "flexstack.minio.endpoint" . }}
+  - Console: http://{{ .Release.Name }}-minio:9001
+{{- end }}
+
+{{- if and .Values.ai.enabled .Values.ai.localai.enabled }}
+LocalAI:
+  - API: http://{{ include "flexstack.fullname" . }}-localai:8080
+  - OpenAI Compatible: http://{{ include "flexstack.fullname" . }}-localai:8080/v1
+{{- end }}
+
+{{- if and .Values.ai.enabled .Values.ai.agixt.enabled }}
+AGiXT:
+  - API: http://{{ include "flexstack.fullname" . }}-agixt:7437
+{{- end }}
+
+{{- if and .Values.messaging.enabled .Values.messaging.temporal.enabled }}
+Temporal:
+  - gRPC: {{ include "flexstack.fullname" . }}-temporal:7233
+  - UI: http://{{ include "flexstack.fullname" . }}-temporal-ui:8080
+{{- end }}
+
+{{- if and .Values.observability.enabled .Values.observability.grafana.enabled }}
+Grafana:
+  - URL: http://{{ .Release.Name }}-grafana:3000
+  - Username: {{ .Values.observability.grafana.adminUser }}
+  - Password: {{ .Values.observability.grafana.adminPassword }}
+{{- end }}
+
+=============================================================================
+NEXT STEPS
+=============================================================================
+
+1. Wait for all pods to be ready:
+   kubectl get pods -n {{ .Values.namespaces.core }} -w
+
+2. Access services via port-forward:
+
+   # Grafana Dashboard
+   kubectl port-forward -n {{ .Values.namespaces.observability }} svc/{{ .Release.Name }}-grafana 3000:3000
+
+   # LocalAI API
+   kubectl port-forward -n {{ .Values.namespaces.ai }} svc/{{ include "flexstack.fullname" . }}-localai 8080:8080
+
+   # Temporal UI
+   kubectl port-forward -n {{ .Values.namespaces.messaging }} svc/{{ include "flexstack.fullname" . }}-temporal-ui 8088:8080
+
+3. Test LocalAI:
+   curl http://localhost:8080/v1/models
+
+4. Check service health:
+   kubectl get pods --all-namespaces -l app.kubernetes.io/part-of=flexstack
+
+=============================================================================
+DOCUMENTATION
+=============================================================================
+
+For more information, visit:
+- GitHub: https://github.com/FlexNetOS/ripple-env
+- Kubernetes Migration Guide: docs/deployment/KUBERNETES_MIGRATION.md

@@ -1,0 +1,32 @@
+# FlexStack Base Kustomization
+# Main entry point for all FlexStack Kubernetes resources
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: flexstack
+
+commonLabels:
+  app.kubernetes.io/part-of: flexstack
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/version: "1.0.0"
+
+resources:
+  # Namespaces
+  - namespace.yaml
+  # Core Infrastructure
+  - core/
+  # Observability Stack
+  - observability/
+  # AI/ML Services
+  - ai/
+  # Identity & Security
+  - identity/
+  # Data Services
+  - data/
+  # Edge Services (API Gateway)
+  - edge/
+  # Messaging & Workflows
+  - messaging/
+  # Automation
+  - automation/

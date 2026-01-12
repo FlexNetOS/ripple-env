@@ -1,0 +1,163 @@
+# Loki Deployment for FlexStack
+# Log aggregation
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-config
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: flexstack
+data:
+  loki.yaml: |
+    auth_enabled: false
+
+    server:
+      http_listen_port: 3100
+
+    ingester:
+      lifecycler:
+        address: 127.0.0.1
+        ring:
+          kvstore:
+            store: inmemory
+          replication_factor: 1
+        final_sleep: 0s
+      chunk_idle_period: 1h
+      max_chunk_age: 1h
+      chunk_target_size: 1048576
+      chunk_retain_period: 30s
+
+    schema_config:
+      configs:
+        - from: 2020-10-24
+          store: boltdb-shipper
+          object_store: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: /loki/boltdb-shipper-active
+        cache_location: /loki/boltdb-shipper-cache
+        cache_ttl: 24h
+        shared_store: filesystem
+      filesystem:
+        directory: /loki/chunks
+
+    compactor:
+      working_directory: /loki/boltdb-shipper-compactor
+      shared_store: filesystem
+
+    limits_config:
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+
+    chunk_store_config:
+      max_look_back_period: 0s
+
+    table_manager:
+      retention_deletes_enabled: false
+      retention_period: 0s
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: loki-data
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: flexstack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: flexstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: loki
+        app.kubernetes.io/component: logging
+        app.kubernetes.io/part-of: flexstack
+    spec:
+      containers:
+        - name: loki
+          image: grafana/loki:3.3.2
+          args:
+            - -config.file=/etc/loki/loki.yaml
+          ports:
+            - containerPort: 3100
+              name: http
+          volumeMounts:
+            - name: loki-config
+              mountPath: /etc/loki
+            - name: loki-data
+              mountPath: /loki
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 3100
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3100
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+      volumes:
+        - name: loki-config
+          configMap:
+            name: loki-config
+        - name: loki-data
+          persistentVolumeClaim:
+            claimName: loki-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: flexstack
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3100
+      targetPort: 3100
+      name: http
+  selector:
+    app.kubernetes.io/name: loki

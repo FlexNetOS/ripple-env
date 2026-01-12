@@ -1,0 +1,124 @@
+{{- if and .Values.ai.enabled .Values.ai.localai.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "flexstack.fullname" . }}-localai-config
+  namespace: {{ .Values.namespaces.ai }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: inference
+data:
+  THREADS: {{ .Values.ai.localai.config.threads | quote }}
+  CONTEXT_SIZE: {{ .Values.ai.localai.config.contextSize | quote }}
+  PARALLEL: {{ .Values.ai.localai.config.parallel | quote }}
+  F16: {{ .Values.ai.localai.config.f16 | quote }}
+  MODELS_PATH: "/models"
+  DEBUG: {{ .Values.ai.localai.config.debug | quote }}
+  LOCALAI_MMAP: "true"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "flexstack.fullname" . }}-localai-models
+  namespace: {{ .Values.namespaces.ai }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: inference
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.ai.localai.persistence.models.size }}
+  {{- if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass }}
+  {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "flexstack.fullname" . }}-localai
+  namespace: {{ .Values.namespaces.ai }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: inference
+spec:
+  replicas: {{ .Values.ai.localai.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: localai
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: localai
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: localai
+          image: {{ include "flexstack.localai.image" . }}
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: {{ include "flexstack.fullname" . }}-localai-config
+          volumeMounts:
+            - name: localai-models
+              mountPath: /models
+          resources:
+            {{- toYaml .Values.ai.localai.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+      volumes:
+        - name: localai-models
+          persistentVolumeClaim:
+            claimName: {{ include "flexstack.fullname" . }}-localai-models
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "flexstack.fullname" . }}-localai
+  namespace: {{ .Values.namespaces.ai }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: inference
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  selector:
+    app.kubernetes.io/name: localai
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

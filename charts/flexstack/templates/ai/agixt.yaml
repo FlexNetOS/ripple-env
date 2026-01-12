@@ -1,0 +1,165 @@
+{{- if and .Values.ai.enabled .Values.ai.agixt.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "flexstack.fullname" . }}-agixt-credentials
+  namespace: {{ .Values.namespaces.ai }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestration
+type: Opaque
+stringData:
+  AGIXT_API_KEY: {{ randAlphaNum 32 | b64enc }}
+  DATABASE_PASSWORD: {{ .Values.postgresql.auth.password }}
+  OPENAI_API_KEY: sk-localai
+  AWS_SECRET_ACCESS_KEY: {{ .Values.minio.auth.rootPassword }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "flexstack.fullname" . }}-agixt-config
+  namespace: {{ .Values.namespaces.ai }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestration
+data:
+  AGIXT_URI: "http://{{ include "flexstack.fullname" . }}-agixt:7437"
+  UVICORN_WORKERS: {{ .Values.ai.agixt.config.uvicornWorkers | quote }}
+  DB_CONNECTED: "true"
+  DATABASE_TYPE: "postgresql"
+  DATABASE_NAME: "agixt"
+  DATABASE_USER: {{ .Values.postgresql.auth.username }}
+  DATABASE_HOST: {{ include "flexstack.postgresql.host" . }}
+  DATABASE_PORT: "5432"
+  USING_S3: "true"
+  AWS_ACCESS_KEY_ID: {{ .Values.minio.auth.rootUser }}
+  S3_BUCKET: "agixt"
+  S3_ENDPOINT_URL: {{ include "flexstack.minio.endpoint" . }}
+  OPENAI_API_BASE: "http://{{ include "flexstack.fullname" . }}-localai:8080/v1"
+  DEFAULT_PROVIDER: {{ .Values.ai.agixt.config.defaultProvider | quote }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "flexstack.fullname" . }}-agixt-models
+  namespace: {{ .Values.namespaces.ai }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestration
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.ai.agixt.persistence.models.size }}
+  {{- if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass }}
+  {{- end }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "flexstack.fullname" . }}-agixt-workspace
+  namespace: {{ .Values.namespaces.ai }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestration
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.ai.agixt.persistence.workspace.size }}
+  {{- if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass }}
+  {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "flexstack.fullname" . }}-agixt
+  namespace: {{ .Values.namespaces.ai }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestration
+spec:
+  replicas: {{ .Values.ai.agixt.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: agixt
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: agixt
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: orchestration
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7437"
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: agixt
+          image: {{ include "flexstack.agixt.image" . }}
+          ports:
+            - containerPort: 7437
+              name: http
+          envFrom:
+            - configMapRef:
+                name: {{ include "flexstack.fullname" . }}-agixt-config
+            - secretRef:
+                name: {{ include "flexstack.fullname" . }}-agixt-credentials
+          volumeMounts:
+            - name: agixt-models
+              mountPath: /agixt/models
+            - name: agixt-workspace
+              mountPath: /agixt/WORKSPACE
+          resources:
+            {{- toYaml .Values.ai.agixt.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 7437
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 7437
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+      volumes:
+        - name: agixt-models
+          persistentVolumeClaim:
+            claimName: {{ include "flexstack.fullname" . }}-agixt-models
+        - name: agixt-workspace
+          persistentVolumeClaim:
+            claimName: {{ include "flexstack.fullname" . }}-agixt-workspace
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "flexstack.fullname" . }}-agixt
+  namespace: {{ .Values.namespaces.ai }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestration
+spec:
+  type: ClusterIP
+  ports:
+    - port: 7437
+      targetPort: 7437
+      name: http
+  selector:
+    app.kubernetes.io/name: agixt
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

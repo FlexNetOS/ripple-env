@@ -1,0 +1,57 @@
+# Production Pod Disruption Budgets
+# Ensure high availability during updates and maintenance
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: flexstack
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-pdb
+  namespace: flexstack
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kong-pdb
+  namespace: flexstack-edge
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kong
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: prometheus-pdb
+  namespace: flexstack-observability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: temporal-pdb
+  namespace: flexstack-messaging
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: temporal
