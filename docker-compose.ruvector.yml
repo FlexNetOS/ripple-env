@@ -1,0 +1,239 @@
+# =============================================================================
+# RuVector Distributed Vector Database - Docker Compose Configuration
+# =============================================================================
+# BUILDKIT_STARTER_SPEC.md Layer 10: State & Storage (P1-001)
+#
+# RuVector Features:
+#   - HNSW indexing with sub-millisecond latency (61us p50)
+#   - Cypher graph query language support
+#   - Self-learning Graph Neural Networks (GNN)
+#   - Raft consensus for distributed coordination
+#   - 39 attention mechanisms for transformers
+#   - HTTP/gRPC API endpoints
+#   - WebAssembly support for browser deployments
+#
+# Usage:
+#   docker compose -f docker-compose.ruvector.yml up -d
+#   docker compose -f docker-compose.ruvector.yml logs -f
+#
+# Endpoints:
+#   - HTTP API: http://localhost:8000
+#   - gRPC API: localhost:8001
+#   - Metrics: http://localhost:8002/metrics
+#   - Health: http://localhost:8000/health
+#
+# See: https://github.com/ruvnet/ruvector
+# =============================================================================
+
+name: ruvector
+
+networks:
+  agentic-network:
+    external: true
+  ruvector-internal:
+    driver: bridge
+
+volumes:
+  ruvector-data:
+    driver: local
+  ruvector-index:
+    driver: local
+  ruvector-logs:
+    driver: local
+
+services:
+  # ===========================================================================
+  # RuVector Primary Node
+  # ===========================================================================
+  ruvector-primary:
+    image: ruvector/ruvector:latest
+    container_name: ruvector-primary
+    hostname: ruvector-primary
+    restart: unless-stopped
+    networks:
+      - agentic-network
+      - ruvector-internal
+    ports:
+      # HTTP API (REST)
+      - "8000:8000"
+      # gRPC API
+      - "8001:8001"
+      # Prometheus metrics
+      - "8002:8002"
+      # Raft consensus (internal cluster communication)
+      - "8003:8003"
+    environment:
+      # Server configuration
+      RUVECTOR_NODE_ID: "node-1"
+      RUVECTOR_NODE_ROLE: "primary"
+      RUVECTOR_HTTP_PORT: "8000"
+      RUVECTOR_GRPC_PORT: "8001"
+      RUVECTOR_METRICS_PORT: "8002"
+      RUVECTOR_RAFT_PORT: "8003"
+
+      # Storage configuration
+      RUVECTOR_DATA_DIR: "/data"
+      RUVECTOR_INDEX_DIR: "/index"
+      RUVECTOR_LOG_DIR: "/logs"
+
+      # Index configuration
+      RUVECTOR_EMBEDDING_DIM: "${RUVECTOR_EMBEDDING_DIM:-384}"
+      RUVECTOR_INDEX_TYPE: "${RUVECTOR_INDEX_TYPE:-hnsw-gnn}"
+      RUVECTOR_HNSW_M: "${RUVECTOR_HNSW_M:-16}"
+      RUVECTOR_HNSW_EF_CONSTRUCT: "${RUVECTOR_HNSW_EF_CONSTRUCT:-200}"
+      RUVECTOR_HNSW_EF_SEARCH: "${RUVECTOR_HNSW_EF_SEARCH:-100}"
+
+      # GNN self-learning configuration
+      RUVECTOR_GNN_ENABLED: "${RUVECTOR_GNN_ENABLED:-true}"
+      RUVECTOR_GNN_LAYERS: "${RUVECTOR_GNN_LAYERS:-2}"
+      RUVECTOR_GNN_HIDDEN_DIM: "${RUVECTOR_GNN_HIDDEN_DIM:-128}"
+      RUVECTOR_GNN_LEARNING_RATE: "${RUVECTOR_GNN_LEARNING_RATE:-0.001}"
+      RUVECTOR_GNN_BATCH_SIZE: "${RUVECTOR_GNN_BATCH_SIZE:-32}"
+
+      # Compression configuration
+      RUVECTOR_COMPRESSION_ENABLED: "${RUVECTOR_COMPRESSION_ENABLED:-true}"
+      RUVECTOR_COMPRESSION_RATIO: "${RUVECTOR_COMPRESSION_RATIO:-8}"
+
+      # Cypher query configuration
+      RUVECTOR_CYPHER_ENABLED: "${RUVECTOR_CYPHER_ENABLED:-true}"
+      RUVECTOR_MAX_QUERY_DEPTH: "${RUVECTOR_MAX_QUERY_DEPTH:-10}"
+
+      # Cluster configuration (for multi-node deployment)
+      RUVECTOR_CLUSTER_ENABLED: "${RUVECTOR_CLUSTER_ENABLED:-false}"
+      RUVECTOR_CLUSTER_PEERS: "${RUVECTOR_CLUSTER_PEERS:-}"
+
+      # Logging
+      RUST_LOG: "${RUST_LOG:-info,ruvector=debug}"
+      RUST_BACKTRACE: "1"
+
+    volumes:
+      - ruvector-data:/data
+      - ruvector-index:/index
+      - ruvector-logs:/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G
+
+  # ===========================================================================
+  # RuVector Replica Node (for HA deployments)
+  # ===========================================================================
+  ruvector-replica:
+    image: ruvector/ruvector:latest
+    container_name: ruvector-replica
+    hostname: ruvector-replica
+    restart: unless-stopped
+    profiles:
+      - ha
+    networks:
+      - agentic-network
+      - ruvector-internal
+    ports:
+      - "8010:8000"
+      - "8011:8001"
+      - "8012:8002"
+      - "8013:8003"
+    environment:
+      RUVECTOR_NODE_ID: "node-2"
+      RUVECTOR_NODE_ROLE: "replica"
+      RUVECTOR_HTTP_PORT: "8000"
+      RUVECTOR_GRPC_PORT: "8001"
+      RUVECTOR_METRICS_PORT: "8002"
+      RUVECTOR_RAFT_PORT: "8003"
+      RUVECTOR_DATA_DIR: "/data"
+      RUVECTOR_INDEX_DIR: "/index"
+      RUVECTOR_LOG_DIR: "/logs"
+      RUVECTOR_EMBEDDING_DIM: "${RUVECTOR_EMBEDDING_DIM:-384}"
+      RUVECTOR_INDEX_TYPE: "${RUVECTOR_INDEX_TYPE:-hnsw-gnn}"
+      RUVECTOR_GNN_ENABLED: "${RUVECTOR_GNN_ENABLED:-true}"
+      RUVECTOR_GNN_LAYERS: "${RUVECTOR_GNN_LAYERS:-2}"
+      RUVECTOR_CLUSTER_ENABLED: "true"
+      RUVECTOR_CLUSTER_PEERS: "ruvector-primary:8003"
+      RUST_LOG: "${RUST_LOG:-info,ruvector=debug}"
+    volumes:
+      - ruvector-replica-data:/data
+      - ruvector-replica-index:/index
+    depends_on:
+      ruvector-primary:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+  # ===========================================================================
+  # RuVector Web UI (optional)
+  # ===========================================================================
+  ruvector-ui:
+    image: ruvector/ruvector-ui:latest
+    container_name: ruvector-ui
+    hostname: ruvector-ui
+    restart: unless-stopped
+    profiles:
+      - ui
+    networks:
+      - agentic-network
+    ports:
+      - "8080:80"
+    environment:
+      RUVECTOR_API_URL: "http://ruvector-primary:8000"
+      RUVECTOR_GRPC_URL: "ruvector-primary:8001"
+    depends_on:
+      ruvector-primary:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # Embedding Service (for vector generation)
+  # ===========================================================================
+  embedding-service:
+    image: sentence-transformers/all-MiniLM-L6-v2:latest
+    container_name: ruvector-embedding
+    hostname: ruvector-embedding
+    restart: unless-stopped
+    profiles:
+      - embedding
+    networks:
+      - agentic-network
+      - ruvector-internal
+    ports:
+      - "8090:8080"
+    environment:
+      MODEL_NAME: "all-MiniLM-L6-v2"
+      MAX_SEQ_LENGTH: "256"
+      BATCH_SIZE: "32"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+# ===========================================================================
+# Additional volumes for replica (only created when HA profile is used)
+# ===========================================================================
+volumes:
+  ruvector-replica-data:
+    driver: local
+  ruvector-replica-index:
+    driver: local

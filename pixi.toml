@@ -381,6 +381,134 @@ numpy = ">=1.24,<3"
 #   cd vCache && pip install -e .
 
 # =============================================================================
+# Vector Database Feature - ChromaDB (P1-001 Alternative)
+# =============================================================================
+# ChromaDB as alternative vector database for A/B testing with ruvector
+# BUILDKIT_STARTER_SPEC.md Layer 10: State & Storage
+# Activate with: pixi run -e vectordb-chromadb <command>
+#
+# Feature Flag: VECTOR_STORE=chromadb (in .env.state.example)
+# Primary Use Case: Development, testing, embedded deployments
+# Alternative: ruvector (Rust-native, via Cargo/npm - not Python)
+#
+# See: https://github.com/chroma-core/chroma
+
+[feature.vectordb-chromadb]
+platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+
+[feature.vectordb-chromadb.dependencies]
+# ChromaDB - Embedding database for AI applications
+chromadb = ">=0.4"
+
+# Embedding model support
+sentence-transformers = ">=2.0"
+
+# HTTP client for remote ChromaDB
+httpx = ">=0.24"
+
+# Async support
+asyncio = ">=3.4"
+
+# =============================================================================
+# Vector Database Feature - RuVector Support (P1-001 Primary)
+# =============================================================================
+# RuVector is a Rust-native distributed vector database with GNN self-learning.
+# BUILDKIT_STARTER_SPEC.md Layer 10: State & Storage
+# Activate with: pixi run -e vectordb-ruvector <command>
+#
+# IMPORTANT: RuVector is NOT a Python package. It provides:
+#   - Rust crates: cargo add ruvector-core ruvector-graph ruvector-gnn
+#   - Node.js bindings: npm install ruvector
+#   - WebAssembly: npm install ruvector-wasm
+#   - CLI: cargo install ruvector-cli
+#
+# This feature provides Python client dependencies for HTTP/gRPC access.
+# The actual ruvector server runs as a Rust binary or Docker container.
+#
+# Feature Flag: VECTOR_STORE=ruvector (in .env.state.example)
+# Primary Use Case: Production, distributed deployments, GNN-enhanced search
+#
+# See: https://github.com/ruvnet/ruvector
+
+[feature.vectordb-ruvector]
+platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+
+[feature.vectordb-ruvector.dependencies]
+# HTTP/gRPC clients for ruvector server communication
+httpx = ">=0.24"
+grpcio = ">=1.50"
+grpcio-tools = ">=1.50"
+
+# Protobuf for gRPC schemas
+protobuf = ">=4.0"
+
+# Embedding model support (for generating vectors to send to ruvector)
+sentence-transformers = ">=2.0"
+
+# Async support
+asyncio = ">=3.4"
+
+# NumPy for vector operations
+numpy = ">=1.24,<3"
+
+[feature.vectordb-ruvector.pypi-dependencies]
+# ruvector Python client (HTTP wrapper)
+# Note: Full ruvector runs as Rust server; this is client-only
+# Install server via: cargo install ruvector-server
+# Or Docker: docker run -p 8000:8000 ruvector/ruvector
+
+# =============================================================================
+# QuDAG Feature - Quantum-Resistant Distributed Communication (P3-011)
+# =============================================================================
+# QuDAG is a quantum-resistant distributed communication platform for
+# autonomous AI agents, swarm intelligence, and zero-person businesses.
+# Activate with: pixi run -e qudag <command>
+#
+# IMPORTANT: QuDAG is NOT a Python package. It provides:
+#   - Rust crates: cargo add qudag-core qudag-crypto qudag-network qudag-mcp
+#   - Node.js bindings: npm install qudag
+#   - CLI: cargo install qudag-cli
+#   - WebAssembly: npm install qudag-wasm
+#
+# This feature provides Python client dependencies for QuDAG MCP server access.
+#
+# Key Features:
+#   - Post-quantum cryptography (ML-KEM-768, ML-DSA, BLAKE3, HQC)
+#   - DAG-based consensus (QR-Avalanche)
+#   - Multi-hop onion routing with ChaCha20Poly1305
+#   - Native MCP server (stdio, HTTP, WebSocket)
+#   - AI agent coordination for autonomous systems
+#
+# See: https://github.com/ruvnet/qudag
+
+[feature.qudag]
+platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+
+[feature.qudag.dependencies]
+# WebSocket client for QuDAG MCP connections
+websockets = ">=11.0"
+
+# HTTP client for QuDAG REST API
+httpx = ">=0.24"
+
+# Cryptography support (for verifying QuDAG signatures)
+cryptography = ">=41.0"
+
+# Async support
+asyncio = ">=3.4"
+
+# JSON handling for MCP protocol
+orjson = ">=3.9"
+
+# Protobuf for binary protocol support
+protobuf = ">=4.0"
+
+[feature.qudag.pypi-dependencies]
+# MCP Python SDK for QuDAG MCP server integration
+# See: https://github.com/anthropics/anthropic-sdk-python
+mcp = ">=1.0"
+
+# =============================================================================
 # Documentation Feature - MkDocs with Material Theme
 # =============================================================================
 # Build and serve documentation locally with MkDocs Material theme
@@ -430,3 +558,8 @@ finetuning = { features = ["finetuning"], solve-group = "finetuning" }
 finetuning-cuda = { features = ["finetuning", "cuda"], solve-group = "finetuning-cuda" }
 caching = { features = ["caching"], solve-group = "caching" }
 docs = { features = ["docs"], solve-group = "docs" }
+# Vector database environments for A/B testing
+vectordb-chromadb = { features = ["vectordb-chromadb"], solve-group = "vectordb-chromadb" }
+vectordb-ruvector = { features = ["vectordb-ruvector"], solve-group = "vectordb-ruvector" }
+# QuDAG quantum-resistant distributed communication
+qudag = { features = ["qudag"], solve-group = "qudag" }

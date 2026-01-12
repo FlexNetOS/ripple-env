@@ -560,6 +560,18 @@ rust:
     # Query Engine (P1-004)
     datafusion: "43 (Apache Arrow-based SQL engine)"
 
+    # QuDAG - Quantum-Resistant Distributed Communication (P3-011)
+    qudag-core: "git (DAG implementation, QR-Avalanche consensus)"
+    qudag-crypto: "git (Post-quantum crypto: ML-KEM, ML-DSA)"
+    qudag-network: "git (P2P networking, onion routing)"
+    qudag-mcp: "git (MCP server implementation)"
+
+    # Post-Quantum Cryptography Support
+    blake3: "1.5 (Fast cryptographic hash)"
+    chacha20poly1305: "0.10 (AEAD cipher for onion routing)"
+    x25519-dalek: "2.0 (Classical key exchange, hybrid mode)"
+    ed25519-dalek: "2.1 (Classical signatures, hybrid mode)"
+
   packages:
     agixt-bridge:
       type: "binary library"
@@ -795,6 +807,37 @@ buildkit_spec_implementation:
       - "P1-001: ruvector distributed VDB (workspace, from git)"
       - "P1-003: sqlx async SQL (workspace)"
       - "P1-004: datafusion query engine (workspace)"
+    docker_compose:
+      - docker-compose.state.yml: "Redis + MinIO services"
+      - docker-compose.ruvector.yml: "RuVector standalone server"
+    pixi_features:
+      - vectordb-ruvector: "RuVector client dependencies"
+      - vectordb-chromadb: "ChromaDB for A/B testing"
+    verification: "scripts/verify-ruvector.sh"
+
+  layer_11_p2p_coordination:
+    status: "Complete"
+    components:
+      - "P1-002: Holochain SDK (hdk 0.4.0, hdi 0.5.0)"
+      - "P3-011: QuDAG quantum-resistant communication"
+    qudag:
+      rust_crates:
+        - qudag-core: "DAG implementation and QR-Avalanche consensus"
+        - qudag-crypto: "Post-quantum cryptography (ML-KEM, ML-DSA)"
+        - qudag-network: "P2P networking and onion routing"
+        - qudag-mcp: "Model Context Protocol server"
+      features:
+        - "Post-quantum cryptography (ML-KEM-768, ML-DSA-65)"
+        - "DAG-based consensus (QR-Avalanche)"
+        - "Multi-hop onion routing (ChaCha20Poly1305)"
+        - "Native MCP server (HTTP, WebSocket, stdio)"
+        - "Dark domain addressing (.dark)"
+      docker_compose: docker-compose.qudag.yml
+      mcp_config: manifests/mcp/qudag-server.json
+      network_config: manifests/qudag/networks.json
+    pixi_features:
+      - qudag: "QuDAG client dependencies (websockets, mcp, cryptography)"
+    verification: "scripts/verify-qudag.sh"
 
   layer_12_llmops:
     status: "Complete"

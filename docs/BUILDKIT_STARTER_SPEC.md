@@ -746,6 +746,62 @@ tuning_params:
   agent_info_expires_after_ms: 1200000
 ```
 
+### 9.8 QuDAG Integration (Quantum-Resistant Communication)
+
+**Priority:** P3-011
+
+**QuDAG** is a quantum-resistant distributed communication platform that complements Holochain for secure agent-to-agent messaging:
+
+| Capability | Holochain Role | QuDAG Role |
+|------------|----------------|------------|
+| Agent identity | DHT-based agent keys | Post-quantum key pairs (ML-KEM) |
+| Message routing | DHT gossip | Onion routing (ChaCha20Poly1305) |
+| Consensus | DHT validation | QR-Avalanche DAG consensus |
+| MCP integration | DNA-based tools | Native MCP server (HTTP/WS/stdio) |
+| Addressing | Agent public keys | .dark domains |
+
+**Key Features:**
+- **Post-Quantum Cryptography:** ML-KEM-768 (key encapsulation), ML-DSA-65 (signatures), BLAKE3 (hashing)
+- **DAG Consensus:** QR-Avalanche for parallel message processing without blockchain bottlenecks
+- **Onion Routing:** Multi-hop encrypted routing for metadata privacy
+- **Native MCP Server:** Direct integration with Claude Code and AI agents
+- **Hybrid Mode:** Classical + post-quantum crypto for defense-in-depth
+
+**Configuration files:**
+- `docker-compose.qudag.yml` — QuDAG node and MCP server
+- `.env.qudag.example` — Environment configuration template
+- `manifests/mcp/qudag-server.json` — MCP server definition with 11 tools
+- `manifests/qudag/networks.json` — Network configuration (local/devnet/testnet/mainnet)
+
+**Rust crates (added to `rust/Cargo.toml`):**
+```toml
+qudag-core = { git = "https://github.com/ruvnet/qudag", branch = "main" }
+qudag-crypto = { git = "https://github.com/ruvnet/qudag", branch = "main" }
+qudag-network = { git = "https://github.com/ruvnet/qudag", branch = "main" }
+qudag-mcp = { git = "https://github.com/ruvnet/qudag", branch = "main" }
+```
+
+**MCP Tools available:**
+- `send_message` — Encrypted agent-to-agent messaging
+- `query_dag` — Query DAG for message history
+- `create_channel` / `join_channel` — Group communication
+- `encrypt_message` / `decrypt_message` — Post-quantum encryption
+- `verify_signature` — Signature verification
+- `resolve_dark_domain` / `register_dark_domain` — .dark addressing
+- `get_node_info` / `get_network_stats` — Node status
+
+**When to use QuDAG vs Holochain:**
+| Use Case | Recommended |
+|----------|-------------|
+| Agent state coordination | Holochain DHT |
+| Secure messaging (quantum-safe) | QuDAG |
+| Capability grants / RBAC | Holochain source-chain |
+| Anonymous routing | QuDAG onion routing |
+| Model/artifact gossip | Holochain with IPFS |
+| AI agent MCP integration | QuDAG MCP server |
+
+**Reference:** https://github.com/ruvnet/qudag
+
 ---
 
 ## 10. Distributed Resource Orchestration (Parallel Compute/Inference/Storage/Memory)
