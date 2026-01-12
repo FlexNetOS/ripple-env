@@ -1,0 +1,254 @@
+# Argo Rollouts for Progressive Delivery
+# Progressive deployment strategies: Canary, Blue-Green
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argo-rollouts
+  labels:
+    app.kubernetes.io/name: argo-rollouts
+    app.kubernetes.io/component: delivery
+    app.kubernetes.io/part-of: flexstack
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argo-rollouts
+  namespace: argo-rollouts
+  labels:
+    app.kubernetes.io/name: argo-rollouts
+    app.kubernetes.io/component: delivery
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argo-rollouts
+  labels:
+    app.kubernetes.io/name: argo-rollouts
+    app.kubernetes.io/component: delivery
+rules:
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - rollouts
+      - rollouts/status
+      - rollouts/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - analysisruns
+      - analysisruns/finalizers
+      - experiments
+      - experiments/finalizers
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - analysistemplates
+      - clusteranalysistemplates
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - replicasets
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+      - apps
+    resources:
+      - deployments
+      - podtemplates
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argo-rollouts
+  labels:
+    app.kubernetes.io/name: argo-rollouts
+    app.kubernetes.io/component: delivery
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argo-rollouts
+subjects:
+  - kind: ServiceAccount
+    name: argo-rollouts
+    namespace: argo-rollouts
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argo-rollouts-config
+  namespace: argo-rollouts
+  labels:
+    app.kubernetes.io/name: argo-rollouts
+    app.kubernetes.io/component: delivery
+data:
+  # P1-006: Argo Rollouts configuration
+  rollout-defaults: |
+    strategy:
+      canary:
+        steps:
+          - setWeight: 20
+          - pause: {duration: 5m}
+          - setWeight: 40
+          - pause: {duration: 5m}
+          - setWeight: 60
+          - pause: {duration: 5m}
+          - setWeight: 80
+          - pause: {duration: 5m}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argo-rollouts
+  namespace: argo-rollouts
+  labels:
+    app.kubernetes.io/name: argo-rollouts
+    app.kubernetes.io/component: delivery
+    app.kubernetes.io/part-of: flexstack
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argo-rollouts
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: argo-rollouts
+        app.kubernetes.io/component: delivery
+    spec:
+      serviceAccountName: argo-rollouts
+      containers:
+        - name: argo-rollouts
+          image: quay.io/argoproj/argo-rollouts:v1.7.2
+          args:
+            - --loglevel
+            - info
+            - --kloglevel
+            - "0"
+          ports:
+            - containerPort: 8090
+              name: metrics
+            - containerPort: 8080
+              name: healthz
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+      securityContext:
+        runAsNonRoot: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: argo-rollouts-metrics
+  namespace: argo-rollouts
+  labels:
+    app.kubernetes.io/name: argo-rollouts
+    app.kubernetes.io/component: delivery
+spec:
+  ports:
+    - port: 8090
+      protocol: TCP
+      targetPort: 8090
+      name: metrics
+  selector:
+    app.kubernetes.io/name: argo-rollouts
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: argo-rollouts-dashboard
+  namespace: argo-rollouts
+  labels:
+    app.kubernetes.io/name: argo-rollouts-dashboard
+    app.kubernetes.io/component: delivery
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3100
+      targetPort: 3100
+      protocol: TCP
+      name: dashboard
+  selector:
+    app.kubernetes.io/name: argo-rollouts-dashboard
