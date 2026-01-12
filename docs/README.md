@@ -33,6 +33,7 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 
 | Document | Description |
 |----------|-------------|
+| [SECRETS.md](SECRETS.md) | Secrets management with agenix and detect-secrets |
 | [MTLS_SETUP.md](MTLS_SETUP.md) | Mutual TLS configuration |
 | [MTLS-IMPLEMENTATION-CHECKLIST.md](MTLS-IMPLEMENTATION-CHECKLIST.md) | mTLS implementation checklist |
 

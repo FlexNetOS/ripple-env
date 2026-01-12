@@ -27,6 +27,12 @@
       url = "github:nix-community/NixOS-WSL";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Agenix for encrypted secrets management (security audit remediation)
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -37,6 +43,7 @@
       systems,
       home-manager,
       nixos-wsl,
+      agenix,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
