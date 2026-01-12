@@ -2,6 +2,61 @@
 # High-performance event bus
 ---
 apiVersion: v1
+kind: Secret
+metadata:
+  name: nats-auth
+  namespace: flexstack-messaging
+  labels:
+    app.kubernetes.io/name: nats
+    app.kubernetes.io/component: messaging
+    app.kubernetes.io/part-of: flexstack
+type: Opaque
+stringData:
+  auth.conf: |
+    # NATS Authentication Configuration
+    # P0-004: User-based authentication
+
+    authorization {
+      # System account for monitoring and management
+      users = [
+        {
+          user: "admin"
+          password: "$2a$11$3kIDaCxw.Glsl1.u5nKa6eUnNDLV5HV9tIuUp7EHhMt6Nm9myW1aS"  # bcrypt hash of 'admin_pass'
+          permissions: {
+            publish: ">"
+            subscribe: ">"
+          }
+        }
+        {
+          user: "service"
+          password: "$2a$11$oWWQ7rQ7K0SQmYE.g5TKOu6..jxTBh0Y4c6W3e4Q0qHOQVqHHQF7S"  # bcrypt hash of 'service_pass'
+          permissions: {
+            publish: ["flexstack.>", "ros2.>", "temporal.>"]
+            subscribe: ["flexstack.>", "ros2.>", "temporal.>"]
+          }
+        }
+        {
+          user: "readonly"
+          password: "$2a$11$1OzHBXNqJRnUKGdPxL0s7eY1tD7r3s.xH8L9Z6MJVz.8K.W7YNXC6"  # bcrypt hash of 'readonly_pass'
+          permissions: {
+            publish: []
+            subscribe: ">"
+          }
+        }
+      ]
+
+      # Default permissions for unauthenticated connections (deny all)
+      default_permissions: {
+        publish: []
+        subscribe: []
+      }
+
+      # Connection timeout
+      timeout: 5
+    }
+  CLUSTER_PASSWORD: "cluster_secure_password_change_me"
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nats-config
@@ -15,20 +70,39 @@ data:
     # NATS Server Configuration
     port: 4222
     http_port: 8222
+
+    # Authentication (P0-004: Added for secure messaging)
+    # Load auth from mounted secret
+    include /etc/nats/auth/auth.conf
+
     cluster {
       port: 6222
+      # Cluster auth (use same credentials as client)
+      authorization {
+        user: cluster_admin
+        password: $CLUSTER_PASSWORD
+        timeout: 2
+      }
     }
+
     jetstream {
       store_dir: /data
       max_memory_store: 1G
       max_file_store: 10G
     }
+
     # Enable monitoring
     server_name: flexstack-nats
+
     # Logging
     debug: false
     trace: false
     logtime: true
+
+    # Connection limits
+    max_connections: 1000
+    max_control_line: 4096
+    max_payload: 8388608  # 8MB
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -89,8 +163,17 @@ spec:
           volumeMounts:
             - name: nats-config
               mountPath: /etc/nats
+            - name: nats-auth
+              mountPath: /etc/nats/auth
+              readOnly: true
             - name: nats-data
               mountPath: /data
+          env:
+            - name: CLUSTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nats-auth
+                  key: CLUSTER_PASSWORD
           resources:
             limits:
               memory: 1Gi
@@ -118,6 +201,12 @@ spec:
         - name: nats-config
           configMap:
             name: nats-config
+        - name: nats-auth
+          secret:
+            secretName: nats-auth
+            items:
+              - key: auth.conf
+                path: auth.conf
         - name: nats-data
           persistentVolumeClaim:
             claimName: nats-data
