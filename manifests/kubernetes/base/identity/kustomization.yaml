@@ -16,3 +16,5 @@ commonLabels:
 resources:
   - keycloak.yaml
   - vault.yaml
+  - step-ca.yaml
+  - vaultwarden.yaml

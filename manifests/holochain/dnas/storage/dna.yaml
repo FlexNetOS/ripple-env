@@ -1,0 +1,21 @@
+---
+# Storage DNA Manifest
+# P1-016: Holochain DNA placeholder for distributed storage
+
+manifest_version: "1"
+name: storage
+uid: 00000000-0000-0000-0000-000000000003
+properties:
+  description: "Content-addressed distributed storage DNA"
+  version: "0.1.0"
+
+zomes:
+  - name: files
+    bundled: zomes/files.wasm
+    dependencies: []
+  - name: metadata
+    bundled: zomes/metadata.wasm
+    dependencies: []
+  - name: replication
+    bundled: zomes/replication.wasm
+    dependencies: []
