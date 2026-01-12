@@ -170,18 +170,18 @@ This flake exports modules for use in other projects:
 
 ```nix
 {
-  inputs.ros2-humble-env.url = "github:FlexNetOS/ros2-humble-env";
+  inputs.ripple-env.url = "github:FlexNetOS/ripple-env";
 
-  outputs = { ros2-humble-env, ... }: {
+  outputs = { ripple-env, ... }: {
     homeConfigurations.user = {
       modules = [
         # Auto-detects platform (Linux/macOS)
-        ros2-humble-env.homeManagerModules.default
+        ripple-env.homeManagerModules.default
 
         # Or specific modules:
-        ros2-humble-env.homeManagerModules.common  # Cross-platform only
-        ros2-humble-env.homeManagerModules.linux   # Linux-specific
-        ros2-humble-env.homeManagerModules.macos   # macOS-specific
+        ripple-env.homeManagerModules.common  # Cross-platform only
+        ripple-env.homeManagerModules.linux   # Linux-specific
+        ripple-env.homeManagerModules.macos   # macOS-specific
       ];
     };
   };
@@ -194,12 +194,12 @@ This flake exports modules for use in other projects:
 {
   # For NixOS systems
   nixosConfigurations.host = {
-    modules = [ ros2-humble-env.nixosModules.default ];
+    modules = [ ripple-env.nixosModules.default ];
   };
 
   # For macOS with nix-darwin
   darwinConfigurations.host = {
-    modules = [ ros2-humble-env.darwinModules.default ];
+    modules = [ ripple-env.darwinModules.default ];
   };
 }
 ```
@@ -209,7 +209,7 @@ This flake exports modules for use in other projects:
 ```nix
 {
   # Access utility functions
-  myLib = ros2-humble-env.lib;
+  myLib = ripple-env.lib;
 
   # Available functions:
   # - collectNixFiles: Collect .nix files from directory
@@ -245,11 +245,11 @@ The flake supports generating deployable NixOS images for various targets.
 
 ```bash
 # Method 1: nixos-rebuild (native)
-nixos-rebuild build --flake .#wsl-ros2
+nixos-rebuild build --flake .#wsl-ripple
 
 # Method 2: Flake outputs (recommended)
 # WSL2 tarball (import with wsl --import)
-nix build .#nixosConfigurations.wsl-ros2.config.system.build.tarballBuilder
+nix build .#nixosConfigurations.wsl-ripple.config.system.build.tarballBuilder
 
 # ISO installer
 nix build .#nixosConfigurations.iso-ros2.config.system.build.isoImage
@@ -266,10 +266,10 @@ nixos-generate -f qcow -c ./nix/images/vm.nix
 
 ```powershell
 # Import the tarball
-wsl --import NixOS-ROS2 $env:USERPROFILE\WSL\NixOS-ROS2 result/nixos-wsl.tar.gz
+wsl --import NixOS-Ripple $env:USERPROFILE\WSL\NixOS-Ripple result/nixos-wsl.tar.gz
 
 # Launch
-wsl -d NixOS-ROS2
+wsl -d NixOS-Ripple
 ```
 
 See [NIX_FLAKE_MODULARIZATION.md](docs/NIX_FLAKE_MODULARIZATION.md) for the complete modularization plan.

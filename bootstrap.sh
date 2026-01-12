@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# bootstrap.sh - Complete end-to-end installation for ros2-humble-env
+# bootstrap.sh - Complete end-to-end installation for ripple-env
 #
 # This script installs all dependencies and sets up the development environment:
 # - Nix with flakes enabled (using experimental installer)
@@ -563,7 +563,7 @@ print_summary() {
 # Main execution
 main() {
     echo "========================================"
-    echo "ros2-humble-env Bootstrap Script"
+    echo "ripple-env Bootstrap Script"
     echo "========================================"
     echo ""
 

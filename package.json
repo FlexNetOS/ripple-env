@@ -1,5 +1,5 @@
 {
-  "name": "ros2-humble-env",
+  "name": "ripple-env",
   "version": "1.0.0",
   "description": "ROS2 Humble development environment with build tools",
   "private": true,

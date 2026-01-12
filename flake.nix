@@ -1,5 +1,5 @@
 {
-  description = "ROS2 Humble development environment with Nix flakes and pixi";
+  description = "Ripple development environment with ROS2 Humble, Nix flakes and pixi";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -72,19 +72,19 @@
 
         # NixOS configurations for image generation
         nixosConfigurations = {
-          wsl-ros2 = import ./nix/images/wsl.nix {
+          wsl-ripple = import ./nix/images/wsl.nix {
             inherit inputs;
             pkgs = nixpkgs.legacyPackages.x86_64-linux;
             lib = nixpkgs.lib;
           };
 
-          iso-ros2 = import ./nix/images/iso.nix {
+          iso-ripple = import ./nix/images/iso.nix {
             inherit inputs;
             pkgs = nixpkgs.legacyPackages.x86_64-linux;
             lib = nixpkgs.lib;
           };
 
-          vm-ros2 = import ./nix/images/vm.nix {
+          vm-ripple = import ./nix/images/vm.nix {
             inherit inputs;
             pkgs = nixpkgs.legacyPackages.x86_64-linux;
             lib = nixpkgs.lib;

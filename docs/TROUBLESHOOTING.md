@@ -36,7 +36,7 @@ sudo systemctl restart nix-daemon
 
 **Solution**:
 ```bash
-cd /path/to/ros2-humble-env
+cd /path/to/ripple-env
 nix develop
 ```
 
@@ -302,10 +302,10 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```powershell
 # Expand the VHD (as Administrator)
 wsl --shutdown
-Resize-VHD -Path "$env:USERPROFILE\WSL\NixOS-ROS2\ext4.vhdx" -SizeBytes 200GB
+Resize-VHD -Path "$env:USERPROFILE\WSL\NixOS-Ripple\ext4.vhdx" -SizeBytes 200GB
 
 # Inside WSL, resize filesystem
-wsl -d NixOS-ROS2
+wsl -d NixOS-Ripple
 sudo resize2fs /dev/sdc
 ```
 
@@ -337,7 +337,7 @@ sudo /nix/var/nix/profiles/default/bin/nix-daemon &
 
 # Or restart WSL
 wsl --shutdown
-wsl -d NixOS-ROS2
+wsl -d NixOS-Ripple
 ```
 
 ---
@@ -441,7 +441,7 @@ pixi add pytorch-cuda=12.1
 
 If your issue isn't covered here:
 
-1. **Search existing issues**: [GitHub Issues](https://github.com/FlexNetOS/ros2-humble-env/issues)
+1. **Search existing issues**: [GitHub Issues](https://github.com/FlexNetOS/ripple-env/issues)
 2. **Check ROS2 docs**: [ROS2 Troubleshooting](https://docs.ros.org/en/humble/How-To-Guides/Installation-Troubleshooting.html)
 3. **Check Nix docs**: [Nix Manual](https://nixos.org/manual/nix/stable/)
 4. **Open a new issue**: Include:

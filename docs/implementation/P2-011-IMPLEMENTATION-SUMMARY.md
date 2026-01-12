@@ -40,7 +40,7 @@
 ## 📁 Files Created
 
 ### 1. Docker Compose Configuration
-**File**: `/home/user/ros2-humble-env/docker-compose.data.yml`
+**File**: `/home/user/ripple-env/docker-compose.data.yml`
 **Size**: 4.8 KB
 **Purpose**: MindsDB service and PostgreSQL metadata store
 
@@ -61,7 +61,7 @@
 - `mindsdb_db_data` - PostgreSQL data
 
 ### 2. Environment Variables
-**File**: `/home/user/ros2-humble-env/.env.data.example`
+**File**: `/home/user/ripple-env/.env.data.example`
 **Size**: 3.1 KB
 **Purpose**: Template for data services environment variables
 
@@ -75,11 +75,11 @@ MINDSDB_DB_PASSWORD=changeme
 MINDSDB_DB_NAME=mindsdb
 ```
 
-**Also Updated**: `/home/user/ros2-humble-env/.env.example`
+**Also Updated**: `/home/user/ripple-env/.env.example`
 Added Data & Query Services section with MindsDB variables
 
 ### 3. Verification Script
-**File**: `/home/user/ros2-humble-env/scripts/verify-mindsdb.sh`
+**File**: `/home/user/ripple-env/scripts/verify-mindsdb.sh`
 **Size**: 9.6 KB
 **Permissions**: Executable (755)
 
@@ -94,7 +94,7 @@ Added Data & Query Services section with MindsDB variables
 8. ✅ Show integration examples
 
 ### 4. Implementation Documentation
-**File**: `/home/user/ros2-humble-env/P2-011-MINDSDB-IMPLEMENTATION.md`
+**File**: `/home/user/ripple-env/P2-011-MINDSDB-IMPLEMENTATION.md`
 **Size**: 15 KB
 
 **Contents**:
@@ -111,7 +111,7 @@ Added Data & Query Services section with MindsDB variables
 - API reference
 
 ### 5. Quick Start Guide
-**File**: `/home/user/ros2-humble-env/MINDSDB_QUICKSTART.md`
+**File**: `/home/user/ripple-env/MINDSDB_QUICKSTART.md`
 **Size**: 4.4 KB
 
 **Contents**:

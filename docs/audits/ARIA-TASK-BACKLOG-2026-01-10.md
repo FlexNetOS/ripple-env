@@ -2,7 +2,7 @@
 
 **Generated**: 2026-01-10
 **Based on**: ARIA Audit v2.2.0 (Multi-Agent Parallel Execution)
-**Repository**: FlexNetOS/ros2-humble-env
+**Repository**: FlexNetOS/ripple-env
 **Branch**: claude/fetch-main-branch-OKeqW
 
 ---

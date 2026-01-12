@@ -2,13 +2,13 @@
 # Builds a tarball that can be imported into Windows Subsystem for Linux
 #
 # Build command:
-#   nix build .#nixosConfigurations.wsl-ros2.config.system.build.tarballBuilder
+#   nix build .#nixosConfigurations.wsl-ripple.config.system.build.tarballBuilder
 #
 # Import command (PowerShell):
-#   wsl --import NixOS-ROS2 $env:USERPROFILE\WSL\NixOS-ROS2 result/nixos-wsl.tar.gz
+#   wsl --import NixOS-Ripple $env:USERPROFILE\WSL\NixOS-Ripple result/nixos-wsl.tar.gz
 #
 # Launch:
-#   wsl -d NixOS-ROS2
+#   wsl -d NixOS-Ripple
 { inputs, pkgs, lib, ... }:
 
 inputs.nixos-wsl.lib.nixosSystem {
@@ -40,7 +40,7 @@ inputs.nixos-wsl.lib.nixosSystem {
             options = "metadata,umask=22,fmask=11";
           };
           network = {
-            hostname = "nixos-ros2";
+            hostname = "nixos-ripple";
             generateHosts = true;
             generateResolvConf = true;
           };
@@ -48,7 +48,7 @@ inputs.nixos-wsl.lib.nixosSystem {
       };
 
       # System configuration
-      networking.hostName = "nixos-ros2";
+      networking.hostName = "nixos-ripple";
       time.timeZone = "UTC";
 
       # Nix configuration

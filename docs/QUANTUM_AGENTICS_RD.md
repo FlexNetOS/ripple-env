@@ -276,7 +276,7 @@ az quantum workspace create \
   --location "East US"
 
 # Python dependencies
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 git clone https://github.com/agenticsorg/quantum-agentics.git
 cd quantum-agentics
 pip install -r requirements.txt
@@ -305,10 +305,10 @@ Quantum Agentics represents a promising research direction for large-scale agent
 
 ## Related Documentation
 
-- [BUILDKIT_STARTER_SPEC.md](/home/user/ros2-humble-env/BUILDKIT_STARTER_SPEC.md) - Section 1.19 (DevOps & Autonomy)
-- [manifests/holochain/HOLOCHAIN.md](/home/user/ros2-humble-env/manifests/holochain/HOLOCHAIN.md) - P2P coordination layer
-- [docs/PHASE3-LAZYVIM-DEPS.md](/home/user/ros2-humble-env/docs/PHASE3-LAZYVIM-DEPS.md) - Phase 3 tooling
-- [ARIA_AUDIT_REPORT.md](/home/user/ros2-humble-env/ARIA_AUDIT_REPORT.md) - P3-004 task definition
+- [BUILDKIT_STARTER_SPEC.md](/home/user/ripple-env/BUILDKIT_STARTER_SPEC.md) - Section 1.19 (DevOps & Autonomy)
+- [manifests/holochain/HOLOCHAIN.md](/home/user/ripple-env/manifests/holochain/HOLOCHAIN.md) - P2P coordination layer
+- [docs/PHASE3-LAZYVIM-DEPS.md](/home/user/ripple-env/docs/PHASE3-LAZYVIM-DEPS.md) - Phase 3 tooling
+- [ARIA_AUDIT_REPORT.md](/home/user/ripple-env/ARIA_AUDIT_REPORT.md) - P3-004 task definition
 
 ## Support & Contact
 

@@ -112,7 +112,7 @@ psql -h localhost -U postgres -d postgres -c "SELECT version();"
 
 ```bash
 # Navigate to project root
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 
 # Start services
 docker compose -f docker/docker-compose.bytebase.yml up -d

@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    Bootstrap script for ros2-humble-env on Windows with WSL2 and NixOS.
+    Bootstrap script for ripple-env on Windows with WSL2 and NixOS.
 
 .DESCRIPTION
     This script sets up a complete ROS2 Humble development environment on Windows by:
@@ -12,10 +12,10 @@
     5. Configuring shells (bash, zsh, nushell)
 
 .PARAMETER DistroName
-    Name for the WSL distribution (default: NixOS-ROS2)
+    Name for the WSL distribution (default: NixOS-Ripple)
 
 .PARAMETER InstallPath
-    Installation path for the distro (default: $env:USERPROFILE\WSL\NixOS-ROS2)
+    Installation path for the distro (default: $env:USERPROFILE\WSL\NixOS-Ripple)
 
 .PARAMETER DiskSizeGB
     Size of the ext4.vhdx disk in GB (default: 1024 = 1TB)
@@ -27,7 +27,7 @@
     Size of swap in GB (default: 8)
 
 .PARAMETER RepoURL
-    Git URL to clone inside WSL (default: https://github.com/FlexNetOS/ros2-humble-env.git)
+    Git URL to clone inside WSL (default: https://github.com/FlexNetOS/ripple-env.git)
 
 .PARAMETER RepoFetchRef
     Optional git ref/refspec to fetch inside WSL before running bootstrap.
@@ -52,8 +52,8 @@
 
 [CmdletBinding()]
 param(
-    [string]$DistroName = "NixOS-ROS2",
-    [string]$InstallPath = "$env:USERPROFILE\WSL\NixOS-ROS2",
+    [string]$DistroName = "NixOS-Ripple",
+    [string]$InstallPath = "$env:USERPROFILE\WSL\NixOS-Ripple",
     [ValidateRange(64, 4096)]
     [int]$DiskSizeGB = 1024,
     [ValidateRange(2, 256)]
@@ -61,7 +61,7 @@ param(
     [ValidateRange(1, 64)]
     [int]$SwapSizeGB = 8,
     [ValidatePattern('^https?://')]
-    [string]$RepoURL = "https://github.com/FlexNetOS/ros2-humble-env.git",
+    [string]$RepoURL = "https://github.com/FlexNetOS/ripple-env.git",
     [string]$RepoFetchRef = "",
     [switch]$SkipShells,
     [switch]$SkipWSLCheck,
@@ -340,12 +340,12 @@ function Install-ROS2Environment {
     Write-ColorOutput "Setting up ROS2 development environment..." "Step"
 
     # Clone the repository
-    Write-ColorOutput "Cloning ros2-humble-env repository..." "Info"
+    Write-ColorOutput "Cloning ripple-env repository..." "Info"
 
     $cloneScript = @'
 set -euo pipefail
 
-repo_dir="${REPO_DIR:-ros2-humble-env}"
+repo_dir="${REPO_DIR:-ripple-env}"
 repo_url="${REPO_URL:?REPO_URL is required}"
 repo_fetch_ref="${REPO_FETCH_REF:-}"
 
@@ -378,14 +378,14 @@ fi
 echo "Repository ready"
 '@
 
-    wsl -d $DistroName -- env "REPO_URL=$RepoURL" "REPO_FETCH_REF=$RepoFetchRef" "REPO_DIR=ros2-humble-env" bash -lc $cloneScript
+    wsl -d $DistroName -- env "REPO_URL=$RepoURL" "REPO_FETCH_REF=$RepoFetchRef" "REPO_DIR=ripple-env" bash -lc $cloneScript
 
     # Run the bootstrap script
     Write-ColorOutput "Running bootstrap script (this may take a while)..." "Info"
 
     $bootstrapScript = @'
 set -e
-cd ~/ros2-humble-env
+cd ~/ripple-env
 
 # Make bootstrap executable
 chmod +x bootstrap.sh
@@ -434,7 +434,7 @@ function Show-Summary {
     Write-Host ""
     Write-Host "To enter the environment:" -ForegroundColor Cyan
     Write-Host "  wsl -d $DistroName"
-    Write-Host "  cd ~/ros2-humble-env"
+    Write-Host "  cd ~/ripple-env"
     Write-Host "  direnv allow  # or: nom develop"
     Write-Host ""
     Write-Host "Quick commands inside WSL:" -ForegroundColor Cyan

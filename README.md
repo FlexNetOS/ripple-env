@@ -1,6 +1,6 @@
-# Riple Environment and Binary Creation
+# Ripple Environment
 
-- Uses the original environment template setup from "ros2-humble-env" to create a WSL2 distro.
+- Uses the original environment template setup from "ripple-env" to create a WSL2 distro.
 - A reproducible and declarative development environment for ROS2 Humble using Nix flakes and pixi for cross-platform compatibility.
 - This repository is meant to be used as a "template" repository for robotics projects to offer an easy starting environment with a working ROS2 install.
 
@@ -11,7 +11,7 @@
 ```powershell
 # Run PowerShell as Administrator
 # Download and run the bootstrap script
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/FlexNetOS/ros2-humble-env/main/bootstrap.ps1" -OutFile "bootstrap.ps1"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/FlexNetOS/ripple-env/main/bootstrap.ps1" -OutFile "bootstrap.ps1"
 .\bootstrap.ps1
 ```
 
@@ -19,8 +19,8 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/FlexNetOS/ros2-humble-
 
 ```bash
 # Clone the repository
-git clone https://github.com/FlexNetOS/ros2-humble-env.git
-cd ros2-humble-env
+git clone https://github.com/FlexNetOS/ripple-env.git
+cd ripple-env
 
 # Run the bootstrap script (installs everything)
 ./bootstrap.sh
@@ -94,8 +94,8 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 **Parameters:**
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `-DistroName` | NixOS-ROS2 | Name for the WSL distribution |
-| `-InstallPath` | `$HOME\WSL\NixOS-ROS2` | Installation directory |
+| `-DistroName` | NixOS-Ripple | Name for the WSL distribution |
+| `-InstallPath` | `$HOME\WSL\NixOS-Ripple` | Installation directory |
 | `-DiskSizeGB` | 1024 | Virtual disk size (1TB) |
 | `-SwapSizeGB` | 8 | Swap size in GB |
 | `-SkipWSLCheck` | false | Skip WSL installation check |
@@ -104,8 +104,8 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 **After installation:**
 ```powershell
 # Enter the environment
-wsl -d NixOS-ROS2
-cd ~/ros2-humble-env
+wsl -d NixOS-Ripple
+cd ~/ripple-env
 direnv allow
 
 # If you prefer manual activation (direnv optional):
@@ -149,7 +149,7 @@ nom develop
 If you have direnv installed, simply enter the directory:
 
 ```bash
-cd ros2-humble-env
+cd ripple-env
 direnv allow
 ```
 
@@ -158,7 +158,7 @@ direnv will automatically load the environment.
 ## Workspace Structure
 
 ```
-ros2-humble-env/
+ripple-env/
 ├── flake.nix              # Main nix flake configuration
 ├── flake.lock             # Locked dependency versions
 ├── pixi.toml              # Pixi workspace definition
@@ -333,14 +333,14 @@ The modules can be imported into other flakes:
 ```nix
 {
   inputs = {
-    ros2-humble-env.url = "github:FlexNetOS/ros2-humble-env";
+    ripple-env.url = "github:FlexNetOS/ripple-env";
     home-manager.url = "github:nix-community/home-manager";
   };
 
-  outputs = { self, ros2-humble-env, home-manager, ... }: {
+  outputs = { self, ripple-env, home-manager, ... }: {
     homeConfigurations.myuser = home-manager.lib.homeManagerConfiguration {
       modules = [
-        ros2-humble-env.lib.homeManagerModules.default
+        ripple-env.lib.homeManagerModules.default
         # Your other modules...
       ];
     };
@@ -361,7 +361,7 @@ Generate a WSL2-compatible NixOS tarball with ROS2 pre-configured:
 nix build .#images.wsl
 
 # Import to Windows WSL
-wsl --import NixOS-ROS2-Custom $env:USERPROFILE\WSL\NixOS-ROS2 result/nixos-wsl.tar.gz
+wsl --import NixOS-Ripple-Custom $env:USERPROFILE\WSL\NixOS-Ripple result/nixos-wsl.tar.gz
 ```
 
 ### Other Image Formats

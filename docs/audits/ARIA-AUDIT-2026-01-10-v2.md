@@ -2,7 +2,7 @@
 
 **ARIA Orchestrator Version:** v2.2.0 (Multi-Agent Parallel Execution)
 **Execution Mode:** Wave-Based Parallel Agents
-**Repository:** FlexNetOS/ros2-humble-env
+**Repository:** FlexNetOS/ripple-env
 **Branch:** claude/fetch-main-branch-OKeqW
 
 ---
@@ -233,7 +233,7 @@ No unauthorized files at repository root
 ## Architecture Directory Tree Map
 
 ```
-ros2-humble-env/
+ripple-env/
 ├── .claude/                    # AI assistant configuration
 │   ├── agents/                 # 14 agent definitions
 │   ├── commands/               # Slash commands

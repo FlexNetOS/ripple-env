@@ -20,19 +20,19 @@ This document describes the implementation of Neo4j graph database integration f
 
 ### Files Modified
 
-1. **`/home/user/ros2-humble-env/docker-compose.data.yml`**
+1. **`/home/user/ripple-env/docker-compose.data.yml`**
    - Added Neo4j service definition
    - Added Neo4j volumes (data, logs, import, plugins)
    - Updated header with P3-003 reference
    - Added endpoint documentation
 
-2. **`/home/user/ros2-humble-env/.env.data.example`**
+2. **`/home/user/ripple-env/.env.data.example`**
    - Added Neo4j environment variables
    - Added Neo4j integration examples
    - Updated production checklist
    - Added security recommendations
 
-3. **`/home/user/ros2-humble-env/docs/neo4j-verification.md`** (created)
+3. **`/home/user/ripple-env/docs/neo4j-verification.md`** (created)
    - Comprehensive verification guide
    - Connection and functional tests
    - Python integration examples
@@ -233,7 +233,7 @@ docker exec neo4j cypher-shell -u neo4j -p <password> \
   "MATCH (n:Test) DELETE n"
 ```
 
-See `/home/user/ros2-humble-env/docs/neo4j-verification.md` for comprehensive testing procedures.
+See `/home/user/ripple-env/docs/neo4j-verification.md` for comprehensive testing procedures.
 
 ## Performance Tuning
 
@@ -367,7 +367,7 @@ The service includes an automated health check that runs every 30 seconds:
    - View health logs: `docker inspect neo4j --format='{{json .State.Health}}' | jq`
    - Manually test: `docker exec neo4j cypher-shell -u neo4j -p <password> 'RETURN 1'`
 
-See `/home/user/ros2-humble-env/docs/neo4j-verification.md` for detailed troubleshooting.
+See `/home/user/ripple-env/docs/neo4j-verification.md` for detailed troubleshooting.
 
 ## References
 

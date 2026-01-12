@@ -27,7 +27,7 @@ OUTPUT FILES CREATED
    ✓ Contains: dependencies, tags, acceptance_tests, related_issues
    ✓ Includes: implementation_phases (for complex tasks like P2-003)
    ✓ Provides: quality_checklist and implementation_guidelines
-   Location: /home/user/ros2-humble-env/ARIA_TASK_SPECS.yaml
+   Location: /home/user/ripple-env/ARIA_TASK_SPECS.yaml
 
 2. ARIA_TASK_EXTRACTION_SUMMARY.md (367 lines, 13 KB)
    ✓ Markdown guide for implementation approach
@@ -36,7 +36,7 @@ OUTPUT FILES CREATED
    ✓ Details: how to use specifications, testing strategy
    ✓ Contains: domain mapping, success criteria
    ✓ Provides: file generation estimates and references
-   Location: /home/user/ros2-humble-env/ARIA_TASK_EXTRACTION_SUMMARY.md
+   Location: /home/user/ripple-env/ARIA_TASK_EXTRACTION_SUMMARY.md
 
 3. ARIA_TASK_REFERENCE.md (297 lines, 9.3 KB)
    ✓ Quick lookup guide for each task
@@ -44,7 +44,7 @@ OUTPUT FILES CREATED
    ✓ Includes: quick statistics and implementation order
    ✓ Provides: file locations and commands to run tasks
    ✓ Contains: escalation and contact guidance
-   Location: /home/user/ros2-humble-env/ARIA_TASK_REFERENCE.md
+   Location: /home/user/ripple-env/ARIA_TASK_REFERENCE.md
 
 Total Documentation: 1,211 lines, 47 KB
 Total Time to Generate: ~15 minutes
@@ -285,7 +285,7 @@ WITHIN 1 MONTH:
 FILE REFERENCE
 ================================================================================
 
-Location: /home/user/ros2-humble-env/
+Location: /home/user/ripple-env/
 
 Main Specification Files:
 ├── ARIA_TASK_SPECS.yaml                    [547 lines, 25 KB]

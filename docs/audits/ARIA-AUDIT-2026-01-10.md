@@ -1,7 +1,7 @@
 # ARIA Audit Report - 2026-01-10
 
 **ARIA Orchestrator Version:** v2.2.0 (Kimi K2 Cross-Analysis Integration)
-**Repository:** FlexNetOS/ros2-humble-env
+**Repository:** FlexNetOS/ripple-env
 **Branch:** claude/fetch-main-branch-OKeqW
 
 ---
@@ -332,7 +332,7 @@ Total external repos referenced: **132** (from BUILDKIT_STARTER_SPEC.md)
 ## Architecture Directory Tree Map
 
 ```
-ros2-humble-env/
+ripple-env/
 ├── .claude/                    # AI assistant configuration
 │   ├── commands/               # Slash commands
 │   ├── policies/               # OPA enforcement policies

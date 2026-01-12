@@ -115,7 +115,7 @@ docker-compose -f docker-compose.ui.yml down
 
 # Remove everything (including volumes)
 docker-compose -f docker-compose.ui.yml down -v
-docker volume rm ros2-humble-env_open-lovable-data ros2-humble-env_open-lovable-projects
+docker volume rm ripple-env_open-lovable-data ripple-env_open-lovable-projects
 
 # Rebuild from scratch
 docker-compose -f docker-compose.ui.yml build --no-cache open-lovable
