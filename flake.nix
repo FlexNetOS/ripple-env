@@ -59,6 +59,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Agenix for encrypted secrets management (security audit remediation)
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # NixOS-WSL stable variant for production images
     nixos-wsl-stable = {
       url = "github:nix-community/NixOS-WSL";
@@ -93,6 +98,7 @@
       home-manager,
       home-manager-stable,
       nixos-wsl,
+      agenix,
       nixos-wsl-stable,
       ...
     }:
