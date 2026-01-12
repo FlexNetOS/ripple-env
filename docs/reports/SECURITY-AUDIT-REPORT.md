@@ -28,7 +28,7 @@ This report documents the remediation of critical security vulnerabilities SEC-0
 
 ### 1. Docker Compose Files (9 files)
 
-#### `/home/user/ros2-humble-env/docker-compose.identity.yml`
+#### `/home/user/ripple-env/docker-compose.identity.yml`
 **Issues Fixed**:
 - Keycloak admin credentials (admin/admin)
 - Keycloak database password (keycloak)
@@ -51,7 +51,7 @@ POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-changeme}
 ADMIN_TOKEN: ${VAULTWARDEN_ADMIN_TOKEN:-changeme}
 ```
 
-#### `/home/user/ros2-humble-env/docker-compose.llmops.yml`
+#### `/home/user/ripple-env/docker-compose.llmops.yml`
 **Issues Fixed**:
 - ClickHouse password (tensorzero)
 - MLflow PostgreSQL password (mlflow)
@@ -70,7 +70,7 @@ POSTGRES_PASSWORD: ${MLFLOW_DB_PASSWORD:-changeme}
 MLFLOW_BACKEND_STORE_URI: postgresql://${MLFLOW_DB_USER:-mlflow}:${MLFLOW_DB_PASSWORD:-changeme}@mlflow-db:5432/${MLFLOW_DB_NAME:-mlflow}
 ```
 
-#### `/home/user/ros2-humble-env/docker-compose.automation.yml`
+#### `/home/user/ripple-env/docker-compose.automation.yml`
 **Issues Fixed**:
 - n8n basic auth password (n8n_secure_password)
 - n8n database password (n8n_password)
@@ -88,7 +88,7 @@ DB_POSTGRESDB_PASSWORD=${N8N_DB_PASSWORD:-changeme}
 POSTGRES_PASSWORD: ${N8N_DB_PASSWORD:-changeme}
 ```
 
-#### `/home/user/ros2-humble-env/docker-compose.observability.yml`
+#### `/home/user/ripple-env/docker-compose.observability.yml`
 **Issues Fixed**:
 - Umami PostgreSQL password (umami)
 - Umami app secret (replace-me-with-a-random-string)
@@ -106,7 +106,7 @@ POSTGRES_PASSWORD: ${UMAMI_DB_PASSWORD:-changeme}
 APP_SECRET: ${UMAMI_APP_SECRET:-changeme}
 ```
 
-#### `/home/user/ros2-humble-env/docker-compose.messaging.yml`
+#### `/home/user/ripple-env/docker-compose.messaging.yml`
 **Issues Fixed**:
 - Temporal PostgreSQL password (temporal_password)
 
@@ -121,7 +121,7 @@ POSTGRES_PWD=${TEMPORAL_DB_PASSWORD:-changeme}
 POSTGRES_PASSWORD: ${TEMPORAL_DB_PASSWORD:-changeme}
 ```
 
-#### `/home/user/ros2-humble-env/docker-compose.edge.yml`
+#### `/home/user/ripple-env/docker-compose.edge.yml`
 **Issues Fixed**:
 - Kong PostgreSQL password (kong)
 - Konga database password (kong)
@@ -139,7 +139,7 @@ KONG_PG_PASSWORD: ${KONG_DB_PASSWORD:-changeme}
 DB_PASSWORD: ${KONG_DB_PASSWORD:-changeme}
 ```
 
-#### `/home/user/ros2-humble-env/docker-compose.ui.yml`
+#### `/home/user/ripple-env/docker-compose.ui.yml`
 **Issues Fixed**:
 - Lobe Chat PostgreSQL password (lobe)
 - MinIO credentials (minioadmin/minioadmin)
@@ -159,7 +159,7 @@ MINIO_ROOT_USER: ${LOBE_MINIO_ROOT_USER:-changeme}
 MINIO_ROOT_PASSWORD: ${LOBE_MINIO_ROOT_PASSWORD:-changeme}
 ```
 
-#### `/home/user/ros2-humble-env/docker-compose.argo.yml`
+#### `/home/user/ripple-env/docker-compose.argo.yml`
 **Issues Fixed**:
 - K3s cluster token (argocd-dev-token)
 
@@ -172,14 +172,14 @@ K3S_TOKEN=argocd-dev-token
 K3S_TOKEN=${K3S_TOKEN:-changeme}
 ```
 
-#### `/home/user/ros2-humble-env/docker-compose.temporal.yml`
+#### `/home/user/ripple-env/docker-compose.temporal.yml`
 **Note**: This file already used environment variables correctly:
 ```yaml
 POSTGRES_PASSWORD: ${TEMPORAL_DB_PASSWORD:-temporal-dev-password}
 ```
 No changes needed.
 
-#### `/home/user/ros2-humble-env/docker-compose.agixt.yml`
+#### `/home/user/ripple-env/docker-compose.agixt.yml`
 **Note**: This file already used environment variables correctly:
 ```yaml
 DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-agixt-dev-password}
@@ -192,7 +192,7 @@ No changes needed - this is the CORRECT pattern!
 
 ### 2. Configuration Files Created
 
-#### `/home/user/ros2-humble-env/.env.example`
+#### `/home/user/ripple-env/.env.example`
 **Purpose**: Comprehensive template for all environment variables
 **Size**: 233 lines
 **Secrets Defined**: 30+ environment variables
@@ -216,7 +216,7 @@ source .env
 docker-compose up -d
 ```
 
-#### `/home/user/ros2-humble-env/config/vault/policy-secrets.hcl`
+#### `/home/user/ripple-env/config/vault/policy-secrets.hcl`
 **Purpose**: HashiCorp Vault policy for all platform secrets
 **Size**: 312 lines
 **Access Control**: Principle of least privilege
@@ -242,7 +242,7 @@ secret/data/edge/kong/*
 secret/data/ui/lobe/*
 ```
 
-#### `/home/user/ros2-humble-env/config/vault/README.md`
+#### `/home/user/ripple-env/config/vault/README.md`
 **Purpose**: Complete guide for Vault integration
 **Size**: 450+ lines
 
@@ -564,9 +564,9 @@ vault agent -config=vault-agent.hcl
 ## References
 
 ### Files
-- `/home/user/ros2-humble-env/.env.example` - Environment variable template
-- `/home/user/ros2-humble-env/config/vault/policy-secrets.hcl` - Vault policy
-- `/home/user/ros2-humble-env/config/vault/README.md` - Vault integration guide
+- `/home/user/ripple-env/.env.example` - Environment variable template
+- `/home/user/ripple-env/config/vault/policy-secrets.hcl` - Vault policy
+- `/home/user/ripple-env/config/vault/README.md` - Vault integration guide
 
 ### Documentation
 - [HashiCorp Vault Documentation](https://www.vaultproject.io/docs)

@@ -1,4 +1,4 @@
-# Contributing to ROS2 Humble Development Environment
+# Contributing to Ripple Environment
 
 Thank you for your interest in contributing! This document provides guidelines and best practices for contributing to this project.
 
@@ -32,8 +32,8 @@ Be respectful, inclusive, and professional. We're all here to build great roboti
 
 ```bash
 # Clone the repository
-git clone https://github.com/FlexNetOS/ros2-humble-env.git
-cd ros2-humble-env
+git clone https://github.com/FlexNetOS/ripple-env.git
+cd ripple-env
 
 # Enter development shell
 nix develop

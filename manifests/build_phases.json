@@ -1,7 +1,7 @@
 {
-  "$schema": "https://ros2-humble-env.dev/schemas/build-phases.schema.json",
+  "$schema": "https://ripple-env.dev/schemas/build-phases.schema.json",
   "version": "1.0.0",
-  "description": "Build phase orchestration for ros2-humble-env cross-platform installation",
+  "description": "Build phase orchestration for ripple-env cross-platform installation",
   "metadata": {
     "source": "scripts/install-all.sh",
     "platforms": ["linux", "darwin", "wsl2"],

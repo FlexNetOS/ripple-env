@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "name": "ros2-humble-env",
+  "name": "ripple-env",
   "description": "ROS2 Humble development environment configuration",
   "model": "claude-sonnet-4-20250514",
   "permissions": {

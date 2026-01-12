@@ -15,7 +15,7 @@ Successfully implemented all three missing Layer 10 components to bring ARIA's S
 
 ## Files Created
 
-### 1. `/home/user/ros2-humble-env/docker-compose.state.yml`
+### 1. `/home/user/ripple-env/docker-compose.state.yml`
 
 **Purpose:** Docker Compose configuration for Redis and MinIO services
 
@@ -53,7 +53,7 @@ docker compose -f docker-compose.state.yml logs -f redis
 docker compose -f docker-compose.state.yml logs -f minio
 ```
 
-### 2. `/home/user/ros2-humble-env/.env.state.example`
+### 2. `/home/user/ripple-env/.env.state.example`
 
 **Purpose:** Environment configuration for L10 state & storage services
 
@@ -97,7 +97,7 @@ RUVECTOR_GNN_LAYERS=2
 
 ## Files Modified
 
-### 3. `/home/user/ros2-humble-env/rust/Cargo.toml`
+### 3. `/home/user/ripple-env/rust/Cargo.toml`
 
 **Changes:** Added ruvector and Redis client dependencies to workspace
 

@@ -6,7 +6,7 @@
     ":semanticCommitTypeAll(chore)",
     "group:recommended"
   ],
-  "description": "Automated dependency updates for ros2-humble-env",
+  "description": "Automated dependency updates for ripple-env",
   "labels": ["dependencies", "automated"],
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ros2-humble-env.dev/schemas/mcp-tools.schema.json",
+  "$schema": "https://ripple-env.dev/schemas/mcp-tools.schema.json",
   "version": "1.0.0",
   "description": "MCP tool configurations for cloud and remote environments",
   "providers": {
@@ -144,9 +144,9 @@
   "remote_sessions": {
     "wsl2": {
       "type": "wsl",
-      "distro": "NixOS-ROS2",
+      "distro": "NixOS-Ripple",
       "user": "nixos",
-      "working_directory": "/home/nixos/ros2-humble-env"
+      "working_directory": "/home/nixos/ripple-env"
     },
     "devcontainer": {
       "type": "container",

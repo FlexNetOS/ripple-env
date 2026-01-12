@@ -3,7 +3,7 @@
 > **Status**: Research Complete
 > **Last Updated**: January 2026
 
-This document catalogs external GitHub resources evaluated for integration with the ros2-humble-env project, including Nix/Pixi compatibility analysis and conflict assessment.
+This document catalogs external GitHub resources evaluated for integration with the ripple-env project, including Nix/Pixi compatibility analysis and conflict assessment.
 
 ---
 

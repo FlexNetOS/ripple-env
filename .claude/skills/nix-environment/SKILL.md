@@ -82,15 +82,15 @@ This flake exports home-manager modules that can be imported:
 ```nix
 {
   inputs = {
-    ros2-humble-env.url = "github:FlexNetOS/ros2-humble-env";
+    ripple-env.url = "github:FlexNetOS/ripple-env";
     home-manager.url = "github:nix-community/home-manager";
   };
 
-  outputs = { self, nixpkgs, home-manager, ros2-humble-env, ... }: {
+  outputs = { self, nixpkgs, home-manager, ripple-env, ... }: {
     homeConfigurations.myuser = home-manager.lib.homeManagerConfiguration {
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
       modules = [
-        ros2-humble-env.homeManagerModules.default
+        ripple-env.homeManagerModules.default
         # Your modules...
       ];
     };

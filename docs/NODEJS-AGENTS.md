@@ -42,7 +42,7 @@ The Node.js agent framework provides a foundation for deploying AI agents in ROS
 
 1. **Install dependencies**:
    ```bash
-   cd /home/user/ros2-humble-env
+   cd /home/user/ripple-env
    npm install
    ```
 
@@ -59,7 +59,7 @@ The Node.js agent framework provides a foundation for deploying AI agents in ROS
 ## Project Structure
 
 ```
-/home/user/ros2-humble-env/
+/home/user/ripple-env/
 ├── package.json                 # Node.js project configuration
 ├── agents/
 │   ├── index.js                 # Main agent framework

@@ -1,0 +1,450 @@
+name: Python Version Matrix
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'pixi.toml'
+      - 'pixi.lock'
+      - 'flake.nix'
+      - 'nix/**'
+      - '.github/workflows/python-matrix.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'pixi.toml'
+      - 'pixi.lock'
+      - 'flake.nix'
+      - 'nix/**'
+      - '.github/workflows/python-matrix.yml'
+  workflow_dispatch:
+    inputs:
+      include_slow_tests:
+        description: 'Include slow compatibility tests'
+        type: boolean
+        default: false
+
+# Ensure only one run per branch/PR at a time
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NIXPKGS_ALLOW_UNFREE: "1"
+
+jobs:
+  # ===========================================
+  # Quick Python Version Verification
+  # ===========================================
+  verify-versions:
+    name: Verify Python Versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      pixi-python: ${{ steps.versions.outputs.pixi_python }}
+      nix-python: ${{ steps.versions.outputs.nix_python }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Build development shell
+        run: nix develop .#default --command echo "Shell ready"
+
+      - name: Install Pixi packages
+        run: nix develop .#default --command pixi install
+
+      - name: Get Python versions
+        id: versions
+        run: |
+          echo "=== Nix Python Version ==="
+          NIX_PYTHON=$(nix develop .#default --command python3.13 --version 2>/dev/null || echo "N/A")
+          echo "Nix: $NIX_PYTHON"
+
+          echo "=== Pixi Python Version ==="
+          PIXI_PYTHON=$(nix develop .#default --command pixi run python --version)
+          echo "Pixi: $PIXI_PYTHON"
+
+          # Extract version numbers
+          PIXI_VER=$(echo "$PIXI_PYTHON" | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
+          NIX_VER=$(echo "$NIX_PYTHON" | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
+
+          echo "pixi_python=$PIXI_VER" >> $GITHUB_OUTPUT
+          echo "nix_python=$NIX_VER" >> $GITHUB_OUTPUT
+
+      - name: Verify version constraints
+        run: |
+          echo "=== Version Constraint Verification ==="
+
+          # Check Pixi Python is in allowed range (3.11.x - 3.12.x)
+          PIXI_MAJOR=$(nix develop .#default --command pixi run python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+          echo "Pixi Python major.minor: $PIXI_MAJOR"
+
+          if [[ "$PIXI_MAJOR" == "3.11" || "$PIXI_MAJOR" == "3.12" ]]; then
+            echo "OK: Pixi Python version is in allowed range (3.11-3.12)"
+          else
+            echo "WARNING: Pixi Python version $PIXI_MAJOR may have compatibility issues"
+            echo "Expected: 3.11.x or 3.12.x for RoboStack compatibility"
+          fi
+
+  # ===========================================
+  # Pixi Environment Matrix
+  # ===========================================
+  pixi-environments:
+    name: "Pixi Env: ${{ matrix.env }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: verify-versions
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [default, llmops, finetuning, caching]
+        # Note: cuda, aios, aios-cuda require specific hardware/dependencies
+        # They are tested separately in dedicated workflows
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          sudo rm -rf /usr/local/lib/android
+          sudo apt-get clean 2>/dev/null || true
+
+      - name: Build development shell
+        run: nix develop .#default --command echo "Shell ready"
+
+      - name: Install Pixi environment
+        run: |
+          echo "Installing environment: ${{ matrix.env }}"
+          nix develop .#default --command pixi install -e ${{ matrix.env }}
+
+      - name: Verify Python version
+        run: |
+          echo "=== Python Version in ${{ matrix.env }} ==="
+          nix develop .#default --command pixi run -e ${{ matrix.env }} python --version
+          nix develop .#default --command pixi run -e ${{ matrix.env }} python -c "import sys; print(f'Python {sys.version}')"
+
+      - name: Test core imports
+        run: |
+          echo "=== Testing core imports in ${{ matrix.env }} ==="
+          nix develop .#default --command pixi run -e ${{ matrix.env }} python -c "
+          import sys
+          print(f'Python: {sys.version}')
+
+          # Core packages
+          try:
+              import numpy
+              print(f'numpy: {numpy.__version__}')
+          except ImportError as e:
+              print(f'numpy: MISSING ({e})')
+
+          try:
+              import pandas
+              print(f'pandas: {pandas.__version__}')
+          except ImportError as e:
+              print(f'pandas: MISSING ({e})')
+          "
+
+      - name: Test environment-specific imports
+        run: |
+          echo "=== Testing ${{ matrix.env }}-specific packages ==="
+          case "${{ matrix.env }}" in
+            default)
+              nix develop .#default --command pixi run -e ${{ matrix.env }} python -c "
+              import torch; print(f'torch: {torch.__version__}')
+              import transformers; print(f'transformers: {transformers.__version__}')
+              import rclpy; print('rclpy: available')
+              " || echo "Some packages not available (expected in minimal CI)"
+              ;;
+            llmops)
+              nix develop .#default --command pixi run -e ${{ matrix.env }} python -c "
+              import mlflow; print(f'mlflow: {mlflow.__version__}')
+              try:
+                  import trulens_eval; print(f'trulens_eval: {trulens_eval.__version__}')
+              except ImportError:
+                  print('trulens_eval: not installed')
+              " || echo "LLMOps packages pending installation"
+              ;;
+            finetuning)
+              nix develop .#default --command pixi run -e ${{ matrix.env }} python -c "
+              import torch; print(f'torch: {torch.__version__}')
+              import peft; print(f'peft: {peft.__version__}')
+              try:
+                  import unsloth; print(f'unsloth: {unsloth.__version__}')
+              except ImportError:
+                  print('unsloth: not installed (PyPI-only)')
+              " || echo "Finetuning packages pending installation"
+              ;;
+            caching)
+              nix develop .#default --command pixi run -e ${{ matrix.env }} python -c "
+              import redis; print(f'redis: {redis.__version__}')
+              import openai; print(f'openai: {openai.__version__}')
+              " || echo "Caching packages pending installation"
+              ;;
+          esac
+
+  # ===========================================
+  # PyTorch Version Coupling Test
+  # ===========================================
+  pytorch-coupling:
+    name: PyTorch Version Coupling
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: verify-versions
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Build development shell
+        run: nix develop .#default --command echo "Shell ready"
+
+      - name: Install Pixi packages
+        run: nix develop .#default --command pixi install
+
+      - name: Verify PyTorch version coupling
+        run: |
+          echo "=== PyTorch Version Coupling Verification ==="
+          nix develop .#default --command pixi run python -c "
+          import sys
+
+          # Version coupling rules:
+          # PyTorch 2.5.x requires torchvision 0.20.x, torchaudio 2.5.x
+          # PyTorch 2.4.x requires torchvision 0.19.x, torchaudio 2.4.x
+          # etc.
+
+          COUPLING_RULES = {
+              '2.5': {'torchvision': '0.20', 'torchaudio': '2.5'},
+              '2.4': {'torchvision': '0.19', 'torchaudio': '2.4'},
+              '2.3': {'torchvision': '0.18', 'torchaudio': '2.3'},
+              '2.2': {'torchvision': '0.17', 'torchaudio': '2.2'},
+          }
+
+          try:
+              import torch
+              import torchvision
+              import torchaudio
+
+              torch_major_minor = '.'.join(torch.__version__.split('.')[:2])
+              tv_major_minor = '.'.join(torchvision.__version__.split('.')[:2])
+              ta_major_minor = '.'.join(torchaudio.__version__.split('.')[:2])
+
+              print(f'PyTorch: {torch.__version__} (major.minor: {torch_major_minor})')
+              print(f'TorchVision: {torchvision.__version__} (major.minor: {tv_major_minor})')
+              print(f'TorchAudio: {torchaudio.__version__} (major.minor: {ta_major_minor})')
+
+              if torch_major_minor in COUPLING_RULES:
+                  expected = COUPLING_RULES[torch_major_minor]
+                  errors = []
+
+                  if tv_major_minor != expected['torchvision']:
+                      errors.append(f'torchvision: expected {expected[\"torchvision\"]}.x, got {tv_major_minor}')
+
+                  if ta_major_minor != expected['torchaudio']:
+                      errors.append(f'torchaudio: expected {expected[\"torchaudio\"]}.x, got {ta_major_minor}')
+
+                  if errors:
+                      print('VERSION COUPLING ERRORS:')
+                      for e in errors:
+                          print(f'  - {e}')
+                      sys.exit(1)
+                  else:
+                      print('OK: All PyTorch ecosystem versions are correctly coupled')
+              else:
+                  print(f'WARNING: No coupling rules for PyTorch {torch_major_minor}')
+                  print('Please add coupling rules to this test')
+
+          except ImportError as e:
+              print(f'PyTorch not installed: {e}')
+              print('Skipping version coupling check')
+          "
+
+  # ===========================================
+  # Dependency Conflict Detection
+  # ===========================================
+  conflict-detection:
+    name: Dependency Conflict Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: verify-versions
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Build development shell
+        run: nix develop .#default --command echo "Shell ready"
+
+      - name: Install Pixi packages
+        run: nix develop .#default --command pixi install
+
+      - name: Check for dependency conflicts
+        run: |
+          echo "=== Checking for Dependency Conflicts ==="
+
+          # Check pixi lock for conflicts
+          if [ -f "pixi.lock" ]; then
+            echo "Analyzing pixi.lock for potential conflicts..."
+
+            # Look for multiple versions of the same package
+            nix develop .#default --command python3 -c "
+          import json
+          import sys
+          from collections import defaultdict
+
+          try:
+              with open('pixi.lock') as f:
+                  lock_data = json.load(f)
+          except json.JSONDecodeError:
+              # pixi.lock might be in a different format
+              print('pixi.lock is not JSON format, skipping detailed analysis')
+              sys.exit(0)
+
+          # Track package versions across environments
+          pkg_versions = defaultdict(set)
+
+          def extract_packages(data, path=''):
+              if isinstance(data, dict):
+                  for k, v in data.items():
+                      if k == 'packages' and isinstance(v, dict):
+                          for pkg, info in v.items():
+                              if isinstance(info, dict) and 'version' in info:
+                                  pkg_versions[pkg].add(info['version'])
+                      else:
+                          extract_packages(v, f'{path}.{k}')
+              elif isinstance(data, list):
+                  for item in data:
+                      extract_packages(item, path)
+
+          extract_packages(lock_data)
+
+          # Report packages with multiple versions
+          conflicts = {k: v for k, v in pkg_versions.items() if len(v) > 1}
+          if conflicts:
+              print('Packages with multiple versions (potential conflicts):')
+              for pkg, versions in sorted(conflicts.items()):
+                  print(f'  {pkg}: {sorted(versions)}')
+          else:
+              print('No obvious version conflicts detected')
+          " || echo "Lock file analysis skipped"
+          fi
+
+      - name: Test import compatibility
+        run: |
+          echo "=== Testing Cross-Package Import Compatibility ==="
+          nix develop .#default --command pixi run python -c "
+          import sys
+          import warnings
+          warnings.filterwarnings('ignore')
+
+          # Test packages that commonly conflict
+          conflict_tests = [
+              ('numpy', 'pandas'),
+              ('numpy', 'scipy'),
+              ('torch', 'numpy'),
+              ('transformers', 'torch'),
+              ('accelerate', 'transformers'),
+          ]
+
+          print('Testing common conflict pairs...')
+          for pkg1, pkg2 in conflict_tests:
+              try:
+                  mod1 = __import__(pkg1)
+                  mod2 = __import__(pkg2)
+                  v1 = getattr(mod1, '__version__', 'unknown')
+                  v2 = getattr(mod2, '__version__', 'unknown')
+                  print(f'  OK: {pkg1}=={v1} + {pkg2}=={v2}')
+              except ImportError as e:
+                  print(f'  SKIP: {pkg1}/{pkg2} not installed ({e})')
+              except Exception as e:
+                  print(f'  WARN: {pkg1}/{pkg2} conflict: {e}')
+          " || echo "Some packages not installed (expected in CI)"
+
+  # ===========================================
+  # Summary
+  # ===========================================
+  summary:
+    name: Python Matrix Summary
+    runs-on: ubuntu-latest
+    needs: [verify-versions, pixi-environments, pytorch-coupling, conflict-detection]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Python Version Matrix Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Detected Versions" >> $GITHUB_STEP_SUMMARY
+          echo "| Source | Python Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|----------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Pixi | ${{ needs.verify-versions.outputs.pixi-python }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Nix | ${{ needs.verify-versions.outputs.nix-python }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          for job in verify-versions pixi-environments pytorch-coupling conflict-detection; do
+            case "$job" in
+              verify-versions) result="${{ needs.verify-versions.result }}" ;;
+              pixi-environments) result="${{ needs.pixi-environments.result }}" ;;
+              pytorch-coupling) result="${{ needs.pytorch-coupling.result }}" ;;
+              conflict-detection) result="${{ needs.conflict-detection.result }}" ;;
+            esac
+
+            if [ "$result" == "success" ]; then
+              echo "| $job | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+            elif [ "$result" == "skipped" ]; then
+              echo "| $job | :fast_forward: |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| $job | :x: |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Version Coupling Rules" >> $GITHUB_STEP_SUMMARY
+          echo "PyTorch ecosystem versions must be coupled:" >> $GITHUB_STEP_SUMMARY
+          echo "- PyTorch 2.5.x requires torchvision 0.20.x, torchaudio 2.5.x" >> $GITHUB_STEP_SUMMARY
+          echo "- AIOS requires Python 3.10-3.11 (no 3.12+ support)" >> $GITHUB_STEP_SUMMARY
+          echo "- RoboStack Humble requires Python 3.11.x" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for failures
+        run: |
+          if [ "${{ needs.verify-versions.result }}" != "success" ] || \
+             [ "${{ needs.pytorch-coupling.result }}" != "success" ]; then
+            echo "Critical Python version checks failed"
+            exit 1
+          fi
+
+          # Environment tests are non-blocking (may have missing packages)
+          if [ "${{ needs.pixi-environments.result }}" != "success" ]; then
+            echo "::warning::Some Pixi environments had issues - review logs"
+          fi

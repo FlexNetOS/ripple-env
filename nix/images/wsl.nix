@@ -2,24 +2,46 @@
 # Builds a tarball that can be imported into Windows Subsystem for Linux
 #
 # Build command:
-#   nix build .#nixosConfigurations.wsl-ros2.config.system.build.tarballBuilder
+#   nix build .#nixosConfigurations.wsl-ripple.config.system.build.tarballBuilder
+#
+# Build command (production/stable):
+#   nix build .#nixosConfigurations.wsl-ros2-stable.config.system.build.tarballBuilder
 #
 # Import command (PowerShell):
-#   wsl --import NixOS-ROS2 $env:USERPROFILE\WSL\NixOS-ROS2 result/nixos-wsl.tar.gz
+#   wsl --import NixOS-Ripple $env:USERPROFILE\WSL\NixOS-Ripple result/nixos-wsl.tar.gz
 #
 # Launch:
-#   wsl -d NixOS-ROS2
-{ inputs, pkgs, lib, ... }:
+#   wsl -d NixOS-Ripple
+#
+# Supply Chain Security:
+#   - Use *-stable variants for production deployments
+#   - Stable uses nixos-24.11 with vetted packages
+#   - Development uses nixos-unstable for latest features
+{ inputs, pkgs, lib, isStable ? false, ... }:
 
-inputs.nixos-wsl.lib.nixosSystem {
+let
+  wslInput = if isStable then inputs.nixos-wsl-stable else inputs.nixos-wsl;
+  nixpkgsInput = if isStable then inputs.nixpkgs-stable else inputs.nixpkgs;
+  channelLabel = if isStable then "stable (nixos-24.11)" else "unstable";
+in
+wslInput.lib.nixosSystem {
   system = "x86_64-linux";
 
   modules = [
     # NixOS-WSL base module
     inputs.nixos-wsl.nixosModules.wsl
 
+    # Security hardening module
+    ./security-hardening.nix
+
     # ROS2 Humble development environment configuration
     ({ config, pkgs, lib, ... }: {
+      # Enable security hardening (minimal level for dev)
+      security.hardening = {
+        enable = true;
+        level = "minimal";  # Use minimal for development convenience
+        auditd.enable = false;  # Disable audit in WSL
+      };
       # WSL-specific configuration
       wsl = {
         enable = true;
@@ -40,7 +62,7 @@ inputs.nixos-wsl.lib.nixosSystem {
             options = "metadata,umask=22,fmask=11";
           };
           network = {
-            hostname = "nixos-ros2";
+            hostname = "nixos-ripple";
             generateHosts = true;
             generateResolvConf = true;
           };
@@ -48,7 +70,7 @@ inputs.nixos-wsl.lib.nixosSystem {
       };
 
       # System configuration
-      networking.hostName = "nixos-ros2";
+      networking.hostName = "nixos-ripple";
       time.timeZone = "UTC";
 
       # Nix configuration

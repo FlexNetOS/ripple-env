@@ -1,7 +1,7 @@
 # ARIA Task Graph & Execution Plan for Manus 1.6
 
 > **Generated**: 2026-01-09
-> **Repository**: FlexNetOS/ros2-humble-env
+> **Repository**: FlexNetOS/ripple-env
 > **Total Repositories**: 131 unique (168 with duplicates)
 > **Total Domains**: 20
 
@@ -23,7 +23,7 @@ This document outlines the complete task graph and execution plan for the ARIA o
 
 ### Completed Actions
 
-1. ✅ Cloned repository: `FlexNetOS/ros2-humble-env` (main branch)
+1. ✅ Cloned repository: `FlexNetOS/ripple-env` (main branch)
 2. ✅ Read ARIA orchestrator prompt: `.claude/prompts/aria-orchestrator.md`
 3. ✅ Adapted prompt for Manus 1.6 architecture
 4. ✅ Extracted repositories from BUILDKIT_STARTER_SPEC.md: 102 repos
@@ -143,10 +143,10 @@ Use Manus `map` tool to deploy 20 parallel domain analysis agents. Each agent wi
 
 **Prompt Template:**
 ```
-You are a domain specialist analyzing the {{input}} domain for the ros2-humble-env repository.
+You are a domain specialist analyzing the {{input}} domain for the ripple-env repository.
 
 Context:
-- Repository: /home/ubuntu/ros2-humble-env
+- Repository: /home/ubuntu/ripple-env
 - Domain data: /tmp/repos_by_domain.json
 - SSoT: BUILDKIT_STARTER_SPEC.md
 

@@ -2,6 +2,8 @@
 
 This guide walks you through setting up and using the ROS2 Humble development environment from scratch.
 
+> **New to the project?** After completing quick setup, try the [Interactive Onboarding Tutorial](ONBOARDING_TUTORIAL.md) for a guided learning experience, or check [Video Walkthroughs](VIDEO_WALKTHROUGHS.md) for visual learning.
+
 ## Prerequisites
 
 Before you begin, ensure you have:
@@ -27,8 +29,8 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 
 ```bash
 # Clone the repository
-git clone https://github.com/FlexNetOS/ros2-humble-env.git
-cd ros2-humble-env
+git clone https://github.com/FlexNetOS/ripple-env.git
+cd ripple-env
 
 # Enter the development shell (first run takes 5-10 minutes)
 nix develop
@@ -65,8 +67,8 @@ You're ready to develop ROS2 applications.
 
 3. **Clone and setup**:
    ```bash
-   git clone https://github.com/FlexNetOS/ros2-humble-env.git
-   cd ros2-humble-env
+   git clone https://github.com/FlexNetOS/ripple-env.git
+   cd ripple-env
    direnv allow  # If using direnv
    # OR
    nix develop   # Direct entry
@@ -88,8 +90,8 @@ You're ready to develop ROS2 applications.
 
 3. **Clone and setup**:
    ```bash
-   git clone https://github.com/FlexNetOS/ros2-humble-env.git
-   cd ros2-humble-env
+   git clone https://github.com/FlexNetOS/ripple-env.git
+   cd ripple-env
    nix develop
    ```
 
@@ -100,14 +102,14 @@ You're ready to develop ROS2 applications.
 1. **Run the bootstrap script** (as Administrator in PowerShell):
    ```powershell
    # Download and run bootstrap
-   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/FlexNetOS/ros2-humble-env/main/bootstrap.ps1" -OutFile "bootstrap.ps1"
+   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/FlexNetOS/ripple-env/main/bootstrap.ps1" -OutFile "bootstrap.ps1"
    .\bootstrap.ps1
    ```
 
 2. **Enter WSL and continue**:
    ```bash
-   wsl -d NixOS-ROS2
-   cd ~/ros2-humble-env
+   wsl -d NixOS-Ripple
+   cd ~/ripple-env
    nix develop
    ```
 
@@ -229,7 +231,7 @@ ls docker/docker-compose.*.yml
 ## Project Structure
 
 ```
-ros2-humble-env/
+ripple-env/
 ├── flake.nix           # Main Nix configuration
 ├── pixi.toml           # Python/ROS2 package definitions
 ├── bootstrap.sh        # Linux/macOS setup script
@@ -243,6 +245,15 @@ ros2-humble-env/
 
 ## Next Steps
 
+### Learning Resources
+
+- **Interactive Tutorial**: [ONBOARDING_TUTORIAL.md](ONBOARDING_TUTORIAL.md) - Guided learning with checkpoints
+- **Video Walkthroughs**: [VIDEO_WALKTHROUGHS.md](VIDEO_WALKTHROUGHS.md) - Visual tutorials
+- **Progressive Examples**: [PROGRESSIVE_EXAMPLES.md](PROGRESSIVE_EXAMPLES.md) - Beginner to advanced examples
+- **Common Pitfalls**: [COMMON_PITFALLS.md](COMMON_PITFALLS.md) - Avoid common mistakes
+
+### Build Something
+
 - **Build a robot**: Check out [ROS2 Tutorials](https://docs.ros.org/en/humble/Tutorials.html)
 - **Add AI capabilities**: See [INFERENCE_SETUP.md](INFERENCE_SETUP.md)
 - **Deploy to edge**: See [EDGE_DEPLOYMENT.md](EDGE_DEPLOYMENT.md)
@@ -255,6 +266,6 @@ For common issues and solutions, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 ## Getting Help
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/FlexNetOS/ros2-humble-env/issues)
-- **Discussions**: [Ask questions](https://github.com/FlexNetOS/ros2-humble-env/discussions)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/FlexNetOS/ripple-env/issues)
+- **Discussions**: [Ask questions](https://github.com/FlexNetOS/ripple-env/discussions)
 - **ROS2 Documentation**: [docs.ros.org](https://docs.ros.org/en/humble/)

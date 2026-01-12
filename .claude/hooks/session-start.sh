@@ -17,7 +17,7 @@ echo -e "${BLUE}═════════════════════�
 
 # Check if we're in the right directory
 if [[ ! -f "flake.nix" ]]; then
-    echo -e "${YELLOW}Warning: Not in ros2-humble-env root directory${NC}"
+    echo -e "${YELLOW}Warning: Not in ripple-env root directory${NC}"
 fi
 
 # Check Nix availability

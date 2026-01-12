@@ -1,6 +1,6 @@
 # ROS2 Humble Environment Documentation
 
-Welcome to the comprehensive documentation for ros2-humble-env, a cross-platform ROS2 development environment built with Nix and Pixi.
+Welcome to the comprehensive documentation for ripple-env, a cross-platform ROS2 development environment built with Nix and Pixi.
 
 ## Quick Navigation
 
@@ -100,7 +100,7 @@ Platform-specific guides:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     ros2-humble-env                             │
+│                     ripple-env                             │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
@@ -187,6 +187,6 @@ nix develop .#rolling # ROS2 Rolling (dev)
 
 ## Support
 
-- [GitHub Issues](https://github.com/FlexNetOS/ros2-humble-env/issues)
-- [GitHub Discussions](https://github.com/FlexNetOS/ros2-humble-env/discussions)
+- [GitHub Issues](https://github.com/FlexNetOS/ripple-env/issues)
+- [GitHub Discussions](https://github.com/FlexNetOS/ripple-env/discussions)
 - See [SECURITY.md](../SECURITY.md) for security issues

@@ -9,7 +9,7 @@ docker network create agentic-network
 
 ### Step 2: Deploy Services
 ```bash
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 ./scripts/deploy-edge.sh
 ```
 

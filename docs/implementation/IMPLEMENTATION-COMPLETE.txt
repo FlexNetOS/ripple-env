@@ -30,7 +30,7 @@ ALL SERVICES USE:
 ================================================================================
 
 1. DOCKER COMPOSE SERVICES
-   File: /home/user/ros2-humble-env/docker-compose.observability.yml
+   File: /home/user/ripple-env/docker-compose.observability.yml
    
    - netdata:    Lines 210-236 (27 lines)
    - umami:      Lines 243-262 (20 lines)
@@ -39,7 +39,7 @@ ALL SERVICES USE:
    Total: 64 lines of production-ready configuration
 
 2. ENVIRONMENT VARIABLES
-   File: /home/user/ros2-humble-env/.env.example
+   File: /home/user/ripple-env/.env.example
    
    - UMAMI_DB_USER
    - UMAMI_DB_PASSWORD
@@ -50,7 +50,7 @@ ALL SERVICES USE:
    All lines: 71-81 (11 lines)
 
 3. GRAFANA DATASOURCE
-   File: /home/user/ros2-humble-env/manifests/observability/grafana/provisioning/datasources/datasources.yml
+   File: /home/user/ripple-env/manifests/observability/grafana/provisioning/datasources/datasources.yml
    
    - Netdata datasource added (lines 24-31)
    - Enables viewing Netdata metrics in Grafana
@@ -59,37 +59,37 @@ ALL SERVICES USE:
                         FILES CREATED (NEW)
 ================================================================================
 
-1. /home/user/ros2-humble-env/scripts/verify-observability.sh
+1. /home/user/ripple-env/scripts/verify-observability.sh
    - Automated verification script
    - Checks service status, endpoints, health
    - Size: 4.9 KB
    - Executable: Yes
 
-2. /home/user/ros2-humble-env/scripts/deploy-observability.sh
+2. /home/user/ripple-env/scripts/deploy-observability.sh
    - Automated deployment script
    - Handles setup, secrets, and deployment
    - Size: 4.3 KB
    - Executable: Yes
 
-3. /home/user/ros2-humble-env/docs/P1-008-009-IMPLEMENTATION.md
+3. /home/user/ripple-env/docs/P1-008-009-IMPLEMENTATION.md
    - Comprehensive implementation report
    - Security configuration guide
    - Troubleshooting instructions
    - Size: 13 KB (273 lines)
 
-4. /home/user/ros2-humble-env/docs/OBSERVABILITY-QUICK-START.md
+4. /home/user/ripple-env/docs/OBSERVABILITY-QUICK-START.md
    - Quick reference guide
    - Common commands
    - Service access information
    - Size: 11 KB (284 lines)
 
-5. /home/user/ros2-humble-env/P1-008-009-COMPLETION-SUMMARY.md
+5. /home/user/ripple-env/P1-008-009-COMPLETION-SUMMARY.md
    - Executive summary
    - Service definitions
    - Deployment instructions
    - Size: 16 KB (428 lines)
 
-6. /home/user/ros2-humble-env/IMPLEMENTATION-COMPLETE.txt
+6. /home/user/ripple-env/IMPLEMENTATION-COMPLETE.txt
    - This file
    - Quick reference for implementation
 
@@ -99,7 +99,7 @@ TOTAL NEW DOCUMENTATION: 50+ KB across 6 files
                         FILES MODIFIED (EXISTING)
 ================================================================================
 
-1. /home/user/ros2-humble-env/manifests/observability/grafana/provisioning/datasources/datasources.yml
+1. /home/user/ripple-env/manifests/observability/grafana/provisioning/datasources/datasources.yml
    - Added Netdata datasource configuration
    - Lines added: 8 (lines 24-31)
 

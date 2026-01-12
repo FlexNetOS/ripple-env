@@ -23,7 +23,7 @@ P1-001_promptfoo_configuration:
   task_id: P1-001
   priority: P1
   status: PASSED
-  file_verified: /home/user/ros2-humble-env/promptfooconfig.yaml
+  file_verified: /home/user/ripple-env/promptfooconfig.yaml
   verification_timestamp: 2026-01-10T02:09:00Z
 
   requirements:
@@ -108,7 +108,7 @@ P1-005_opa_policies:
   verification_timestamp: 2026-01-10T02:09:00Z
 
   file_1_authz_rego:
-    file_verified: /home/user/ros2-humble-env/config/opa/policies/authz.rego
+    file_verified: /home/user/ripple-env/config/opa/policies/authz.rego
 
     requirements:
       - requirement: Default deny policy exists
@@ -148,7 +148,7 @@ P1-005_opa_policies:
       policy_count: 3
 
   file_2_service_mesh_rego:
-    file_verified: /home/user/ros2-humble-env/config/opa/policies/service_mesh.rego
+    file_verified: /home/user/ripple-env/config/opa/policies/service_mesh.rego
 
     requirements:
       - requirement: Service-to-service policies defined
@@ -197,7 +197,7 @@ P1-009_postgresql_version:
   task_id: P1-009
   priority: P1
   status: PASSED
-  file_verified: /home/user/ros2-humble-env/docker/docker-compose.temporal.yml
+  file_verified: /home/user/ripple-env/docker/docker-compose.temporal.yml
   verification_timestamp: 2026-01-10T02:09:00Z
 
   requirements:
@@ -248,7 +248,7 @@ P1-010_python_documentation:
   task_id: P1-010
   priority: P1
   status: PASSED
-  file_verified: /home/user/ros2-humble-env/docs/PYTHON-ENVIRONMENTS.md
+  file_verified: /home/user/ripple-env/docs/PYTHON-ENVIRONMENTS.md
   verification_timestamp: 2026-01-10T02:09:00Z
 
   requirements:
