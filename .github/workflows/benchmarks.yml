@@ -7,11 +7,15 @@ on:
       - 'test/benchmarks/**'
       - 'src/**'
       - 'pixi.toml'
+      - 'flake.nix'
+      - 'nix/**'
   pull_request:
     branches: [main]
     paths:
       - 'test/benchmarks/**'
       - 'src/**'
+      - 'flake.nix'
+      - 'nix/**'
   workflow_dispatch:
   schedule:
     # Run benchmarks weekly on Sunday at 2 AM UTC
@@ -21,7 +25,92 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  NIXPKGS_ALLOW_UNFREE: "1"
+
 jobs:
+  # ===========================================
+  # Nix Evaluation Benchmarks
+  # ===========================================
+  nix-eval-benchmark:
+    name: Nix Evaluation Benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Benchmark flake evaluation
+        id: eval-benchmark
+        run: |
+          echo "## Nix Evaluation Benchmarks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Operation | Time (s) | Target (s) | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|----------|------------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Benchmark flake show
+          START=$(date +%s.%N)
+          nix flake show --no-write-lock-file > /dev/null 2>&1
+          END=$(date +%s.%N)
+          FLAKE_SHOW=$(echo "$END - $START" | bc)
+          if (( $(echo "$FLAKE_SHOW < 10" | bc -l) )); then
+            echo "| flake show | $FLAKE_SHOW | 10 | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| flake show | $FLAKE_SHOW | 10 | :x: |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Benchmark minimal shell eval
+          START=$(date +%s.%N)
+          nix eval .#devShells.x86_64-linux.minimal --apply 'x: x.name' > /dev/null 2>&1
+          END=$(date +%s.%N)
+          MINIMAL=$(echo "$END - $START" | bc)
+          if (( $(echo "$MINIMAL < 5" | bc -l) )); then
+            echo "| minimal shell | $MINIMAL | 5 | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| minimal shell | $MINIMAL | 5 | :x: |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Benchmark default shell eval
+          START=$(date +%s.%N)
+          nix eval .#devShells.x86_64-linux.default --apply 'x: x.name' > /dev/null 2>&1
+          END=$(date +%s.%N)
+          DEFAULT=$(echo "$END - $START" | bc)
+          if (( $(echo "$DEFAULT < 15" | bc -l) )); then
+            echo "| default shell | $DEFAULT | 15 | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| default shell | $DEFAULT | 15 | :x: |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Save results for artifact
+          echo "flake_show=$FLAKE_SHOW" >> $GITHUB_OUTPUT
+          echo "minimal_shell=$MINIMAL" >> $GITHUB_OUTPUT
+          echo "default_shell=$DEFAULT" >> $GITHUB_OUTPUT
+
+          # Create JSON for comparison
+          cat > nix-eval-results.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "benchmarks": [
+              {"name": "flake_show", "time": $FLAKE_SHOW, "target": 10},
+              {"name": "minimal_shell", "time": $MINIMAL, "target": 5},
+              {"name": "default_shell", "time": $DEFAULT, "target": 15}
+            ]
+          }
+          EOF
+
+      - name: Upload Nix eval benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: nix-eval-benchmark-results
+          path: nix-eval-results.json
+          retention-days: 90
+
   benchmark:
     name: Run Benchmarks
     runs-on: ubuntu-latest
