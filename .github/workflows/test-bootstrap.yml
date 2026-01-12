@@ -287,7 +287,7 @@ jobs:
       - name: Clean previous test artifacts
         shell: pwsh
         run: |
-          $distroName = "NixOS-ROS2-Test"
+          $distroName = "NixOS-Ripple-Test"
           $distros = wsl --list --quiet 2>$null
           if ($distros -contains $distroName) {
             Write-Host "Removing existing test distribution..."
@@ -303,8 +303,8 @@ jobs:
         shell: pwsh
         run: |
           .\bootstrap.ps1 `
-            -DistroName "NixOS-ROS2-Test" `
-            -InstallPath "$env:TEMP\WSL-Test\NixOS-ROS2-Test" `
+            -DistroName "NixOS-Ripple-Test" `
+            -InstallPath "$env:TEMP\WSL-Test\NixOS-Ripple-Test" `
             -DiskSizeGB 64 `
             -SwapSizeGB 4 `
             -Force
@@ -339,7 +339,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          wsl --unregister NixOS-ROS2-Test 2>$null
+          wsl --unregister NixOS-Ripple-Test 2>$null
           Remove-Item "$env:TEMP\WSL-Test" -Recurse -Force -ErrorAction SilentlyContinue
 
   # ===========================================

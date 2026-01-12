@@ -546,7 +546,7 @@ jobs:
       - name: Test binary in WSL2
         shell: wsl-bash {0}
         run: |
-          cd /mnt/c/Users/runneradmin/work/ros2-humble-env/ros2-humble-env/wsl-test
+          cd /mnt/c/Users/runneradmin/work/ripple-env/ripple-env/wsl-test
           chmod +x agixt-bridge.exe
 
           # Test version/help command
