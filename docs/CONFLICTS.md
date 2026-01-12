@@ -193,6 +193,85 @@ nix develop           # For CPU-only
 - `DYLD_FALLBACK_LIBRARY_PATH` set correctly on macOS
 - Nix provides system tools, Pixi provides ROS2/ML stack
 
+## Python Environment Complexity
+
+This project manages multiple Python environments to balance compatibility, performance, and feature requirements.
+
+### Environment Overview
+
+| Environment | Python | Purpose | Activation |
+|-------------|--------|---------|------------|
+| **default** | 3.11.x | ROS2 + ML development | `pixi run` or `pixi shell` |
+| **cuda** | 3.11.x | GPU/CUDA workloads | `pixi run -e cuda` |
+| **aios** | 3.10-3.11 | AIOS Agent OS | `pixi run -e aios` |
+| **aios-cuda** | 3.10-3.11 | AIOS + GPU | `pixi run -e aios-cuda` |
+| **llmops** | 3.11.x | LLM evaluation | `pixi run -e llmops` |
+| **finetuning** | 3.11.x | Model training | `pixi run -e finetuning` |
+| **caching** | 3.11.x | Prompt caching | `pixi run -e caching` |
+| **Nix scripts** | 3.13.x | Tools, scripts | `python3.13` |
+
+### Version Coupling Requirements
+
+**Critical**: These version couplings must be maintained to avoid runtime errors.
+
+#### PyTorch Ecosystem
+
+PyTorch, TorchVision, and TorchAudio must use matched versions:
+
+| PyTorch | TorchVision | TorchAudio | CUDA Support |
+|---------|-------------|------------|--------------|
+| 2.5.x | 0.20.x | 2.5.x | 11.8, 12.1, 12.4 |
+| 2.4.x | 0.19.x | 2.4.x | 11.8, 12.1, 12.4 |
+| 2.3.x | 0.18.x | 2.3.x | 11.8, 12.1 |
+| 2.2.x | 0.17.x | 2.2.x | 11.8, 12.1 |
+
+**Current**: PyTorch 2.5.x with torchvision 0.20.x, torchaudio 2.5.x
+
+#### AIOS Compatibility
+
+AIOS Agent OS has strict Python requirements:
+
+| Component | Requirement | Notes |
+|-----------|-------------|-------|
+| Python | 3.10-3.11 | **No 3.12+ support** |
+| pydantic | ==2.7.0 | Exact version required |
+| numpy | ==1.24.3 | Exact version required |
+| click | ==8.1.7 | Exact version required |
+
+**Why**: AIOS kernel uses specific APIs removed in Python 3.12+.
+
+#### RoboStack (ROS2) Compatibility
+
+| Component | Constraint | Reason |
+|-----------|------------|--------|
+| Python | 3.11.x | conda-forge builds |
+| ROS2 | Humble | robostack-humble channel |
+| NumPy | <2.0 | Some ROS2 packages not updated |
+
+### Dependency Source Priority
+
+Packages are resolved in this order:
+
+1. **robostack-humble**: ROS2 packages (highest priority for ROS compatibility)
+2. **conda-forge**: Scientific packages (numpy, pandas, pytorch CPU)
+3. **pytorch**: CUDA-enabled PyTorch (when cuda feature enabled)
+4. **nvidia**: CUDA runtime libraries
+5. **PyPI**: Python-only packages not in conda (via `[pypi-dependencies]`)
+
+**Channel conflicts**: If a package exists in multiple channels, specify explicitly:
+```toml
+pytorch = { version = ">=2.5", channel = "pytorch", build = "*cuda*" }
+```
+
+### Common Conflict Patterns
+
+| Pattern | Symptom | Solution |
+|---------|---------|----------|
+| NumPy 2.x | `AttributeError: module 'numpy' has no attribute...` | Pin `numpy = "<2"` |
+| PyTorch CPU/CUDA mix | Wrong CUDA version or no GPU | Use correct environment (`-e cuda`) |
+| AIOS on Python 3.12+ | Import errors in AIOS kernel | Use `aios` environment (Python 3.11) |
+| Cross-channel pydantic | Version mismatch | Pin exact version in feature |
+
 ## Version Matrix
 
 ### Tested Compatible Versions
