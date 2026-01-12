@@ -1,4 +1,4 @@
-# Library utility functions for ros2-humble-env
+# Library utility functions for ripple-env
 # Inspired by RGBCube/ncc and GustavoWidman/nix
 {
   lib,

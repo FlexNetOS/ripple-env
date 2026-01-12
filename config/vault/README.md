@@ -6,7 +6,7 @@ This directory contains Vault policies and configuration for secure secret manag
 
 ### SEC-001: Keycloak Credentials (HIGH Severity)
 **Status**: RESOLVED
-**Files Modified**: `/home/user/ros2-humble-env/docker-compose.identity.yml`
+**Files Modified**: `/home/user/ripple-env/docker-compose.identity.yml`
 
 **Before**:
 ```yaml
@@ -96,10 +96,10 @@ vault secrets list
 
 ```bash
 # Load the secrets policy
-vault policy write aria-secrets /home/user/ros2-humble-env/config/vault/policy-secrets.hcl
+vault policy write aria-secrets /home/user/ripple-env/config/vault/policy-secrets.hcl
 
 # Load the agent policy
-vault policy write aria-agent /home/user/ros2-humble-env/config/vault/policy-agent.hcl
+vault policy write aria-agent /home/user/ripple-env/config/vault/policy-agent.hcl
 
 # Verify
 vault policy list

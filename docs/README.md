@@ -7,6 +7,7 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | Resource | Description |
 |----------|-------------|
 | [Getting Started](GETTING_STARTED.md) | New user setup guide |
+| [Onboarding Tutorial](ONBOARDING_TUTORIAL.md) | Interactive step-by-step tutorial |
 | [Troubleshooting](TROUBLESHOOTING.md) | Common issues and solutions |
 | [Network Requirements](NETWORK_REQUIREMENTS.md) | Network dependencies and offline mode |
 | [Contributing](../CONTRIBUTING.md) | How to contribute |
@@ -16,10 +17,24 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 
 ## Documentation Categories
 
-### Getting Started
+### Getting Started & Onboarding
 
-- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete setup guide for new users
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Solutions to common problems
+New to the project? Start here:
+
+| Document | Description | Time |
+|----------|-------------|------|
+| [GETTING_STARTED.md](GETTING_STARTED.md) | Quick setup reference | 5-10 min |
+| [ONBOARDING_TUTORIAL.md](ONBOARDING_TUTORIAL.md) | Interactive tutorial with checkpoints | 30-45 min |
+| [PROGRESSIVE_EXAMPLES.md](PROGRESSIVE_EXAMPLES.md) | Examples from beginner to advanced | Varies |
+| [VIDEO_WALKTHROUGHS.md](VIDEO_WALKTHROUGHS.md) | Video tutorials and external resources | Varies |
+| [COMMON_PITFALLS.md](COMMON_PITFALLS.md) | Common mistakes and how to avoid them | Reference |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Solutions to common problems | Reference |
+
+**Recommended learning path:**
+1. [Getting Started](GETTING_STARTED.md) - Get the environment running
+2. [Onboarding Tutorial](ONBOARDING_TUTORIAL.md) - Learn the basics interactively
+3. [Progressive Examples](PROGRESSIVE_EXAMPLES.md) - Build your skills
+4. [Common Pitfalls](COMMON_PITFALLS.md) - Learn what to avoid
 
 ### Core Infrastructure
 
@@ -34,9 +49,11 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 
 | Document | Description |
 |----------|-------------|
+| [CONTAINER_SECURITY.md](CONTAINER_SECURITY.md) | Container security, network segmentation, and port exposure |
 | [SECRETS.md](SECRETS.md) | Secrets management with agenix and detect-secrets |
 | [MTLS_SETUP.md](MTLS_SETUP.md) | Mutual TLS configuration |
 | [MTLS-IMPLEMENTATION-CHECKLIST.md](MTLS-IMPLEMENTATION-CHECKLIST.md) | mTLS implementation checklist |
+| [SUPPLY_CHAIN_SECURITY.md](SUPPLY_CHAIN_SECURITY.md) | Supply chain security and SBOM |
 
 ### Database & Storage
 

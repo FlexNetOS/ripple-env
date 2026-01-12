@@ -20,7 +20,7 @@ cd terraform
 terraform init
 
 # Get a runner registration token from:
-# https://github.com/FlexNetOS/ros2-humble-env/settings/actions/runners/new
+# https://github.com/FlexNetOS/ripple-env/settings/actions/runners/new
 
 # Deploy the runner
 terraform plan -var="github_token=YOUR_REGISTRATION_TOKEN"

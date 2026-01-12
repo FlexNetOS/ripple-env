@@ -98,7 +98,7 @@ $script:NetworkRetryAttempts = 4
 $script:NetworkRetryDelaySeconds = 2
 
 # State management
-$script:StateDir = Join-Path $env:LOCALAPPDATA "ros2-humble-env"
+$script:StateDir = Join-Path $env:LOCALAPPDATA "ripple-env"
 $script:StateFile = Join-Path $script:StateDir "bootstrap.state.json"
 
 # Stages in order

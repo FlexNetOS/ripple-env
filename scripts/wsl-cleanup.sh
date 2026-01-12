@@ -77,8 +77,8 @@ show_disk_report() {
     fi
 
     # Check for build directories
-    if [ -d "$HOME/ros2-humble-env/build" ]; then
-        printf "  %-25s %s\n" "Build Artifacts:" "$(du -sh ~/ros2-humble-env/build 2>/dev/null | cut -f1 || echo 'N/A')"
+    if [ -d "$HOME/ripple-env/build" ]; then
+        printf "  %-25s %s\n" "Build Artifacts:" "$(du -sh ~/ripple-env/build 2>/dev/null | cut -f1 || echo 'N/A')"
     fi
 
     # Check for AI models
@@ -199,9 +199,9 @@ clean_build() {
 
     # Clean ROS2/colcon build directories
     local build_dirs=(
-        "$HOME/ros2-humble-env/build"
-        "$HOME/ros2-humble-env/install"
-        "$HOME/ros2-humble-env/log"
+        "$HOME/ripple-env/build"
+        "$HOME/ripple-env/install"
+        "$HOME/ripple-env/log"
     )
 
     for dir in "${build_dirs[@]}"; do

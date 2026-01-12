@@ -555,7 +555,7 @@ result = prompt(
 
 ```bash
 # Validate tool schemas against JSON Schema spec
-cd /home/user/ros2-humble-env/manifests/mcp/schemas
+cd /home/user/ripple-env/manifests/mcp/schemas
 
 # Using jsonschema CLI
 jsonschema -i repository-analysis.schema.json
@@ -565,7 +565,7 @@ jsonschema -i repository-analysis.schema.json
 
 ```bash
 # Run prompt regression tests
-cd /home/user/ros2-humble-env/.claude/prompts
+cd /home/user/ripple-env/.claude/prompts
 
 promptfoo eval
 ```
@@ -574,7 +574,7 @@ promptfoo eval
 
 ```bash
 # Test semantic search performance
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 
 python scripts/test_memory_performance.py \
   --backend qdrant \
@@ -703,7 +703,7 @@ use_cases: [...]
 ## Support & Contact
 
 **Owner**: L8 Tool Execution MCP Team Lead
-**Repository**: https://github.com/[your-org]/ros2-humble-env
+**Repository**: https://github.com/[your-org]/ripple-env
 **Issues**: Use GitHub Issues with `[MCP]` tag
 **Slack**: #aria-mcp-team
 

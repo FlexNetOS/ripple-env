@@ -181,11 +181,11 @@ let admins = get_agents_with_role("admin".to_string())?;
 
 ```bash
 # Build the integrity zome
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/aria/zomes/identity_integrity
+cd /home/user/ripple-env/manifests/holochain/dnas/aria/zomes/identity_integrity
 cargo build --release --target wasm32-unknown-unknown
 
 # Build the coordinator zome
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/aria/zomes/identity
+cd /home/user/ripple-env/manifests/holochain/dnas/aria/zomes/identity
 cargo build --release --target wasm32-unknown-unknown
 ```
 
@@ -193,7 +193,7 @@ cargo build --release --target wasm32-unknown-unknown
 
 ```bash
 # From the ARIA DNA directory
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/aria
+cd /home/user/ripple-env/manifests/holochain/dnas/aria
 
 # Copy the compiled WASM files
 cp zomes/identity_integrity/target/wasm32-unknown-unknown/release/identity_integrity.wasm zomes/
