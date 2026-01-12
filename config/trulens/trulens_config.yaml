@@ -1,0 +1,169 @@
+# TruLens LLM Evaluation Configuration
+# P1-019: LLM testing and evaluation framework
+
+# Database configuration
+database:
+  type: sqlite
+  path: data/trulens/trulens.db
+  # For production, use PostgreSQL:
+  # type: postgresql
+  # url: postgresql://user:pass@localhost:5432/trulens
+
+# Evaluation providers
+providers:
+  # OpenAI for GPT-based evaluations
+  openai:
+    enabled: true
+    model: gpt-4
+    api_key_env: OPENAI_API_KEY
+    temperature: 0.0
+    max_tokens: 500
+
+  # Local models via LocalAI
+  localai:
+    enabled: true
+    base_url: http://localhost:8080/v1
+    model: gemma-3-4b-it-qat
+    api_key: "not-needed"
+
+  # Anthropic Claude for evaluations
+  anthropic:
+    enabled: true
+    model: claude-sonnet-4-5-20250929
+    api_key_env: ANTHROPIC_API_KEY
+
+# Feedback functions configuration
+feedback:
+  # Answer relevance (does the answer address the question?)
+  answer_relevance:
+    enabled: true
+    provider: openai
+    threshold: 0.7
+    weight: 1.0
+
+  # Context relevance (is context relevant to question?)
+  context_relevance:
+    enabled: true
+    provider: openai
+    threshold: 0.7
+    weight: 1.0
+
+  # Groundedness (is answer grounded in context?)
+  groundedness:
+    enabled: true
+    provider: openai
+    threshold: 0.7
+    weight: 1.0
+
+  # Toxicity detection
+  toxicity:
+    enabled: true
+    provider: openai
+    threshold: 0.3  # Lower is better
+    weight: 1.0
+    invert: true    # Penalize high toxicity
+
+  # Conciseness
+  conciseness:
+    enabled: false
+    provider: openai
+    threshold: 0.5
+    weight: 0.5
+
+  # Coherence
+  coherence:
+    enabled: true
+    provider: openai
+    threshold: 0.7
+    weight: 0.8
+
+# RAG-specific evaluations
+rag:
+  # QA relevance between question and answer
+  qa_relevance:
+    enabled: true
+    provider: openai
+
+  # Context selection quality
+  context_selection:
+    enabled: true
+    provider: openai
+
+  # Hallucination detection
+  hallucination:
+    enabled: true
+    provider: openai
+
+# Agent evaluations
+agent:
+  # Tool selection appropriateness
+  tool_selection:
+    enabled: true
+    provider: openai
+
+  # Task completion
+  task_completion:
+    enabled: true
+    provider: openai
+
+  # Step efficiency
+  step_efficiency:
+    enabled: false
+    provider: openai
+
+# Logging and monitoring
+logging:
+  level: INFO
+  format: json
+  file: data/trulens/trulens.log
+  console: true
+
+# Dashboard configuration
+dashboard:
+  enabled: true
+  host: 0.0.0.0
+  port: 8501
+  auth:
+    enabled: false
+    # For production, enable auth:
+    # username: admin
+    # password_env: TRULENS_PASSWORD
+
+# Experiment tracking
+experiments:
+  # Auto-generate experiment names
+  auto_name: true
+  # Tag experiments with git commit
+  git_tag: true
+  # Save experiment metadata
+  save_metadata: true
+  metadata_path: data/trulens/experiments/
+
+# Performance settings
+performance:
+  # Number of parallel evaluations
+  max_workers: 4
+  # Batch size for evaluations
+  batch_size: 10
+  # Cache evaluation results
+  cache_enabled: true
+  cache_path: data/trulens/cache/
+
+# Integration with other tools
+integrations:
+  # MLflow for experiment tracking
+  mlflow:
+    enabled: false
+    tracking_uri: http://localhost:5000
+
+  # Weights & Biases
+  wandb:
+    enabled: false
+    project: flexstack-llm-eval
+    entity: flexstack
+
+  # Prometheus metrics
+  prometheus:
+    enabled: true
+    port: 9090
+    metrics_path: /metrics

@@ -37,12 +37,23 @@ data:
       trace:
         backend: local
         local:
-          path: /tmp/tempo/traces
+          path: /var/tempo/traces
         wal:
-          path: /tmp/tempo/wal
+          path: /var/tempo/wal
         pool:
           max_workers: 100
           queue_depth: 10000
+
+    # P1-012: Fix Tempo storage persistence
+    querier:
+      frontend_worker:
+        frontend_address: tempo:9095
+
+    query_frontend:
+      search:
+        enabled: true
+      trace_by_id:
+        enabled: true
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -98,7 +109,7 @@ spec:
             - name: tempo-config
               mountPath: /etc/tempo
             - name: tempo-data
-              mountPath: /tmp/tempo
+              mountPath: /var/tempo
           resources:
             limits:
               memory: 1Gi

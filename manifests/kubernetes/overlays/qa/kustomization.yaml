@@ -1,0 +1,90 @@
+# QA Environment Overlay
+# P1-018: Quality Assurance environment configuration
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: flexstack-qa
+
+namespace: flexstack-qa
+
+# Reference base configurations
+bases:
+  - ../../base/messaging
+  - ../../base/identity
+  - ../../base/observability
+  - ../../base/delivery
+
+# Common labels for QA environment
+commonLabels:
+  environment: qa
+  managed-by: kustomize
+  app.kubernetes.io/part-of: flexstack
+
+# Resource name prefix
+namePrefix: qa-
+
+# Common annotations
+commonAnnotations:
+  deployment.kubernetes.io/revision: "1"
+  flexstack.io/environment: qa
+
+# Namespace transformation
+namespace: flexstack-qa
+
+# Resource modifications
+patches:
+  # Reduce replicas for QA
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+    target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/component=observability
+
+  # Reduce resource requests for QA
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 128Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 100m
+    target:
+      kind: Deployment
+
+  # Use smaller storage for QA
+  - patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 5Gi
+    target:
+      kind: PersistentVolumeClaim
+
+# ConfigMap generator for QA-specific config
+configMapGenerator:
+  - name: qa-config
+    literals:
+      - ENVIRONMENT=qa
+      - LOG_LEVEL=debug
+      - ENABLE_DEBUG=true
+      - METRICS_ENABLED=true
+
+# Secret generator for QA credentials
+secretGenerator:
+  - name: qa-secrets
+    literals:
+      - DATABASE_PASSWORD=qa_password_change_me
+      - API_KEY=qa_api_key_change_me
+
+# Images - use specific tags for QA
+images:
+  - name: grafana/tempo
+    newTag: 2.7.2
+  - name: grafana/grafana
+    newTag: 11.4.0
+  - name: prom/prometheus
+    newTag: v3.1.0
+  - name: grafana/loki
+    newTag: 3.3.2

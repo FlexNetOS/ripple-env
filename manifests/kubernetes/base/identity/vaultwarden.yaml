@@ -1,0 +1,172 @@
+# Vaultwarden (Bitwarden-compatible password manager)
+# Self-hosted secrets management for teams
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vaultwarden-config
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/component: identity
+    app.kubernetes.io/part-of: flexstack
+data:
+  DOMAIN: "https://vaultwarden.local"
+  SIGNUPS_ALLOWED: "false"
+  INVITATIONS_ALLOWED: "true"
+  SHOW_PASSWORD_HINT: "false"
+  WEB_VAULT_ENABLED: "true"
+  WEBSOCKET_ENABLED: "true"
+  LOG_LEVEL: "info"
+  EXTENDED_LOGGING: "true"
+  # Database backend
+  DATABASE_URL: "sqlite:///data/vaultwarden.db"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vaultwarden-secrets
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/component: identity
+type: Opaque
+stringData:
+  # P1-009: Vaultwarden admin token (change in production!)
+  # Generate with: openssl rand -base64 48
+  ADMIN_TOKEN: "change_me_generate_with_openssl_rand_base64_48"
+  # SMTP settings (optional, for email notifications)
+  SMTP_HOST: ""
+  SMTP_FROM: ""
+  SMTP_PORT: "587"
+  SMTP_SECURITY: "starttls"
+  SMTP_USERNAME: ""
+  SMTP_PASSWORD: ""
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vaultwarden-data
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/component: identity
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/component: identity
+    app.kubernetes.io/part-of: flexstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vaultwarden
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vaultwarden
+        app.kubernetes.io/component: identity
+    spec:
+      containers:
+        - name: vaultwarden
+          image: vaultwarden/server:1.32.1-alpine
+          ports:
+            - containerPort: 80
+              name: http
+            - containerPort: 3012
+              name: websocket
+          envFrom:
+            - configMapRef:
+                name: vaultwarden-config
+            - secretRef:
+                name: vaultwarden-secrets
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /alive
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /alive
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1000
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vaultwarden-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/component: identity
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+    - port: 3012
+      targetPort: 3012
+      protocol: TCP
+      name: websocket
+  selector:
+    app.kubernetes.io/name: vaultwarden
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden-websocket
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/component: identity
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3012
+      targetPort: 3012
+      protocol: TCP
+      name: websocket
+  selector:
+    app.kubernetes.io/name: vaultwarden

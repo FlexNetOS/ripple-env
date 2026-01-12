@@ -1,0 +1,199 @@
+# Netdata for Real-time System Monitoring
+# P1-010: Real-time infrastructure monitoring
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: netdata
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: netdata
+    app.kubernetes.io/component: observability
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: netdata
+  labels:
+    app.kubernetes.io/name: netdata
+    app.kubernetes.io/component: observability
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/metrics
+      - nodes/proxy
+      - pods
+      - services
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: netdata
+  labels:
+    app.kubernetes.io/name: netdata
+    app.kubernetes.io/component: observability
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: netdata
+subjects:
+  - kind: ServiceAccount
+    name: netdata
+    namespace: flexstack-observability
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: netdata-config
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: netdata
+    app.kubernetes.io/component: observability
+data:
+  netdata.conf: |
+    [global]
+        bind to = *:19999
+        debug log = none
+        error log = syslog
+        access log = none
+
+    [web]
+        mode = multi-threaded
+        web files owner = root
+        web files group = root
+
+    [plugins]
+        timex = no
+        idlejitter = no
+        tc = no
+        diskspace = no
+        cgroups = no
+        apps = yes
+        proc = yes
+        python.d = no
+        node.d = no
+        go.d = yes
+
+    [health]
+        enabled = yes
+
+  stream.conf: |
+    [stream]
+        enabled = yes
+        destination = netdata-parent:19999
+        api key = default_api_key_change_me
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: netdata
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: netdata
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/part-of: flexstack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netdata
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: netdata
+        app.kubernetes.io/component: observability
+    spec:
+      serviceAccountName: netdata
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: netdata
+          image: netdata/netdata:v2.0.3
+          env:
+            - name: NETDATA_CLAIM_TOKEN
+              value: ""
+            - name: NETDATA_CLAIM_URL
+              value: "https://app.netdata.cloud"
+            - name: NETDATA_CLAIM_ROOMS
+              value: ""
+          ports:
+            - containerPort: 19999
+              hostPort: 19999
+              protocol: TCP
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/netdata
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+            - name: varrun
+              mountPath: /var/run/docker.sock
+              readOnly: true
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "200m"
+          securityContext:
+            capabilities:
+              add:
+                - SYS_PTRACE
+                - SYS_ADMIN
+            privileged: true
+          livenessProbe:
+            httpGet:
+              path: /api/v1/info
+              port: 19999
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/info
+              port: 19999
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: netdata-config
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: varrun
+          hostPath:
+            path: /var/run/docker.sock
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: netdata
+  namespace: flexstack-observability
+  labels:
+    app.kubernetes.io/name: netdata
+    app.kubernetes.io/component: observability
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - port: 19999
+      targetPort: 19999
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: netdata

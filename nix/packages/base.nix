@@ -20,6 +20,13 @@ with pkgs; [
   nixfmt-rfc-style
   nil
 
+  # Kubernetes tools (P0-001: Added for Month 1 prep)
+  kubectl              # Kubernetes CLI
+  helm                 # Kubernetes package manager
+  kustomize            # Kubernetes configuration management
+  k9s                  # Kubernetes TUI
+  kubectx              # Context/namespace switcher
+
   # Useful basics
   curl
   jq
