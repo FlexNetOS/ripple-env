@@ -1,0 +1,223 @@
+name: Container Image Security
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docker/**'
+      - '.github/workflows/container-security.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docker/**'
+      - '.github/workflows/container-security.yml'
+  schedule:
+    # Run weekly on Sunday at 2 AM UTC to catch new CVEs
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+env:
+  # Severity threshold for failing the build
+  SEVERITY_THRESHOLD: CRITICAL,HIGH
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Extract all Docker images from compose files
+  # ---------------------------------------------------------------------------
+  extract-images:
+    name: Extract Docker Images
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.extract.outputs.images }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract images from docker-compose files
+        id: extract
+        run: |
+          # Extract unique images from all docker-compose files
+          images=$(grep -h "image:" docker/docker-compose*.yml 2>/dev/null | \
+            sed 's/.*image: //' | \
+            sed 's/"//g' | \
+            sed "s/'//g" | \
+            grep -v '^\${' | \
+            grep -v '^#' | \
+            sort -u | \
+            jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "images=$images" >> $GITHUB_OUTPUT
+          echo "Found images:"
+          echo "$images" | jq -r '.[]'
+
+  # ---------------------------------------------------------------------------
+  # Scan critical infrastructure images
+  # ---------------------------------------------------------------------------
+  scan-critical-images:
+    name: Scan Critical Images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          # Identity & Access Management (HIGH PRIORITY)
+          - quay.io/keycloak/keycloak:26.0
+          - hashicorp/vault:1.18
+          - vaultwarden/server:1.32.5
+          - smallstep/step-ca:0.27.5
+          # Databases (HIGH PRIORITY)
+          - postgres:17.2-alpine
+          - redis:7.4-alpine
+          - neo4j:5-community
+          - minio/minio:RELEASE.2024-12-18T13-15-44Z
+          # AI/ML Services (MEDIUM-HIGH PRIORITY)
+          - localai/localai:v2.24.2-aio-cpu
+          - mindsdb/mindsdb:latest
+          - joshxt/agixt:main
+          # API Gateway (HIGH PRIORITY)
+          - kong:3.9.0-alpine
+          - openpolicyagent/opa:0.71.0-rootless
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull image
+        run: docker pull ${{ matrix.image }}
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ matrix.image }}
+          format: 'sarif'
+          output: 'trivy-${{ hashFiles(matrix.image) }}.sarif'
+          severity: ${{ env.SEVERITY_THRESHOLD }}
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+        continue-on-error: true
+
+      - name: Run Trivy (table output for logs)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ matrix.image }}
+          format: 'table'
+          severity: ${{ env.SEVERITY_THRESHOLD }}
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+        continue-on-error: true
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-${{ hashFiles(matrix.image) }}.sarif'
+          category: 'container-${{ matrix.image }}'
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # Scan observability stack images
+  # ---------------------------------------------------------------------------
+  scan-observability-images:
+    name: Scan Observability Images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - grafana/grafana:11.4.0
+          - grafana/loki:3.3.2
+          - grafana/promtail:3.3.2
+          - grafana/tempo:2.7.2
+          - prom/prometheus:v2.48.0
+          - prom/alertmanager:v0.27.0
+          - prom/node-exporter:v1.8.2
+          - otel/opentelemetry-collector-contrib:0.115.0
+          - netdata/netdata:v2.1.0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull image
+        run: docker pull ${{ matrix.image }}
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ matrix.image }}
+          format: 'table'
+          severity: ${{ env.SEVERITY_THRESHOLD }}
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # Scan workflow and automation images
+  # ---------------------------------------------------------------------------
+  scan-automation-images:
+    name: Scan Automation Images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - temporalio/auto-setup:1.26.2
+          - temporalio/ui:2.34.0
+          - temporalio/admin-tools:1.26.2
+          - n8nio/n8n:1.73.1
+          - nats:2.10.24-alpine
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull image
+        run: docker pull ${{ matrix.image }}
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ matrix.image }}
+          format: 'table'
+          severity: ${{ env.SEVERITY_THRESHOLD }}
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # Generate security summary report
+  # ---------------------------------------------------------------------------
+  security-summary:
+    name: Security Summary
+    needs: [scan-critical-images, scan-observability-images, scan-automation-images]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Container Image Security Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Category | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical Infrastructure | ${{ needs.scan-critical-images.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Observability Stack | ${{ needs.scan-observability-images.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Automation Services | ${{ needs.scan-automation-images.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Security Recommendations" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Review CRITICAL and HIGH vulnerabilities in the Security tab" >> $GITHUB_STEP_SUMMARY
+          echo "- Update images with known CVEs when patches are available" >> $GITHUB_STEP_SUMMARY
+          echo "- Consider using digest pinning for critical images" >> $GITHUB_STEP_SUMMARY
+          echo "- Enable network policies to limit container communication" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Documentation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- [Container Security Guide](docs/CONTAINER_SECURITY.md)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Network Segmentation](docs/CONTAINER_SECURITY.md#network-segmentation)" >> $GITHUB_STEP_SUMMARY
+          echo "- [mTLS Setup](docs/MTLS_SETUP.md)" >> $GITHUB_STEP_SUMMARY

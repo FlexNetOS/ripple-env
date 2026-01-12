@@ -132,19 +132,19 @@ hc sandbox run
 
 ```bash
 # Validate each DNA manifest
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/agent_registry
+cd /home/user/ripple-env/manifests/holochain/dnas/agent_registry
 hc dna init
 
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/resource_mesh
+cd /home/user/ripple-env/manifests/holochain/dnas/resource_mesh
 hc dna init
 
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/policy_store
+cd /home/user/ripple-env/manifests/holochain/dnas/policy_store
 hc dna init
 
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/artifact_index
+cd /home/user/ripple-env/manifests/holochain/dnas/artifact_index
 hc dna init
 
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/memory_shards
+cd /home/user/ripple-env/manifests/holochain/dnas/memory_shards
 hc dna init
 ```
 
@@ -152,14 +152,14 @@ hc dna init
 
 ```bash
 # Validate conductor.yaml
-holochain --config-path /home/user/ros2-humble-env/manifests/holochain/conductor.yaml --check
+holochain --config-path /home/user/ripple-env/manifests/holochain/conductor.yaml --check
 ```
 
 ### 5. Verify Rust Dependencies
 
 ```bash
 # Check that Holochain crates are available
-cd /home/user/ros2-humble-env/rust
+cd /home/user/ripple-env/rust
 cargo tree | grep holochain
 ```
 

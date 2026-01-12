@@ -48,7 +48,7 @@ Both stable and unstable image variants are available:
 
 | Image Type | Development | Production |
 |------------|-------------|------------|
-| WSL2 | `wsl-ros2` | `wsl-ros2-stable` |
+| WSL2 | `wsl-ripple` | `wsl-ripple-stable` |
 | ISO | `iso-ros2` | `iso-ros2-stable` |
 | VM | `vm-ros2` | `vm-ros2-stable` |
 
@@ -56,7 +56,7 @@ Build production images:
 
 ```bash
 # WSL2 stable image
-nix build .#nixosConfigurations.wsl-ros2-stable.config.system.build.tarballBuilder
+nix build .#nixosConfigurations.wsl-ripple-stable.config.system.build.tarballBuilder
 
 # ISO stable image
 nix build .#nixosConfigurations.iso-ros2-stable.config.system.build.isoImage

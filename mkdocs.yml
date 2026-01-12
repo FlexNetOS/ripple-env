@@ -1,0 +1,219 @@
+# MkDocs Configuration for ripple-env Documentation
+# See: https://www.mkdocs.org/user-guide/configuration/
+# Theme: https://squidfunk.github.io/mkdocs-material/
+
+site_name: ripple-env
+site_description: Cross-platform ROS2 development environment with Nix and Pixi
+site_author: FlexNetOS
+site_url: https://flexnetos.github.io/ripple-env/
+repo_url: https://github.com/FlexNetOS/ripple-env
+repo_name: FlexNetOS/ripple-env
+edit_uri: edit/main/docs/
+
+# Copyright
+copyright: Copyright &copy; 2024-2026 FlexNetOS
+
+# Theme Configuration
+theme:
+  name: material
+  language: en
+  features:
+    # Navigation
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.indexes
+    - navigation.top
+    # Search
+    - search.suggest
+    - search.highlight
+    - search.share
+    # Content
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    # Header
+    - header.autohide
+    # TOC
+    - toc.follow
+    - toc.integrate
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/robot-industrial
+  favicon: assets/favicon.png
+
+# Plugins
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\-\.]+'
+  - tags:
+      tags_file: tags.md
+  - minify:
+      minify_html: true
+
+# Extensions
+markdown_extensions:
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  # PyMdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: FlexNetOS
+      repo: ripple-env
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      base_path: docs
+      check_paths: true
+      auto_append:
+        - includes/abbreviations.md
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Extra configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/FlexNetOS/ripple-env
+  generator: false
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_KEY
+  version:
+    provider: mike
+    default: latest
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js
+
+# Navigation Structure
+nav:
+  - Home:
+    - index.md
+    - Getting Started: getting-started/index.md
+    - Quick Reference: quick-reference.md
+    - Tags: tags.md
+
+  - Getting Started:
+    - getting-started/index.md
+    - Installation: getting-started/installation.md
+    - First Steps: getting-started/first-steps.md
+    - Troubleshooting: getting-started/troubleshooting.md
+    - ARM64 Setup: getting-started/arm64.md
+
+  - Development:
+    - development/index.md
+    - Python Environments: development/python-environments.md
+    - ROS2 Development: development/ros2.md
+    - Shell Commands: development/shell-commands.md
+    - Testing: development/testing.md
+
+  - AI & ML:
+    - ai-ml/index.md
+    - LocalAI Setup: ai-ml/localai.md
+    - Inference Configuration: ai-ml/inference.md
+    - MindsDB: ai-ml/mindsdb.md
+    - GenAI Toolbox: ai-ml/genai-toolbox.md
+    - LLMOps: ai-ml/llmops.md
+
+  - Infrastructure:
+    - infrastructure/index.md
+    - Docker Services: infrastructure/docker.md
+    - Observability: infrastructure/observability.md
+    - Distributed Tracing: infrastructure/tracing.md
+    - Real-time Setup: infrastructure/realtime.md
+
+  - Security:
+    - security/index.md
+    - mTLS Configuration: security/mtls.md
+    - Secrets Management: security/secrets.md
+    - Supply Chain Security: security/supply-chain.md
+
+  - Architecture:
+    - architecture/index.md
+    - System Overview: architecture/overview.md
+    - Nix Flake Design: architecture/nix-flake.md
+    - ARIA Orchestrator: architecture/aria.md
+    - decisions/index.md
+
+  - Deployment:
+    - deployment/index.md
+    - Edge Deployment: deployment/edge.md
+    - WSL2 Pipeline: deployment/wsl2.md
+    - NixOS Images: deployment/nixos-images.md
+    - Kata Containers: deployment/kata.md
+
+  - Reference:
+    - reference/index.md
+    - Network Requirements: reference/network.md
+    - AI Resources: reference/ai-resources.md
+    - Channel Strategy: reference/channel-strategy.md
+    - Dependency Conflicts: reference/conflicts.md
+
+  - Contributing:
+    - contributing/index.md
+    - Code of Conduct: contributing/code-of-conduct.md
+    - Development Guide: contributing/development.md
