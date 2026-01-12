@@ -15,8 +15,17 @@ inputs.nixpkgs.lib.nixosSystem {
     # QEMU VM base module
     "${inputs.nixpkgs}/nixos/modules/virtualisation/qemu-vm.nix"
 
+    # Security hardening module
+    ./security-hardening.nix
+
     # ROS2 development environment
     ({ config, pkgs, lib, ... }: {
+      # Enable security hardening (standard level for VMs)
+      security.hardening = {
+        enable = true;
+        level = "standard";
+        auditd.enable = true;
+      };
       # VM-specific configuration
       virtualisation = {
         memorySize = 4096;  # 4GB RAM

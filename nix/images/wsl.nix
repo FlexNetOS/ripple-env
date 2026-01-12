@@ -18,8 +18,17 @@ inputs.nixos-wsl.lib.nixosSystem {
     # NixOS-WSL base module
     inputs.nixos-wsl.nixosModules.wsl
 
+    # Security hardening module
+    ./security-hardening.nix
+
     # ROS2 Humble development environment configuration
     ({ config, pkgs, lib, ... }: {
+      # Enable security hardening (minimal level for dev)
+      security.hardening = {
+        enable = true;
+        level = "minimal";  # Use minimal for development convenience
+        auditd.enable = false;  # Disable audit in WSL
+      };
       # WSL-specific configuration
       wsl = {
         enable = true;
