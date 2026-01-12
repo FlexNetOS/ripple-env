@@ -309,7 +309,7 @@ The WSL2 setup creates a sparse VHDX file that can grow up to 1TB by default. Un
 | Pixi environments | 5-15 GB | `~/.pixi` |
 | Docker images/containers | 10-50+ GB | `/var/lib/docker` |
 | AI models (if downloaded) | 15-60 GB | `~/models` |
-| Build artifacts | 1-10 GB | `~/ros2-humble-env/build` |
+| Build artifacts | 1-10 GB | `~/ripple-env/build` |
 
 **Check current usage inside WSL:**
 ```bash
@@ -332,7 +332,7 @@ du -h / 2>/dev/null | grep '[0-9]G' | sort -hr | head -20
 **Check VHD size from Windows (PowerShell):**
 ```powershell
 # Get actual VHD size on disk
-$vhdPath = "$env:USERPROFILE\WSL\NixOS-ROS2\ext4.vhdx"
+$vhdPath = "$env:USERPROFILE\WSL\NixOS-Ripple\ext4.vhdx"
 (Get-Item $vhdPath).Length / 1GB
 ```
 
@@ -394,7 +394,7 @@ docker image prune -a
 **Build artifact cleanup:**
 ```bash
 # Clean colcon build artifacts
-cd ~/ros2-humble-env
+cd ~/ripple-env
 rm -rf build/ install/ log/
 
 # Clean ccache
@@ -438,7 +438,7 @@ wsl --shutdown
 
 # Compact the VHD (reclaims freed space)
 # Note: sparseVhd=true in .wslconfig handles this automatically
-Optimize-VHD -Path "$env:USERPROFILE\WSL\NixOS-ROS2\ext4.vhdx" -Mode Full
+Optimize-VHD -Path "$env:USERPROFILE\WSL\NixOS-Ripple\ext4.vhdx" -Mode Full
 ```
 
 #### Configuring Disk Size at Install Time

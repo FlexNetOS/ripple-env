@@ -242,6 +242,6 @@ nats --server nats://localhost:4222 \
 
 ## Related Files
 
-- Docker Compose: `/home/user/ros2-humble-env/docker/docker-compose.messaging.yml`
-- Init Script: `/home/user/ros2-humble-env/scripts/init-jetstream.sh`
-- Verify Script: `/home/user/ros2-humble-env/scripts/verify-jetstream.sh`
+- Docker Compose: `/home/user/ripple-env/docker/docker-compose.messaging.yml`
+- Init Script: `/home/user/ripple-env/scripts/init-jetstream.sh`
+- Verify Script: `/home/user/ripple-env/scripts/verify-jetstream.sh`

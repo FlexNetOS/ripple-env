@@ -59,6 +59,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Agenix for encrypted secrets management (security audit remediation)
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # NixOS-WSL stable variant for production images
     nixos-wsl-stable = {
       url = "github:nix-community/NixOS-WSL";
@@ -93,6 +98,7 @@
       home-manager,
       home-manager-stable,
       nixos-wsl,
+      agenix,
       nixos-wsl-stable,
       ...
     }:
@@ -150,7 +156,7 @@
 
           # Production images (nixos-stable) - Supply Chain Security
           # Use these for production deployments with stable, well-tested packages
-          wsl-ros2-stable = import ./nix/images/wsl.nix {
+          wsl-ripple-stable = import ./nix/images/wsl.nix {
             inherit inputs;
             pkgs = nixpkgs-stable.legacyPackages.x86_64-linux;
             lib = nixpkgs-stable.lib;
@@ -176,6 +182,14 @@
       # Per-system outputs
       perSystem =
         { pkgs, system, ... }:
+        let
+          # Import NixOS image tests
+          imageTests = import ./nix/tests {
+            inherit inputs system;
+            pkgs = nixpkgs.legacyPackages.${system};
+            lib = nixpkgs.lib;
+          };
+        in
         let
           # Holochain overlay source (pinned commit)
           holochainSrc = inputs.nixpkgs.legacyPackages.${system}.fetchFromGitHub {
@@ -241,8 +255,41 @@
           stableShellPackages = import ./nix/packages { pkgs = pkgsStable; lib = pkgsStable.lib; };
           stableShellCommands = import ./nix/commands { pkgs = pkgsStable; };
 
+          # Import test suite
+          nixTests = import ./nix/tests { inherit pkgs; lib = pkgs.lib; };
+
         in
         {
+          # =================================================================
+          # FLAKE CHECKS - Run with: nix flake check
+          # =================================================================
+          checks = {
+            # Nix module unit tests
+            module-tests-git = nixTests.test-git-module;
+            module-tests-direnv = nixTests.test-direnv-module;
+            module-tests-packages = nixTests.test-packages-module;
+
+            # Library function tests
+            lib-tests = nixTests.test-lib-functions;
+
+            # Shell configuration tests
+            shell-tests = nixTests.test-shell-packages;
+
+            # Flake syntax validation
+            flake-syntax = pkgs.runCommand "flake-syntax-check" { } ''
+              ${pkgs.nix}/bin/nix-instantiate --parse ${./flake.nix} > /dev/null
+              touch $out
+            '';
+
+            # Module syntax validation
+            module-syntax = pkgs.runCommand "module-syntax-check" { } ''
+              for f in ${./modules/common}/*.nix ${./modules/linux}/*.nix ${./modules/macos}/*.nix; do
+                ${pkgs.nix}/bin/nix-instantiate --parse "$f" > /dev/null
+              done
+              touch $out
+            '';
+          };
+
           # Development shells - use modular structure from nix/shells/
           # See nix/shells/default.nix for shell definitions
           devShells = modularShells // {
@@ -272,6 +319,11 @@
               '';
             };
           };
+
+          # Flake checks including image tests
+          # Run with: nix flake check
+          # Individual tests: nix build .#checks.x86_64-linux.basic-services
+          checks = pkgs.lib.optionalAttrs (system == "x86_64-linux") imageTests;
         };
     };
 }

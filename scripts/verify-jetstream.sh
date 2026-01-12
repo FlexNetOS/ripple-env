@@ -234,8 +234,8 @@ show_summary() {
         echo "✓ All JetStream verifications passed!"
         echo ""
         echo "JetStream is properly configured and operational."
-        echo "Configuration file: /home/user/ros2-humble-env/config/nats/jetstream.conf"
-        echo "Initialization script: /home/user/ros2-humble-env/scripts/init-jetstream.sh"
+        echo "Configuration file: /home/user/ripple-env/config/nats/jetstream.conf"
+        echo "Initialization script: /home/user/ripple-env/scripts/init-jetstream.sh"
         return 0
     else
         echo ""

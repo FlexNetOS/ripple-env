@@ -16,12 +16,12 @@ jobs:
       id-token: "write"
       contents: "read"
     steps:
-      - uses: "actions/checkout@v4"
+      - uses: "actions/checkout@v6"
         with:
           persist-credentials: false
           ref: "${{ (inputs.tag != null) && format('refs/tags/{0}', inputs.tag) || '' }}"
       - uses: "DeterminateSystems/determinate-nix-action@v3"
-      - uses: "DeterminateSystems/flakehub-push@v4"
+      - uses: "DeterminateSystems/flakehub-push@v6"
         with:
           visibility: "public"
           name: "FlexNetOS/ripple-env"

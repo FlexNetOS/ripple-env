@@ -47,6 +47,14 @@ nix develop  # (or: nom develop for nicer output)
 - ✅ Clear Configs and Schema - Documented options with types and defaults
 
 ### Documentation
+- ✅ [Getting Started](docs/GETTING_STARTED.md) - Quick setup guide
+- ✅ [Onboarding Tutorial](docs/ONBOARDING_TUTORIAL.md) - Interactive step-by-step tutorial
+- ✅ [Progressive Examples](docs/PROGRESSIVE_EXAMPLES.md) - Beginner to advanced examples
+- ✅ [Common Pitfalls](docs/COMMON_PITFALLS.md) - Avoid common mistakes
+- ✅ [Video Walkthroughs](docs/VIDEO_WALKTHROUGHS.md) - Visual learning resources
+- ✅ [Troubleshooting](docs/TROUBLESHOOTING.md) - Solutions to common issues
+
+### Agent Documentation
 - ✅ [AGENT.md](.claude/AGENT.md) - Agent system architecture and capabilities
 - ✅ [CLAUDE.md](.claude/CLAUDE.md) - Claude Code specific instructions
 - ✅ [RULES.md](.claude/RULES.md) - Rules and contribution guidelines

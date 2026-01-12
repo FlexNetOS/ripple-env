@@ -10,7 +10,7 @@
     - Resizing VHD if needed
 
 .PARAMETER DistroName
-    Name of the WSL distribution (default: NixOS-ROS2)
+    Name of the WSL distribution (default: NixOS-Ripple)
 
 .PARAMETER Report
     Show disk usage report only
@@ -52,7 +52,7 @@
 
 [CmdletBinding()]
 param(
-    [string]$DistroName = "NixOS-ROS2",
+    [string]$DistroName = "NixOS-Ripple",
     [switch]$Report,
     [switch]$Compact,
     [switch]$Cleanup,
@@ -195,7 +195,7 @@ function Invoke-WSLCleanup {
     Write-ColorOutput "Running cleanup inside WSL" "Header"
 
     # Check if cleanup script exists
-    $scriptExists = wsl -d $DistroName -- test -f ~/ros2-humble-env/scripts/wsl-cleanup.sh 2>&1
+    $scriptExists = wsl -d $DistroName -- test -f ~/ripple-env/scripts/wsl-cleanup.sh 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-ColorOutput "Cleanup script not found. Running manual cleanup..." "Warning"
 
@@ -229,7 +229,7 @@ df -h /
         }
 
         Write-ColorOutput "Running wsl-cleanup.sh $scriptArgs" "Info"
-        wsl -d $DistroName -- bash -c "cd ~/ros2-humble-env && ./scripts/wsl-cleanup.sh $scriptArgs"
+        wsl -d $DistroName -- bash -c "cd ~/ripple-env && ./scripts/wsl-cleanup.sh $scriptArgs"
     }
 
     if ($LASTEXITCODE -eq 0) {
