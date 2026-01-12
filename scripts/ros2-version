@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# ROS2 Version Manager - Switch between ROS2 distributions
+#
+# Usage: ./ros2-version [DISTRO]
+#
+# Arguments:
+#   DISTRO  - ROS2 distribution to use (humble, iron, rolling)
+#             Defaults to 'humble' if not specified
+#
+# Examples:
+#   ./ros2-version humble    # Switch to ROS2 Humble
+#   ./ros2-version iron      # Switch to ROS2 Iron
+#   ./ros2-version rolling   # Switch to ROS2 Rolling
+#   ./ros2-version           # List available versions
+
+set -euo pipefail
+
+SUPPORTED_VERSIONS=("humble" "iron" "rolling")
+VERSION="${1:-}"
+
+usage() {
+    echo "ROS2 Version Manager"
+    echo ""
+    echo "Usage: $(basename "$0") [DISTRO]"
+    echo ""
+    echo "Supported ROS2 distributions:"
+    for v in "${SUPPORTED_VERSIONS[@]}"; do
+        if [[ "$v" == "humble" ]]; then
+            echo "  - $v (default, LTS until 2027)"
+        elif [[ "$v" == "iron" ]]; then
+            echo "  - $v (May 2023 - Nov 2024)"
+        else
+            echo "  - $v (development branch)"
+        fi
+    done
+    echo ""
+    echo "Examples:"
+    echo "  $(basename "$0") humble   # Switch to ROS2 Humble"
+    echo "  $(basename "$0") iron     # Switch to ROS2 Iron"
+    echo "  $(basename "$0") rolling  # Switch to ROS2 Rolling"
+}
+
+# Show usage if no version specified
+if [[ -z "$VERSION" ]]; then
+    usage
+    exit 0
+fi
+
+# Validate version
+if [[ ! " ${SUPPORTED_VERSIONS[*]} " =~ " ${VERSION} " ]]; then
+    echo "Error: Unsupported ROS2 version: $VERSION" >&2
+    echo "Supported versions: ${SUPPORTED_VERSIONS[*]}" >&2
+    exit 1
+fi
+
+# Check if nix is available
+if ! command -v nix &> /dev/null; then
+    echo "Error: Nix is not installed or not in PATH" >&2
+    echo "Please install Nix first: https://nixos.org/download.html" >&2
+    exit 1
+fi
+
+# Find the flake root (look for flake.nix)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FLAKE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+if [[ ! -f "$FLAKE_ROOT/flake.nix" ]]; then
+    echo "Error: Cannot find flake.nix in $FLAKE_ROOT" >&2
+    exit 1
+fi
+
+echo "Switching to ROS2 $VERSION..."
+echo "  Flake: $FLAKE_ROOT"
+echo ""
+
+# Export ROS_DISTRO for shells that need it
+export ROS_DISTRO="$VERSION"
+
+# Check if the shell variant exists
+if nix flake show "$FLAKE_ROOT" 2>/dev/null | grep -q "devShells.*$VERSION"; then
+    # Use specific shell if available
+    exec nix develop "$FLAKE_ROOT#$VERSION" --command bash -l
+else
+    # Fall back to default shell with ROS_DISTRO set
+    echo "Note: Using default shell with ROS_DISTRO=$VERSION"
+    exec nix develop "$FLAKE_ROOT" --command bash -l
+fi

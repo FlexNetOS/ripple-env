@@ -1,0 +1,93 @@
+# ShellCheck workflow for shell script linting
+# Ensures all shell scripts follow best practices
+name: ShellCheck
+
+on:
+  push:
+    paths:
+      - '**.sh'
+      - '.github/workflows/shellcheck.yml'
+  pull_request:
+    paths:
+      - '**.sh'
+      - '.github/workflows/shellcheck.yml'
+
+jobs:
+  shellcheck:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Find shell scripts
+        id: find-scripts
+        run: |
+          # Find all .sh files, excluding vendor directories
+          scripts=$(find . -name "*.sh" \
+            -not -path "./.pixi/*" \
+            -not -path "./.git/*" \
+            -not -path "./node_modules/*" \
+            -not -path "./result/*" \
+            -type f | sort)
+
+          echo "Found shell scripts:"
+          echo "$scripts"
+
+          # Count scripts
+          count=$(echo "$scripts" | grep -c . || echo 0)
+          echo "script_count=$count" >> "$GITHUB_OUTPUT"
+
+          # Save to file for next step
+          echo "$scripts" > scripts.txt
+
+      - name: Run ShellCheck
+        if: steps.find-scripts.outputs.script_count != '0'
+        run: |
+          echo "Running ShellCheck on shell scripts..."
+          echo ""
+
+          exit_code=0
+          while IFS= read -r script; do
+            if [[ -f "$script" ]]; then
+              echo "Checking: $script"
+              if ! shellcheck --severity=warning "$script"; then
+                exit_code=1
+              fi
+            fi
+          done < scripts.txt
+
+          echo ""
+          if [[ $exit_code -eq 0 ]]; then
+            echo "All shell scripts passed ShellCheck!"
+          else
+            echo "Some scripts have ShellCheck warnings/errors"
+            exit $exit_code
+          fi
+
+      - name: Check for bashate style
+        if: steps.find-scripts.outputs.script_count != '0'
+        continue-on-error: true
+        run: |
+          pip install bashate
+          echo "Running bashate style checks..."
+
+          while IFS= read -r script; do
+            if [[ -f "$script" ]]; then
+              bashate "$script" || true
+            fi
+          done < scripts.txt
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## ShellCheck Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Scripts checked: ${{ steps.find-scripts.outputs.script_count }}" >> "$GITHUB_STEP_SUMMARY"
