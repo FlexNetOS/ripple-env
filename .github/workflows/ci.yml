@@ -59,7 +59,15 @@ jobs:
 
       - name: Free disk space
         run: |
+          echo "=== Initial Disk Usage ==="
+          df -h
+          echo ""
+          echo "=== Freeing space ==="
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          sudo rm -rf /usr/local/lib/android
+          sudo apt-get clean 2>/dev/null || true
+          echo ""
+          echo "=== After cleanup ==="
           df -h
 
       - name: Install Nix
@@ -106,6 +114,18 @@ jobs:
       - name: Verify PyTorch installation
         run: |
           nix develop .#default --command pixi run python -c "import torch; print(f'PyTorch {torch.__version__}')" || echo "PyTorch not yet installed (run pixi update)"
+
+      - name: Report disk usage
+        if: always()
+        run: |
+          echo "=== Final Disk Usage ==="
+          df -h
+          echo ""
+          echo "=== Nix Store Size ==="
+          du -sh /nix/store 2>/dev/null || echo "N/A"
+          echo ""
+          echo "=== Largest directories ==="
+          du -h /nix/store/* 2>/dev/null | sort -hr | head -10 || echo "N/A"
 
   # ===========================================
   # macOS Build
@@ -225,6 +245,8 @@ jobs:
         run: |
           echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
 
@@ -247,6 +269,16 @@ jobs:
               echo "| $job | ❌ |" >> $GITHUB_STEP_SUMMARY
             fi
           done
+
+      - name: Add disk usage note to summary
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Disk Usage Notes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Each job reports disk usage. For WSL2 disk management:" >> $GITHUB_STEP_SUMMARY
+          echo "- See [Troubleshooting Guide](docs/TROUBLESHOOTING.md#wsl2-disk-space-management)" >> $GITHUB_STEP_SUMMARY
+          echo "- Use \`scripts/wsl-cleanup.sh\` inside WSL" >> $GITHUB_STEP_SUMMARY
+          echo "- Use \`scripts/Cleanup-WSL.ps1\` from Windows" >> $GITHUB_STEP_SUMMARY
 
       - name: Check for failures
         run: |
