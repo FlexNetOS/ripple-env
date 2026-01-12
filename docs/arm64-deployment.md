@@ -21,8 +21,8 @@ This guide covers deploying the ROS2 Humble environment on ARM64 platforms.
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 
 # Clone repository
-git clone https://github.com/FlexNetOS/ros2-humble-env.git
-cd ros2-humble-env
+git clone https://github.com/FlexNetOS/ripple-env.git
+cd ripple-env
 
 # Enter development shell
 nix develop
@@ -51,8 +51,8 @@ uses appropriate packages when detecting Jetson hardware.
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 
 # Clone and enter
-git clone https://github.com/FlexNetOS/ros2-humble-env.git
-cd ros2-humble-env
+git clone https://github.com/FlexNetOS/ripple-env.git
+cd ripple-env
 nix develop
 ```
 

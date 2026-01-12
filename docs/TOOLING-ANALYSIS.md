@@ -18,7 +18,7 @@
 ### Current Architecture Details
 
 ```
-ros2-humble-env/
+ripple-env/
 ├── .envrc                      # direnv: `use flake` + local overrides
 ├── .pixi/
 │   └── config.toml             # Pixi: run-post-link-scripts = "insecure"
@@ -262,7 +262,7 @@ devshells.default.devshell.packages = with pkgs; [
 **Recommended devcontainer.json for Nix + ROS2:**
 ```json
 {
-  "name": "ros2-humble-env",
+  "name": "ripple-env",
   "image": "ghcr.io/lucernae/devcontainer-nix/nix:1",
   "features": {
     "ghcr.io/devcontainers/features/nix:1": {
@@ -315,9 +315,9 @@ devshells.default.devshell.packages = with pkgs; [
 {
   imports = [ /* ... */ ];
 
-  # Can add ros2-humble-env as a development shell
+  # Can add ripple-env as a development shell
   home.shellAliases = {
-    ros2-dev = "cd ~/projects/ros2-humble-env && nix develop";
+    ros2-dev = "cd ~/projects/ripple-env && nix develop";
   };
 }
 ```

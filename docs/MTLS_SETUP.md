@@ -37,7 +37,7 @@ ARIA uses **mutual TLS (mTLS)** to secure communication between services. This p
 ### 1. Step-CA (Certificate Authority)
 
 - **Purpose**: Issues and manages X.509 certificates
-- **Configuration**: `/home/user/ros2-humble-env/config/step-ca/ca.json`
+- **Configuration**: `/home/user/ripple-env/config/step-ca/ca.json`
 - **Provisioners**:
   - **JWK**: For manual certificate requests (admin use)
   - **ACME**: Automated certificate management (Let's Encrypt protocol)

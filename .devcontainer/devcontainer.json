@@ -1,5 +1,5 @@
 {
-  "name": "ros2-humble-env (Codespaces)",
+  "name": "ripple-env (Codespaces)",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
 
   "features": {
@@ -16,9 +16,9 @@
   },
 
   "mounts": [
-    "source=ros2-humble-env-nix-store,target=/nix,type=volume",
-    "source=ros2-humble-env-nix-cache,target=/home/vscode/.cache/nix,type=volume",
-    "source=ros2-humble-env-pixi-cache,target=/home/vscode/.cache/pixi,type=volume"
+    "source=ripple-env-nix-store,target=/nix,type=volume",
+    "source=ripple-env-nix-cache,target=/home/vscode/.cache/nix,type=volume",
+    "source=ripple-env-pixi-cache,target=/home/vscode/.cache/pixi,type=volume"
   ],
 
   "updateRemoteUserUID": true,

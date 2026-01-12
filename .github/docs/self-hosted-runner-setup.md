@@ -132,7 +132,7 @@ The workflow automatically cleans up test distributions, but if needed manually:
 wsl --list --verbose
 
 # Remove test distribution
-wsl --unregister NixOS-ROS2-Test
+wsl --unregister NixOS-Ripple-Test
 
 # Clean up temp files
 Remove-Item -Path "$env:TEMP\WSL-Test" -Recurse -Force

@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-The ros2-humble-env project needs a code editor strategy that balances:
+The ripple-env project needs a code editor strategy that balances:
 - **Fast startup** for quick Git commits and small edits
 - **Full IDE features** for extended AI-assisted development sessions
 - **Nix reproducibility** without external plugin managers

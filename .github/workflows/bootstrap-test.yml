@@ -260,7 +260,7 @@ jobs:
       - name: Clean up previous test distribution (if exists)
         shell: pwsh
         run: |
-          $distroName = "NixOS-ROS2-Test"
+          $distroName = "NixOS-Ripple-Test"
 
           # Check if distro exists and remove it
           $distros = wsl --list --quiet 2>$null
@@ -271,7 +271,7 @@ jobs:
           }
 
           # Clean up test directory
-          $testPath = "$env:TEMP\WSL-Test\NixOS-ROS2-Test"
+          $testPath = "$env:TEMP\WSL-Test\NixOS-Ripple-Test"
           if (Test-Path $testPath) {
             Write-Host "Cleaning up test directory: $testPath" -ForegroundColor Yellow
             Remove-Item -Path $testPath -Recurse -Force
@@ -282,8 +282,8 @@ jobs:
         run: |
           # Run with test-specific parameters
           .\bootstrap.ps1 `
-            -DistroName "NixOS-ROS2-Test" `
-            -InstallPath "$env:TEMP\WSL-Test\NixOS-ROS2-Test" `
+            -DistroName "NixOS-Ripple-Test" `
+            -InstallPath "$env:TEMP\WSL-Test\NixOS-Ripple-Test" `
             -DiskSizeGB 64 `
             -MemorySizeGB 12 `
             -SwapSizeGB 4 `
@@ -298,13 +298,13 @@ jobs:
           Write-Host "Verifying distribution was created..." -ForegroundColor Cyan
 
           $distros = wsl --list --quiet
-          if ($distros -notcontains "NixOS-ROS2-Test") {
-            Write-Host "ERROR: Distribution 'NixOS-ROS2-Test' not found!" -ForegroundColor Red
+          if ($distros -notcontains "NixOS-Ripple-Test") {
+            Write-Host "ERROR: Distribution 'NixOS-Ripple-Test' not found!" -ForegroundColor Red
             wsl --list --verbose
             exit 1
           }
 
-          Write-Host "Distribution 'NixOS-ROS2-Test' exists" -ForegroundColor Green
+          Write-Host "Distribution 'NixOS-Ripple-Test' exists" -ForegroundColor Green
 
           # Show distribution details
           wsl --list --verbose
@@ -314,7 +314,7 @@ jobs:
         run: |
           Write-Host "Checking Nix installation..." -ForegroundColor Cyan
 
-          $result = wsl -d NixOS-ROS2-Test -- nix --version
+          $result = wsl -d NixOS-Ripple-Test -- nix --version
           if ($LASTEXITCODE -ne 0) {
             Write-Host "ERROR: Nix not working in WSL!" -ForegroundColor Red
             exit 1
@@ -328,38 +328,38 @@ jobs:
           Write-Host "Checking installed tools..." -ForegroundColor Cyan
 
           # Check direnv
-          wsl -d NixOS-ROS2-Test -- direnv --version
+          wsl -d NixOS-Ripple-Test -- direnv --version
           if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: direnv not found" -ForegroundColor Yellow }
 
           # Check nom
-          wsl -d NixOS-ROS2-Test -- nom --version
+          wsl -d NixOS-Ripple-Test -- nom --version
           if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: nom not found" -ForegroundColor Yellow }
 
           # Check git
-          wsl -d NixOS-ROS2-Test -- git --version
+          wsl -d NixOS-Ripple-Test -- git --version
           if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: git not found" -ForegroundColor Yellow }
 
           # Check gh
-          wsl -d NixOS-ROS2-Test -- gh --version
+          wsl -d NixOS-Ripple-Test -- gh --version
           if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: gh not found" -ForegroundColor Yellow }
 
           Write-Host "Tool verification complete" -ForegroundColor Green
 
-      - name: Verify ros2-humble-env repository exists
+      - name: Verify ripple-env repository exists
         shell: pwsh
         run: |
           Write-Host "Checking repository..." -ForegroundColor Cyan
 
-          $result = wsl -d NixOS-ROS2-Test -- bash -c "test -d ~/ros2-humble-env && echo 'exists'"
+          $result = wsl -d NixOS-Ripple-Test -- bash -c "test -d ~/ripple-env && echo 'exists'"
           if ($result -ne "exists") {
-            Write-Host "ERROR: ros2-humble-env directory not found!" -ForegroundColor Red
+            Write-Host "ERROR: ripple-env directory not found!" -ForegroundColor Red
             exit 1
           }
 
           Write-Host "Repository exists in WSL" -ForegroundColor Green
 
           # List contents
-          wsl -d NixOS-ROS2-Test -- ls -la ~/ros2-humble-env/
+          wsl -d NixOS-Ripple-Test -- ls -la ~/ripple-env/
 
       - name: Verify flake and development environment
         shell: pwsh
@@ -367,7 +367,7 @@ jobs:
           Write-Host "Testing development environment..." -ForegroundColor Cyan
 
           # Enter the dev shell and verify pixi
-          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop .#default --command pixi --version"
+          wsl -d NixOS-Ripple-Test -- bash -c "cd ~/ripple-env && nix develop .#default --command pixi --version"
           if ($LASTEXITCODE -ne 0) {
             Write-Host "ERROR: Failed to enter dev shell or pixi not available!" -ForegroundColor Red
             exit 1
@@ -381,9 +381,9 @@ jobs:
           Write-Host "Testing ROS2..." -ForegroundColor Cyan
 
           # Run pixi install and test ros2
-          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop .#default --command pixi install"
+          wsl -d NixOS-Ripple-Test -- bash -c "cd ~/ripple-env && nix develop .#default --command pixi install"
 
-          wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop .#default --command pixi run ros2 --help" | Select-Object -First 20
+          wsl -d NixOS-Ripple-Test -- bash -c "cd ~/ripple-env && nix develop .#default --command pixi run ros2 --help" | Select-Object -First 20
           if ($LASTEXITCODE -ne 0) {
             Write-Host "WARNING: ROS2 command test had issues" -ForegroundColor Yellow
           } else {
@@ -397,10 +397,10 @@ jobs:
           Write-Host "Cleaning up test distribution..." -ForegroundColor Cyan
 
           # Unregister test distribution
-          wsl --unregister NixOS-ROS2-Test 2>$null
+          wsl --unregister NixOS-Ripple-Test 2>$null
 
           # Remove test directory
-          $testPath = "$env:TEMP\WSL-Test\NixOS-ROS2-Test"
+          $testPath = "$env:TEMP\WSL-Test\NixOS-Ripple-Test"
           if (Test-Path $testPath) {
             Remove-Item -Path $testPath -Recurse -Force
           }

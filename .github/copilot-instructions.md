@@ -1,4 +1,4 @@
-# Copilot instructions for ros2-humble-env
+# Copilot instructions for ripple-env
 
 ## Repo goals
 - Provide a reproducible ROS2 Humble dev environment using **Nix flakes** + **pixi**.

@@ -16,9 +16,9 @@
 - **Blocker**: None
 - **Key Technology**: gVisor OCI runtime
 - **Main Files**:
-  - `/home/user/ros2-humble-env/flake.nix`
-  - `/home/user/ros2-humble-env/modules/linux/docker.nix`
-  - `/home/user/ros2-humble-env/manifests/agent-isolation/` (create)
+  - `/home/user/ripple-env/flake.nix`
+  - `/home/user/ripple-env/modules/linux/docker.nix`
+  - `/home/user/ripple-env/manifests/agent-isolation/` (create)
 - **Dependencies**: None
 - **Specification**: See `ARIA_TASK_SPECS.yaml` line ~30
 
@@ -32,9 +32,9 @@
 - **Blocker**: None
 - **Key Technology**: NATS JetStream, persistent message queue
 - **Main Files**:
-  - `/home/user/ros2-humble-env/manifests/distributed/nats/` (create)
-  - `/home/user/ros2-humble-env/config/nats/jetstream-config.yaml` (create)
-  - `/home/user/ros2-humble-env/pixi.toml`
+  - `/home/user/ripple-env/manifests/distributed/nats/` (create)
+  - `/home/user/ripple-env/config/nats/jetstream-config.yaml` (create)
+  - `/home/user/ripple-env/pixi.toml`
 - **Dependencies**: None
 - **Specification**: See `ARIA_TASK_SPECS.yaml` line ~110
 
@@ -48,14 +48,14 @@
 - **Blocker**: Blocks P3-003
 - **Key Technology**: Holochain, Rust, WASM, HDK/HDI
 - **Main Files**:
-  - `/home/user/ros2-humble-env/manifests/holochain/dnas/*/zomes/*/src/lib.rs` (create/implement)
-  - `/home/user/ros2-humble-env/rust/Cargo.toml`
-  - `/home/user/ros2-humble-env/manifests/holochain/conductor.yaml`
+  - `/home/user/ripple-env/manifests/holochain/dnas/*/zomes/*/src/lib.rs` (create/implement)
+  - `/home/user/ripple-env/rust/Cargo.toml`
+  - `/home/user/ripple-env/manifests/holochain/conductor.yaml`
 - **Dependencies**: None (but 5 sub-phases)
 - **Specification**: See `ARIA_TASK_SPECS.yaml` line ~190
 - **Related**:
-  - `/home/user/ros2-humble-env/manifests/holochain/IMPLEMENTATION_SUMMARY.md`
-  - `/home/user/ros2-humble-env/manifests/holochain/HOLOCHAIN.md`
+  - `/home/user/ripple-env/manifests/holochain/IMPLEMENTATION_SUMMARY.md`
+  - `/home/user/ripple-env/manifests/holochain/HOLOCHAIN.md`
 
 ---
 
@@ -67,10 +67,10 @@
 - **Blocker**: None
 - **Key Technology**: Node.js 22, pnpm, agentic-flow, claude-flow
 - **Main Files**:
-  - `/home/user/ros2-humble-env/package.json` (create)
-  - `/home/user/ros2-humble-env/pnpm-lock.yaml` (create)
-  - `/home/user/ros2-humble-env/flake.nix`
-  - `/home/user/ros2-humble-env/modules/common/packages.nix`
+  - `/home/user/ripple-env/package.json` (create)
+  - `/home/user/ripple-env/pnpm-lock.yaml` (create)
+  - `/home/user/ripple-env/flake.nix`
+  - `/home/user/ripple-env/modules/common/packages.nix`
 - **Dependencies**: None
 - **Specification**: See `ARIA_TASK_SPECS.yaml` line ~290
 
@@ -84,8 +84,8 @@
 - **Blocker**: None
 - **Key Technology**: Step CA, mutual TLS, certificates
 - **Main Files**:
-  - `/home/user/ros2-humble-env/config/step-ca/` (modify)
-  - `/home/user/ros2-humble-env/manifests/security/` (create)
+  - `/home/user/ripple-env/config/step-ca/` (modify)
+  - `/home/user/ripple-env/manifests/security/` (create)
   - Service config files (Temporal, Holochain, NATS, etc.)
 - **Dependencies**: None
 - **Specification**: See `ARIA_TASK_SPECS.yaml` line ~360
@@ -100,9 +100,9 @@
 - **Blocker**: None
 - **Key Technology**: Grafana, Prometheus, ROS2 metrics
 - **Main Files**:
-  - `/home/user/ros2-humble-env/config/grafana/provisioning/dashboards/ros2-*.json` (create)
-  - `/home/user/ros2-humble-env/manifests/observability/prometheus.yml`
-  - `/home/user/ros2-humble-env/config/grafana/provisioning/dashboards/default.yml`
+  - `/home/user/ripple-env/config/grafana/provisioning/dashboards/ros2-*.json` (create)
+  - `/home/user/ripple-env/manifests/observability/prometheus.yml`
+  - `/home/user/ripple-env/config/grafana/provisioning/dashboards/default.yml`
 - **Dependencies**: None
 - **Specification**: See `ARIA_TASK_SPECS.yaml` line ~440
 
@@ -118,9 +118,9 @@
 - **Blocker**: None
 - **Key Technology**: vCache, semantic caching, Redis
 - **Main Files**:
-  - `/home/user/ros2-humble-env/pixi.toml` (caching feature)
-  - `/home/user/ros2-humble-env/docs/VCACHE_SETUP.md` (create)
-  - `/home/user/ros2-humble-env/examples/llm-caching-example.py` (create)
+  - `/home/user/ripple-env/pixi.toml` (caching feature)
+  - `/home/user/ripple-env/docs/VCACHE_SETUP.md` (create)
+  - `/home/user/ripple-env/examples/llm-caching-example.py` (create)
 - **Dependencies**: None
 - **Specification**: See `ARIA_TASK_SPECS.yaml` line ~495
 - **Note**: Requires building from source; not on PyPI
@@ -135,9 +135,9 @@
 - **Blocker**: None
 - **Key Technology**: Bytebase, database schema CI/CD, GitOps
 - **Main Files**:
-  - `/home/user/ros2-humble-env/manifests/database/bytebase-deployment.yaml` (create)
-  - `/home/user/ros2-humble-env/docker/docker-compose.yml`
-  - `/home/user/ros2-humble-env/docs/BYTEBASE_WORKFLOW.md` (create)
+  - `/home/user/ripple-env/manifests/database/bytebase-deployment.yaml` (create)
+  - `/home/user/ripple-env/docker/docker-compose.yml`
+  - `/home/user/ripple-env/docs/BYTEBASE_WORKFLOW.md` (create)
 - **Dependencies**: None
 - **Specification**: See `ARIA_TASK_SPECS.yaml` line ~560
 
@@ -151,9 +151,9 @@
 - **Blocker**: None (but depends on P2-003)
 - **Key Technology**: Holochain bootstrap, signal servers, networking
 - **Main Files**:
-  - `/home/user/ros2-humble-env/manifests/holochain/bootstrap/` (create)
-  - `/home/user/ros2-humble-env/manifests/holochain/networks.json`
-  - `/home/user/ros2-humble-env/infrastructure/holochain/terraform/` (create)
+  - `/home/user/ripple-env/manifests/holochain/bootstrap/` (create)
+  - `/home/user/ripple-env/manifests/holochain/networks.json`
+  - `/home/user/ripple-env/infrastructure/holochain/terraform/` (create)
 - **Dependencies**: P2-003 (Holochain zomes)
 - **Specification**: See `ARIA_TASK_SPECS.yaml` line ~620
 
@@ -167,9 +167,9 @@
 - **Blocker**: None
 - **Key Technology**: Jaeger, Tempo, OpenTelemetry, OTEL
 - **Main Files**:
-  - `/home/user/ros2-humble-env/manifests/observability/jaeger-deployment.yaml` (create)
-  - `/home/user/ros2-humble-env/config/otel-collector/jaeger-config.yaml` (create)
-  - `/home/user/ros2-humble-env/pixi.toml` (add OTEL packages)
+  - `/home/user/ripple-env/manifests/observability/jaeger-deployment.yaml` (create)
+  - `/home/user/ripple-env/config/otel-collector/jaeger-config.yaml` (create)
+  - `/home/user/ripple-env/pixi.toml` (add OTEL packages)
 - **Dependencies**: None
 - **Specification**: See `ARIA_TASK_SPECS.yaml` line ~680
 
@@ -218,7 +218,7 @@
 
 ### Main Specification Files (in repository root)
 ```
-/home/user/ros2-humble-env/
+/home/user/ripple-env/
 ├── ARIA_TASK_SPECS.yaml              # Complete YAML specifications (547 lines)
 ├── ARIA_TASK_EXTRACTION_SUMMARY.md   # Implementation guide (367 lines)
 └── ARIA_TASK_REFERENCE.md            # This file
@@ -233,14 +233,14 @@
 ## Files to Review Before Starting
 
 ### For Understanding Architecture
-- `/home/user/ros2-humble-env/BUILDKIT_STARTER_SPEC.md` - Overall architecture
-- `/home/user/ros2-humble-env/.claude/CLAUDE.md` - Project guidelines
+- `/home/user/ripple-env/BUILDKIT_STARTER_SPEC.md` - Overall architecture
+- `/home/user/ripple-env/.claude/CLAUDE.md` - Project guidelines
 
 ### For Specific Domains
-- **Holochain**: `/home/user/ros2-humble-env/manifests/holochain/HOLOCHAIN.md`
-- **Observability**: `/home/user/ros2-humble-env/manifests/observability/`
-- **Security**: `/home/user/ros2-humble-env/config/step-ca/README.md`
-- **Agent Gateway**: `/home/user/ros2-humble-env/config/agentgateway/config.yaml`
+- **Holochain**: `/home/user/ripple-env/manifests/holochain/HOLOCHAIN.md`
+- **Observability**: `/home/user/ripple-env/manifests/observability/`
+- **Security**: `/home/user/ripple-env/config/step-ca/README.md`
+- **Agent Gateway**: `/home/user/ripple-env/config/agentgateway/config.yaml`
 
 ---
 
@@ -248,14 +248,14 @@
 
 ### For P2-002 (NATS JetStream)
 ```bash
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 git checkout -b feat/p2-002-nats-jetstream
 # See ARIA_TASK_SPECS.yaml for detailed steps
 ```
 
 ### For P2-003 (Holochain Zomes)
 ```bash
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 git checkout -b feat/p2-003-holochain-zomes
 # Refer to manifests/holochain/IMPLEMENTATION_SUMMARY.md for phases
 ```
@@ -294,4 +294,4 @@ git checkout -b feat/pxxx-yyy-short-name
 
 ---
 
-**TIP**: For detailed implementation steps, open `/home/user/ros2-humble-env/ARIA_TASK_SPECS.yaml` and search for your task ID (e.g., "P2-001").
+**TIP**: For detailed implementation steps, open `/home/user/ripple-env/ARIA_TASK_SPECS.yaml` and search for your task ID (e.g., "P2-001").

@@ -219,12 +219,12 @@ Describe "Test-DistroExists" {
         BeforeAll {
             function global:wsl {
                 param([Parameter(ValueFromRemainingArguments=$true)]$Arguments)
-                return @("Ubuntu", "NixOS-ROS2", "Debian")
+                return @("Ubuntu", "NixOS-Ripple", "Debian")
             }
         }
 
         It "Should return true when distro exists" {
-            $result = Test-DistroExists -Name "NixOS-ROS2"
+            $result = Test-DistroExists -Name "NixOS-Ripple"
             $result | Should -Be $true
         }
     }
@@ -238,7 +238,7 @@ Describe "Test-DistroExists" {
         }
 
         It "Should return false when distro does not exist" {
-            $result = Test-DistroExists -Name "NixOS-ROS2"
+            $result = Test-DistroExists -Name "NixOS-Ripple"
             $result | Should -Be $false
         }
     }
@@ -313,7 +313,7 @@ Describe "Install-WSL Logic" {
 
 Describe "New-NixOSDistro Logic" {
     BeforeAll {
-        $script:TestDistroName = "NixOS-ROS2-Test"
+        $script:TestDistroName = "NixOS-Ripple-Test"
         $script:TestInstallPath = $TestDrive
     }
 
@@ -357,7 +357,7 @@ Describe "New-NixOSDistro Logic" {
 Describe "Parameter Validation" {
     It "Should have valid default values" {
         # These are the defaults from the param block
-        $defaultDistroName = "NixOS-ROS2"
+        $defaultDistroName = "NixOS-Ripple"
         $defaultDiskSizeGB = 1024
         $defaultMemorySizeGB = 8
         $defaultSwapSizeGB = 8
@@ -442,7 +442,7 @@ Describe "WSL Command Arguments" {
     }
 
     It "Should construct correct wsl --import command" {
-        $distroName = "NixOS-ROS2"
+        $distroName = "NixOS-Ripple"
         $installPath = "C:\WSL\NixOS"
         $tarPath = "C:\WSL\nixos.tar.gz"
         $version = 2

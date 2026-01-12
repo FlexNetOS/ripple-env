@@ -1,9 +1,9 @@
 {
-  "$schema": "https://ros2-humble-env.dev/schemas/wsl2-distro.schema.json",
+  "$schema": "https://ripple-env.dev/schemas/wsl2-distro.schema.json",
   "version": "1.0.0",
-  "description": "WSL2 NixOS distribution configuration for ros2-humble-env",
+  "description": "WSL2 NixOS distribution configuration for ripple-env",
   "distro": {
-    "name": "NixOS-ROS2",
+    "name": "NixOS-Ripple",
     "display_name": "NixOS ROS2 Development Environment",
     "base_image": "nixos/nix",
     "nixos_wsl_version": "latest",
@@ -22,7 +22,7 @@
     ]
   },
   "defaults": {
-    "install_path": "%USERPROFILE%\\WSL\\NixOS-ROS2",
+    "install_path": "%USERPROFILE%\\WSL\\NixOS-Ripple",
     "disk_size_gb": 1024,
     "memory_size_gb": 8,
     "swap_size_gb": 8,
@@ -52,8 +52,8 @@
   },
   "post_install": {
     "clone_repo": true,
-    "repo_url": "https://github.com/FlexNetOS/ros2-humble-env.git",
-    "repo_path": "/home/nixos/ros2-humble-env",
+    "repo_url": "https://github.com/FlexNetOS/ripple-env.git",
+    "repo_path": "/home/nixos/ripple-env",
     "run_bootstrap": true,
     "bootstrap_args": ["--ci"],
     "set_as_default": true
@@ -74,7 +74,7 @@
     "windows_terminal": {
       "add_profile": true,
       "icon": "🤖",
-      "starting_directory": "//wsl.localhost/NixOS-ROS2/home/nixos/ros2-humble-env"
+      "starting_directory": "//wsl.localhost/NixOS-Ripple/home/nixos/ripple-env"
     }
   },
   "gpu_support": {

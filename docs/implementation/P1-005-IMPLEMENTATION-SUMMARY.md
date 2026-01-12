@@ -14,7 +14,7 @@ Successfully implemented **smallstep/step-ca** PKI infrastructure for mTLS (mutu
 ### 1. Package Installation (flake.nix)
 
 ✅ **Status**: Already present in flake.nix
-📍 **Location**: `/home/user/ros2-humble-env/flake.nix` (line 209)
+📍 **Location**: `/home/user/ripple-env/flake.nix` (line 209)
 
 ```nix
 # PKI Automation (BUILDKIT_STARTER_SPEC.md L5)
@@ -39,7 +39,7 @@ step --version
 ### 2. Step-CA Configuration
 
 ✅ **Created**: Complete PKI configuration structure
-📍 **Location**: `/home/user/ros2-humble-env/config/step-ca/`
+📍 **Location**: `/home/user/ripple-env/config/step-ca/`
 
 #### File Structure
 
@@ -81,7 +81,7 @@ config/step-ca/
 ### 3. Initialization Script
 
 ✅ **Created**: Automated CA setup script
-📍 **Location**: `/home/user/ros2-humble-env/scripts/init-step-ca.sh`
+📍 **Location**: `/home/user/ripple-env/scripts/init-step-ca.sh`
 
 **Features**:
 - Generates root CA certificate (10-year validity)
@@ -106,7 +106,7 @@ config/step-ca/
 ### 4. Service Certificate Generation Script
 
 ✅ **Created**: Automated service certificate generation
-📍 **Location**: `/home/user/ros2-humble-env/scripts/generate-service-certs.sh`
+📍 **Location**: `/home/user/ripple-env/scripts/generate-service-certs.sh`
 
 **Features**:
 - Generates certificates for all ARIA services
@@ -139,7 +139,7 @@ docker-compose -f docker-compose.identity.yml up -d step-ca
 ### 5. Verification Script
 
 ✅ **Created**: Comprehensive setup verification
-📍 **Location**: `/home/user/ros2-humble-env/scripts/verify-mtls-setup.sh`
+📍 **Location**: `/home/user/ripple-env/scripts/verify-mtls-setup.sh`
 
 **Checks**:
 1. ✓ step-cli installation
@@ -159,7 +159,7 @@ docker-compose -f docker-compose.identity.yml up -d step-ca
 ### 6. mTLS Documentation
 
 ✅ **Created**: Comprehensive mTLS setup guide
-📍 **Location**: `/home/user/ros2-humble-env/docs/MTLS_SETUP.md`
+📍 **Location**: `/home/user/ripple-env/docs/MTLS_SETUP.md`
 
 **Contents**:
 - **Overview**: mTLS architecture and benefits
@@ -176,7 +176,7 @@ docker-compose -f docker-compose.identity.yml up -d step-ca
 ### 7. Docker Compose Integration
 
 ✅ **Updated**: docker-compose.identity.yml
-📍 **Location**: `/home/user/ros2-humble-env/docker-compose.identity.yml`
+📍 **Location**: `/home/user/ripple-env/docker-compose.identity.yml`
 
 #### Added Step-CA Service
 
@@ -314,24 +314,24 @@ step certificate verify data/certs/keycloak/keycloak.crt --roots config/step-ca/
 ### New Files Created
 
 1. **Configuration**:
-   - `/home/user/ros2-humble-env/config/step-ca/ca.json`
-   - `/home/user/ros2-humble-env/config/step-ca/defaults.json`
-   - `/home/user/ros2-humble-env/config/step-ca/.gitignore`
-   - `/home/user/ros2-humble-env/config/step-ca/README.md`
+   - `/home/user/ripple-env/config/step-ca/ca.json`
+   - `/home/user/ripple-env/config/step-ca/defaults.json`
+   - `/home/user/ripple-env/config/step-ca/.gitignore`
+   - `/home/user/ripple-env/config/step-ca/README.md`
 
 2. **Scripts**:
-   - `/home/user/ros2-humble-env/scripts/init-step-ca.sh`
-   - `/home/user/ros2-humble-env/scripts/generate-service-certs.sh`
-   - `/home/user/ros2-humble-env/scripts/verify-mtls-setup.sh`
+   - `/home/user/ripple-env/scripts/init-step-ca.sh`
+   - `/home/user/ripple-env/scripts/generate-service-certs.sh`
+   - `/home/user/ripple-env/scripts/verify-mtls-setup.sh`
 
 3. **Documentation**:
-   - `/home/user/ros2-humble-env/docs/MTLS_SETUP.md`
-   - `/home/user/ros2-humble-env/P1-005-IMPLEMENTATION-SUMMARY.md` (this file)
+   - `/home/user/ripple-env/docs/MTLS_SETUP.md`
+   - `/home/user/ripple-env/P1-005-IMPLEMENTATION-SUMMARY.md` (this file)
 
 ### Files Modified
 
 1. **Docker Compose**:
-   - `/home/user/ros2-humble-env/docker-compose.identity.yml`
+   - `/home/user/ripple-env/docker-compose.identity.yml`
      - Added `step-ca` service
      - Updated `keycloak` with mTLS configuration (commented)
      - Updated `vaultwarden` with mTLS configuration (commented)
@@ -339,7 +339,7 @@ step certificate verify data/certs/keycloak/keycloak.crt --roots config/step-ca/
 ### Files NOT Modified (Already Complete)
 
 1. **Nix Configuration**:
-   - `/home/user/ros2-humble-env/flake.nix`
+   - `/home/user/ripple-env/flake.nix`
      - `step-cli` already present at line 209
      - `pki-cert` wrapper already present at lines 1131-1175
 

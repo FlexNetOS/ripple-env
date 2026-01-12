@@ -3,7 +3,7 @@
 **Report Date:** 2026-01-10
 **Orchestrator:** ARIA v2.2.0
 **Analysis Model:** Kimi K2 Thinking + Opus 4.5
-**Repository:** FlexNetOS/ros2-humble-env
+**Repository:** FlexNetOS/ripple-env
 
 ---
 
@@ -113,7 +113,7 @@
 **Priority 1 - Security Gap (1h)**
 ```bash
 # Task: P0-001 - Add Vault to docker-compose.identity.yml
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 # Edit docker/docker-compose.identity.yml
 # Add vault service (port 8200, dev mode)
 docker-compose -f docker/docker-compose.identity.yml up -d vault
@@ -222,7 +222,7 @@ docker-compose -f docker/docker-compose.messaging.yml up -d nats
 ## Next Steps
 
 1. **Read this summary** ✅
-2. **Review full analysis:** `/home/user/ros2-humble-env/.aria/WAVE3-CROSS-ANALYSIS.yaml`
+2. **Review full analysis:** `/home/user/ripple-env/.aria/WAVE3-CROSS-ANALYSIS.yaml`
 3. **Execute P0-001 TODAY:** Add Vault to Docker
 4. **Schedule Wave 1:** Coordinate 4 developers for foundation tasks
 5. **Review after Wave 1:** Validate progress, adjust timeline
