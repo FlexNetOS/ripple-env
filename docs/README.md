@@ -49,9 +49,11 @@ New to the project? Start here:
 
 | Document | Description |
 |----------|-------------|
+| [CONTAINER_SECURITY.md](CONTAINER_SECURITY.md) | Container security, network segmentation, and port exposure |
 | [SECRETS.md](SECRETS.md) | Secrets management with agenix and detect-secrets |
 | [MTLS_SETUP.md](MTLS_SETUP.md) | Mutual TLS configuration |
 | [MTLS-IMPLEMENTATION-CHECKLIST.md](MTLS-IMPLEMENTATION-CHECKLIST.md) | mTLS implementation checklist |
+| [SUPPLY_CHAIN_SECURITY.md](SUPPLY_CHAIN_SECURITY.md) | Supply chain security and SBOM |
 
 ### Database & Storage
 
