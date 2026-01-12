@@ -9,6 +9,7 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | [Getting Started](GETTING_STARTED.md) | New user setup guide |
 | [Onboarding Tutorial](ONBOARDING_TUTORIAL.md) | Interactive step-by-step tutorial |
 | [Troubleshooting](TROUBLESHOOTING.md) | Common issues and solutions |
+| [Network Requirements](NETWORK_REQUIREMENTS.md) | Network dependencies and offline mode |
 | [Contributing](../CONTRIBUTING.md) | How to contribute |
 | [Project README](../README.md) | Project overview |
 
@@ -48,6 +49,7 @@ New to the project? Start here:
 
 | Document | Description |
 |----------|-------------|
+| [SECRETS.md](SECRETS.md) | Secrets management with agenix and detect-secrets |
 | [MTLS_SETUP.md](MTLS_SETUP.md) | Mutual TLS configuration |
 | [MTLS-IMPLEMENTATION-CHECKLIST.md](MTLS-IMPLEMENTATION-CHECKLIST.md) | mTLS implementation checklist |
 
@@ -81,8 +83,16 @@ New to the project? Start here:
 | Document | Description |
 |----------|-------------|
 | [PYTHON-ENVIRONMENTS.md](PYTHON-ENVIRONMENTS.md) | Python environment management |
+| [CONFLICTS.md](CONFLICTS.md) | Version coupling and dependency conflicts |
 | [NODEJS-AGENTS.md](NODEJS-AGENTS.md) | Node.js agent development |
 | [TOOLING-ANALYSIS.md](TOOLING-ANALYSIS.md) | Development tooling analysis |
+
+#### Python Dependency Utilities
+
+| Script | Description |
+|--------|-------------|
+| [`scripts/check-python-deps.sh`](../scripts/check-python-deps.sh) | Check for Python dependency conflicts |
+| [`scripts/upgrade-python-deps.sh`](../scripts/upgrade-python-deps.sh) | Python version upgrade automation |
 
 ### Platform-Specific
 
@@ -118,6 +128,15 @@ New to the project? Start here:
 | Document | Description |
 |----------|-------------|
 | [NIX_FLAKE_MODULARIZATION.md](NIX_FLAKE_MODULARIZATION.md) | Flake modularization plan and image generation |
+| [NIX_EVALUATION_OPTIMIZATION.md](NIX_EVALUATION_OPTIMIZATION.md) | Nix evaluation performance optimization |
+
+### Network & Offline
+
+| Document | Description |
+|----------|-------------|
+| [NETWORK_REQUIREMENTS.md](NETWORK_REQUIREMENTS.md) | Network dependencies and firewall rules |
+| [SUPPLY_CHAIN_SECURITY.md](SUPPLY_CHAIN_SECURITY.md) | Supply chain security measures |
+| [AI_RESOURCE_REQUIREMENTS.md](AI_RESOURCE_REQUIREMENTS.md) | AI service resource requirements |
 
 ### Architecture & Planning
 

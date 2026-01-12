@@ -1,0 +1,144 @@
+# Offline Mode Configuration
+#
+# This file configures ripple-env for offline/air-gapped operation.
+# Copy to ~/.config/ripple-env/offline.yaml and customize.
+#
+# Enable with: export RIPPLE_OFFLINE=1
+
+# Nix binary cache configuration
+nix:
+  # Local Nix store cache (populated by prepare-offline.sh)
+  local_substituters:
+    - "file:///var/cache/ripple-env/nix-store"
+    - "file://$HOME/.cache/ripple-env/nix-store"
+
+  # Enterprise/private binary cache (optional)
+  # Format: https://your-cache.example.com or s3://bucket-name
+  private_substituters: []
+
+  # Public keys for private caches
+  private_trusted_keys: []
+
+  # Disable all remote substituters when offline
+  disable_remote: true
+
+# Pixi/Conda channel configuration
+pixi:
+  # Local channel mirrors (populated by prepare-offline.sh)
+  local_channels:
+    - "file:///var/cache/ripple-env/conda-channels/conda-forge"
+    - "file:///var/cache/ripple-env/conda-channels/robostack-humble"
+
+  # Enterprise Artifactory/Nexus conda proxy (optional)
+  # Format: https://artifactory.example.com/conda-forge
+  enterprise_channels: []
+
+  # Channel priority (strict = only use first match)
+  channel_priority: "strict"
+
+  # Disable remote channels when offline
+  disable_remote: true
+
+# Docker registry configuration
+docker:
+  # Local registry mirror for air-gapped deployments
+  # Run: docker run -d -p 5000:5000 registry:2
+  local_registry: "localhost:5000"
+
+  # Enterprise registry (optional)
+  # Format: registry.example.com:5000
+  enterprise_registry: ""
+
+  # Pre-pulled image cache directory
+  image_cache: "/var/cache/ripple-env/docker-images"
+
+  # Use local registry as mirror
+  use_mirror: true
+
+# AI Model configuration
+models:
+  # Local model storage directory
+  cache_path: "/var/cache/ripple-env/models"
+
+  # HuggingFace Hub configuration
+  huggingface:
+    # Enable offline mode (HF_HUB_OFFLINE=1)
+    offline_mode: true
+
+    # Local cache directory
+    cache_dir: "/var/cache/ripple-env/models/huggingface"
+
+    # Mirror URL (optional, for enterprise setups)
+    mirror_url: ""
+
+  # LocalAI model configuration
+  localai:
+    # Local model directory
+    models_path: "/var/cache/ripple-env/models/localai"
+
+    # Disable automatic model downloads
+    disable_downloads: true
+
+# Git configuration for offline use
+git:
+  # Local git mirror/cache
+  local_mirror: "/var/cache/ripple-env/git-mirrors"
+
+  # Use git bundles for air-gapped transfer
+  bundle_path: "/var/cache/ripple-env/git-bundles"
+
+  # Repositories to mirror (for prepare-offline.sh)
+  mirror_repos:
+    - "https://github.com/FlexNetOS/ripple-env.git"
+    - "https://github.com/nixos/nixpkgs.git"
+
+# Network requirements (for documentation)
+network_requirements:
+  # Required for initial setup (can be cached)
+  setup:
+    - host: "cache.nixos.org"
+      port: 443
+      protocol: "https"
+      purpose: "Nix binary cache"
+
+    - host: "nix-community.cachix.org"
+      port: 443
+      protocol: "https"
+      purpose: "Community Nix cache"
+
+    - host: "conda.anaconda.org"
+      port: 443
+      protocol: "https"
+      purpose: "Conda/Pixi packages"
+
+    - host: "github.com"
+      port: 443
+      protocol: "https"
+      purpose: "Git repositories and releases"
+
+    - host: "registry-1.docker.io"
+      port: 443
+      protocol: "https"
+      purpose: "Docker Hub images"
+
+  # Optional services (can be disabled)
+  optional:
+    - host: "huggingface.co"
+      port: 443
+      protocol: "https"
+      purpose: "AI model downloads"
+
+    - host: "cuda-maintainers.cachix.org"
+      port: 443
+      protocol: "https"
+      purpose: "CUDA binary cache"
+
+    - host: "ghcr.io"
+      port: 443
+      protocol: "https"
+      purpose: "GitHub Container Registry"
+
+    - host: "quay.io"
+      port: 443
+      protocol: "https"
+      purpose: "Quay.io Container Registry"
