@@ -1,11 +1,11 @@
-# Makefile for ros2-humble-env
+# Makefile for ripple-env
 # Common development tasks and shortcuts
 
 .PHONY: help install test lint format clean shell update docker-build docker-run check
 
 # Default target
 help: ## Show this help message
-	@echo "ros2-humble-env - ROS2 Development Environment"
+	@echo "ripple-env - ROS2 Development Environment"
 	@echo ""
 	@echo "Usage: make <target>"
 	@echo ""
@@ -142,10 +142,10 @@ clean-all: clean ros2-clean pixi-clean ## Clean everything including ROS2 and Pi
 
 # Docker targets
 docker-build: ## Build Docker image
-	docker build -t ros2-humble-env .
+	docker build -t ripple-env .
 
 docker-run: ## Run Docker container interactively
-	docker run -it --rm ros2-humble-env
+	docker run -it --rm ripple-env
 
 docker-compose-up: ## Start all Docker Compose services
 	docker-compose up -d

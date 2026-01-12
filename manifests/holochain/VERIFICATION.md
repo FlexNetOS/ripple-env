@@ -7,7 +7,7 @@ This guide provides step-by-step verification commands for the Holochain integra
 Ensure you're in a Nix development shell with Holochain binaries available:
 
 ```bash
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 nix develop
 ```
 
@@ -51,7 +51,7 @@ lair-keystore 0.4.5
 ### Check Cargo.toml Dependencies
 
 ```bash
-cd /home/user/ros2-humble-env/rust
+cd /home/user/ripple-env/rust
 grep -A 5 "Holochain Coordination" Cargo.toml
 ```
 
@@ -70,7 +70,7 @@ holochain_zome_types = "0.4.0"
 ### Verify Crate Availability (Optional - requires network)
 
 ```bash
-cd /home/user/ros2-humble-env/rust
+cd /home/user/ripple-env/rust
 cargo tree | grep holochain | head -10
 ```
 
@@ -81,7 +81,7 @@ cargo tree | grep holochain | head -10
 ### Check DNA Directory Structure
 
 ```bash
-ls -la /home/user/ros2-humble-env/manifests/holochain/dnas/
+ls -la /home/user/ripple-env/manifests/holochain/dnas/
 ```
 
 **Expected Output:**
@@ -101,19 +101,19 @@ drwxr-xr-x X root root XXXX Jan  9 XX:XX resource_mesh
 
 ```bash
 # Check agent_registry DNA manifest
-cat /home/user/ros2-humble-env/manifests/holochain/dnas/agent_registry/dna.yaml | head -10
+cat /home/user/ripple-env/manifests/holochain/dnas/agent_registry/dna.yaml | head -10
 
 # Check resource_mesh DNA manifest
-cat /home/user/ros2-humble-env/manifests/holochain/dnas/resource_mesh/dna.yaml | head -10
+cat /home/user/ripple-env/manifests/holochain/dnas/resource_mesh/dna.yaml | head -10
 
 # Check policy_store DNA manifest
-cat /home/user/ros2-humble-env/manifests/holochain/dnas/policy_store/dna.yaml | head -10
+cat /home/user/ripple-env/manifests/holochain/dnas/policy_store/dna.yaml | head -10
 
 # Check artifact_index DNA manifest
-cat /home/user/ros2-humble-env/manifests/holochain/dnas/artifact_index/dna.yaml | head -10
+cat /home/user/ripple-env/manifests/holochain/dnas/artifact_index/dna.yaml | head -10
 
 # Check memory_shards DNA manifest
-cat /home/user/ros2-humble-env/manifests/holochain/dnas/memory_shards/dna.yaml | head -10
+cat /home/user/ripple-env/manifests/holochain/dnas/memory_shards/dna.yaml | head -10
 ```
 
 **Expected:** Each command should display a valid YAML manifest starting with:
@@ -131,7 +131,7 @@ name: [dna_name]
 ### Verify DNA Index
 
 ```bash
-cat /home/user/ros2-humble-env/manifests/holochain/dnas/index.json
+cat /home/user/ripple-env/manifests/holochain/dnas/index.json
 ```
 
 **Expected:** All DNAs should have status: "scaffolding" and include manifest paths.
@@ -141,7 +141,7 @@ cat /home/user/ros2-humble-env/manifests/holochain/dnas/index.json
 ### Test agent_registry DNA
 
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/agent_registry
+cd /home/user/ripple-env/manifests/holochain/dnas/agent_registry
 hc dna init --path workdir
 ```
 
@@ -150,28 +150,28 @@ hc dna init --path workdir
 ### Test resource_mesh DNA
 
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/resource_mesh
+cd /home/user/ripple-env/manifests/holochain/dnas/resource_mesh
 hc dna init --path workdir
 ```
 
 ### Test policy_store DNA
 
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/policy_store
+cd /home/user/ripple-env/manifests/holochain/dnas/policy_store
 hc dna init --path workdir
 ```
 
 ### Test artifact_index DNA
 
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/artifact_index
+cd /home/user/ripple-env/manifests/holochain/dnas/artifact_index
 hc dna init --path workdir
 ```
 
 ### Test memory_shards DNA
 
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/memory_shards
+cd /home/user/ripple-env/manifests/holochain/dnas/memory_shards
 hc dna init --path workdir
 ```
 
@@ -208,7 +208,7 @@ hc sandbox run
 ### Check Conductor Config Syntax
 
 ```bash
-cat /home/user/ros2-humble-env/manifests/holochain/conductor.yaml
+cat /home/user/ripple-env/manifests/holochain/conductor.yaml
 ```
 
 **Expected:** Should display valid YAML configuration with:
@@ -221,7 +221,7 @@ cat /home/user/ros2-humble-env/manifests/holochain/conductor.yaml
 ### Validate Config (Advanced - requires running conductor)
 
 ```bash
-holochain --config-path /home/user/ros2-humble-env/manifests/holochain/conductor.yaml --check
+holochain --config-path /home/user/ripple-env/manifests/holochain/conductor.yaml --check
 ```
 
 **Note:** This may fail if environment variables like `$RIPPLE_DATA` are not set, which is expected at this stage.
@@ -231,7 +231,7 @@ holochain --config-path /home/user/ros2-humble-env/manifests/holochain/conductor
 ### Check Holochain Packages Definition
 
 ```bash
-grep -A 5 "holochainPackages" /home/user/ros2-humble-env/flake.nix
+grep -A 5 "holochainPackages" /home/user/ripple-env/flake.nix
 ```
 
 **Expected Output:**
@@ -246,7 +246,7 @@ holochainPackages = with pkgs; [
 ### Check Holochain Source
 
 ```bash
-grep -A 5 "holochainSrc" /home/user/ros2-humble-env/flake.nix | head -10
+grep -A 5 "holochainSrc" /home/user/ripple-env/flake.nix | head -10
 ```
 
 **Expected:** Should show fetchFromGitHub call to spartan-holochain-counsel/nix-overlay.
@@ -256,7 +256,7 @@ grep -A 5 "holochainSrc" /home/user/ros2-humble-env/flake.nix | head -10
 Run this comprehensive check:
 
 ```bash
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 
 echo "=== Holochain Integration Verification ==="
 echo ""
@@ -348,7 +348,7 @@ After successful verification:
 5. **Test Conductor** - Run conductor with real DNAs
 6. **Service Integration** - Connect to AGiXT, ROS2, and Rust services
 
-See `/home/user/ros2-humble-env/manifests/holochain/HOLOCHAIN.md` for detailed implementation roadmap.
+See `/home/user/ripple-env/manifests/holochain/HOLOCHAIN.md` for detailed implementation roadmap.
 
 ## Support Resources
 

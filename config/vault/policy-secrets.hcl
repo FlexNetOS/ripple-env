@@ -8,7 +8,7 @@
 # - Object storage credentials (MinIO)
 #
 # Usage:
-#   vault policy write aria-secrets /home/user/ros2-humble-env/config/vault/policy-secrets.hcl
+#   vault policy write aria-secrets /home/user/ripple-env/config/vault/policy-secrets.hcl
 #   vault token create -policy=aria-secrets
 #
 # Security Notes:

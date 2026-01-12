@@ -5,7 +5,7 @@
 #   nix build .#nixosConfigurations.wsl-ripple.config.system.build.tarballBuilder
 #
 # Build command (production/stable):
-#   nix build .#nixosConfigurations.wsl-ros2-stable.config.system.build.tarballBuilder
+#   nix build .#nixosConfigurations.wsl-ripple-stable.config.system.build.tarballBuilder
 #
 # Import command (PowerShell):
 #   wsl --import NixOS-Ripple $env:USERPROFILE\WSL\NixOS-Ripple result/nixos-wsl.tar.gz

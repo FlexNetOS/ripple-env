@@ -150,7 +150,7 @@
 
           # Production images (nixos-stable) - Supply Chain Security
           # Use these for production deployments with stable, well-tested packages
-          wsl-ros2-stable = import ./nix/images/wsl.nix {
+          wsl-ripple-stable = import ./nix/images/wsl.nix {
             inherit inputs;
             pkgs = nixpkgs-stable.legacyPackages.x86_64-linux;
             lib = nixpkgs-stable.lib;

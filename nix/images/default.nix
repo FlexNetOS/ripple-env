@@ -1,7 +1,7 @@
 # NixOS image builders aggregator
 # Usage in flake.nix:
 #   images = import ./nix/images { inherit inputs pkgs lib; };
-#   nixosConfigurations.wsl-ros2 = images.wsl;
+#   nixosConfigurations.wsl-ripple = images.wsl;
 { inputs, pkgs, lib, ... }:
 
 {
