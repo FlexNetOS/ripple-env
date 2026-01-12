@@ -1,192 +1,201 @@
-# ROS2 Humble Environment Documentation
-
-Welcome to the comprehensive documentation for ripple-env, a cross-platform ROS2 development environment built with Nix and Pixi.
-
-## Quick Navigation
-
-| Getting Started | Development | Deployment |
-|----------------|-------------|------------|
-| [Installation](GETTING_STARTED.md) | [ROS2 Commands](PYTHON-ENVIRONMENTS.md) | [Docker Services](docker-compose.md) |
-| [Troubleshooting](TROUBLESHOOTING.md) | [AI Integration](LOCALAI-MODELS.md) | [Edge Deployment](EDGE_DEPLOYMENT.md) |
-| [ARM64 Setup](arm64-deployment.md) | [Testing](../test/) | [WSL2 Build](WSL2_BUILD_PIPELINE.md) |
-
+---
+title: Home
+description: Cross-platform ROS2 development environment built with Nix and Pixi
+tags:
+  - home
+  - overview
 ---
 
-## Documentation Structure
+# ripple-env Documentation
 
-### Getting Started
+Welcome to **ripple-env**, a cross-platform ROS2 Humble development environment built with Nix flakes and Pixi.
 
-Start here if you're new to the project:
+<div class="grid cards" markdown>
 
-- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Installation and first steps
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
-- **[arm64-deployment.md](arm64-deployment.md)** - ARM64 platform guide (Raspberry Pi, Jetson)
+-   :material-clock-fast:{ .lg .middle } __Quick Start__
 
-### Core Development
+    ---
 
-Day-to-day development guides:
+    Get up and running in minutes with our installation guide
 
-| Document | Description |
-|----------|-------------|
-| [PYTHON-ENVIRONMENTS.md](PYTHON-ENVIRONMENTS.md) | Python environment management (Nix vs Pixi) |
-| [ROS2_STATE_PACKAGES.md](ROS2_STATE_PACKAGES.md) | ROS2 state management packages |
-| [CONFLICTS.md](CONFLICTS.md) | Dependency conflict resolution |
+    [:octicons-arrow-right-24: Getting Started](getting-started/index.md)
 
-### AI & Machine Learning
+-   :material-robot:{ .lg .middle } __ROS2 Development__
 
-AI integration and inference:
+    ---
 
-| Document | Description |
-|----------|-------------|
-| [LOCALAI-MODELS.md](LOCALAI-MODELS.md) | LocalAI model configuration |
-| [INFERENCE_SETUP.md](INFERENCE_SETUP.md) | LLM inference setup |
-| [MINDSDB_QUICKSTART.md](MINDSDB_QUICKSTART.md) | MindsDB ML platform |
-| [GENAI_TOOLBOX_INSTALL.md](GENAI_TOOLBOX_INSTALL.md) | GenAI toolbox |
+    Build robotics applications with ROS2 Humble
 
-### Infrastructure
+    [:octicons-arrow-right-24: Development Guide](development/index.md)
 
-Service deployment and management:
+-   :material-brain:{ .lg .middle } __AI & Machine Learning__
 
-| Document | Description |
-|----------|-------------|
-| [docker-compose.md](docker-compose.md) | Docker service architecture |
-| [OBSERVABILITY-QUICK-START.md](OBSERVABILITY-QUICK-START.md) | Prometheus, Grafana setup |
-| [DISTRIBUTED-TRACING.md](DISTRIBUTED-TRACING.md) | Distributed tracing |
+    ---
 
-### Security
+    Integrate LocalAI, MindsDB, and LLM inference
 
-Security configuration and best practices:
+    [:octicons-arrow-right-24: AI & ML](ai-ml/index.md)
 
-| Document | Description |
-|----------|-------------|
-| [MTLS_SETUP.md](MTLS_SETUP.md) | Mutual TLS configuration |
-| [MTLS-IMPLEMENTATION-CHECKLIST.md](MTLS-IMPLEMENTATION-CHECKLIST.md) | mTLS checklist |
-| [../SECURITY.md](../SECURITY.md) | Security policy |
+-   :material-server:{ .lg .middle } __Infrastructure__
 
-### Real-Time & Hardware
+    ---
 
-Real-time systems and hardware integration:
+    Deploy services with Docker, Kubernetes, and observability
 
-| Document | Description |
-|----------|-------------|
-| [realtime-setup.md](realtime-setup.md) | PREEMPT_RT kernel setup |
-| Hardware Interfaces | GPIO, CAN, serial in nix/packages/hardware.nix |
+    [:octicons-arrow-right-24: Infrastructure](infrastructure/index.md)
 
-### Architecture
+</div>
 
-System design and decisions:
+## Architecture Overview
 
-| Document | Description |
-|----------|-------------|
-| [NIX_FLAKE_MODULARIZATION.md](NIX_FLAKE_MODULARIZATION.md) | Flake architecture |
-| [MANUS_ARIA_ORCHESTRATOR.md](MANUS_ARIA_ORCHESTRATOR.md) | ARIA orchestrator |
-| [adr/](adr/) | Architecture Decision Records |
+```mermaid
+graph TB
+    subgraph "Development Environment"
+        NF[Nix Flake<br/>System Packages]
+        PX[Pixi<br/>Python/Conda]
+        DC[Docker Compose<br/>Services]
+    end
 
-### Platform-Specific
+    subgraph "Core Platform"
+        DS[Development Shell]
+        ROS[ROS2 Humble]
+        AI[AI Tools]
+        OBS[Observability]
+    end
 
-Platform-specific guides:
+    subgraph "Deployment Targets"
+        WSL[WSL2]
+        EDGE[Edge Devices]
+        K8S[Kubernetes]
+        VM[VMs/Containers]
+    end
 
-| Platform | Document |
-|----------|----------|
-| Windows/WSL2 | [WSL2_BUILD_PIPELINE.md](WSL2_BUILD_PIPELINE.md) |
-| Containers | [KATA_CONTAINERS_INSTALL.md](KATA_CONTAINERS_INSTALL.md) |
-| Sandbox | [SANDBOX_RUNTIME_INSTALL.md](SANDBOX_RUNTIME_INSTALL.md) |
+    NF --> DS
+    PX --> DS
+    DC --> DS
 
----
+    DS --> ROS
+    DS --> AI
+    DS --> OBS
 
-## Architecture Diagrams
+    DS --> WSL
+    DS --> EDGE
+    DS --> K8S
+    DS --> VM
 
-### Component Overview
-
+    style NF fill:#4051b5,color:#fff
+    style PX fill:#4051b5,color:#fff
+    style DC fill:#4051b5,color:#fff
+    style DS fill:#7c4dff,color:#fff
+    style ROS fill:#00bfa5,color:#fff
+    style AI fill:#00bfa5,color:#fff
+    style OBS fill:#00bfa5,color:#fff
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     ripple-env                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │   Nix Flake  │  │    Pixi      │  │   Docker     │         │
-│  │   (System)   │  │  (Python)    │  │  (Services)  │         │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘         │
-│         │                 │                 │                  │
-│         ▼                 ▼                 ▼                  │
-│  ┌──────────────────────────────────────────────────────────┐ │
-│  │                   Development Shell                       │ │
-│  │  • ROS2 Humble    • AI Tools      • Infrastructure       │ │
-│  │  • Build Tools    • Security      • Observability        │ │
-│  └──────────────────────────────────────────────────────────┘ │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Service Architecture
-
-See [docker-compose.md](docker-compose.md) for detailed service diagrams.
-
----
 
 ## Quick Reference
 
 ### Common Commands
 
-```bash
-# Enter development shell
-nix develop
+=== "Development"
 
-# Build ROS2 packages
-cb    # alias for: colcon build --symlink-install
+    ```bash
+    # Enter development shell
+    nix develop
 
-# Run tests
-ct    # alias for: colcon test
+    # Build ROS2 packages
+    cb    # alias for: colcon build --symlink-install
 
-# Start services
-agixt up        # Start AGiXT
-localai start   # Start LocalAI
-temporal-ctl start  # Start Temporal
+    # Run tests
+    ct    # alias for: colcon test
+    ```
 
-# Security
-sbom-generate   # Generate SBOM
-sbom-audit      # Full security audit
-```
+=== "Services"
 
-### Shell Options
+    ```bash
+    # Start AI services
+    agixt up
+    localai start
 
-```bash
-nix develop           # Default shell
-nix develop .#full    # Full-featured shell
-nix develop .#cuda    # CUDA-enabled shell
-nix develop .#humble  # ROS2 Humble (explicit)
-nix develop .#iron    # ROS2 Iron
-nix develop .#rolling # ROS2 Rolling (dev)
-```
+    # Start workflow engine
+    temporal-ctl start
+    ```
 
----
+=== "Security"
+
+    ```bash
+    # Generate SBOM
+    sbom-generate
+
+    # Run security audit
+    sbom-audit
+    ```
+
+### Shell Variants
+
+| Shell | Description | Command |
+|-------|-------------|---------|
+| Default | Standard development | `nix develop` |
+| Full | All features enabled | `nix develop .#full` |
+| CUDA | GPU acceleration | `nix develop .#cuda` |
+| Humble | ROS2 Humble explicit | `nix develop .#humble` |
+| Iron | ROS2 Iron | `nix develop .#iron` |
+| Rolling | ROS2 Rolling (dev) | `nix develop .#rolling` |
+
+## Documentation Sections
+
+| Section | Description |
+|---------|-------------|
+| [Getting Started](getting-started/index.md) | Installation and first steps |
+| [Development](development/index.md) | Day-to-day development guides |
+| [AI & ML](ai-ml/index.md) | AI integration and inference |
+| [Infrastructure](infrastructure/index.md) | Service deployment |
+| [Security](security/index.md) | Security configuration |
+| [Architecture](architecture/index.md) | System design and ADRs |
+| [Deployment](deployment/index.md) | Platform-specific deployment |
+| [Reference](reference/index.md) | Technical reference |
+
+## Key Features
+
+- **Cross-platform**: Linux, macOS, Windows (WSL2)
+- **Reproducible**: Nix flakes ensure consistent environments
+- **AI-Ready**: LocalAI, MindsDB, and LLM inference built-in
+- **Observable**: Prometheus, Grafana, and OpenTelemetry
+- **Secure**: mTLS, secrets management, SBOM generation
 
 ## External Resources
 
-### ROS2
-- [ROS2 Humble Documentation](https://docs.ros.org/en/humble/)
-- [ROS2 Tutorials](https://docs.ros.org/en/humble/Tutorials.html)
-- [ROS2 Design](https://design.ros2.org/)
+<div class="grid cards" markdown>
 
-### Nix
-- [Nix Manual](https://nixos.org/manual/nix/stable/)
-- [Nix Flakes](https://nixos.wiki/wiki/Flakes)
-- [Home Manager Options](https://home-manager-options.extranix.com/)
+-   :simple-ros:{ .lg .middle } __ROS2 Humble__
 
-### Pixi
-- [Pixi Documentation](https://pixi.sh/)
-- [RoboStack](https://robostack.github.io/)
+    ---
 
----
+    Official ROS2 documentation
 
-## Contributing
+    [:octicons-arrow-right-24: docs.ros.org](https://docs.ros.org/en/humble/)
 
-- Read [CONTRIBUTING.md](../CONTRIBUTING.md) before submitting changes
-- Follow the [commit message format](../CLAUDE.md#commit-message-format)
-- Update documentation when adding features
+-   :simple-nixos:{ .lg .middle } __Nix Manual__
 
-## Support
+    ---
 
-- [GitHub Issues](https://github.com/FlexNetOS/ripple-env/issues)
-- [GitHub Discussions](https://github.com/FlexNetOS/ripple-env/discussions)
-- See [SECURITY.md](../SECURITY.md) for security issues
+    Nix package manager documentation
+
+    [:octicons-arrow-right-24: nixos.org](https://nixos.org/manual/nix/stable/)
+
+-   :material-package:{ .lg .middle } __Pixi__
+
+    ---
+
+    Fast package manager for conda
+
+    [:octicons-arrow-right-24: pixi.sh](https://pixi.sh/)
+
+-   :material-github:{ .lg .middle } __Source Code__
+
+    ---
+
+    View the source on GitHub
+
+    [:octicons-arrow-right-24: GitHub](https://github.com/FlexNetOS/ripple-env)
+
+</div>

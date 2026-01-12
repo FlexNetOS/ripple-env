@@ -1,0 +1,81 @@
+/* Extra styles for ripple-env documentation */
+
+/* Grid cards enhancements */
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.5rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Mermaid diagram styling */
+.mermaid {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+/* Code block enhancements */
+.md-typeset pre > code {
+  border-radius: 0.3rem;
+}
+
+/* Admonition enhancements */
+.md-typeset .admonition {
+  border-radius: 0.3rem;
+}
+
+/* Navigation improvements */
+.md-nav__link--active {
+  font-weight: 600;
+}
+
+/* Table styling */
+.md-typeset table:not([class]) {
+  border-radius: 0.3rem;
+  overflow: hidden;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+}
+
+/* Tab styling */
+.md-typeset .tabbed-labels > label {
+  border-radius: 0.3rem 0.3rem 0 0;
+}
+
+/* Hero section styling */
+.md-typeset h1 {
+  font-weight: 700;
+}
+
+/* Icon sizing in cards */
+.md-typeset .grid.cards .lg {
+  font-size: 2rem;
+}
+
+/* Footer enhancements */
+.md-footer-meta {
+  background-color: var(--md-footer-bg-color--dark);
+}
+
+/* Search result highlighting */
+.md-search-result mark {
+  background-color: var(--md-accent-fg-color);
+  color: var(--md-accent-bg-color);
+  padding: 0.1rem 0.2rem;
+  border-radius: 0.2rem;
+}
+
+/* Print styles */
+@media print {
+  .md-sidebar,
+  .md-header,
+  .md-footer {
+    display: none;
+  }
+}
