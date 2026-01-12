@@ -2,6 +2,8 @@
 
 This guide walks you through setting up and using the ROS2 Humble development environment from scratch.
 
+> **New to the project?** After completing quick setup, try the [Interactive Onboarding Tutorial](ONBOARDING_TUTORIAL.md) for a guided learning experience, or check [Video Walkthroughs](VIDEO_WALKTHROUGHS.md) for visual learning.
+
 ## Prerequisites
 
 Before you begin, ensure you have:
@@ -242,6 +244,15 @@ ripple-env/
 ```
 
 ## Next Steps
+
+### Learning Resources
+
+- **Interactive Tutorial**: [ONBOARDING_TUTORIAL.md](ONBOARDING_TUTORIAL.md) - Guided learning with checkpoints
+- **Video Walkthroughs**: [VIDEO_WALKTHROUGHS.md](VIDEO_WALKTHROUGHS.md) - Visual tutorials
+- **Progressive Examples**: [PROGRESSIVE_EXAMPLES.md](PROGRESSIVE_EXAMPLES.md) - Beginner to advanced examples
+- **Common Pitfalls**: [COMMON_PITFALLS.md](COMMON_PITFALLS.md) - Avoid common mistakes
+
+### Build Something
 
 - **Build a robot**: Check out [ROS2 Tutorials](https://docs.ros.org/en/humble/Tutorials.html)
 - **Add AI capabilities**: See [INFERENCE_SETUP.md](INFERENCE_SETUP.md)
