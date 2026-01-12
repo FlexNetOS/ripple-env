@@ -255,8 +255,41 @@
           stableShellPackages = import ./nix/packages { pkgs = pkgsStable; lib = pkgsStable.lib; };
           stableShellCommands = import ./nix/commands { pkgs = pkgsStable; };
 
+          # Import test suite
+          nixTests = import ./nix/tests { inherit pkgs; lib = pkgs.lib; };
+
         in
         {
+          # =================================================================
+          # FLAKE CHECKS - Run with: nix flake check
+          # =================================================================
+          checks = {
+            # Nix module unit tests
+            module-tests-git = nixTests.test-git-module;
+            module-tests-direnv = nixTests.test-direnv-module;
+            module-tests-packages = nixTests.test-packages-module;
+
+            # Library function tests
+            lib-tests = nixTests.test-lib-functions;
+
+            # Shell configuration tests
+            shell-tests = nixTests.test-shell-packages;
+
+            # Flake syntax validation
+            flake-syntax = pkgs.runCommand "flake-syntax-check" { } ''
+              ${pkgs.nix}/bin/nix-instantiate --parse ${./flake.nix} > /dev/null
+              touch $out
+            '';
+
+            # Module syntax validation
+            module-syntax = pkgs.runCommand "module-syntax-check" { } ''
+              for f in ${./modules/common}/*.nix ${./modules/linux}/*.nix ${./modules/macos}/*.nix; do
+                ${pkgs.nix}/bin/nix-instantiate --parse "$f" > /dev/null
+              done
+              touch $out
+            '';
+          };
+
           # Development shells - use modular structure from nix/shells/
           # See nix/shells/default.nix for shell definitions
           devShells = modularShells // {
