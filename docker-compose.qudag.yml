@@ -1,0 +1,346 @@
+# =============================================================================
+# QuDAG - Quantum-Resistant Distributed Communication Platform
+# =============================================================================
+# BUILDKIT_STARTER_SPEC.md Layer 11: P2P Coordination (P3-011)
+#
+# QuDAG Features:
+#   - Post-quantum cryptography (ML-KEM-768, ML-DSA, BLAKE3, HQC)
+#   - DAG-based consensus (QR-Avalanche)
+#   - Multi-hop onion routing with ChaCha20Poly1305
+#   - Native MCP server (stdio, HTTP, WebSocket)
+#   - AI agent coordination for autonomous systems
+#   - rUv token economy for resource exchange
+#   - .dark domain system for decentralized addressing
+#
+# Usage:
+#   docker compose -f docker-compose.qudag.yml up -d
+#   docker compose -f docker-compose.qudag.yml logs -f
+#
+# Profiles:
+#   - default: Single node for development
+#   - cluster: Multi-node cluster for testing
+#   - testnet: Connect to QuDAG testnet
+#
+# Endpoints:
+#   - MCP HTTP: http://localhost:9000
+#   - MCP WebSocket: ws://localhost:9001
+#   - P2P Network: localhost:9002
+#   - Metrics: http://localhost:9003/metrics
+#   - Health: http://localhost:9000/health
+#
+# See: https://github.com/ruvnet/qudag
+# =============================================================================
+
+name: qudag
+
+networks:
+  agentic-network:
+    external: true
+  qudag-internal:
+    driver: bridge
+
+volumes:
+  qudag-data:
+    driver: local
+  qudag-keys:
+    driver: local
+  qudag-logs:
+    driver: local
+  qudag-dag:
+    driver: local
+
+services:
+  # ===========================================================================
+  # QuDAG Primary Node
+  # ===========================================================================
+  qudag-node:
+    image: ruvector/qudag:latest
+    container_name: qudag-node
+    hostname: qudag-node
+    restart: unless-stopped
+    networks:
+      - agentic-network
+      - qudag-internal
+    ports:
+      # MCP HTTP API
+      - "9000:9000"
+      # MCP WebSocket
+      - "9001:9001"
+      # P2P Network (libp2p)
+      - "9002:9002"
+      # Prometheus metrics
+      - "9003:9003"
+      # Raft consensus (internal)
+      - "9004:9004"
+    environment:
+      # Node identity
+      QUDAG_NODE_ID: "${QUDAG_NODE_ID:-node-1}"
+      QUDAG_NODE_NAME: "${QUDAG_NODE_NAME:-qudag-primary}"
+
+      # Network configuration
+      QUDAG_NETWORK: "${QUDAG_NETWORK:-testnet}"
+      QUDAG_P2P_PORT: "9002"
+      QUDAG_MCP_HTTP_PORT: "9000"
+      QUDAG_MCP_WS_PORT: "9001"
+      QUDAG_METRICS_PORT: "9003"
+      QUDAG_RAFT_PORT: "9004"
+
+      # Storage paths
+      QUDAG_DATA_DIR: "/data"
+      QUDAG_KEYS_DIR: "/keys"
+      QUDAG_DAG_DIR: "/dag"
+      QUDAG_LOG_DIR: "/logs"
+
+      # Cryptography configuration
+      QUDAG_CRYPTO_SUITE: "${QUDAG_CRYPTO_SUITE:-ml-kem-768}"
+      QUDAG_SIGNATURE_SCHEME: "${QUDAG_SIGNATURE_SCHEME:-ml-dsa-65}"
+      QUDAG_HASH_FUNCTION: "${QUDAG_HASH_FUNCTION:-blake3}"
+      QUDAG_HYBRID_MODE: "${QUDAG_HYBRID_MODE:-true}"
+
+      # DAG consensus configuration
+      QUDAG_CONSENSUS_ALGORITHM: "${QUDAG_CONSENSUS_ALGORITHM:-qr-avalanche}"
+      QUDAG_SAMPLE_SIZE: "${QUDAG_SAMPLE_SIZE:-20}"
+      QUDAG_QUORUM_SIZE: "${QUDAG_QUORUM_SIZE:-14}"
+      QUDAG_DECISION_THRESHOLD: "${QUDAG_DECISION_THRESHOLD:-0.8}"
+
+      # Onion routing configuration
+      QUDAG_ONION_ENABLED: "${QUDAG_ONION_ENABLED:-true}"
+      QUDAG_ONION_HOPS: "${QUDAG_ONION_HOPS:-3}"
+      QUDAG_ONION_CIPHER: "${QUDAG_ONION_CIPHER:-chacha20poly1305}"
+
+      # MCP server configuration
+      QUDAG_MCP_ENABLED: "${QUDAG_MCP_ENABLED:-true}"
+      QUDAG_MCP_TRANSPORT: "${QUDAG_MCP_TRANSPORT:-http,websocket}"
+      QUDAG_MCP_AUTH_REQUIRED: "${QUDAG_MCP_AUTH_REQUIRED:-false}"
+      QUDAG_MCP_MAX_CONNECTIONS: "${QUDAG_MCP_MAX_CONNECTIONS:-100}"
+
+      # Dark domain configuration
+      QUDAG_DARK_DOMAIN_ENABLED: "${QUDAG_DARK_DOMAIN_ENABLED:-true}"
+      QUDAG_DARK_DOMAIN_SUFFIX: "${QUDAG_DARK_DOMAIN_SUFFIX:-.dark}"
+
+      # Bootstrap nodes (for network discovery)
+      QUDAG_BOOTSTRAP_NODES: "${QUDAG_BOOTSTRAP_NODES:-}"
+
+      # Token economy (rUv)
+      QUDAG_TOKEN_ENABLED: "${QUDAG_TOKEN_ENABLED:-false}"
+      QUDAG_TOKEN_STAKE_AMOUNT: "${QUDAG_TOKEN_STAKE_AMOUNT:-100}"
+
+      # Logging
+      RUST_LOG: "${RUST_LOG:-info,qudag=debug}"
+      RUST_BACKTRACE: "1"
+
+    volumes:
+      - qudag-data:/data
+      - qudag-keys:/keys
+      - qudag-dag:/dag
+      - qudag-logs:/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  # ===========================================================================
+  # QuDAG MCP Gateway (dedicated MCP server)
+  # ===========================================================================
+  qudag-mcp:
+    image: ruvector/qudag-mcp:latest
+    container_name: qudag-mcp
+    hostname: qudag-mcp
+    restart: unless-stopped
+    profiles:
+      - mcp
+    networks:
+      - agentic-network
+      - qudag-internal
+    ports:
+      # Dedicated MCP ports
+      - "9010:9000"  # HTTP
+      - "9011:9001"  # WebSocket
+      - "9012:9002"  # stdio (for local connections)
+    environment:
+      QUDAG_MCP_MODE: "standalone"
+      QUDAG_NODE_URL: "http://qudag-node:9000"
+      QUDAG_MCP_HTTP_PORT: "9000"
+      QUDAG_MCP_WS_PORT: "9001"
+
+      # MCP tools configuration
+      QUDAG_MCP_TOOLS_ENABLED: "${QUDAG_MCP_TOOLS_ENABLED:-true}"
+      QUDAG_MCP_TOOLS: "${QUDAG_MCP_TOOLS:-send_message,query_dag,create_channel,join_channel,verify_signature}"
+
+      # MCP resources configuration
+      QUDAG_MCP_RESOURCES_ENABLED: "${QUDAG_MCP_RESOURCES_ENABLED:-true}"
+      QUDAG_MCP_RESOURCES: "${QUDAG_MCP_RESOURCES:-dag://,channel://,identity://}"
+
+      RUST_LOG: "${RUST_LOG:-info,qudag_mcp=debug}"
+    depends_on:
+      qudag-node:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # QuDAG Cluster Node 2 (for HA/testing)
+  # ===========================================================================
+  qudag-node-2:
+    image: ruvector/qudag:latest
+    container_name: qudag-node-2
+    hostname: qudag-node-2
+    restart: unless-stopped
+    profiles:
+      - cluster
+    networks:
+      - agentic-network
+      - qudag-internal
+    ports:
+      - "9020:9000"
+      - "9021:9001"
+      - "9022:9002"
+      - "9023:9003"
+    environment:
+      QUDAG_NODE_ID: "node-2"
+      QUDAG_NODE_NAME: "qudag-secondary-1"
+      QUDAG_NETWORK: "${QUDAG_NETWORK:-testnet}"
+      QUDAG_P2P_PORT: "9002"
+      QUDAG_MCP_HTTP_PORT: "9000"
+      QUDAG_MCP_WS_PORT: "9001"
+      QUDAG_DATA_DIR: "/data"
+      QUDAG_KEYS_DIR: "/keys"
+      QUDAG_DAG_DIR: "/dag"
+      QUDAG_CRYPTO_SUITE: "${QUDAG_CRYPTO_SUITE:-ml-kem-768}"
+      QUDAG_CONSENSUS_ALGORITHM: "${QUDAG_CONSENSUS_ALGORITHM:-qr-avalanche}"
+      QUDAG_BOOTSTRAP_NODES: "qudag-node:9002"
+      RUST_LOG: "${RUST_LOG:-info,qudag=debug}"
+    volumes:
+      - qudag-node2-data:/data
+      - qudag-node2-keys:/keys
+      - qudag-node2-dag:/dag
+    depends_on:
+      qudag-node:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # QuDAG Cluster Node 3 (for HA/testing)
+  # ===========================================================================
+  qudag-node-3:
+    image: ruvector/qudag:latest
+    container_name: qudag-node-3
+    hostname: qudag-node-3
+    restart: unless-stopped
+    profiles:
+      - cluster
+    networks:
+      - agentic-network
+      - qudag-internal
+    ports:
+      - "9030:9000"
+      - "9031:9001"
+      - "9032:9002"
+      - "9033:9003"
+    environment:
+      QUDAG_NODE_ID: "node-3"
+      QUDAG_NODE_NAME: "qudag-secondary-2"
+      QUDAG_NETWORK: "${QUDAG_NETWORK:-testnet}"
+      QUDAG_P2P_PORT: "9002"
+      QUDAG_MCP_HTTP_PORT: "9000"
+      QUDAG_MCP_WS_PORT: "9001"
+      QUDAG_DATA_DIR: "/data"
+      QUDAG_KEYS_DIR: "/keys"
+      QUDAG_DAG_DIR: "/dag"
+      QUDAG_CRYPTO_SUITE: "${QUDAG_CRYPTO_SUITE:-ml-kem-768}"
+      QUDAG_CONSENSUS_ALGORITHM: "${QUDAG_CONSENSUS_ALGORITHM:-qr-avalanche}"
+      QUDAG_BOOTSTRAP_NODES: "qudag-node:9002,qudag-node-2:9002"
+      RUST_LOG: "${RUST_LOG:-info,qudag=debug}"
+    volumes:
+      - qudag-node3-data:/data
+      - qudag-node3-keys:/keys
+      - qudag-node3-dag:/dag
+    depends_on:
+      qudag-node:
+        condition: service_healthy
+      qudag-node-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # QuDAG Testnet Connector (connects to public testnet)
+  # ===========================================================================
+  qudag-testnet:
+    image: ruvector/qudag:latest
+    container_name: qudag-testnet
+    hostname: qudag-testnet
+    restart: unless-stopped
+    profiles:
+      - testnet
+    networks:
+      - agentic-network
+    ports:
+      - "9040:9000"
+      - "9041:9001"
+      - "9042:9002"
+    environment:
+      QUDAG_NODE_ID: "${QUDAG_NODE_ID:-testnet-node}"
+      QUDAG_NETWORK: "testnet"
+      QUDAG_P2P_PORT: "9002"
+      QUDAG_MCP_HTTP_PORT: "9000"
+      QUDAG_MCP_WS_PORT: "9001"
+      QUDAG_DATA_DIR: "/data"
+      QUDAG_KEYS_DIR: "/keys"
+      QUDAG_DAG_DIR: "/dag"
+      # Public testnet bootstrap nodes
+      QUDAG_BOOTSTRAP_NODES: "${QUDAG_TESTNET_BOOTSTRAP:-/dns4/testnet-us-west.qudag.network/tcp/9002/p2p/12D3KooW...,/dns4/testnet-eu-central.qudag.network/tcp/9002/p2p/12D3KooW...}"
+      QUDAG_CRYPTO_SUITE: "ml-kem-768"
+      QUDAG_SIGNATURE_SCHEME: "ml-dsa-65"
+      QUDAG_CONSENSUS_ALGORITHM: "qr-avalanche"
+      RUST_LOG: "${RUST_LOG:-info,qudag=info}"
+    volumes:
+      - qudag-testnet-data:/data
+      - qudag-testnet-keys:/keys
+      - qudag-testnet-dag:/dag
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+# ===========================================================================
+# Additional volumes for cluster nodes
+# ===========================================================================
+volumes:
+  qudag-node2-data:
+    driver: local
+  qudag-node2-keys:
+    driver: local
+  qudag-node2-dag:
+    driver: local
+  qudag-node3-data:
+    driver: local
+  qudag-node3-keys:
+    driver: local
+  qudag-node3-dag:
+    driver: local
+  qudag-testnet-data:
+    driver: local
+  qudag-testnet-keys:
+    driver: local
+  qudag-testnet-dag:
+    driver: local

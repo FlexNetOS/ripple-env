@@ -1,0 +1,403 @@
+{
+  "$schema": "./schemas/mcp-server.schema.json",
+  "name": "qudag-mcp-server",
+  "version": "1.0.0",
+  "description": "QuDAG MCP Server - Quantum-resistant distributed communication for AI agents",
+  "repository": "https://github.com/ruvnet/qudag",
+  "priority": "P3-011",
+  "layer": "Layer 11: P2P Coordination",
+
+  "transport": {
+    "protocols": ["http", "websocket", "stdio"],
+    "http": {
+      "port": 9000,
+      "host": "0.0.0.0",
+      "path": "/mcp",
+      "cors": {
+        "enabled": true,
+        "origins": ["*"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "headers": ["Content-Type", "Authorization"]
+      }
+    },
+    "websocket": {
+      "port": 9001,
+      "host": "0.0.0.0",
+      "path": "/ws",
+      "pingInterval": 30000,
+      "pongTimeout": 10000
+    },
+    "stdio": {
+      "command": "qudag-mcp",
+      "args": ["--transport", "stdio"],
+      "env": {
+        "RUST_LOG": "info,qudag_mcp=debug"
+      }
+    }
+  },
+
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": false,
+    "logging": true,
+    "sampling": false
+  },
+
+  "tools": [
+    {
+      "name": "send_message",
+      "description": "Send an encrypted message to another QuDAG node using post-quantum cryptography",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "recipient": {
+            "type": "string",
+            "description": "Recipient node ID or .dark domain address"
+          },
+          "message": {
+            "type": "string",
+            "description": "Message content to send"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Optional channel ID for group communication"
+          },
+          "encrypt": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to encrypt the message (default: true)"
+          },
+          "onion_routing": {
+            "type": "boolean",
+            "default": false,
+            "description": "Use onion routing for additional privacy"
+          }
+        },
+        "required": ["recipient", "message"]
+      }
+    },
+    {
+      "name": "query_dag",
+      "description": "Query the DAG for messages matching criteria",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from_node": {
+            "type": "string",
+            "description": "Filter by sender node ID"
+          },
+          "to_node": {
+            "type": "string",
+            "description": "Filter by recipient node ID"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Filter by channel ID"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Filter messages after this timestamp"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 100,
+            "description": "Maximum number of messages to return"
+          }
+        }
+      }
+    },
+    {
+      "name": "create_channel",
+      "description": "Create a new communication channel for group messaging",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable channel name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Channel description"
+          },
+          "public": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the channel is publicly discoverable"
+          },
+          "encrypted": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether messages are end-to-end encrypted"
+          },
+          "members": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Initial list of member node IDs"
+          }
+        },
+        "required": ["name"]
+      }
+    },
+    {
+      "name": "join_channel",
+      "description": "Join an existing communication channel",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel_id": {
+            "type": "string",
+            "description": "Channel ID to join"
+          },
+          "invite_code": {
+            "type": "string",
+            "description": "Invite code for private channels"
+          }
+        },
+        "required": ["channel_id"]
+      }
+    },
+    {
+      "name": "verify_signature",
+      "description": "Verify a post-quantum digital signature",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Original message that was signed"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Base64-encoded signature"
+          },
+          "public_key": {
+            "type": "string",
+            "description": "Base64-encoded public key"
+          },
+          "algorithm": {
+            "type": "string",
+            "enum": ["ml-dsa-65", "ml-dsa-87", "ed25519"],
+            "default": "ml-dsa-65",
+            "description": "Signature algorithm"
+          }
+        },
+        "required": ["message", "signature", "public_key"]
+      }
+    },
+    {
+      "name": "encrypt_message",
+      "description": "Encrypt a message using post-quantum key encapsulation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "plaintext": {
+            "type": "string",
+            "description": "Message to encrypt"
+          },
+          "recipient_public_key": {
+            "type": "string",
+            "description": "Recipient's public key (base64)"
+          },
+          "algorithm": {
+            "type": "string",
+            "enum": ["ml-kem-768", "ml-kem-1024", "x25519"],
+            "default": "ml-kem-768",
+            "description": "Key encapsulation algorithm"
+          }
+        },
+        "required": ["plaintext", "recipient_public_key"]
+      }
+    },
+    {
+      "name": "decrypt_message",
+      "description": "Decrypt a message using the node's private key",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ciphertext": {
+            "type": "string",
+            "description": "Encrypted message (base64)"
+          },
+          "encapsulated_key": {
+            "type": "string",
+            "description": "Encapsulated symmetric key (base64)"
+          }
+        },
+        "required": ["ciphertext", "encapsulated_key"]
+      }
+    },
+    {
+      "name": "get_node_info",
+      "description": "Get information about this QuDAG node",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_network_stats",
+      "description": "Get network statistics and peer information",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "include_peers": {
+            "type": "boolean",
+            "default": false,
+            "description": "Include list of connected peers"
+          }
+        }
+      }
+    },
+    {
+      "name": "resolve_dark_domain",
+      "description": "Resolve a .dark domain address to a node ID",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The .dark domain to resolve (e.g., agent.dark)"
+          }
+        },
+        "required": ["domain"]
+      }
+    },
+    {
+      "name": "register_dark_domain",
+      "description": "Register a .dark domain for this node",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The .dark domain to register (without suffix)"
+          },
+          "ttl": {
+            "type": "integer",
+            "default": 86400,
+            "description": "Time-to-live in seconds"
+          }
+        },
+        "required": ["domain"]
+      }
+    }
+  ],
+
+  "resources": [
+    {
+      "uri": "dag://messages",
+      "name": "DAG Messages",
+      "description": "Access messages stored in the DAG",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "dag://transactions",
+      "name": "DAG Transactions",
+      "description": "Access transaction history",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "channel://{channel_id}",
+      "name": "Channel",
+      "description": "Access channel information and messages",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "identity://self",
+      "name": "Node Identity",
+      "description": "This node's identity information",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "identity://peers",
+      "name": "Peer Identities",
+      "description": "Connected peer identities",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "message://{message_id}",
+      "name": "Message",
+      "description": "Access a specific message by ID",
+      "mimeType": "application/json"
+    }
+  ],
+
+  "authentication": {
+    "required": false,
+    "methods": ["api_key", "jwt"],
+    "api_key": {
+      "header": "X-QuDAG-API-Key",
+      "env_var": "QUDAG_API_KEY"
+    },
+    "jwt": {
+      "header": "Authorization",
+      "scheme": "Bearer",
+      "issuer": "qudag",
+      "audience": "qudag-mcp"
+    }
+  },
+
+  "rateLimit": {
+    "enabled": true,
+    "requests_per_minute": 1000,
+    "burst_size": 100
+  },
+
+  "healthCheck": {
+    "endpoint": "/health",
+    "interval_seconds": 30
+  },
+
+  "integration": {
+    "claude_code": {
+      "config_path": ".claude/mcp-servers.json",
+      "example": {
+        "qudag": {
+          "command": "docker",
+          "args": ["exec", "-i", "qudag-mcp", "qudag-mcp", "--transport", "stdio"],
+          "env": {
+            "RUST_LOG": "info"
+          }
+        }
+      }
+    },
+    "aria": {
+      "layer": "L11-P2P",
+      "priority": "P3-011",
+      "feature_flag": "QUDAG_ENABLED"
+    }
+  },
+
+  "docker": {
+    "compose_file": "docker-compose.qudag.yml",
+    "service": "qudag-mcp",
+    "profile": "mcp"
+  },
+
+  "metrics": {
+    "prometheus": {
+      "enabled": true,
+      "port": 9003,
+      "path": "/metrics"
+    },
+    "counters": [
+      "qudag_messages_sent_total",
+      "qudag_messages_received_total",
+      "qudag_encryption_operations_total",
+      "qudag_consensus_rounds_total"
+    ],
+    "gauges": [
+      "qudag_connected_peers",
+      "qudag_dag_size_bytes",
+      "qudag_pending_messages"
+    ],
+    "histograms": [
+      "qudag_message_latency_seconds",
+      "qudag_consensus_latency_seconds",
+      "qudag_encryption_duration_seconds"
+    ]
+  }
+}

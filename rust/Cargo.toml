@@ -103,3 +103,52 @@ sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "macro
 # High-performance SQL query engine compatible with async tokio runtime
 # Used for distributed query processing and analytics
 datafusion = { version = "43" }
+
+# =============================================================================
+# QuDAG - Quantum-Resistant Distributed Communication (P3-011)
+# =============================================================================
+# BUILDKIT_STARTER_SPEC.md Layer 11: P2P Coordination
+# See: https://github.com/ruvnet/qudag
+#
+# QuDAG is a quantum-resistant distributed communication platform featuring:
+#   - Post-quantum cryptography (ML-KEM-768, ML-DSA, BLAKE3, HQC)
+#   - DAG-based consensus (QR-Avalanche)
+#   - Multi-hop onion routing with ChaCha20Poly1305
+#   - Native MCP server (stdio, HTTP, WebSocket)
+#   - AI agent coordination for autonomous systems
+#   - rUv token economy for resource exchange
+#
+# Crates from the QuDAG repository:
+#   - qudag-core: Core DAG implementation and consensus
+#   - qudag-crypto: Post-quantum cryptography primitives
+#   - qudag-network: P2P networking and onion routing
+#   - qudag-mcp: Model Context Protocol server implementation
+
+# QuDAG Core - DAG implementation and QR-Avalanche consensus
+qudag-core = { git = "https://github.com/ruvnet/qudag", branch = "main" }
+
+# QuDAG Crypto - Post-quantum cryptography (ML-KEM, ML-DSA, BLAKE3, HQC)
+qudag-crypto = { git = "https://github.com/ruvnet/qudag", branch = "main" }
+
+# QuDAG Network - P2P networking and onion routing
+qudag-network = { git = "https://github.com/ruvnet/qudag", branch = "main" }
+
+# QuDAG MCP - Model Context Protocol server for AI agent coordination
+qudag-mcp = { git = "https://github.com/ruvnet/qudag", branch = "main" }
+
+# =============================================================================
+# Post-Quantum Cryptography Support
+# =============================================================================
+# Additional crypto libraries for QuDAG post-quantum features
+
+# BLAKE3 - Fast cryptographic hash function
+blake3 = "1.5"
+
+# ChaCha20Poly1305 - AEAD cipher for onion routing
+chacha20poly1305 = "0.10"
+
+# x25519-dalek - Key exchange (hybrid with ML-KEM)
+x25519-dalek = { version = "2.0", features = ["static_secrets"] }
+
+# ed25519-dalek - Digital signatures (hybrid with ML-DSA)
+ed25519-dalek = { version = "2.1", features = ["serde"] }

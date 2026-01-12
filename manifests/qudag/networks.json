@@ -1,0 +1,237 @@
+{
+  "$schema": "../schemas/qudag-network.schema.json",
+  "version": "1.0.0",
+  "description": "QuDAG network configurations for different deployment environments",
+
+  "networks": {
+    "local": {
+      "name": "Local Development",
+      "description": "Single-node local development network",
+      "chain_id": "qudag-local-dev",
+      "genesis_time": "2026-01-01T00:00:00Z",
+
+      "consensus": {
+        "algorithm": "qr-avalanche",
+        "sample_size": 5,
+        "quorum_size": 3,
+        "decision_threshold": 0.6,
+        "beta1": 11,
+        "beta2": 150
+      },
+
+      "crypto": {
+        "key_encapsulation": "ml-kem-768",
+        "signature": "ml-dsa-65",
+        "hash": "blake3",
+        "hybrid_mode": false
+      },
+
+      "network": {
+        "p2p_port": 9002,
+        "mcp_http_port": 9000,
+        "mcp_ws_port": 9001,
+        "max_peers": 10,
+        "bootstrap_nodes": []
+      },
+
+      "features": {
+        "onion_routing": false,
+        "dark_domains": true,
+        "token_economy": false
+      }
+    },
+
+    "devnet": {
+      "name": "Development Network",
+      "description": "Multi-node development network for integration testing",
+      "chain_id": "qudag-devnet-v1",
+      "genesis_time": "2026-01-01T00:00:00Z",
+
+      "consensus": {
+        "algorithm": "qr-avalanche",
+        "sample_size": 10,
+        "quorum_size": 7,
+        "decision_threshold": 0.7,
+        "beta1": 11,
+        "beta2": 150
+      },
+
+      "crypto": {
+        "key_encapsulation": "ml-kem-768",
+        "signature": "ml-dsa-65",
+        "hash": "blake3",
+        "hybrid_mode": true
+      },
+
+      "network": {
+        "p2p_port": 9002,
+        "mcp_http_port": 9000,
+        "mcp_ws_port": 9001,
+        "max_peers": 50,
+        "bootstrap_nodes": [
+          {
+            "id": "12D3KooWDevnet1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "address": "/ip4/127.0.0.1/tcp/9002"
+          },
+          {
+            "id": "12D3KooWDevnet2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "address": "/ip4/127.0.0.1/tcp/9012"
+          },
+          {
+            "id": "12D3KooWDevnet3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "address": "/ip4/127.0.0.1/tcp/9022"
+          }
+        ]
+      },
+
+      "features": {
+        "onion_routing": true,
+        "dark_domains": true,
+        "token_economy": false
+      }
+    },
+
+    "testnet": {
+      "name": "Public Testnet",
+      "description": "Public testnet for pre-production testing",
+      "chain_id": "qudag-testnet-v1",
+      "genesis_time": "2025-12-01T00:00:00Z",
+
+      "consensus": {
+        "algorithm": "qr-avalanche",
+        "sample_size": 20,
+        "quorum_size": 14,
+        "decision_threshold": 0.8,
+        "beta1": 15,
+        "beta2": 200
+      },
+
+      "crypto": {
+        "key_encapsulation": "ml-kem-768",
+        "signature": "ml-dsa-65",
+        "hash": "blake3",
+        "hybrid_mode": true
+      },
+
+      "network": {
+        "p2p_port": 9002,
+        "mcp_http_port": 9000,
+        "mcp_ws_port": 9001,
+        "max_peers": 100,
+        "bootstrap_nodes": [
+          {
+            "id": "12D3KooWTestnetUS1xxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "address": "/dns4/testnet-us-west.qudag.network/tcp/9002",
+            "region": "us-west-2",
+            "mcp_endpoint": "https://testnet-us-west.qudag.network:9000"
+          },
+          {
+            "id": "12D3KooWTestnetEU1xxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "address": "/dns4/testnet-eu-central.qudag.network/tcp/9002",
+            "region": "eu-central-1",
+            "mcp_endpoint": "https://testnet-eu-central.qudag.network:9000"
+          },
+          {
+            "id": "12D3KooWTestnetAP1xxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "address": "/dns4/testnet-ap-east.qudag.network/tcp/9002",
+            "region": "ap-northeast-1",
+            "mcp_endpoint": "https://testnet-ap-east.qudag.network:9000"
+          },
+          {
+            "id": "12D3KooWTestnetAP2xxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "address": "/dns4/testnet-ap-south.qudag.network/tcp/9002",
+            "region": "ap-south-1",
+            "mcp_endpoint": "https://testnet-ap-south.qudag.network:9000"
+          }
+        ]
+      },
+
+      "faucet": {
+        "enabled": true,
+        "url": "https://faucet.testnet.qudag.network",
+        "amount_per_request": 1000,
+        "cooldown_seconds": 86400
+      },
+
+      "explorer": {
+        "url": "https://explorer.testnet.qudag.network",
+        "api_url": "https://api.explorer.testnet.qudag.network"
+      },
+
+      "features": {
+        "onion_routing": true,
+        "dark_domains": true,
+        "token_economy": true
+      }
+    },
+
+    "mainnet": {
+      "name": "Production Mainnet",
+      "description": "Production mainnet for live deployments",
+      "chain_id": "qudag-mainnet-v1",
+      "genesis_time": "2026-06-01T00:00:00Z",
+      "status": "planned",
+
+      "consensus": {
+        "algorithm": "qr-avalanche",
+        "sample_size": 20,
+        "quorum_size": 14,
+        "decision_threshold": 0.8,
+        "beta1": 20,
+        "beta2": 250
+      },
+
+      "crypto": {
+        "key_encapsulation": "ml-kem-768",
+        "signature": "ml-dsa-65",
+        "hash": "blake3",
+        "hybrid_mode": true
+      },
+
+      "network": {
+        "p2p_port": 9002,
+        "mcp_http_port": 9000,
+        "mcp_ws_port": 9001,
+        "max_peers": 500,
+        "bootstrap_nodes": []
+      },
+
+      "features": {
+        "onion_routing": true,
+        "dark_domains": true,
+        "token_economy": true
+      },
+
+      "notes": "Mainnet launch planned for Q2 2026. Bootstrap nodes TBD."
+    }
+  },
+
+  "default_network": "testnet",
+
+  "connection_profiles": {
+    "development": {
+      "network": "local",
+      "log_level": "debug",
+      "skip_verification": true,
+      "fast_consensus": true
+    },
+    "testing": {
+      "network": "devnet",
+      "log_level": "info",
+      "skip_verification": false,
+      "fast_consensus": true
+    },
+    "staging": {
+      "network": "testnet",
+      "log_level": "info",
+      "skip_verification": false,
+      "fast_consensus": false
+    },
+    "production": {
+      "network": "mainnet",
+      "log_level": "warn",
+      "skip_verification": false,
+      "fast_consensus": false
+    }
+  }
+}
