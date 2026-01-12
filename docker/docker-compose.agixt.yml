@@ -1,6 +1,14 @@
 # AGiXT Docker Compose Configuration
 # Documentation: docs/adr/adr-006-agixt-integration.md
 #
+# Resource Requirements (Total):
+#   - RAM: 8GB minimum (all services)
+#   - CPU: 8 cores recommended
+#   - Disk: 12GB+ for data
+#
+# Validate resources: ./scripts/validate-resources.sh --profile standard
+# See docs/AI_RESOURCE_REQUIREMENTS.md for detailed requirements
+#
 # Usage:
 #   agixt up      - Start all services
 #   agixt down    - Stop all services
@@ -8,10 +16,10 @@
 #   agixt status  - Show service status
 #
 # Services:
-#   - AGiXT API (port 7437) - Main API server
-#   - AGiXT Interactive (port 3437) - Next.js UI
-#   - PostgreSQL (port 5432) - Agent memory and data
-#   - MinIO (ports 9000/9001) - S3-compatible object storage
+#   - AGiXT API (port 7437) - Main API server (4GB RAM limit)
+#   - AGiXT Interactive (port 3437) - Next.js UI (1GB RAM limit)
+#   - PostgreSQL (port 5432) - Agent memory and data (2GB RAM limit)
+#   - MinIO (ports 9000/9001) - S3-compatible object storage (1GB RAM limit)
 #
 # Integration with LocalAI:
 #   AGiXT uses LocalAI (running on host) as OpenAI-compatible provider
@@ -95,6 +103,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    # Resource limits for AGiXT API
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '4.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
 
   # AGiXT Interactive UI
   agixt-interactive:
@@ -110,6 +127,14 @@ services:
       - agixt
     networks:
       - agixt-network
+    # Resource limits for UI
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
 
   # PostgreSQL Database
   postgres:
@@ -140,6 +165,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # Resource limits for PostgreSQL
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
   # MinIO S3-compatible Storage
   minio:
@@ -171,6 +205,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # Resource limits for MinIO
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
 
   # MinIO setup - creates the agixt bucket on first run
   minio-setup:

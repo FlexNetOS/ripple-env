@@ -41,7 +41,7 @@ Describe "WSL2 Environment" -Tag "Integration" {
 
 Describe "NixOS Distribution" -Tag "Integration", "NixOS" {
     BeforeAll {
-        $distroName = "NixOS-ROS2-Test"
+        $distroName = "NixOS-Ripple-Test"
         $distroExists = $false
 
         try {
@@ -53,30 +53,30 @@ Describe "NixOS Distribution" -Tag "Integration", "NixOS" {
         }
     }
 
-    It "Should have NixOS-ROS2-Test distribution" -Skip:(-not $distroExists) {
+    It "Should have NixOS-Ripple-Test distribution" -Skip:(-not $distroExists) {
         $distros = wsl --list --quiet
-        $distros | Should -Contain "NixOS-ROS2-Test"
+        $distros | Should -Contain "NixOS-Ripple-Test"
     }
 
     It "Should have Nix installed in the distribution" -Skip:(-not $distroExists) {
-        $result = wsl -d NixOS-ROS2-Test -- nix --version 2>&1
+        $result = wsl -d NixOS-Ripple-Test -- nix --version 2>&1
         $LASTEXITCODE | Should -Be 0
         $result | Should -Match "nix"
     }
 
     It "Should have flakes enabled" -Skip:(-not $distroExists) {
-        $result = wsl -d NixOS-ROS2-Test -- nix flake --help 2>&1
+        $result = wsl -d NixOS-Ripple-Test -- nix flake --help 2>&1
         $LASTEXITCODE | Should -Be 0
     }
 }
 
 Describe "Development Environment" -Tag "Integration", "DevEnv" {
     BeforeAll {
-        $distroName = "NixOS-ROS2-Test"
+        $distroName = "NixOS-Ripple-Test"
         $repoExists = $false
 
         try {
-            $result = wsl -d $distroName -- bash -c "test -d ~/ros2-humble-env && echo 'exists'"
+            $result = wsl -d $distroName -- bash -c "test -d ~/ripple-env && echo 'exists'"
             $repoExists = $result -eq "exists"
         }
         catch {
@@ -84,23 +84,23 @@ Describe "Development Environment" -Tag "Integration", "DevEnv" {
         }
     }
 
-    It "Should have ros2-humble-env repository cloned" -Skip:(-not $repoExists) {
-        $result = wsl -d NixOS-ROS2-Test -- bash -c "test -d ~/ros2-humble-env && echo 'exists'"
+    It "Should have ripple-env repository cloned" -Skip:(-not $repoExists) {
+        $result = wsl -d NixOS-Ripple-Test -- bash -c "test -d ~/ripple-env && echo 'exists'"
         $result | Should -Be "exists"
     }
 
     It "Should have valid flake.nix" -Skip:(-not $repoExists) {
-        $result = wsl -d NixOS-ROS2-Test -- bash -c "test -f ~/ros2-humble-env/flake.nix && echo 'exists'"
+        $result = wsl -d NixOS-Ripple-Test -- bash -c "test -f ~/ripple-env/flake.nix && echo 'exists'"
         $result | Should -Be "exists"
     }
 
     It "Should have pixi.toml" -Skip:(-not $repoExists) {
-        $result = wsl -d NixOS-ROS2-Test -- bash -c "test -f ~/ros2-humble-env/pixi.toml && echo 'exists'"
+        $result = wsl -d NixOS-Ripple-Test -- bash -c "test -f ~/ripple-env/pixi.toml && echo 'exists'"
         $result | Should -Be "exists"
     }
 
     It "Should be able to enter dev shell" -Skip:(-not $repoExists) {
-        $result = wsl -d NixOS-ROS2-Test -- bash -c "cd ~/ros2-humble-env && nix develop --command echo 'shell works'"
+        $result = wsl -d NixOS-Ripple-Test -- bash -c "cd ~/ripple-env && nix develop --command echo 'shell works'"
         $result | Should -Contain "shell works"
     }
 }

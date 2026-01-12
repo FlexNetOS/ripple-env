@@ -1,7 +1,7 @@
 {
-  "$schema": "https://ros2-humble-env.dev/schemas/cloud-builder.schema.json",
+  "$schema": "https://ripple-env.dev/schemas/cloud-builder.schema.json",
   "version": "1.0.0",
-  "description": "Cloud builder image configurations for ros2-humble-env CI/CD",
+  "description": "Cloud builder image configurations for ripple-env CI/CD",
   "base_images": {
     "linux": {
       "default": "ubuntu:22.04",
@@ -84,7 +84,7 @@
   "caching": {
     "nix": {
       "provider": "cachix",
-      "cache_name": "ros2-humble-env",
+      "cache_name": "ripple-env",
       "signing_key_secret": "CACHIX_SIGNING_KEY"
     },
     "pixi": {

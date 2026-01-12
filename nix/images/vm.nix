@@ -1,19 +1,30 @@
 # NixOS VM Image Configuration
 # Builds a QEMU/VirtualBox compatible VM image
 #
-# Build command:
+# Build command (development):
 #   nix build .#nixosConfigurations.vm-ros2.config.system.build.vm
+#
+# Build command (production/stable):
+#   nix build .#nixosConfigurations.vm-ros2-stable.config.system.build.vm
 #
 # Run the VM:
 #   ./result/bin/run-nixos-ros2-vm
-{ inputs, pkgs, lib, ... }:
+#
+# Supply Chain Security:
+#   - Use *-stable variants for production deployments
+#   - Stable uses nixos-24.11 with vetted packages
+{ inputs, pkgs, lib, isStable ? false, ... }:
 
-inputs.nixpkgs.lib.nixosSystem {
+let
+  nixpkgsInput = if isStable then inputs.nixpkgs-stable else inputs.nixpkgs;
+  channelLabel = if isStable then "stable" else "unstable";
+in
+nixpkgsInput.lib.nixosSystem {
   system = "x86_64-linux";
 
   modules = [
     # QEMU VM base module
-    "${inputs.nixpkgs}/nixos/modules/virtualisation/qemu-vm.nix"
+    "${nixpkgsInput}/nixos/modules/virtualisation/qemu-vm.nix"
 
     # ROS2 development environment
     ({ config, pkgs, lib, ... }: {

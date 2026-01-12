@@ -49,13 +49,13 @@ Download models directly from Hugging Face:
 
 ```bash
 # Create models directory
-mkdir -p /home/user/ros2-humble-env/models
+mkdir -p /home/user/ripple-env/models
 
 # Download using huggingface-cli
 huggingface-cli download \
     TheBloke/Mistral-7B-Instruct-v0.2-GGUF \
     mistral-7b-instruct-v0.2.Q4_K_M.gguf \
-    --local-dir /home/user/ros2-humble-env/models \
+    --local-dir /home/user/ripple-env/models \
     --local-dir-use-symlinks False
 ```
 
@@ -67,8 +67,8 @@ Mount models directory when running LocalAI:
 docker run -d \
     --name localai \
     -p 8080:8080 \
-    -v /home/user/ros2-humble-env/models:/models:ro \
-    -v /home/user/ros2-humble-env/config/localai:/config:ro \
+    -v /home/user/ripple-env/models:/models:ro \
+    -v /home/user/ripple-env/config/localai:/config:ro \
     --env MODELS_PATH=/models \
     localai/localai:latest
 ```

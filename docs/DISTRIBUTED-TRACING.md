@@ -58,7 +58,7 @@ This document describes the distributed tracing setup using **Grafana Tempo** in
 
 ### Tempo Configuration
 
-Location: `/home/user/ros2-humble-env/config/tempo/tempo.yaml`
+Location: `/home/user/ripple-env/config/tempo/tempo.yaml`
 
 Key features:
 - **OTLP receivers**: Accept traces from OpenTelemetry instrumented applications
@@ -69,7 +69,7 @@ Key features:
 
 ### OTel Collector Configuration
 
-Location: `/home/user/ros2-humble-env/manifests/observability/otel-collector.yaml`
+Location: `/home/user/ripple-env/manifests/observability/otel-collector.yaml`
 
 Traces pipeline:
 ```yaml
@@ -81,7 +81,7 @@ traces:
 
 ### Grafana Datasource
 
-Location: `/home/user/ros2-humble-env/manifests/observability/grafana/provisioning/datasources/datasources.yml`
+Location: `/home/user/ripple-env/manifests/observability/grafana/provisioning/datasources/datasources.yml`
 
 Features enabled:
 - **Trace-to-logs**: Jump from traces to related logs in Loki
@@ -94,7 +94,7 @@ Features enabled:
 ### Start the Observability Stack
 
 ```bash
-cd /home/user/ros2-humble-env/docker
+cd /home/user/ripple-env/docker
 
 # Create network if it doesn't exist
 docker network create agentic-network 2>/dev/null || true

@@ -1,6 +1,6 @@
 # Reference Sources
 
-This directory contains reference documents, research papers, and external resources used in developing the ros2-humble-env project.
+This directory contains reference documents, research papers, and external resources used in developing the ripple-env project.
 
 ## Contents
 

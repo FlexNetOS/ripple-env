@@ -1,6 +1,6 @@
 ---
 # P0 CRITICAL TASK SPECIFICATIONS
-# FlexNetOS ros2-humble-env Repository
+# FlexNetOS ripple-env Repository
 # Generated: 2026-01-10
 # ARIA Audit Findings - Multi-Agent Analysis
 #
@@ -45,7 +45,7 @@ tasks:
       - Audit trail of secret access
       - Rotation of service credentials
 
-    location: "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
+    location: "/home/user/ripple-env/docker/docker-compose.identity.yml"
 
     impact: |
       **System Impact:**
@@ -78,12 +78,12 @@ tasks:
       - "Keycloak and vaultwarden services depend_on vault service"
 
     files_to_modify:
-      - "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
+      - "/home/user/ripple-env/docker/docker-compose.identity.yml"
 
     files_to_create:
-      - "/home/user/ros2-humble-env/config/vault/config.hcl (vault configuration)"
-      - "/home/user/ros2-humble-env/scripts/init-vault.sh (initialization script)"
-      - "/home/user/ros2-humble-env/docs/VAULT_SETUP.md (integration guide)"
+      - "/home/user/ripple-env/config/vault/config.hcl (vault configuration)"
+      - "/home/user/ripple-env/scripts/init-vault.sh (initialization script)"
+      - "/home/user/ripple-env/docs/VAULT_SETUP.md (integration guide)"
 
     technical_spec: |
       ## Docker Compose Service Definition
@@ -245,7 +245,7 @@ tasks:
       - JWT-based authentication for service-to-service
       - Vault integration for credential rotation
 
-    location: "/home/user/ros2-humble-env/docker/docker-compose.messaging.yml"
+    location: "/home/user/ripple-env/docker/docker-compose.messaging.yml"
 
     impact: |
       **System Impact:**
@@ -282,12 +282,12 @@ tasks:
       - "Integration script shows how to add new authenticated clients"
 
     files_to_modify:
-      - "/home/user/ros2-humble-env/docker/docker-compose.messaging.yml"
+      - "/home/user/ripple-env/docker/docker-compose.messaging.yml"
 
     files_to_create:
-      - "/home/user/ros2-humble-env/config/nats/nats.conf (NATS configuration with auth)"
-      - "/home/user/ros2-humble-env/scripts/setup-nats-auth.sh (credential setup)"
-      - "/home/user/ros2-humble-env/docs/NATS_AUTH_SETUP.md (integration guide)"
+      - "/home/user/ripple-env/config/nats/nats.conf (NATS configuration with auth)"
+      - "/home/user/ripple-env/scripts/setup-nats-auth.sh (credential setup)"
+      - "/home/user/ripple-env/docs/NATS_AUTH_SETUP.md (integration guide)"
 
     technical_spec: |
       ## NATS Authentication Architecture
@@ -487,9 +487,9 @@ tasks:
       - Event schema definitions
 
     location: |
-      - /home/user/ros2-humble-env/docker/docker-compose.messaging.yml (NATS config)
-      - /home/user/ros2-humble-env/docker/docker-compose.temporal.yml (Temporal config)
-      - /home/user/ros2-humble-env/docker/docker-compose.automation.yml (n8n config)
+      - /home/user/ripple-env/docker/docker-compose.messaging.yml (NATS config)
+      - /home/user/ripple-env/docker/docker-compose.temporal.yml (Temporal config)
+      - /home/user/ripple-env/docker/docker-compose.automation.yml (n8n config)
 
     impact: |
       **System Impact:**
@@ -532,16 +532,16 @@ tasks:
       - "Deployment guide documents adding new subscribers"
 
     files_to_modify:
-      - "/home/user/ros2-humble-env/docker/docker-compose.messaging.yml"
-      - "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
-      - "/home/user/ros2-humble-env/docker/docker-compose.automation.yml"
+      - "/home/user/ripple-env/docker/docker-compose.messaging.yml"
+      - "/home/user/ripple-env/docker/docker-compose.temporal.yml"
+      - "/home/user/ripple-env/docker/docker-compose.automation.yml"
 
     files_to_create:
-      - "/home/user/ros2-humble-env/config/nats/streams.conf (JetStream definitions)"
-      - "/home/user/ros2-humble-env/config/nats/consumers.conf (Consumer groups)"
-      - "/home/user/ros2-humble-env/config/temporal/workflows/event-processor.ts (Event workflow)"
-      - "/home/user/ros2-humble-env/scripts/setup-nats-mesh.sh (Stream/consumer setup)"
-      - "/home/user/ros2-humble-env/docs/SERVICE_MESH_GUIDE.md (complete routing guide)"
+      - "/home/user/ripple-env/config/nats/streams.conf (JetStream definitions)"
+      - "/home/user/ripple-env/config/nats/consumers.conf (Consumer groups)"
+      - "/home/user/ripple-env/config/temporal/workflows/event-processor.ts (Event workflow)"
+      - "/home/user/ripple-env/scripts/setup-nats-mesh.sh (Stream/consumer setup)"
+      - "/home/user/ripple-env/docs/SERVICE_MESH_GUIDE.md (complete routing guide)"
 
     technical_spec: |
       ## Service Mesh Event Architecture
@@ -777,7 +777,7 @@ tasks:
 # Status Update Commands:
 #   mark-status() {
 #     yq eval ".tasks[] | select(.id == \"$1\") | .status = \"$2\"" \
-#       -i /home/user/ros2-humble-env/docs/P0-TASK-SPECIFICATIONS.yaml
+#       -i /home/user/ripple-env/docs/P0-TASK-SPECIFICATIONS.yaml
 #   }
 #
 # Example:

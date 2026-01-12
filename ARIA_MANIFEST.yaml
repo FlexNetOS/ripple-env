@@ -1,6 +1,6 @@
 # ARIA_MANIFEST.yaml - Single Source of Truth for Component Verification
 # =========================================================================
-# This manifest defines ALL components in the ros2-humble-env project and
+# This manifest defines ALL components in the ripple-env project and
 # provides verification commands for CI/CD and local development.
 #
 # Usage:
@@ -13,15 +13,15 @@
 # Version: 1.0.0
 
 version: "1.0.0"
-schema: "https://ros2-humble-env.dev/schemas/aria-manifest.schema.json"
+schema: "https://ripple-env.dev/schemas/aria-manifest.schema.json"
 
 # =============================================================================
 # METADATA
 # =============================================================================
 metadata:
-  project: "ros2-humble-env"
-  description: "ROS2 Humble development environment with Nix, Pixi, and Docker"
-  repository: "https://github.com/FlexNetOS/ros2-humble-env"
+  project: "ripple-env"
+  description: "Ripple development environment with ROS2 Humble, Nix, Pixi, and Docker"
+  repository: "https://github.com/FlexNetOS/ripple-env"
   maintainers:
     - "FlexNetOS Team"
 

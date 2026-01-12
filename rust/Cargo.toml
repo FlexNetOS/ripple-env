@@ -9,7 +9,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 authors = ["FlexNetOS"]
-repository = "https://github.com/FlexNetOS/ros2-humble-env"
+repository = "https://github.com/FlexNetOS/ripple-env"
 
 [workspace.dependencies]
 # AGiXT SDK (package name on crates.io uses hyphen)

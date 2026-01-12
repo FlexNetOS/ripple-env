@@ -35,14 +35,14 @@ Successfully implemented **genai-toolbox** (MCP Toolbox for Databases) as the pr
 
 #### Created Files:
 
-1. **`/home/user/ros2-humble-env/modules/common/ai/genai-toolbox.nix`**
+1. **`/home/user/ripple-env/modules/common/ai/genai-toolbox.nix`**
    - Nix derivation using buildGoModule
    - Version: v0.25.0 (released Jan 8, 2026)
    - Source: googleapis/genai-toolbox
    - Binary renamed from 'server' to 'mcp-toolbox'
    - XDG config file at ~/.config/mcp-toolbox/config.yaml
 
-2. **`/home/user/ros2-humble-env/docs/GENAI_TOOLBOX_INSTALL.md`**
+2. **`/home/user/ripple-env/docs/GENAI_TOOLBOX_INSTALL.md`**
    - Complete installation guide
    - 6 installation methods documented
    - Configuration examples
@@ -51,16 +51,16 @@ Successfully implemented **genai-toolbox** (MCP Toolbox for Databases) as the pr
 
 #### Modified Files:
 
-3. **`/home/user/ros2-humble-env/modules/common/ai/default.nix`**
+3. **`/home/user/ripple-env/modules/common/ai/default.nix`**
    - Added import for genai-toolbox.nix
    - Enabled by default: programs.genai-toolbox.enable = true;
 
-4. **`/home/user/ros2-humble-env/flake.nix`**
+4. **`/home/user/ripple-env/flake.nix`**
    - Added mcp-toolbox wrapper script (lines 550-584)
    - Layer 8 Tool Execution comment
    - Multi-method installation fallback logic
 
-5. **`/home/user/ros2-humble-env/pixi.toml`**
+5. **`/home/user/ripple-env/pixi.toml`**
    - Updated comment about genai-toolbox
    - Clarified it's installed via Nix, not pip
    - Added Layer 8 P0-007 reference
@@ -89,19 +89,19 @@ programs.genai-toolbox.enable = true;
 ### 1. Check Module Files
 ```bash
 # Verify Nix module exists
-ls -la /home/user/ros2-humble-env/modules/common/ai/genai-toolbox.nix
+ls -la /home/user/ripple-env/modules/common/ai/genai-toolbox.nix
 
 # Verify documentation exists
-ls -la /home/user/ros2-humble-env/docs/GENAI_TOOLBOX_INSTALL.md
+ls -la /home/user/ripple-env/docs/GENAI_TOOLBOX_INSTALL.md
 
 # Check imports in default.nix
-grep -n "genai-toolbox" /home/user/ros2-humble-env/modules/common/ai/default.nix
+grep -n "genai-toolbox" /home/user/ripple-env/modules/common/ai/default.nix
 
 # Check wrapper in flake.nix
-grep -n "P0-007" /home/user/ros2-humble-env/flake.nix
+grep -n "P0-007" /home/user/ripple-env/flake.nix
 
 # Check pixi.toml reference
-grep -n "genai-toolbox" /home/user/ros2-humble-env/pixi.toml
+grep -n "genai-toolbox" /home/user/ripple-env/pixi.toml
 ```
 
 ### 2. Build and Install (Requires Nix)
@@ -227,7 +227,7 @@ nano ~/.config/mcp-toolbox/config.yaml
 
 ## Related Documentation
 
-- **Installation Guide**: `/home/user/ros2-humble-env/docs/GENAI_TOOLBOX_INSTALL.md`
+- **Installation Guide**: `/home/user/ripple-env/docs/GENAI_TOOLBOX_INSTALL.md`
 - **BUILDKIT_STARTER_SPEC.md**: Layer 8 requirements
 - **ARIA_AUDIT_REPORT.md**: P0-007 audit findings
 - **Upstream Repo**: https://github.com/googleapis/genai-toolbox

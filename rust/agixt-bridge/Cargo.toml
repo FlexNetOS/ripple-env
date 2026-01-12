@@ -5,7 +5,7 @@ edition = "2021"
 description = "ROS2-AGiXT bridge for natural language robot control"
 license = "MIT"
 authors = ["FlexNetOS"]
-repository = "https://github.com/FlexNetOS/ros2-humble-env"
+repository = "https://github.com/FlexNetOS/ripple-env"
 
 [dependencies]
 # AGiXT Rust SDK (Alpha - v0.1.0)

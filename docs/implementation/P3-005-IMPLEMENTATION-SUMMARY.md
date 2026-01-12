@@ -475,8 +475,8 @@ Planned enhancement for production:
 **Local Build Testing**:
 ```bash
 # Clone repository
-git clone https://github.com/FlexNetOS/ros2-humble-env.git
-cd ros2-humble-env/rust
+git clone https://github.com/FlexNetOS/ripple-env.git
+cd ripple-env/rust
 
 # Build for Windows (from Linux)
 cross build --release --target x86_64-pc-windows-gnu
@@ -501,7 +501,7 @@ wine target/x86_64-pc-windows-gnu/release/agixt-bridge.exe --version
 - Test results
 - Error logs
 
-**URL**: https://github.com/FlexNetOS/ros2-humble-env/actions/workflows/wsl2-build.yml
+**URL**: https://github.com/FlexNetOS/ripple-env/actions/workflows/wsl2-build.yml
 
 ### Notifications
 

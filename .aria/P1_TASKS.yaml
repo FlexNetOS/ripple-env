@@ -12,7 +12,7 @@ tasks:
       promptfoo is an open-source framework for LLM testing and evaluation.
       Currently no promptfooconfig.yaml exists, blocking LLM quality assurance pipelines.
       This configuration enables automated testing of inference outputs from LocalAI models.
-    location: "/home/user/ros2-humble-env/promptfooconfig.yaml"
+    location: "/home/user/ripple-env/promptfooconfig.yaml"
     impact: |
       - Blocks LLM model evaluation and quality assurance
       - Prevents automated testing of inference pipelines
@@ -50,7 +50,7 @@ tasks:
       AgentGateway (P0-004) is the agent/MCP traffic plane providing routing and orchestration.
       While configuration exists, needs to be properly exported to main docker-compose for
       discoverability and integration with the full agentic system stack.
-    location: "/home/user/ros2-humble-env/docker-compose.yml (or docker-compose.agentgateway.yml)"
+    location: "/home/user/ripple-env/docker-compose.yml (or docker-compose.agentgateway.yml)"
     impact: |
       - AgentGateway not easily deployable with standard docker-compose up
       - Breaks agentic system startup orchestration
@@ -94,9 +94,9 @@ tasks:
       Kong handles north-south (client-to-service) traffic, AgentGateway handles east-west
       (agent-to-agent) traffic. Both need authentication middleware to protect API access.
     location: |
-      /home/user/ros2-humble-env/docker/docker-compose.edge.yml
-      /home/user/ros2-humble-env/config/agentgateway/config.yaml
-      /home/user/ros2-humble-env/config/kong/config.yaml (NEW)
+      /home/user/ripple-env/docker/docker-compose.edge.yml
+      /home/user/ripple-env/config/agentgateway/config.yaml
+      /home/user/ripple-env/config/kong/config.yaml (NEW)
     impact: |
       - Unauthenticated API access (critical security gap)
       - No integration with Keycloak identity provider
@@ -149,9 +149,9 @@ tasks:
       - Token rotation and revocation through Keycloak
       - Group-based access policies
     location: |
-      /home/user/ros2-humble-env/docker/docker-compose.identity.yml (Keycloak)
-      /home/user/ros2-humble-env/docker/docker-compose.data.yml (assumed Vault location)
-      /home/user/ros2-humble-env/config/vault/oidc-config.hcl (NEW)
+      /home/user/ripple-env/docker/docker-compose.identity.yml (Keycloak)
+      /home/user/ripple-env/docker/docker-compose.data.yml (assumed Vault location)
+      /home/user/ripple-env/config/vault/oidc-config.hcl (NEW)
     impact: |
       - No federated identity for secrets management
       - Keycloak users cannot authenticate to Vault
@@ -200,9 +200,9 @@ tasks:
       Evaluates authorization decisions for agents, tools, and resources.
       Provides centralized policy management and audit logging.
     location: |
-      /home/user/ros2-humble-env/docker/docker-compose.identity.yml or
-      /home/user/ros2-humble-env/docker-compose.opa.yml (NEW)
-      /home/user/ros2-humble-env/config/opa/policies/
+      /home/user/ripple-env/docker/docker-compose.identity.yml or
+      /home/user/ripple-env/docker-compose.opa.yml (NEW)
+      /home/user/ripple-env/config/opa/policies/
     impact: |
       - No authorization enforcement (everyone has access)
       - Agent isolation not implemented
@@ -257,8 +257,8 @@ tasks:
       Improves reproducibility, offline capability, and reduces external dependencies.
       Ensures deterministic deployment across environments.
     location: |
-      /home/user/ros2-humble-env/flake.nix
-      /home/user/ros2-humble-env/modules/common/tools/sandbox-runtime.nix (NEW)
+      /home/user/ripple-env/flake.nix
+      /home/user/ripple-env/modules/common/tools/sandbox-runtime.nix (NEW)
     impact: |
       - Runtime dependency on npm registry (network failure risk)
       - Non-reproducible builds (npx may fetch different versions)
@@ -305,7 +305,7 @@ tasks:
       The genai-toolbox.nix module contains fakeHash placeholder that needs
       replacement with actual sha256 hashes from Go build. Enables proper
       caching and reproducible builds in Nix.
-    location: "/home/user/ros2-humble-env/modules/common/ai/genai-toolbox.nix"
+    location: "/home/user/ripple-env/modules/common/ai/genai-toolbox.nix"
     impact: |
       - Package cannot be built (fakeHash rejection)
       - Blocks Nix flake checks
@@ -323,7 +323,7 @@ tasks:
     complexity: "Trivial"
     effort_hours: 1
     verification_command: |
-      cd /home/user/ros2-humble-env && \
+      cd /home/user/ripple-env && \
       nix flake check && \
       nix build .#genai-toolbox && \
       ./result/bin/mcp-toolbox --version
@@ -344,8 +344,8 @@ tasks:
       Includes base models for inference testing and development.
       Reduces first-run latency and ensures reproducible setups.
     location: |
-      /home/user/ros2-humble-env/data/localai/models/
-      /home/user/ros2-humble-env/docker/docker-compose.localai.yml (usage docs)
+      /home/user/ripple-env/data/localai/models/
+      /home/user/ripple-env/docker/docker-compose.localai.yml (usage docs)
     impact: |
       - LocalAI cannot serve inference requests (no models)
       - Blocks LLM evaluation (P1-001)
@@ -393,7 +393,7 @@ tasks:
       Creates consistent database environment across Kong, MLflow, Keycloak, n8n,
       Temporal, and other services.
     location: |
-      /home/user/ros2-humble-env/docker/docker-compose.*.yml (all files with postgres)
+      /home/user/ripple-env/docker/docker-compose.*.yml (all files with postgres)
     impact: |
       - Version inconsistency causes compatibility issues
       - Data migration complexity if upgrading incrementally
@@ -440,8 +440,8 @@ tasks:
       2. Pixi environment: ROS packages and scientific Python (conda-forge, robostack)
       3. When to use each, how they integrate, conflict resolution
     location: |
-      /home/user/ros2-humble-env/docs/PYTHON-ENVIRONMENTS.md (NEW)
-      /home/user/ros2-humble-env/.claude/skills/python-environments/SKILL.md (NEW)
+      /home/user/ripple-env/docs/PYTHON-ENVIRONMENTS.md (NEW)
+      /home/user/ripple-env/.claude/skills/python-environments/SKILL.md (NEW)
     impact: |
       - Users install packages in wrong environment
       - Version conflicts between Nix and Pixi Python

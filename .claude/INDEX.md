@@ -122,7 +122,7 @@
 ## Project Structure
 
 ```
-ros2-humble-env/
+ripple-env/
 ├── .claude/                          # Agent configuration
 │   ├── INDEX.md                      # This file - documentation navigation
 │   ├── AGENT.md                      # Agent system architecture

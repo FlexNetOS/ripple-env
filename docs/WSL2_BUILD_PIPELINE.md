@@ -474,7 +474,7 @@ sha256sum -c SHA256SUMS.txt
 ### Workflow Status
 
 Check status via GitHub Actions:
-- https://github.com/FlexNetOS/ros2-humble-env/actions/workflows/wsl2-build.yml
+- https://github.com/FlexNetOS/ripple-env/actions/workflows/wsl2-build.yml
 
 ### Artifact Storage
 
@@ -528,7 +528,7 @@ GitHub Actions sends notifications on:
 ## Support
 
 For issues with the build pipeline:
-1. Check [GitHub Issues](https://github.com/FlexNetOS/ros2-humble-env/issues)
+1. Check [GitHub Issues](https://github.com/FlexNetOS/ripple-env/issues)
 2. Review workflow logs
 3. Contact: DevOps Build Pipeline Team
 

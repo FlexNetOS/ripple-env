@@ -38,7 +38,7 @@ variable "aws_region" {
 variable "github_repo" {
   description = "GitHub repository (owner/repo format)"
   type        = string
-  default     = "FlexNetOS/ros2-humble-env"
+  default     = "FlexNetOS/ripple-env"
 }
 
 variable "github_token" {
@@ -56,7 +56,7 @@ variable "instance_type" {
 variable "runner_name" {
   description = "Name for the self-hosted runner"
   type        = string
-  default     = "ros2-wsl2-runner"
+  default     = "ripple-wsl2-runner"
 }
 
 variable "runner_labels" {
@@ -71,7 +71,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project     = "ros2-humble-env"
+      Project     = "ripple-env"
       Environment = "ci"
       ManagedBy   = "terraform"
     }

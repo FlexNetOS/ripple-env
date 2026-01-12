@@ -24,6 +24,6 @@ jobs:
       - uses: "DeterminateSystems/flakehub-push@v4"
         with:
           visibility: "public"
-          name: "FlexNetOS/ros2-humble-env"
+          name: "FlexNetOS/ripple-env"
           tag: "${{ inputs.tag }}"
           include-output-paths: true

@@ -1,3 +1,12 @@
+# LocalAI Configuration
+#
+# Resource Requirements (CPU Mode):
+#   - RAM: 4-8GB minimum, 16GB recommended
+#   - CPU: 4 cores minimum, 8 recommended
+#   - Disk: 15-20GB for models
+#
+# Validate resources: ./scripts/validate-resources.sh --profile standard
+# See docs/AI_RESOURCE_REQUIREMENTS.md for detailed requirements
 
 services:
   localai:
@@ -6,10 +15,20 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - THREADS=4
-      - CONTEXT_SIZE=2048
+      # CPU threads for inference (adjust based on available cores)
+      - THREADS=${LOCALAI_THREADS:-4}
+      # Context window size (tokens) - higher uses more RAM
+      - CONTEXT_SIZE=${LOCALAI_CONTEXT_SIZE:-2048}
+      # Concurrent requests (reduce for low-memory systems)
+      - PARALLEL=${LOCALAI_PARALLEL:-2}
+      # Use FP16 for faster inference
+      - F16=true
+      # Model path
       - MODELS_PATH=/models
-      - DEBUG=true
+      # Debug mode (disable in production)
+      - DEBUG=${LOCALAI_DEBUG:-true}
+      # Memory-mapped loading (reduces RAM for large models)
+      - LOCALAI_MMAP=${LOCALAI_MMAP:-true}
       # OpenAI-compatible API endpoint
       - OPENAI_API_BASE=http://localhost:8080/v1
     volumes:
@@ -30,32 +49,72 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+    # Resource limits for standard profile
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: '4.0'
+        reservations:
+          memory: 4G
+          cpus: '2.0'
     networks:
       - agentic-network
 
-  # Optional: LocalAI with GPU support (uncomment if NVIDIA GPU available)
+  # LocalAI with GPU support
+  # Uncomment this service if NVIDIA GPU is available
+  #
+  # GPU Requirements:
+  #   - NVIDIA GPU with 8GB+ VRAM (RTX 3060+)
+  #   - NVIDIA Driver 525+ with CUDA 12 support
+  #   - nvidia-container-toolkit installed
+  #   - Docker configured with nvidia runtime
+  #
+  # Validate GPU: ./scripts/validate-resources.sh --profile gpu
+  # See docs/AI_RESOURCE_REQUIREMENTS.md for GPU compatibility matrix
+  #
   # localai-gpu:
   #   image: localai/localai:latest-aio-gpu-nvidia-cuda-12
   #   container_name: localai-gpu
   #   ports:
   #     - "8081:8080"
   #   environment:
-  #     - THREADS=4
-  #     - CONTEXT_SIZE=4096
+  #     # CPU threads (reduced since GPU handles inference)
+  #     - THREADS=${LOCALAI_GPU_THREADS:-2}
+  #     # Larger context window with GPU memory
+  #     - CONTEXT_SIZE=${LOCALAI_GPU_CONTEXT_SIZE:-4096}
+  #     # More concurrent requests with GPU
+  #     - PARALLEL=${LOCALAI_GPU_PARALLEL:-4}
+  #     # Use FP16 for GPU inference
+  #     - F16=true
+  #     # GPU layers to offload (0 = auto, -1 = all)
+  #     - GPU_LAYERS=${LOCALAI_GPU_LAYERS:--1}
+  #     # Model path
   #     - MODELS_PATH=/models
-  #     - DEBUG=true
+  #     # Debug mode
+  #     - DEBUG=${LOCALAI_DEBUG:-false}
   #   volumes:
   #     - ./data/localai/models:/models:cached
   #     - ./data/localai/images:/tmp/generated/images:cached
   #   deploy:
   #     resources:
+  #       limits:
+  #         memory: 16G
+  #         cpus: '4.0'
   #       reservations:
+  #         memory: 8G
   #         devices:
   #           - driver: nvidia
   #             count: 1
   #             capabilities: [gpu]
   #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 120s
   #   networks:
   #     - agentic-network
 
