@@ -1,0 +1,21 @@
+---
+# Messaging DNA Manifest
+# P1-016: Holochain DNA placeholder for P2P messaging
+
+manifest_version: "1"
+name: messaging
+uid: 00000000-0000-0000-0000-000000000002
+properties:
+  description: "Decentralized messaging DNA"
+  version: "0.1.0"
+
+zomes:
+  - name: channels
+    bundled: zomes/channels.wasm
+    dependencies: []
+  - name: relay
+    bundled: zomes/relay.wasm
+    dependencies: []
+  - name: encryption
+    bundled: zomes/encryption.wasm
+    dependencies: []

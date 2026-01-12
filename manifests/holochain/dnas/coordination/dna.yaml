@@ -1,0 +1,21 @@
+---
+# Coordination DNA Manifest
+# P1-016: Holochain DNA placeholder for agent coordination
+
+manifest_version: "1"
+name: coordination
+uid: 00000000-0000-0000-0000-000000000001
+properties:
+  description: "Agent coordination and task distribution DNA"
+  version: "0.1.0"
+
+zomes:
+  - name: tasks
+    bundled: zomes/tasks.wasm
+    dependencies: []
+  - name: agents
+    bundled: zomes/agents.wasm
+    dependencies: []
+  - name: consensus
+    bundled: zomes/consensus.wasm
+    dependencies: []
