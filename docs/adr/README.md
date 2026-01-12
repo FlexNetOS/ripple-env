@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This directory contains Architecture Decision Records (ADRs) documenting significant technical decisions for the ros2-humble-env project.
+This directory contains Architecture Decision Records (ADRs) documenting significant technical decisions for the ripple-env project.
 
 ## ADR Index
 

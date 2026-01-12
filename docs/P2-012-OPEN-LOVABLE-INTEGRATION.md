@@ -21,7 +21,7 @@ Open-Lovable is an AI-powered web app builder that allows users to clone and rec
 
 Since open-lovable does not have an official Docker image (see [issue #74](https://github.com/firecrawl/open-lovable/issues/74)), we created a custom multi-stage Dockerfile:
 
-**File**: `/home/user/ros2-humble-env/config/dockerfiles/Dockerfile.open-lovable`
+**File**: `/home/user/ripple-env/config/dockerfiles/Dockerfile.open-lovable`
 
 **Features**:
 - Multi-stage build for optimized image size
@@ -33,7 +33,7 @@ Since open-lovable does not have an official Docker image (see [issue #74](https
 
 ### 2. Docker Compose Service
 
-**File**: `/home/user/ros2-humble-env/docker-compose.ui.yml`
+**File**: `/home/user/ripple-env/docker-compose.ui.yml`
 
 **Service Configuration**:
 ```yaml
@@ -74,7 +74,7 @@ open-lovable:
 
 ### 3. Environment Variables
 
-**File**: `/home/user/ros2-humble-env/.env.example`
+**File**: `/home/user/ripple-env/.env.example`
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -216,8 +216,8 @@ docker volume ls | grep open-lovable
 
 **Expected Output**:
 ```
-ros2-humble-env_open-lovable-data
-ros2-humble-env_open-lovable-projects
+ripple-env_open-lovable-data
+ripple-env_open-lovable-projects
 ```
 
 ### 8. Check Network Connectivity
@@ -328,8 +328,8 @@ curl http://localhost:8080/v1/models
 
 - **GitHub Repository**: https://github.com/firecrawl/open-lovable
 - **Docker Support Issue**: https://github.com/firecrawl/open-lovable/issues/74
-- **ARIA Documentation**: `/home/user/ros2-humble-env/README.md`
-- **BUILDKIT Spec**: `/home/user/ros2-humble-env/BUILDKIT_STARTER_SPEC.md` (Layer 1.20)
+- **ARIA Documentation**: `/home/user/ripple-env/README.md`
+- **BUILDKIT Spec**: `/home/user/ripple-env/BUILDKIT_STARTER_SPEC.md` (Layer 1.20)
 - **Task Reference**: ARIA_AUDIT_REPORT.md (P2-012)
 
 ## Change Log

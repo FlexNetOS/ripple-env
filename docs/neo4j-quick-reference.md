@@ -271,9 +271,9 @@ RETURN timestamp();
 
 ## Resources
 
-- Full Documentation: `/home/user/ros2-humble-env/docs/neo4j-verification.md`
-- Implementation Guide: `/home/user/ros2-humble-env/docs/P3-003-NEO4J-IMPLEMENTATION.md`
-- Docker Compose: `/home/user/ros2-humble-env/docker-compose.data.yml`
-- Environment Config: `/home/user/ros2-humble-env/.env.data.example`
+- Full Documentation: `/home/user/ripple-env/docs/neo4j-verification.md`
+- Implementation Guide: `/home/user/ripple-env/docs/P3-003-NEO4J-IMPLEMENTATION.md`
+- Docker Compose: `/home/user/ripple-env/docker-compose.data.yml`
+- Environment Config: `/home/user/ripple-env/.env.data.example`
 - Neo4j Docs: https://neo4j.com/docs/
 - Cypher Manual: https://neo4j.com/docs/cypher-manual/current/

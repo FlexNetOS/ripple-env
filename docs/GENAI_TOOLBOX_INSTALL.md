@@ -289,7 +289,7 @@ error: hash mismatch in fixed-output derivation
 ```
 
 1. Copy the "got:" hash from the error
-2. Update `/home/user/ros2-humble-env/modules/common/ai/genai-toolbox.nix`
+2. Update `/home/user/ripple-env/modules/common/ai/genai-toolbox.nix`
 3. Replace the placeholder hash
 4. Rebuild: `home-manager switch`
 

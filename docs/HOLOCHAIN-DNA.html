@@ -775,23 +775,23 @@
 
         <!-- Section 2: Environment Setup -->
         <section id="environment-setup" class="mb-16">
-          <h2 class="text-3xl serif font-semibold text-slate-800 mb-8">2. Environment Setup: The `ros2-humble-env` Foundation</h2>
+          <h2 class="text-3xl serif font-semibold text-slate-800 mb-8">2. Environment Setup: The `ripple-env` Foundation</h2>
 
           <div class="prose prose-lg max-w-none">
             <p class="text-lg leading-relaxed mb-6">
-              The successful integration of Holochain and ROS2 hinges on a robust and reproducible development environment. The `ros2-humble-env` repository provides a pre-configured environment based on NixOS, Pixi, Nushell, and Docker.
+              The successful integration of Holochain and ROS2 hinges on a robust and reproducible development environment. The `ripple-env` repository provides a pre-configured environment based on NixOS, Pixi, Nushell, and Docker.
             </p>
 
             <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">2.1 Initializing the NixOS Development Environment</h3>
 
             <p class="mb-6">
-              The `ros2-humble-env` repository is built around NixOS, a Linux distribution that uses the Nix package manager to provide a declarative and reproducible way to manage software. This is a significant advantage for a complex project like this, as it ensures that all developers are working with the exact same versions of all dependencies, from the ROS2 libraries to the Holochain binaries.
+              The `ripple-env` repository is built around NixOS, a Linux distribution that uses the Nix package manager to provide a declarative and reproducible way to manage software. This is a significant advantage for a complex project like this, as it ensures that all developers are working with the exact same versions of all dependencies, from the ROS2 libraries to the Holochain binaries.
             </p>
 
             <h3 class="text-2xl serif font-semibold text-slate-800 mt-12 mb-6">2.2 Docker Configuration for Containerized Deployment</h3>
 
             <p class="mb-6">
-              Docker is a key component of the `ros2-humble-env`, providing a way to package the entire development environment into a self-contained container. The most common and effective solution for enabling seamless ROS2 communication within a single host is to use the host&#39;s network stack by running containers with the
+              Docker is a key component of the `ripple-env`, providing a way to package the entire development environment into a self-contained container. The most common and effective solution for enabling seamless ROS2 communication within a single host is to use the host&#39;s network stack by running containers with the
               <code class="bg-slate-100 px-2 py-1 rounded">--network=host</code> flag.
               <a href="https://robofoundry.medium.com/trying-out-ros2-humble-hawksbill-using-docker-4490bc88c926" class="citation-link" target="_blank">[287]</a>
               <a href="https://blog.csdn.net/nenchoumi3119/article/details/154589665" class="citation-link" target="_blank">[286]</a>

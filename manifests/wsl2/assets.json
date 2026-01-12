@@ -1,7 +1,7 @@
 {
-  "$schema": "https://ros2-humble-env.dev/schemas/wsl2-assets.schema.json",
+  "$schema": "https://ripple-env.dev/schemas/wsl2-assets.schema.json",
   "version": "1.0.0",
-  "description": "WSL2 binary assets and release artifacts for ros2-humble-env",
+  "description": "WSL2 binary assets and release artifacts for ripple-env",
   "build_targets": [
     {
       "id": "windows-msvc",
@@ -13,7 +13,7 @@
       "outputs": [
         {
           "type": "executable",
-          "name": "ros2-humble-env-setup.exe",
+          "name": "ripple-env-setup.exe",
           "description": "Native Windows installer/bootstrapper"
         }
       ]
@@ -29,7 +29,7 @@
       "outputs": [
         {
           "type": "executable",
-          "name": "ros2-humble-env-setup-gnu.exe",
+          "name": "ripple-env-setup-gnu.exe",
           "description": "Cross-compiled Windows executable (GNU toolchain)"
         }
       ]
@@ -39,7 +39,7 @@
     {
       "id": "standalone-msvc",
       "name": "Standalone Executable (MSVC)",
-      "filename": "ros2-humble-env-setup-${version}-x86_64-msvc.exe",
+      "filename": "ripple-env-setup-${version}-x86_64-msvc.exe",
       "type": "executable",
       "platform": "windows",
       "architecture": "x86_64",
@@ -48,7 +48,7 @@
     {
       "id": "standalone-gnu",
       "name": "Standalone Executable (GNU)",
-      "filename": "ros2-humble-env-setup-${version}-x86_64-gnu.exe",
+      "filename": "ripple-env-setup-${version}-x86_64-gnu.exe",
       "type": "executable",
       "platform": "windows",
       "architecture": "x86_64",
@@ -57,11 +57,11 @@
     {
       "id": "portable-zip",
       "name": "Portable Package",
-      "filename": "ros2-humble-env-${version}-portable.zip",
+      "filename": "ripple-env-${version}-portable.zip",
       "type": "archive",
       "format": "zip",
       "contents": [
-        "ros2-humble-env-setup.exe",
+        "ripple-env-setup.exe",
         "bootstrap.ps1",
         "README.md",
         "LICENSE"
@@ -71,7 +71,7 @@
     {
       "id": "installer-msi",
       "name": "Windows Installer",
-      "filename": "ros2-humble-env-${version}-setup.msi",
+      "filename": "ripple-env-${version}-setup.msi",
       "type": "installer",
       "format": "msi",
       "features": [
@@ -85,7 +85,7 @@
     {
       "id": "bootstrap-bundle-zip",
       "name": "Bootstrap Bundle (ZIP)",
-      "filename": "ros2-humble-env-${version}-bootstrap-bundle.zip",
+      "filename": "ripple-env-${version}-bootstrap-bundle.zip",
       "type": "bundle",
       "format": "zip",
       "contents": [
@@ -102,7 +102,7 @@
     {
       "id": "bootstrap-bundle-tar",
       "name": "Bootstrap Bundle (TAR.GZ)",
-      "filename": "ros2-humble-env-${version}-bootstrap-bundle.tar.gz",
+      "filename": "ripple-env-${version}-bootstrap-bundle.tar.gz",
       "type": "bundle",
       "format": "tar.gz",
       "contents": [
@@ -149,7 +149,7 @@
     },
     "chocolatey": {
       "enabled": false,
-      "package_id": "ros2-humble-env",
+      "package_id": "ripple-env",
       "notes": "Future: Chocolatey package"
     }
   }

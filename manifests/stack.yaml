@@ -33,7 +33,7 @@ sources:
     description: "Component verification definitions for CI/CD and local dev"
     authority: primary
     format: yaml
-    schema: https://ros2-humble-env.dev/schemas/aria-manifest.schema.json
+    schema: https://ripple-env.dev/schemas/aria-manifest.schema.json
     verifies:
       - nix_components
       - pixi_components
@@ -49,7 +49,7 @@ sources:
     description: "7-phase build orchestration from bootstrap to verification"
     authority: primary
     format: json
-    schema: https://ros2-humble-env.dev/schemas/build-phases.schema.json
+    schema: https://ripple-env.dev/schemas/build-phases.schema.json
     orchestrates:
       - preflight
       - environment

@@ -218,7 +218,7 @@ hc --version         # Should be 0.4.0+
 #### Step 1: Build Integrity Zome
 
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/aria/zomes/identity_integrity
+cd /home/user/ripple-env/manifests/holochain/dnas/aria/zomes/identity_integrity
 
 # Build for WASM
 cargo build --release --target wasm32-unknown-unknown
@@ -232,7 +232,7 @@ Expected output: `identity_integrity.wasm` (~200-500 KB)
 #### Step 2: Build Coordinator Zome
 
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/aria/zomes/identity
+cd /home/user/ripple-env/manifests/holochain/dnas/aria/zomes/identity
 
 # Build for WASM
 cargo build --release --target wasm32-unknown-unknown
@@ -246,7 +246,7 @@ Expected output: `identity.wasm` (~300-800 KB)
 #### Step 3: Copy WASM to DNA Directory
 
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/aria
+cd /home/user/ripple-env/manifests/holochain/dnas/aria
 
 # Create zomes directory if it doesn't exist
 mkdir -p zomes
@@ -262,7 +262,7 @@ ls -lh zomes/*.wasm
 #### Step 4: Package the DNA
 
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/aria
+cd /home/user/ripple-env/manifests/holochain/dnas/aria
 
 # Package the DNA
 hc dna pack .
@@ -283,7 +283,7 @@ Create a build script for convenience:
 
 set -e
 
-ARIA_DIR="/home/user/ros2-humble-env/manifests/holochain/dnas/aria"
+ARIA_DIR="/home/user/ripple-env/manifests/holochain/dnas/aria"
 
 echo "Building ARIA DNA..."
 
@@ -359,7 +359,7 @@ mod tests {
 Run tests:
 
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/aria/zomes/identity_integrity
+cd /home/user/ripple-env/manifests/holochain/dnas/aria/zomes/identity_integrity
 cargo test
 ```
 
@@ -440,7 +440,7 @@ export LAIR_CONNECTION_URL="unix://$HOME/.local/share/ripple/lair/socket"
 
 ```bash
 # Start conductor with config
-holochain --config-path /home/user/ros2-humble-env/manifests/holochain/conductor.yaml
+holochain --config-path /home/user/ripple-env/manifests/holochain/conductor.yaml
 
 # Conductor will start on:
 # - Admin interface: ws://localhost:8888
@@ -457,7 +457,7 @@ hc keygen --path ~/.local/share/ripple/holochain/agent-key
 
 # Install DNA
 hc app install \
-  /home/user/ros2-humble-env/manifests/holochain/dnas/aria/aria.dna \
+  /home/user/ripple-env/manifests/holochain/dnas/aria/aria.dna \
   --agent-key $(cat ~/.local/share/ripple/holochain/agent-key) \
   --installed-app-id aria-identity \
   --membrane-proof "{}"
@@ -479,7 +479,7 @@ const installedApp = await adminWs.installApp({
   agent_key: agentPubKey,
   dnas: [
     {
-      path: '/home/user/ros2-humble-env/manifests/holochain/dnas/aria/aria.dna',
+      path: '/home/user/ripple-env/manifests/holochain/dnas/aria/aria.dna',
       role_id: 'aria',
       membrane_proof: null
     }
@@ -526,7 +526,7 @@ docker run -p 8888:8888 -p 8889:8889 aria-conductor
 
 #### Kubernetes Deployment
 
-See `/home/user/ros2-humble-env/manifests/distributed/holochain/` for Kubernetes manifests.
+See `/home/user/ripple-env/manifests/distributed/holochain/` for Kubernetes manifests.
 
 ## Integration Patterns
 
@@ -732,7 +732,7 @@ error: WASM file not found at zomes/identity.wasm
 
 **Solution**: Ensure WASM files are copied to the zomes directory:
 ```bash
-cd /home/user/ros2-humble-env/manifests/holochain/dnas/aria
+cd /home/user/ripple-env/manifests/holochain/dnas/aria
 mkdir -p zomes
 cp zomes/*/target/wasm32-unknown-unknown/release/*.wasm zomes/
 ```
@@ -806,9 +806,9 @@ wasm-opt -Oz input.wasm -o output.wasm
 
 ### Source Code
 
-- ARIA DNA: `/home/user/ros2-humble-env/manifests/holochain/dnas/aria/`
-- Holochain manifests: `/home/user/ros2-humble-env/manifests/holochain/`
-- BUILDKIT_STARTER_SPEC: `/home/user/ros2-humble-env/BUILDKIT_STARTER_SPEC.md`
+- ARIA DNA: `/home/user/ripple-env/manifests/holochain/dnas/aria/`
+- Holochain manifests: `/home/user/ripple-env/manifests/holochain/`
+- BUILDKIT_STARTER_SPEC: `/home/user/ripple-env/BUILDKIT_STARTER_SPEC.md`
 
 ### Community
 
@@ -821,7 +821,7 @@ wasm-opt -Oz input.wasm -o output.wasm
 Complete file structure for ARIA DNA:
 
 ```
-/home/user/ros2-humble-env/manifests/holochain/dnas/aria/
+/home/user/ripple-env/manifests/holochain/dnas/aria/
 ├── dna.yaml                                    # DNA manifest
 ├── README.md                                   # DNA-specific documentation
 ├── aria.dna                                    # Packaged DNA (after build)

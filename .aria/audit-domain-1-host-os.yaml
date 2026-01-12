@@ -257,13 +257,13 @@ version_compatibility:
 bootstrap_status:
   scripts:
     - name: "bootstrap.sh"
-      location: "/home/user/ros2-humble-env/bootstrap.sh"
+      location: "/home/user/ripple-env/bootstrap.sh"
       platform: "Linux/macOS"
       status: "present"
       executable: true
 
     - name: "bootstrap.ps1"
-      location: "/home/user/ros2-humble-env/bootstrap.ps1"
+      location: "/home/user/ripple-env/bootstrap.ps1"
       platform: "Windows"
       status: "present"
       executable: false

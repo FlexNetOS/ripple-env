@@ -64,7 +64,7 @@ implementation_synthesis:
       domain: "Identity & Security"
 
       files_modified:
-        - path: "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
+        - path: "/home/user/ripple-env/docker/docker-compose.identity.yml"
           changes:
             - "Added vault service definition (line 186)"
             - "Configured hashicorp/vault:1.18 image (line 187)"
@@ -74,7 +74,7 @@ implementation_synthesis:
             - "Exposed port 8200 (line 206)"
           lines_added: 34
 
-        - path: "/home/user/ros2-humble-env/config/vault/vault.hcl"
+        - path: "/home/user/ripple-env/config/vault/vault.hcl"
           changes:
             - "Created complete Vault configuration"
             - "Configured file storage backend"
@@ -115,14 +115,14 @@ implementation_synthesis:
       domain: "Messaging & Communication"
 
       files_modified:
-        - path: "/home/user/ros2-humble-env/docker/docker-compose.messaging.yml"
+        - path: "/home/user/ripple-env/docker/docker-compose.messaging.yml"
           changes:
             - "Added NATS config volume mount (line 28)"
             - "Configured --config flag (line 25)"
             - "Added 4 password environment variables (lines 20-24)"
           lines_modified: 9
 
-        - path: "/home/user/ros2-humble-env/config/nats/nats.conf"
+        - path: "/home/user/ripple-env/config/nats/nats.conf"
           changes:
             - "Created authorization block with 4 users"
             - "Configured admin, temporal, n8n, agixt users"
@@ -162,7 +162,7 @@ implementation_synthesis:
       domain: "Service Mesh & Orchestration"
 
       files_modified:
-        - path: "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
+        - path: "/home/user/ripple-env/docker/docker-compose.temporal.yml"
           changes:
             - "Migrated temporal-postgresql to agentic-network (line 33)"
             - "Migrated temporal to agentic-network (line 60)"
@@ -173,7 +173,7 @@ implementation_synthesis:
           lines_modified: 6
           services_migrated: 4
 
-        - path: "/home/user/ros2-humble-env/config/mesh/service-routes.yaml"
+        - path: "/home/user/ripple-env/config/mesh/service-routes.yaml"
           changes:
             - "Documented NATS service mesh configuration"
             - "Documented Temporal service mesh configuration"
@@ -215,7 +215,7 @@ implementation_synthesis:
       domain: "Observability & Testing"
 
       files_modified:
-        - path: "/home/user/ros2-humble-env/promptfooconfig.yaml"
+        - path: "/home/user/ripple-env/promptfooconfig.yaml"
           changes:
             - "Configured LocalAI provider (lines 7-11)"
             - "Created 8 comprehensive test cases (lines 13-133)"
@@ -258,7 +258,7 @@ implementation_synthesis:
       domain: "Security & Authorization"
 
       files_modified:
-        - path: "/home/user/ros2-humble-env/config/opa/policies/authz.rego"
+        - path: "/home/user/ripple-env/config/opa/policies/authz.rego"
           changes:
             - "Implemented default deny policy (line 4)"
             - "Added admin role authorization (lines 7-9)"
@@ -268,7 +268,7 @@ implementation_synthesis:
           file_created: true
           policies_created: 3
 
-        - path: "/home/user/ros2-humble-env/config/opa/policies/service_mesh.rego"
+        - path: "/home/user/ripple-env/config/opa/policies/service_mesh.rego"
           changes:
             - "Implemented default deny for connections (line 4)"
             - "Added temporal -> nats policy (lines 7-10)"
@@ -308,7 +308,7 @@ implementation_synthesis:
       domain: "Data Layer"
 
       files_modified:
-        - path: "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
+        - path: "/home/user/ripple-env/docker/docker-compose.temporal.yml"
           changes:
             - "Upgraded temporal-postgresql from 16-alpine to 17.2-alpine (line 18)"
             - "Maintained health check configuration"
@@ -341,7 +341,7 @@ implementation_synthesis:
       domain: "Developer Experience"
 
       files_modified:
-        - path: "/home/user/ros2-humble-env/docs/PYTHON-ENVIRONMENTS.md"
+        - path: "/home/user/ripple-env/docs/PYTHON-ENVIRONMENTS.md"
           changes:
             - "Created comprehensive documentation (350 lines)"
             - "Documented Python 3.13 (Nix) purpose (lines 16-31)"
@@ -403,9 +403,9 @@ implementation_synthesis:
         method: "Deep file inspection with strict protocol adherence"
 
     verification_artifacts:
-      - "/home/user/ros2-humble-env/.aria/P0-VERIFICATION-REPORT.yaml"
-      - "/home/user/ros2-humble-env/.aria/P1-VERIFICATION-REPORT.yaml"
-      - "/home/user/ros2-humble-env/.aria/IMPLEMENTATION-SYNTHESIS-2026-01-10.yaml"
+      - "/home/user/ripple-env/.aria/P0-VERIFICATION-REPORT.yaml"
+      - "/home/user/ripple-env/.aria/P1-VERIFICATION-REPORT.yaml"
+      - "/home/user/ripple-env/.aria/IMPLEMENTATION-SYNTHESIS-2026-01-10.yaml"
 
   # ---------------------------------------------------------------------------
   # PRODUCTION READINESS BY LAYER
@@ -543,26 +543,26 @@ implementation_synthesis:
 
     by_category:
       docker_compose:
-        - "/home/user/ros2-humble-env/docker/docker-compose.identity.yml"
-        - "/home/user/ros2-humble-env/docker/docker-compose.messaging.yml"
-        - "/home/user/ros2-humble-env/docker/docker-compose.temporal.yml"
+        - "/home/user/ripple-env/docker/docker-compose.identity.yml"
+        - "/home/user/ripple-env/docker/docker-compose.messaging.yml"
+        - "/home/user/ripple-env/docker/docker-compose.temporal.yml"
 
       configuration:
-        - "/home/user/ros2-humble-env/config/vault/vault.hcl"
-        - "/home/user/ros2-humble-env/config/nats/nats.conf"
-        - "/home/user/ros2-humble-env/config/mesh/service-routes.yaml"
-        - "/home/user/ros2-humble-env/config/opa/policies/authz.rego"
-        - "/home/user/ros2-humble-env/config/opa/policies/service_mesh.rego"
+        - "/home/user/ripple-env/config/vault/vault.hcl"
+        - "/home/user/ripple-env/config/nats/nats.conf"
+        - "/home/user/ripple-env/config/mesh/service-routes.yaml"
+        - "/home/user/ripple-env/config/opa/policies/authz.rego"
+        - "/home/user/ripple-env/config/opa/policies/service_mesh.rego"
 
       testing:
-        - "/home/user/ros2-humble-env/promptfooconfig.yaml"
+        - "/home/user/ripple-env/promptfooconfig.yaml"
 
       documentation:
-        - "/home/user/ros2-humble-env/docs/PYTHON-ENVIRONMENTS.md"
+        - "/home/user/ripple-env/docs/PYTHON-ENVIRONMENTS.md"
 
       verification:
-        - "/home/user/ros2-humble-env/.aria/P0-VERIFICATION-REPORT.yaml"
-        - "/home/user/ros2-humble-env/.aria/P1-VERIFICATION-REPORT.yaml"
+        - "/home/user/ripple-env/.aria/P0-VERIFICATION-REPORT.yaml"
+        - "/home/user/ripple-env/.aria/P1-VERIFICATION-REPORT.yaml"
 
   # ---------------------------------------------------------------------------
   # BLOCKERS RESOLVED
@@ -880,8 +880,8 @@ implementation_synthesis:
     model: "Kimi K2 Thinking + Claude Opus 4.5"
     synthesis_timestamp: "2026-01-10T02:15:00Z"
     verification_reports_analyzed:
-      - "/home/user/ros2-humble-env/.aria/P0-VERIFICATION-REPORT.yaml"
-      - "/home/user/ros2-humble-env/.aria/P1-VERIFICATION-REPORT.yaml"
+      - "/home/user/ripple-env/.aria/P0-VERIFICATION-REPORT.yaml"
+      - "/home/user/ripple-env/.aria/P1-VERIFICATION-REPORT.yaml"
 
     certification: |
       This synthesis report certifies that all 7 priority tasks (3 P0, 4 P1) have been

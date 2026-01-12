@@ -56,7 +56,7 @@ The current `flake.nix` contains multiple concerns in a single file:
 ## Proposed Structure
 
 ```
-ros2-humble-env/
+ripple-env/
 ├── flake.nix                      # Entry point (~150 lines)
 ├── flake.lock
 ├── nix/
@@ -191,10 +191,10 @@ pkgs.mkShell {
 
 ```bash
 # Build a WSL-compatible NixOS image
-nixos-rebuild build --flake .#wsl-ros2
+nixos-rebuild build --flake .#wsl-ripple
 
 # Build and switch (on running NixOS)
-nixos-rebuild switch --flake .#wsl-ros2
+nixos-rebuild switch --flake .#wsl-ripple
 ```
 
 #### Method 2: nixos-generators (Multi-format)
@@ -220,7 +220,7 @@ nixos-generate -f sd-aarch64-installer -c ./nix/images/rpi.nix
 
 ```bash
 # Build WSL image via flake output
-nix build .#nixosConfigurations.wsl-ros2.config.system.build.tarballBuilder
+nix build .#nixosConfigurations.wsl-ripple.config.system.build.tarballBuilder
 
 # Build ISO via flake output
 nix build .#nixosConfigurations.iso-ros2.config.system.build.isoImage
@@ -253,7 +253,7 @@ nixos-wsl.lib.nixosSystem {
 
       # Auto-enter development environment
       programs.bash.interactiveShellInit = ''
-        cd ~/ros2-humble-env && nix develop
+        cd ~/ripple-env && nix develop
       '';
     })
   ];
@@ -264,13 +264,13 @@ nixos-wsl.lib.nixosSystem {
 
 ```powershell
 # Import the tarball into WSL
-wsl --import NixOS-ROS2 $env:USERPROFILE\WSL\NixOS-ROS2 result/nixos-wsl.tar.gz
+wsl --import NixOS-Ripple $env:USERPROFILE\WSL\NixOS-Ripple result/nixos-wsl.tar.gz
 
 # Launch the new distro
-wsl -d NixOS-ROS2
+wsl -d NixOS-Ripple
 
 # Set as default (optional)
-wsl --set-default NixOS-ROS2
+wsl --set-default NixOS-Ripple
 ```
 
 ### Available Image Formats

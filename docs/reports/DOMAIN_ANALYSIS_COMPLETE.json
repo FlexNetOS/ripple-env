@@ -20,7 +20,7 @@
       "output": {
         "domain": "Agent Runtime",
         "repos_found": 3,
-        "repos_list": "ros2-humble-env/ros2-humble-env,some-org/some-agent-repo,another-org/another-agent-runtime",
+        "repos_list": "ripple-env/ripple-env,some-org/some-agent-repo,another-org/another-agent-runtime",
         "installation_method": "Mixed",
         "current_status": "4/4 installed, 0 missing",
         "conflicts_detected": "None",
@@ -85,7 +85,7 @@
         "current_status": "0/2 installed, 2 missing",
         "conflicts_detected": "None",
         "missing_deps": "None",
-        "verification_commands": "ls -d /home/ubuntu/ros2-humble-env/agenticsorg/devops; ls -d /home/ubuntu/ros2-humble-env/agenticsorg/quantum-agentics; cd /home/ubuntu/ros2-humble-env/agenticsorg/devops && git status; cd /home/ubuntu/ros2-humble-env/agenticsorg/quantum-agentics && git status",
+        "verification_commands": "ls -d /home/ubuntu/ripple-env/agenticsorg/devops; ls -d /home/ubuntu/ripple-env/agenticsorg/quantum-agentics; cd /home/ubuntu/ripple-env/agenticsorg/devops && git status; cd /home/ubuntu/ripple-env/agenticsorg/quantum-agentics && git status",
         "priority_tasks": "P0: Implement agenticsorg/devops; P1: Integrate agenticsorg/quantum-agentics; P2: Maintain and monitor existing DevOps infrastructure"
       },
       "error": ""

@@ -39,7 +39,7 @@ metadata:
 spec:
   project: flexstack
   source:
-    repoURL: https://github.com/FlexNetOS/ros2-humble-env.git
+    repoURL: https://github.com/FlexNetOS/ripple-env.git
     targetRevision: HEAD
     path: manifests/observability
   destination:
@@ -65,7 +65,7 @@ metadata:
 spec:
   project: flexstack
   source:
-    repoURL: https://github.com/FlexNetOS/ros2-humble-env.git
+    repoURL: https://github.com/FlexNetOS/ripple-env.git
     targetRevision: HEAD
     path: manifests/holochain
   destination:
@@ -90,7 +90,7 @@ metadata:
 spec:
   project: flexstack
   source:
-    repoURL: https://github.com/FlexNetOS/ros2-humble-env.git
+    repoURL: https://github.com/FlexNetOS/ripple-env.git
     targetRevision: HEAD
     path: manifests/llmops
   destination:
@@ -115,7 +115,7 @@ metadata:
 spec:
   project: flexstack
   source:
-    repoURL: https://github.com/FlexNetOS/ros2-humble-env.git
+    repoURL: https://github.com/FlexNetOS/ripple-env.git
     targetRevision: HEAD
     path: manifests/distributed
   destination:
@@ -140,7 +140,7 @@ metadata:
 spec:
   project: flexstack
   source:
-    repoURL: https://github.com/FlexNetOS/ros2-humble-env.git
+    repoURL: https://github.com/FlexNetOS/ripple-env.git
     targetRevision: HEAD
     path: manifests/temporal
   destination:

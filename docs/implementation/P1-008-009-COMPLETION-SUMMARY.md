@@ -16,7 +16,7 @@ Both P1-008 (netdata real-time monitoring) and P1-009 (umami web analytics) have
 
 ### ✅ P1-008: Netdata Real-Time Monitoring
 
-**Service Location**: `/home/user/ros2-humble-env/docker-compose.observability.yml` (lines 210-236)
+**Service Location**: `/home/user/ripple-env/docker-compose.observability.yml` (lines 210-236)
 
 **Configuration**:
 ```yaml
@@ -62,7 +62,7 @@ netdata:
 
 ### ✅ P1-009: Umami Web Analytics
 
-**Service Location**: `/home/user/ros2-humble-env/docker-compose.observability.yml` (lines 243-280)
+**Service Location**: `/home/user/ripple-env/docker-compose.observability.yml` (lines 243-280)
 
 **Umami Service**:
 ```yaml
@@ -123,7 +123,7 @@ umami-db:
 
 ## Environment Variables
 
-**Location**: `/home/user/ros2-humble-env/.env.example` (lines 71-81)
+**Location**: `/home/user/ripple-env/.env.example` (lines 71-81)
 
 ```bash
 # Umami PostgreSQL Credentials
@@ -147,7 +147,7 @@ NETDATA_CLAIM_TOKEN=${NETDATA_CLAIM_TOKEN:-}
 
 ### 1. Grafana Integration
 
-**File**: `/home/user/ros2-humble-env/manifests/observability/grafana/provisioning/datasources/datasources.yml`
+**File**: `/home/user/ripple-env/manifests/observability/grafana/provisioning/datasources/datasources.yml`
 
 Added Netdata as a Grafana datasource:
 
@@ -166,7 +166,7 @@ This enables viewing Netdata metrics directly in Grafana dashboards.
 
 ### 2. Verification Script
 
-**File**: `/home/user/ros2-humble-env/scripts/verify-observability.sh`
+**File**: `/home/user/ripple-env/scripts/verify-observability.sh`
 
 Created automated verification script to check:
 - Service status (running/stopped)
@@ -184,13 +184,13 @@ Created automated verification script to check:
 
 Created two documentation files:
 
-1. **Implementation Report**: `/home/user/ros2-humble-env/docs/P1-008-009-IMPLEMENTATION.md`
+1. **Implementation Report**: `/home/user/ripple-env/docs/P1-008-009-IMPLEMENTATION.md`
    - Detailed implementation specs
    - Security configuration
    - Troubleshooting guide
    - Integration instructions
 
-2. **Quick Start Guide**: `/home/user/ros2-humble-env/docs/OBSERVABILITY-QUICK-START.md`
+2. **Quick Start Guide**: `/home/user/ripple-env/docs/OBSERVABILITY-QUICK-START.md`
    - Service overview table
    - Common commands
    - Setup instructions
@@ -384,7 +384,7 @@ export NETDATA_CLAIM_TOKEN=$(vault kv get -field=value secret/observability/netd
 
 ### 1. Prometheus Scraping (Netdata)
 
-Add to `/home/user/ros2-humble-env/manifests/observability/prometheus.yml`:
+Add to `/home/user/ripple-env/manifests/observability/prometheus.yml`:
 
 ```yaml
 scrape_configs:
@@ -473,38 +473,38 @@ sleep 30
 
 ### Modified Files
 
-1. **`/home/user/ros2-humble-env/manifests/observability/grafana/provisioning/datasources/datasources.yml`**
+1. **`/home/user/ripple-env/manifests/observability/grafana/provisioning/datasources/datasources.yml`**
    - Added Netdata datasource configuration
 
 ### Created Files
 
-1. **`/home/user/ros2-humble-env/scripts/verify-observability.sh`**
+1. **`/home/user/ripple-env/scripts/verify-observability.sh`**
    - Automated verification script for P1-008 and P1-009
 
-2. **`/home/user/ros2-humble-env/docs/P1-008-009-IMPLEMENTATION.md`**
+2. **`/home/user/ripple-env/docs/P1-008-009-IMPLEMENTATION.md`**
    - Comprehensive implementation report
    - Security configuration guide
    - Troubleshooting instructions
 
-3. **`/home/user/ros2-humble-env/docs/OBSERVABILITY-QUICK-START.md`**
+3. **`/home/user/ripple-env/docs/OBSERVABILITY-QUICK-START.md`**
    - Quick reference guide
    - Common commands
    - Service access information
 
-4. **`/home/user/ros2-humble-env/P1-008-009-COMPLETION-SUMMARY.md`** (this file)
+4. **`/home/user/ripple-env/P1-008-009-COMPLETION-SUMMARY.md`** (this file)
    - Executive summary
    - Exact configuration details
    - Deployment instructions
 
 ### Existing Files (Already Configured)
 
-1. **`/home/user/ros2-humble-env/docker-compose.observability.yml`**
+1. **`/home/user/ripple-env/docker-compose.observability.yml`**
    - Netdata service (lines 210-236) ✅
    - Umami service (lines 243-262) ✅
    - Umami database (lines 264-280) ✅
    - Volume definitions (lines 287-290) ✅
 
-2. **`/home/user/ros2-humble-env/.env.example`**
+2. **`/home/user/ripple-env/.env.example`**
    - Umami environment variables (lines 71-78) ✅
    - Netdata environment variable (line 81) ✅
 
@@ -590,9 +590,9 @@ sleep 30
 
 ### Documentation
 
-- **Implementation Report**: `/home/user/ros2-humble-env/docs/P1-008-009-IMPLEMENTATION.md`
-- **Quick Start Guide**: `/home/user/ros2-humble-env/docs/OBSERVABILITY-QUICK-START.md`
-- **Verification Script**: `/home/user/ros2-humble-env/scripts/verify-observability.sh`
+- **Implementation Report**: `/home/user/ripple-env/docs/P1-008-009-IMPLEMENTATION.md`
+- **Quick Start Guide**: `/home/user/ripple-env/docs/OBSERVABILITY-QUICK-START.md`
+- **Verification Script**: `/home/user/ripple-env/scripts/verify-observability.sh`
 
 ### External Resources
 

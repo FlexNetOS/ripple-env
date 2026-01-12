@@ -106,7 +106,7 @@ This guide covers the deployment and verification of ARIA's edge services layer:
 
 ```bash
 # Run the deployment script
-cd /home/user/ros2-humble-env
+cd /home/user/ripple-env
 ./scripts/deploy-edge.sh
 
 # Verify deployment
@@ -167,7 +167,7 @@ docker compose -f docker-compose.edge.yml --env-file .env.edge up -d
 
 ### AgentGateway Configuration
 
-Edit `/home/user/ros2-humble-env/config/agentgateway/config.yaml`:
+Edit `/home/user/ripple-env/config/agentgateway/config.yaml`:
 
 ```yaml
 server:

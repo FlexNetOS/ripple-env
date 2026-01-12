@@ -67,7 +67,7 @@ docker compose -f docker-compose.observability.yml up -d
 ## Configuration Files
 
 ```
-ros2-humble-env/
+ripple-env/
 ├── docker-compose.observability.yml       # Main service definitions
 ├── .env.example                           # Environment template
 ├── .env                                   # Your secrets (create from .example)

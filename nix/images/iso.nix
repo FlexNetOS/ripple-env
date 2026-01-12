@@ -1,19 +1,30 @@
 # NixOS ISO Installer Image Configuration
 # Builds a bootable ISO for bare metal installation
 #
-# Build command:
+# Build command (development):
 #   nix build .#nixosConfigurations.iso-ros2.config.system.build.isoImage
+#
+# Build command (production/stable):
+#   nix build .#nixosConfigurations.iso-ros2-stable.config.system.build.isoImage
 #
 # Write to USB:
 #   dd if=result/iso/nixos-*.iso of=/dev/sdX bs=4M status=progress
-{ inputs, pkgs, lib, ... }:
+#
+# Supply Chain Security:
+#   - Use *-stable variants for production deployments
+#   - Stable uses nixos-24.11 with vetted packages
+{ inputs, pkgs, lib, isStable ? false, ... }:
 
-inputs.nixpkgs.lib.nixosSystem {
+let
+  nixpkgsInput = if isStable then inputs.nixpkgs-stable else inputs.nixpkgs;
+  channelLabel = if isStable then "stable" else "unstable";
+in
+nixpkgsInput.lib.nixosSystem {
   system = "x86_64-linux";
 
   modules = [
     # ISO installer base
-    "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+    "${nixpkgsInput}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
 
     # Security hardening module
     ./security-hardening.nix
