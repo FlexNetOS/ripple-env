@@ -294,20 +294,200 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 .\bootstrap.ps1
 ```
 
-### "Not enough disk space" in WSL2
+### WSL2 Disk Space Management
 
-**Problem**: WSL2 VHD is full.
+The WSL2 setup creates a sparse VHDX file that can grow up to 1TB by default. Understanding disk usage patterns helps prevent storage issues.
 
-**Solution**:
+#### Understanding Disk Usage
+
+**What uses space in WSL2:**
+
+| Component | Typical Size | Location |
+|-----------|-------------|----------|
+| NixOS base | 5-10 GB | `/nix/store` |
+| Nix store (after builds) | 20-50 GB | `/nix/store` |
+| Pixi environments | 5-15 GB | `~/.pixi` |
+| Docker images/containers | 10-50+ GB | `/var/lib/docker` |
+| AI models (if downloaded) | 15-60 GB | `~/models` |
+| Build artifacts | 1-10 GB | `~/ros2-humble-env/build` |
+
+**Check current usage inside WSL:**
+```bash
+# Overall disk usage
+df -h /
+
+# Nix store size
+du -sh /nix/store
+
+# Pixi cache size
+du -sh ~/.pixi
+
+# Docker usage
+docker system df
+
+# Find large files
+du -h / 2>/dev/null | grep '[0-9]G' | sort -hr | head -20
+```
+
+**Check VHD size from Windows (PowerShell):**
 ```powershell
-# Expand the VHD (as Administrator)
+# Get actual VHD size on disk
+$vhdPath = "$env:USERPROFILE\WSL\NixOS-ROS2\ext4.vhdx"
+(Get-Item $vhdPath).Length / 1GB
+```
+
+#### Automatic Garbage Collection
+
+The WSL2 NixOS image includes automatic garbage collection:
+
+- **Schedule**: Weekly
+- **Policy**: Removes generations older than 7 days
+- **Store optimization**: Enabled (deduplicates files)
+
+To verify GC is running:
+```bash
+# Check systemd timer
+systemctl status nix-gc.timer
+
+# View GC logs
+journalctl -u nix-gc.service
+```
+
+#### Manual Cleanup Commands
+
+**Nix store cleanup:**
+```bash
+# Run garbage collection (removes unused packages)
+nix store gc
+
+# Remove all old generations and collect garbage
+nix-collect-garbage -d
+
+# Optimize store (deduplicate identical files)
+nix store optimise
+
+# Show what would be deleted
+nix store gc --dry-run
+```
+
+**Pixi cleanup:**
+```bash
+# Clean Pixi cache
+pixi clean
+
+# Remove unused conda packages
+pixi global clean
+```
+
+**Docker cleanup:**
+```bash
+# Remove unused containers, networks, images
+docker system prune -a
+
+# Remove all unused volumes (careful - data loss!)
+docker system prune -a --volumes
+
+# Remove specific unused images
+docker image prune -a
+```
+
+**Build artifact cleanup:**
+```bash
+# Clean colcon build artifacts
+cd ~/ros2-humble-env
+rm -rf build/ install/ log/
+
+# Clean ccache
+ccache --clear
+```
+
+**AI model cleanup:**
+```bash
+# If using download-models.sh
+./scripts/download-models.sh --clean
+```
+
+#### "Not enough disk space" Error
+
+**Problem**: WSL2 VHD is full or near capacity.
+
+**Solution 1: Clean up space inside WSL**
+```bash
+# Quick cleanup sequence
+nix-collect-garbage -d
+nix store optimise
+docker system prune -a -f
+pixi clean
+```
+
+**Solution 2: Expand the VHD (from Windows PowerShell as Administrator)**
+```powershell
+# Shutdown WSL first
 wsl --shutdown
+
+# Expand VHD to 200GB (adjust size as needed)
 Resize-VHD -Path "$env:USERPROFILE\WSL\NixOS-ROS2\ext4.vhdx" -SizeBytes 200GB
 
 # Inside WSL, resize filesystem
 wsl -d NixOS-ROS2
 sudo resize2fs /dev/sdc
 ```
+
+**Solution 3: Reclaim unused space (Windows PowerShell as Administrator)**
+```powershell
+# Shutdown WSL
+wsl --shutdown
+
+# Compact the VHD (reclaims freed space)
+# Note: sparseVhd=true in .wslconfig handles this automatically
+Optimize-VHD -Path "$env:USERPROFILE\WSL\NixOS-ROS2\ext4.vhdx" -Mode Full
+```
+
+#### Configuring Disk Size at Install Time
+
+When running `bootstrap.ps1`, you can specify a smaller disk:
+```powershell
+# Install with 256GB max disk instead of 1TB
+.\bootstrap.ps1 -DiskSizeGB 256
+```
+
+#### WSL Configuration for Efficient Storage
+
+The default `.wslconfig` includes storage optimizations:
+```ini
+[wsl2]
+memory=8GB
+swap=8GB
+localhostForwarding=true
+
+[experimental]
+autoMemoryReclaim=gradual
+sparseVhd=true  # Automatically reclaims unused space
+```
+
+To edit:
+```powershell
+notepad "$env:USERPROFILE\.wslconfig"
+# Then restart WSL: wsl --shutdown
+```
+
+#### Monitoring Disk Usage
+
+**Create a disk usage report:**
+```bash
+#!/bin/bash
+echo "=== WSL2 Disk Usage Report ==="
+echo ""
+echo "Filesystem:"
+df -h / | tail -1
+echo ""
+echo "Nix Store: $(du -sh /nix/store 2>/dev/null | cut -f1)"
+echo "Pixi:      $(du -sh ~/.pixi 2>/dev/null | cut -f1)"
+echo "Docker:    $(docker system df --format 'table {{.Size}}' 2>/dev/null | tail -1)"
+echo "Home:      $(du -sh ~ 2>/dev/null | cut -f1)"
+```
+
+Save this as `~/disk-usage.sh` and run periodically.
 
 ### WSL2 networking issues
 
