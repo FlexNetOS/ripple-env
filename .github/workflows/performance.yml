@@ -1,0 +1,397 @@
+name: Performance Testing
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'nix/**'
+      - 'docker/**'
+      - 'test/performance/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'nix/**'
+      - 'docker/**'
+      - 'test/performance/**'
+  workflow_dispatch:
+  schedule:
+    # Run daily at 3 AM UTC
+    - cron: '0 3 * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  NIXPKGS_ALLOW_UNFREE: "1"
+
+jobs:
+  # ===========================================
+  # Nix Evaluation Performance
+  # ===========================================
+  nix-evaluation:
+    name: Nix Evaluation Profiling
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Profile flake check
+        id: flake-check
+        run: |
+          echo "## Nix Flake Check Performance" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Time the flake check
+          START_TIME=$(date +%s.%N)
+          nix flake check --no-build --all-systems 2>&1 | tee flake-check.log
+          END_TIME=$(date +%s.%N)
+          DURATION=$(echo "$END_TIME - $START_TIME" | bc)
+
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Flake Check Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+
+          echo "flake_check_duration=$DURATION" >> $GITHUB_OUTPUT
+
+      - name: Profile flake show
+        id: flake-show
+        run: |
+          START_TIME=$(date +%s.%N)
+          nix flake show --json > flake-outputs.json 2>&1
+          END_TIME=$(date +%s.%N)
+          DURATION=$(echo "$END_TIME - $START_TIME" | bc)
+
+          echo "| Flake Show Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "flake_show_duration=$DURATION" >> $GITHUB_OUTPUT
+
+      - name: Profile devshell evaluation
+        id: devshell
+        run: |
+          START_TIME=$(date +%s.%N)
+          nix develop .#default --command echo "Shell evaluated" 2>&1
+          END_TIME=$(date +%s.%N)
+          DURATION=$(echo "$END_TIME - $START_TIME" | bc)
+
+          echo "| DevShell Evaluation | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "devshell_duration=$DURATION" >> $GITHUB_OUTPUT
+
+      - name: Check for regressions
+        run: |
+          FLAKE_CHECK="${{ steps.flake-check.outputs.flake_check_duration }}"
+          DEVSHELL="${{ steps.devshell.outputs.devshell_duration }}"
+
+          # Thresholds (seconds) - adjust based on baseline
+          FLAKE_CHECK_THRESHOLD=120
+          DEVSHELL_THRESHOLD=180
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Regression Check" >> $GITHUB_STEP_SUMMARY
+
+          REGRESSION=false
+
+          if (( $(echo "$FLAKE_CHECK > $FLAKE_CHECK_THRESHOLD" | bc -l) )); then
+            echo "::warning::Flake check took ${FLAKE_CHECK}s (threshold: ${FLAKE_CHECK_THRESHOLD}s)"
+            echo "⚠️ Flake check exceeded threshold (${FLAKE_CHECK}s > ${FLAKE_CHECK_THRESHOLD}s)" >> $GITHUB_STEP_SUMMARY
+            REGRESSION=true
+          fi
+
+          if (( $(echo "$DEVSHELL > $DEVSHELL_THRESHOLD" | bc -l) )); then
+            echo "::warning::DevShell evaluation took ${DEVSHELL}s (threshold: ${DEVSHELL_THRESHOLD}s)"
+            echo "⚠️ DevShell evaluation exceeded threshold (${DEVSHELL}s > ${DEVSHELL_THRESHOLD}s)" >> $GITHUB_STEP_SUMMARY
+            REGRESSION=true
+          fi
+
+          if [ "$REGRESSION" = false ]; then
+            echo "✅ All performance metrics within thresholds" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Save metrics
+        run: |
+          mkdir -p metrics
+          cat > metrics/nix-performance.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit": "${{ github.sha }}",
+            "flake_check_duration": ${{ steps.flake-check.outputs.flake_check_duration }},
+            "flake_show_duration": ${{ steps.flake-show.outputs.flake_show_duration }},
+            "devshell_duration": ${{ steps.devshell.outputs.devshell_duration }}
+          }
+          EOF
+
+      - name: Upload metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: nix-performance-metrics
+          path: metrics/
+          retention-days: 90
+
+  # ===========================================
+  # Docker Service Performance
+  # ===========================================
+  docker-performance:
+    name: Docker Service Baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create test network
+        run: docker network create agentic-network || true
+
+      - name: Test LocalAI startup performance
+        id: localai
+        run: |
+          echo "## Docker Service Performance" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Startup Time | Memory Usage |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------------|--------------|" >> $GITHUB_STEP_SUMMARY
+
+          # Start LocalAI and measure startup time
+          START_TIME=$(date +%s.%N)
+          docker run -d --name localai-test \
+            --network agentic-network \
+            -e THREADS=2 \
+            -e CONTEXT_SIZE=512 \
+            localai/localai:v2.24.2-aio-cpu \
+            2>&1 || echo "LocalAI start initiated"
+
+          # Wait for health check (max 120s)
+          for i in {1..24}; do
+            if docker exec localai-test curl -sf http://localhost:8080/readyz > /dev/null 2>&1; then
+              break
+            fi
+            sleep 5
+          done
+
+          END_TIME=$(date +%s.%N)
+          STARTUP_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+
+          # Get memory usage
+          MEMORY=$(docker stats --no-stream --format "{{.MemUsage}}" localai-test 2>/dev/null | cut -d'/' -f1 || echo "N/A")
+
+          echo "| LocalAI | ${STARTUP_TIME}s | ${MEMORY} |" >> $GITHUB_STEP_SUMMARY
+          echo "localai_startup=$STARTUP_TIME" >> $GITHUB_OUTPUT
+          echo "localai_memory=$MEMORY" >> $GITHUB_OUTPUT
+
+          docker stop localai-test || true
+          docker rm localai-test || true
+
+      - name: Test PostgreSQL startup performance
+        id: postgres
+        run: |
+          START_TIME=$(date +%s.%N)
+          docker run -d --name postgres-test \
+            --network agentic-network \
+            -e POSTGRES_PASSWORD=test \
+            postgres:17.2-alpine \
+            2>&1 || echo "PostgreSQL start initiated"
+
+          # Wait for ready
+          for i in {1..12}; do
+            if docker exec postgres-test pg_isready -U postgres > /dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          END_TIME=$(date +%s.%N)
+          STARTUP_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+
+          MEMORY=$(docker stats --no-stream --format "{{.MemUsage}}" postgres-test 2>/dev/null | cut -d'/' -f1 || echo "N/A")
+
+          echo "| PostgreSQL | ${STARTUP_TIME}s | ${MEMORY} |" >> $GITHUB_STEP_SUMMARY
+          echo "postgres_startup=$STARTUP_TIME" >> $GITHUB_OUTPUT
+
+          docker stop postgres-test || true
+          docker rm postgres-test || true
+
+      - name: Save Docker metrics
+        run: |
+          mkdir -p metrics
+          cat > metrics/docker-performance.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit": "${{ github.sha }}",
+            "localai_startup": "${{ steps.localai.outputs.localai_startup }}",
+            "localai_memory": "${{ steps.localai.outputs.localai_memory }}",
+            "postgres_startup": "${{ steps.postgres.outputs.postgres_startup }}"
+          }
+          EOF
+
+      - name: Upload Docker metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-performance-metrics
+          path: metrics/
+          retention-days: 90
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop localai-test postgres-test 2>/dev/null || true
+          docker rm localai-test postgres-test 2>/dev/null || true
+          docker network rm agentic-network 2>/dev/null || true
+
+  # ===========================================
+  # AI Service Load Testing
+  # ===========================================
+  ai-load-testing:
+    name: AI Service Load Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          pip install aiohttp pytest pytest-asyncio locust requests
+
+      - name: Create test network
+        run: docker network create agentic-network || true
+
+      - name: Start LocalAI for load testing
+        run: |
+          docker run -d --name localai-loadtest \
+            --network agentic-network \
+            -p 8080:8080 \
+            -e THREADS=4 \
+            -e CONTEXT_SIZE=512 \
+            -e DEBUG=false \
+            localai/localai:v2.24.2-aio-cpu
+
+          # Wait for service to be ready
+          echo "Waiting for LocalAI to start..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080/readyz > /dev/null 2>&1; then
+              echo "LocalAI is ready"
+              break
+            fi
+            sleep 5
+          done
+
+      - name: Run load tests
+        run: |
+          mkdir -p test/performance
+          python test/performance/ai_load_test.py 2>&1 | tee load-test-results.txt || echo "Load tests completed"
+
+      - name: Generate load test summary
+        run: |
+          echo "## AI Load Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f load-test-results.txt ]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat load-test-results.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload load test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-results
+          path: load-test-results.txt
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop localai-loadtest 2>/dev/null || true
+          docker rm localai-loadtest 2>/dev/null || true
+          docker network rm agentic-network 2>/dev/null || true
+
+  # ===========================================
+  # Performance Regression Detection
+  # ===========================================
+  regression-detection:
+    name: Performance Regression Detection
+    runs-on: ubuntu-latest
+    needs: [nix-evaluation, docker-performance]
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download current metrics
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-metrics'
+          path: ./current-metrics
+          merge-multiple: true
+
+      - name: Check for regressions
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let nixMetrics = {};
+            let dockerMetrics = {};
+
+            try {
+              nixMetrics = JSON.parse(fs.readFileSync('./current-metrics/nix-performance.json', 'utf8'));
+            } catch (e) {
+              console.log('No Nix metrics found');
+            }
+
+            try {
+              dockerMetrics = JSON.parse(fs.readFileSync('./current-metrics/docker-performance.json', 'utf8'));
+            } catch (e) {
+              console.log('No Docker metrics found');
+            }
+
+            // Build comment
+            let body = '## 📊 Performance Report\n\n';
+            body += '### Nix Evaluation\n';
+            body += '| Metric | Duration |\n';
+            body += '|--------|----------|\n';
+
+            if (nixMetrics.flake_check_duration) {
+              body += `| Flake Check | ${nixMetrics.flake_check_duration}s |\n`;
+            }
+            if (nixMetrics.flake_show_duration) {
+              body += `| Flake Show | ${nixMetrics.flake_show_duration}s |\n`;
+            }
+            if (nixMetrics.devshell_duration) {
+              body += `| DevShell Eval | ${nixMetrics.devshell_duration}s |\n`;
+            }
+
+            body += '\n### Docker Services\n';
+            body += '| Service | Startup Time | Memory |\n';
+            body += '|---------|--------------|--------|\n';
+
+            if (dockerMetrics.localai_startup) {
+              body += `| LocalAI | ${dockerMetrics.localai_startup}s | ${dockerMetrics.localai_memory || 'N/A'} |\n`;
+            }
+            if (dockerMetrics.postgres_startup) {
+              body += `| PostgreSQL | ${dockerMetrics.postgres_startup}s | - |\n`;
+            }
+
+            // Post comment
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

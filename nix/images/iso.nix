@@ -26,8 +26,17 @@ nixpkgsInput.lib.nixosSystem {
     # ISO installer base
     "${nixpkgsInput}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
 
+    # Security hardening module
+    ./security-hardening.nix
+
     # ROS2 development environment
     ({ config, pkgs, lib, ... }: {
+      # Enable security hardening (standard level for installer)
+      security.hardening = {
+        enable = true;
+        level = "standard";
+        auditd.enable = false;  # Not needed for installer
+      };
       # ISO-specific configuration
       isoImage = {
         isoName = "nixos-ros2-${config.system.nixos.label}-x86_64-linux.iso";
