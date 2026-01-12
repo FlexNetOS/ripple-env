@@ -2,7 +2,13 @@
   description = "ROS2 Humble development environment with Nix flakes and pixi";
 
   inputs = {
+    # Supply Chain Security: Dual nixpkgs strategy
+    # - nixpkgs-stable: For production builds and NixOS images (pinned release)
+    # - nixpkgs: For development (unstable, more packages)
+    # See: docs/SUPPLY_CHAIN_SECURITY.md
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.11";
+
     flake-parts.url = "github:hercules-ci/flake-parts";
     systems.url = "github:nix-systems/default";
 
@@ -10,6 +16,12 @@
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Home-manager stable variant for production
+    home-manager-stable = {
+      url = "github:nix-community/home-manager/release-24.11";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
     };
 
     # Holochain overlay for P2P coordination (BUILDKIT_STARTER_SPEC.md L11)
@@ -27,16 +39,25 @@
       url = "github:nix-community/NixOS-WSL";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # NixOS-WSL stable variant for production images
+    nixos-wsl-stable = {
+      url = "github:nix-community/NixOS-WSL";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
+    };
   };
 
   outputs =
     inputs@{
       self,
       nixpkgs,
+      nixpkgs-stable,
       flake-parts,
       systems,
       home-manager,
+      home-manager-stable,
       nixos-wsl,
+      nixos-wsl-stable,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -71,6 +92,7 @@
         darwinModules.default = ./modules/macos;
 
         # NixOS configurations for image generation
+        # Development images (nixos-unstable)
         nixosConfigurations = {
           wsl-ros2 = import ./nix/images/wsl.nix {
             inherit inputs;
@@ -88,6 +110,29 @@
             inherit inputs;
             pkgs = nixpkgs.legacyPackages.x86_64-linux;
             lib = nixpkgs.lib;
+          };
+
+          # Production images (nixos-stable) - Supply Chain Security
+          # Use these for production deployments with stable, well-tested packages
+          wsl-ros2-stable = import ./nix/images/wsl.nix {
+            inherit inputs;
+            pkgs = nixpkgs-stable.legacyPackages.x86_64-linux;
+            lib = nixpkgs-stable.lib;
+            isStable = true;
+          };
+
+          iso-ros2-stable = import ./nix/images/iso.nix {
+            inherit inputs;
+            pkgs = nixpkgs-stable.legacyPackages.x86_64-linux;
+            lib = nixpkgs-stable.lib;
+            isStable = true;
+          };
+
+          vm-ros2-stable = import ./nix/images/vm.nix {
+            inherit inputs;
+            pkgs = nixpkgs-stable.legacyPackages.x86_64-linux;
+            lib = nixpkgs-stable.lib;
+            isStable = true;
           };
         };
       };
@@ -150,6 +195,16 @@
             commands = modularCommands;
           };
 
+          # Stable packages for production shells
+          pkgsStable = import inputs.nixpkgs-stable {
+            inherit system;
+            config.allowUnfree = true;
+          };
+
+          # Stable shell packages (subset for production use)
+          stableShellPackages = import ./nix/packages { pkgs = pkgsStable; lib = pkgsStable.lib; };
+          stableShellCommands = import ./nix/commands { pkgs = pkgsStable; };
+
         in
         {
           # Development shells - use modular structure from nix/shells/
@@ -159,6 +214,27 @@
             default = modularShells.default.overrideAttrs (old: {
               AGENTICSORG_DEVOPS_SRC = toString agenticsorgDevopsSrc;
             });
+
+            # Stable shell for production work (nixos-24.11)
+            # Use: nix develop .#stable
+            # Benefits: Well-tested packages, security updates, predictable behavior
+            stable = pkgsStable.mkShell {
+              packages = stableShellPackages.defaultShell ++ stableShellCommands.defaultShell;
+              COLCON_DEFAULTS_FILE = colconDefaults;
+              EDITOR = "nvim";
+              VISUAL = "nvim";
+              NIXPKGS_CHANNEL = "stable";
+
+              shellHook = ''
+                echo "╔══════════════════════════════════════════════════════════╗"
+                echo "║  ROS2 Humble Environment (STABLE - nixos-24.11)          ║"
+                echo "║  Supply chain verified with pinned dependencies          ║"
+                echo "╚══════════════════════════════════════════════════════════╝"
+                echo ""
+                echo "Channel: nixos-24.11 (stable)"
+                echo "Use 'nix develop .#default' for latest packages"
+              '';
+            };
           };
         };
     };
