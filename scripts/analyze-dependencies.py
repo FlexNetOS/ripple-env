@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Dependency Usage Analytics for ros2-humble-env
+Dependency Usage Analytics for ripple-env
 
 Analyzes which packages are actually used in the codebase to help identify:
 - Unused dependencies that could be removed
@@ -281,7 +281,7 @@ def format_json(used: Dict[str, List[str]], unused: Set[str]) -> str:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Analyze dependency usage in ros2-humble-env"
+        description="Analyze dependency usage in ripple-env"
     )
     parser.add_argument(
         "--verbose", "-v",

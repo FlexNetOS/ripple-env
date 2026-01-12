@@ -73,7 +73,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -240,7 +240,7 @@ jobs:
       # Upload Artifacts
       # ===========================================
       - name: Upload binary artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact_name }}-${{ steps.build_config.outputs.profile }}
           path: dist/${{ matrix.artifact_name }}
@@ -260,7 +260,7 @@ jobs:
           fi
 
       - name: Upload portable package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact_name }}-portable-${{ steps.build_config.outputs.profile }}
           path: dist/${{ matrix.artifact_name }}.zip
@@ -278,7 +278,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install WiX Toolset
         run: |
@@ -292,7 +292,7 @@ jobs:
         run: cargo install cargo-wix
 
       - name: Download MSVC binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: agixt-bridge-windows-msvc-release
           path: installer-staging
@@ -368,7 +368,7 @@ jobs:
           & 'C:\Program Files (x86)\WiX Toolset v3.11\bin\light.exe' -ext WixUIExtension aria.wixobj -o aria-installer.msi
 
       - name: Upload installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: aria-windows-installer
           path: installer-staging/aria-installer.msi
@@ -385,10 +385,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download all binary artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
 
@@ -502,14 +502,14 @@ jobs:
           tar czf ../aria-bootstrap-bundle.tar.gz .
 
       - name: Upload bootstrap bundle (zip)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: aria-bootstrap-bundle-zip
           path: aria-bootstrap-bundle.zip
           retention-days: 30
 
       - name: Upload bootstrap bundle (tar.gz)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: aria-bootstrap-bundle-tar
           path: aria-bootstrap-bundle.tar.gz
@@ -526,7 +526,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup WSL2
         run: |
@@ -538,7 +538,7 @@ jobs:
           wsl --install -d Ubuntu-22.04
 
       - name: Download Windows binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: agixt-bridge-windows-msvc-release
           path: wsl-test
@@ -546,7 +546,7 @@ jobs:
       - name: Test binary in WSL2
         shell: wsl-bash {0}
         run: |
-          cd /mnt/c/Users/runneradmin/work/ros2-humble-env/ros2-humble-env/wsl-test
+          cd /mnt/c/Users/runneradmin/work/ripple-env/ripple-env/wsl-test
           chmod +x agixt-bridge.exe
 
           # Test version/help command
@@ -567,12 +567,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: release-artifacts
 

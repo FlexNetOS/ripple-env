@@ -597,8 +597,8 @@ tool_performance:
 
 - **JSON Schema Specification**: https://json-schema.org/draft/2020-12/schema
 - **MCP Protocol**: https://modelcontextprotocol.io
-- **ARIA Architecture**: /home/user/ros2-humble-env/MANUS_ARIA_ORCHESTRATOR.md
-- **Capability Registry**: /home/user/ros2-humble-env/manifests/capability-registry/
+- **ARIA Architecture**: /home/user/ripple-env/MANUS_ARIA_ORCHESTRATOR.md
+- **Capability Registry**: /home/user/ripple-env/manifests/capability-registry/
 
 ---
 

@@ -5,7 +5,7 @@
 #   nix build .#nixosConfigurations.wsl-ripple.config.system.build.tarballBuilder
 #
 # Build command (production/stable):
-#   nix build .#nixosConfigurations.wsl-ros2-stable.config.system.build.tarballBuilder
+#   nix build .#nixosConfigurations.wsl-ripple-stable.config.system.build.tarballBuilder
 #
 # Import command (PowerShell):
 #   wsl --import NixOS-Ripple $env:USERPROFILE\WSL\NixOS-Ripple result/nixos-wsl.tar.gz
@@ -31,8 +31,17 @@ wslInput.lib.nixosSystem {
     # NixOS-WSL base module
     inputs.nixos-wsl.nixosModules.wsl
 
+    # Security hardening module
+    ./security-hardening.nix
+
     # ROS2 Humble development environment configuration
     ({ config, pkgs, lib, ... }: {
+      # Enable security hardening (minimal level for dev)
+      security.hardening = {
+        enable = true;
+        level = "minimal";  # Use minimal for development convenience
+        auditd.enable = false;  # Disable audit in WSL
+      };
       # WSL-specific configuration
       wsl = {
         enable = true;

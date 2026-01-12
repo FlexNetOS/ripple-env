@@ -150,7 +150,7 @@ retry_network() {
 # STATE PERSISTENCE
 # ============================================================================
 
-STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ros2-humble-env"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ripple-env"
 STATE_FILE="$STATE_DIR/bootstrap.state"
 
 # Bootstrap stages (in order)
@@ -359,7 +359,7 @@ while [[ $# -gt 0 ]]; do
             echo "  NETWORK_RETRY_DELAY     Initial delay in seconds between retries (default: 2)"
             echo "  DEBUG                   Enable debug output (default: false)"
             echo ""
-            echo "State files are stored in: \${XDG_STATE_HOME:-\$HOME/.local/state}/ros2-humble-env/"
+            echo "State files are stored in: \${XDG_STATE_HOME:-\$HOME/.local/state}/ripple-env/"
             exit 0
             ;;
         *)

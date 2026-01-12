@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ros2-humble-env.dev/schemas/aria-manifest.schema.json",
+  "$id": "https://ripple-env.dev/schemas/aria-manifest.schema.json",
   "title": "ARIA Manifest Schema",
   "description": "Schema for validating ARIA_MANIFEST.yaml - Single Source of Truth for component verification",
   "type": "object",

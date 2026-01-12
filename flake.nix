@@ -59,6 +59,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Agenix for encrypted secrets management (security audit remediation)
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # NixOS-WSL stable variant for production images
     nixos-wsl-stable = {
       url = "github:nix-community/NixOS-WSL";
@@ -93,6 +98,7 @@
       home-manager,
       home-manager-stable,
       nixos-wsl,
+      agenix,
       nixos-wsl-stable,
       ...
     }:
@@ -150,7 +156,7 @@
 
           # Production images (nixos-stable) - Supply Chain Security
           # Use these for production deployments with stable, well-tested packages
-          wsl-ros2-stable = import ./nix/images/wsl.nix {
+          wsl-ripple-stable = import ./nix/images/wsl.nix {
             inherit inputs;
             pkgs = nixpkgs-stable.legacyPackages.x86_64-linux;
             lib = nixpkgs-stable.lib;
@@ -176,6 +182,14 @@
       # Per-system outputs
       perSystem =
         { pkgs, system, ... }:
+        let
+          # Import NixOS image tests
+          imageTests = import ./nix/tests {
+            inherit inputs system;
+            pkgs = nixpkgs.legacyPackages.${system};
+            lib = nixpkgs.lib;
+          };
+        in
         let
           # Holochain overlay source (pinned commit)
           holochainSrc = inputs.nixpkgs.legacyPackages.${system}.fetchFromGitHub {
@@ -305,6 +319,11 @@
               '';
             };
           };
+
+          # Flake checks including image tests
+          # Run with: nix flake check
+          # Individual tests: nix build .#checks.x86_64-linux.basic-services
+          checks = pkgs.lib.optionalAttrs (system == "x86_64-linux") imageTests;
         };
     };
 }

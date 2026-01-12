@@ -45,10 +45,10 @@ jobs:
       nixpkgs_stable_hash: ${{ steps.verify.outputs.nixpkgs_stable_hash }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v14
+        uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Verify Flake Lock Integrity
         id: verify
@@ -98,15 +98,15 @@ jobs:
       provenance_file: ${{ steps.provenance.outputs.file }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v14
+        uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Setup Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v8
+        uses: DeterminateSystems/magic-nix-cache-action@v13
 
       - name: Generate SLSA Provenance
         id: provenance
@@ -169,7 +169,7 @@ jobs:
           jq '.' attestations/provenance.json
 
       - name: Upload Provenance
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: slsa-provenance
           path: attestations/provenance.json
@@ -182,10 +182,10 @@ jobs:
     needs: [verify-inputs, generate-provenance]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download Provenance
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: slsa-provenance
           path: attestations/
@@ -232,7 +232,7 @@ jobs:
           EOF
 
       - name: Upload Signed Attestations
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: signed-attestations
           path: attestations/
@@ -240,7 +240,7 @@ jobs:
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             attestations/provenance.json
@@ -256,10 +256,10 @@ jobs:
     if: always() && (needs.sign-artifacts.result == 'success' || github.event.inputs.verify_only == 'true')
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download Attestations
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: signed-attestations
           path: attestations/
@@ -309,19 +309,19 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v14
+        uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Download Provenance
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: slsa-provenance
           path: attestations/
 
       - name: Attest Build Provenance
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-path: |
             flake.nix

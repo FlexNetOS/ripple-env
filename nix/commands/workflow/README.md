@@ -1,6 +1,6 @@
 # Workflow Commands Module
 
-This directory contains modular workflow command definitions for the ros2-humble-env development shell.
+This directory contains modular workflow command definitions for the ripple-env development shell.
 
 ## Structure
 

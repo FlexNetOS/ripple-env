@@ -11,9 +11,9 @@ sandbox:
 
   # Sandbox Script Paths
   paths:
-    wrapper_script: /home/user/ros2-humble-env/scripts/sandbox-wrapper.sh
-    agent_script: /home/user/ros2-humble-env/scripts/sandbox-agent.sh
-    profiles_dir: /home/user/ros2-humble-env/config/sandbox/profiles
+    wrapper_script: /home/user/ripple-env/scripts/sandbox-wrapper.sh
+    agent_script: /home/user/ripple-env/scripts/sandbox-agent.sh
+    profiles_dir: /home/user/ripple-env/config/sandbox/profiles
     log_dir: /var/log/sandbox
 
   # Risk Level Mapping
