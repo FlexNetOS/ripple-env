@@ -1,0 +1,210 @@
+# Package Mirror Configuration
+#
+# Configure alternative package sources for enterprise or air-gapped environments.
+# This file is read by ripple-env setup scripts to configure package managers.
+#
+# Copy to ~/.config/ripple-env/mirrors.yaml and customize for your environment.
+
+# Mirror configuration version
+version: "1.0"
+
+# Nix binary cache mirrors
+nix:
+  # Primary substituters (checked in order)
+  substituters:
+    # Official NixOS cache (default)
+    - url: "https://cache.nixos.org"
+      priority: 40
+      enabled: true
+
+    # Community cache
+    - url: "https://nix-community.cachix.org"
+      priority: 50
+      enabled: true
+
+    # CUDA cache (for GPU support)
+    - url: "https://cuda-maintainers.cachix.org"
+      priority: 60
+      enabled: true
+
+  # Enterprise/Private caches (add your own)
+  private_substituters:
+    # Example: Artifactory generic repository
+    # - url: "https://artifactory.example.com/nix-cache"
+    #   priority: 10
+    #   public_key: "your-cache-key:xxxx"
+    #   enabled: true
+
+    # Example: Local network cache
+    # - url: "http://nix-cache.local:5000"
+    #   priority: 5
+    #   public_key: ""
+    #   enabled: true
+
+  # Trusted public keys for all caches
+  trusted_public_keys:
+    - "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+    - "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+    - "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+
+# Conda/Pixi channel mirrors
+pixi:
+  # Channel configuration
+  channels:
+    # RoboStack ROS2 Humble packages
+    robostack-humble:
+      default: "https://conda.anaconda.org/robostack-humble"
+      mirrors:
+        # Example: Artifactory conda repository
+        # - "https://artifactory.example.com/conda-robostack-humble"
+      enabled: true
+
+    # Conda Forge (general packages)
+    conda-forge:
+      default: "https://conda.anaconda.org/conda-forge"
+      mirrors:
+        # Example: Nexus conda proxy
+        # - "https://nexus.example.com/repository/conda-forge"
+      enabled: true
+
+    # PyTorch (for CUDA feature)
+    pytorch:
+      default: "https://conda.anaconda.org/pytorch"
+      mirrors: []
+      enabled: true
+
+    # NVIDIA (for CUDA packages)
+    nvidia:
+      default: "https://conda.anaconda.org/nvidia"
+      mirrors: []
+      enabled: true
+
+  # Channel priority (strict = use first available)
+  channel_priority: "strict"
+
+# Docker registry mirrors
+docker:
+  # Registry mirrors (Docker daemon config)
+  registry_mirrors:
+    # Example: Enterprise registry mirror
+    # - "https://registry-mirror.example.com"
+
+    # Example: Local registry
+    # - "http://localhost:5000"
+
+  # Private registries requiring authentication
+  private_registries:
+    # Example: Enterprise Harbor registry
+    # - url: "harbor.example.com"
+    #   username: "${HARBOR_USER}"
+    #   password: "${HARBOR_PASS}"
+
+  # Image pull sources (in priority order)
+  image_sources:
+    docker_hub:
+      default: "docker.io"
+      mirror: ""  # e.g., "mirror.gcr.io"
+      enabled: true
+
+    github_ghcr:
+      default: "ghcr.io"
+      mirror: ""
+      enabled: true
+
+    quay:
+      default: "quay.io"
+      mirror: ""
+      enabled: true
+
+    google_gcr:
+      default: "gcr.io"
+      mirror: ""
+      enabled: true
+
+# Git repository mirrors
+git:
+  # GitHub mirror (for flake inputs and git clones)
+  github:
+    default: "https://github.com"
+    mirrors:
+      # Example: GitHub Enterprise
+      # - "https://github.example.com"
+
+      # Example: GitLab mirror
+      # - "https://gitlab.example.com/github-mirror"
+
+  # Use SSH instead of HTTPS
+  prefer_ssh: false
+
+  # SSH configuration for private repos
+  ssh:
+    # Example: Custom SSH host alias
+    # host_alias: "github-enterprise"
+    # hostname: "github.example.com"
+    # identity_file: "~/.ssh/id_enterprise"
+
+# HuggingFace model mirrors
+huggingface:
+  # HuggingFace Hub endpoint
+  default: "https://huggingface.co"
+
+  # Mirror endpoint (if available)
+  mirror: ""
+
+  # Model cache directory
+  cache_dir: "${HF_HOME:-$HOME/.cache/huggingface}"
+
+# PyPI mirrors (for pip packages)
+pypi:
+  # Primary index
+  default: "https://pypi.org/simple"
+
+  # Mirror indexes
+  mirrors:
+    # Example: Artifactory PyPI
+    # - "https://artifactory.example.com/api/pypi/pypi/simple"
+
+    # Example: Nexus PyPI proxy
+    # - "https://nexus.example.com/repository/pypi-proxy/simple"
+
+  # Trust host for self-signed certs
+  trusted_hosts: []
+
+# NPM registry mirrors
+npm:
+  # Primary registry
+  default: "https://registry.npmjs.org"
+
+  # Mirror registries
+  mirrors:
+    # Example: Verdaccio
+    # - "http://verdaccio.example.com:4873"
+
+    # Example: Artifactory NPM
+    # - "https://artifactory.example.com/api/npm/npm"
+
+# Cargo/Rust registry mirrors
+cargo:
+  # Primary registry
+  default: "https://crates.io"
+
+  # Mirror registries
+  mirrors:
+    # Example: Cargo mirror
+    # - "https://mirrors.example.com/crates.io-index"
+
+# Network proxy configuration
+proxy:
+  # HTTP proxy
+  http: "${HTTP_PROXY:-}"
+
+  # HTTPS proxy
+  https: "${HTTPS_PROXY:-}"
+
+  # No proxy list
+  no_proxy: "${NO_PROXY:-localhost,127.0.0.1,.local}"
+
+  # Proxy authentication
+  # auth:
+  #   username: "${PROXY_USER}"
+  #   password: "${PROXY_PASS}"

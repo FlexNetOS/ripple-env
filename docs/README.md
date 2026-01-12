@@ -8,6 +8,7 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 |----------|-------------|
 | [Getting Started](GETTING_STARTED.md) | New user setup guide |
 | [Troubleshooting](TROUBLESHOOTING.md) | Common issues and solutions |
+| [Network Requirements](NETWORK_REQUIREMENTS.md) | Network dependencies and offline mode |
 | [Contributing](../CONTRIBUTING.md) | How to contribute |
 | [Project README](../README.md) | Project overview |
 
@@ -103,6 +104,15 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | Document | Description |
 |----------|-------------|
 | [NIX_FLAKE_MODULARIZATION.md](NIX_FLAKE_MODULARIZATION.md) | Flake modularization plan and image generation |
+| [NIX_EVALUATION_OPTIMIZATION.md](NIX_EVALUATION_OPTIMIZATION.md) | Nix evaluation performance optimization |
+
+### Network & Offline
+
+| Document | Description |
+|----------|-------------|
+| [NETWORK_REQUIREMENTS.md](NETWORK_REQUIREMENTS.md) | Network dependencies and firewall rules |
+| [SUPPLY_CHAIN_SECURITY.md](SUPPLY_CHAIN_SECURITY.md) | Supply chain security measures |
+| [AI_RESOURCE_REQUIREMENTS.md](AI_RESOURCE_REQUIREMENTS.md) | AI service resource requirements |
 
 ### Architecture & Planning
 
