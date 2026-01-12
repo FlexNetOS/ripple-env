@@ -1,6 +1,16 @@
 [workspace]
 name = "robostack"
 description = "Development environment for RoboStack ROS packages"
+# =============================================================================
+# Channel Priority Strategy (see docs/CHANNEL-STRATEGY.md)
+# =============================================================================
+# Channels are listed in priority order (first = highest priority).
+# - robostack-humble: ROS2 Humble packages, takes precedence for ROS compatibility
+# - conda-forge: Community packages for general-purpose dependencies
+#
+# For CUDA environments, features add: pytorch > nvidia > conda-forge
+# This ensures CUDA-linked PyTorch builds are resolved correctly.
+# =============================================================================
 channels = ["robostack-humble", "conda-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
 
@@ -126,6 +136,14 @@ torchaudio = ">=2.5,<3"
 [feature.cuda]
 # CUDA-enabled PyTorch (requires NVIDIA GPU)
 # Activate with: pixi run -e cuda <command>
+#
+# Channel Priority (see docs/CHANNEL-STRATEGY.md):
+# - pytorch: Official CUDA-linked PyTorch builds (highest priority)
+# - nvidia: CUDA runtime and cuDNN libraries
+# - conda-forge: Supporting packages (lowest priority)
+#
+# WARNING: Do not combine with robostack-humble in the same solve-group
+# as they have incompatible Python/CUDA expectations.
 platforms = ["linux-64"]
 channels = ["pytorch", "nvidia", "conda-forge"]
 
