@@ -1,0 +1,200 @@
+# Step-CA (smallstep) for PKI and mTLS
+# Automated certificate management and mTLS
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flexstack-identity
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: identity
+    app.kubernetes.io/part-of: flexstack
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: step-ca-config
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: identity
+data:
+  ca.json: |
+    {
+      "root": "/home/step/certs/root_ca.crt",
+      "federatedRoots": null,
+      "crt": "/home/step/certs/intermediate_ca.crt",
+      "key": "/home/step/secrets/intermediate_ca_key",
+      "address": ":9000",
+      "dnsNames": ["step-ca.flexstack-identity.svc.cluster.local"],
+      "logger": {"format": "json"},
+      "db": {
+        "type": "badgerv2",
+        "dataSource": "/home/step/db"
+      },
+      "authority": {
+        "provisioners": [
+          {
+            "type": "ACME",
+            "name": "acme"
+          },
+          {
+            "type": "JWK",
+            "name": "admin",
+            "key": {
+              "use": "sig",
+              "kty": "EC",
+              "kid": "admin",
+              "crv": "P-256",
+              "alg": "ES256"
+            },
+            "encryptedKey": "eyJhbGc...encrypted_key_here"
+          }
+        ]
+      },
+      "tls": {
+        "cipherSuites": [
+          "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+          "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+        ],
+        "minVersion": 1.2,
+        "maxVersion": 1.3,
+        "renegotiation": false
+      }
+    }
+  defaults.json: |
+    {
+      "ca-url": "https://step-ca.flexstack-identity.svc.cluster.local:9000",
+      "ca-config": "/home/step/config/ca.json",
+      "fingerprint": "",
+      "root": "/home/step/certs/root_ca.crt"
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: step-ca-secrets
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: identity
+type: Opaque
+stringData:
+  # P1-008: Step-CA root password (change in production!)
+  password: "change_me_in_production"
+  # Intermediate CA key password
+  provisioner-password: "change_me_in_production"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: step-ca-data
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: identity
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: step-ca
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: identity
+    app.kubernetes.io/part-of: flexstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: step-ca
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: step-ca
+        app.kubernetes.io/component: identity
+    spec:
+      containers:
+        - name: step-ca
+          image: smallstep/step-ca:0.27.2
+          args:
+            - /usr/local/bin/step-ca
+            - /home/step/config/ca.json
+            - --password-file=/home/step/secrets/password
+          ports:
+            - containerPort: 9000
+              name: https
+          env:
+            - name: DOCKER_STEPCA_INIT_NAME
+              value: "FlexStack CA"
+            - name: DOCKER_STEPCA_INIT_DNS_NAMES
+              value: "step-ca.flexstack-identity.svc.cluster.local"
+          volumeMounts:
+            - name: config
+              mountPath: /home/step/config
+              readOnly: true
+            - name: secrets
+              mountPath: /home/step/secrets
+              readOnly: true
+            - name: data
+              mountPath: /home/step/db
+            - name: certs
+              mountPath: /home/step/certs
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9000
+              scheme: HTTPS
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9000
+              scheme: HTTPS
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: step-ca-config
+        - name: secrets
+          secret:
+            secretName: step-ca-secrets
+        - name: data
+          persistentVolumeClaim:
+            claimName: step-ca-data
+        - name: certs
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: step-ca
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: identity
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+      name: https
+  selector:
+    app.kubernetes.io/name: step-ca
