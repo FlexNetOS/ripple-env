@@ -1,0 +1,96 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":dependencyDashboard",
+    ":semanticCommitTypeAll(chore)",
+    "group:recommended"
+  ],
+  "description": "Automated dependency updates for ros2-humble-env",
+  "labels": ["dependencies", "automated"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "timezone": "UTC",
+  "schedule": ["before 6am on Monday"],
+  "packageRules": [
+    {
+      "description": "Group all Nix flake input updates",
+      "matchManagers": ["nix"],
+      "groupName": "nix flake inputs",
+      "automerge": false
+    },
+    {
+      "description": "Group Docker image updates",
+      "matchManagers": ["docker-compose"],
+      "groupName": "docker images",
+      "automerge": false
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Auto-merge patch updates for trusted packages",
+      "matchUpdateTypes": ["patch"],
+      "matchPackagePatterns": ["^actions/", "^DeterminateSystems/"],
+      "automerge": true
+    },
+    {
+      "description": "Pin PostgreSQL to 17.x",
+      "matchPackageNames": ["postgres"],
+      "allowedVersions": "17.x"
+    },
+    {
+      "description": "Pin LocalAI versions carefully",
+      "matchPackageNames": ["localai/localai"],
+      "automerge": false,
+      "prPriority": 10
+    },
+    {
+      "description": "Update Pixi configuration",
+      "matchFileNames": ["pixi.toml"],
+      "enabled": true
+    }
+  ],
+  "nix": {
+    "enabled": true,
+    "fileMatch": ["^flake\\.nix$"]
+  },
+  "docker-compose": {
+    "enabled": true,
+    "fileMatch": ["^docker-compose.*\\.yml$", "^docker/docker-compose.*\\.yml$"]
+  },
+  "github-actions": {
+    "enabled": true,
+    "fileMatch": ["^\\.github/workflows/.*\\.yml$"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update image tags in docker-compose files",
+      "fileMatch": ["^docker/docker-compose.*\\.yml$"],
+      "matchStrings": [
+        "image:\\s*(?<depName>[^:]+):(?<currentValue>[^\\s]+)"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Nix fetchFromGitHub revisions",
+      "fileMatch": ["^flake\\.nix$", "^nix/.*\\.nix$"],
+      "matchStrings": [
+        "fetchFromGitHub\\s*\\{[^}]*owner\\s*=\\s*\"(?<depOwner>[^\"]+)\"[^}]*repo\\s*=\\s*\"(?<depName>[^\"]+)\"[^}]*rev\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "{{depOwner}}/{{depName}}"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
+  "osvVulnerabilityAlerts": true
+}

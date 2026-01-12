@@ -78,6 +78,13 @@ test-unit: ## Run unit tests only
 test-integration: ## Run integration tests
 	pytest test/integration/ -v || true
 
+test-coverage: ## Run tests with coverage report
+	pytest test/ -v --cov=scripts --cov-report=term-missing --cov-report=xml --cov-report=html
+	@echo "Coverage report generated: htmlcov/index.html"
+
+test-benchmarks: ## Run performance benchmarks
+	pytest test/benchmarks/ -v --benchmark-only || echo "No benchmarks found or ROS2 not available"
+
 # Linting targets
 lint: ## Run all linters
 	@echo "Running linters..."

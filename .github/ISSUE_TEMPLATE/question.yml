@@ -1,0 +1,68 @@
+name: Question
+description: Ask a question about using ros2-humble-env
+title: "[Question]: "
+labels: ["question"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question? We're happy to help!
+        Please check the documentation first: `docs/` directory or `docs/README.md`
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+      placeholder: How do I...?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic
+      description: What area is your question about?
+      options:
+        - Getting Started / Installation
+        - ROS2 Development
+        - Nix / Flake Configuration
+        - Pixi / Python Packages
+        - Docker / Containers
+        - CI/CD
+        - Hardware Integration
+        - Performance / Real-time
+        - Security
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What Have You Tried?
+      description: What documentation or solutions have you looked at?
+      placeholder: |
+        I read the docs at...
+        I tried running...
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Any additional context that might help answer your question
+      placeholder: |
+        I'm trying to...
+        My setup is...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues and discussions
+          required: true
+        - label: I have checked the documentation (docs/ directory)
+          required: true

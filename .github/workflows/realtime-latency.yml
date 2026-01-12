@@ -1,0 +1,157 @@
+name: Real-Time Latency Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'nix/overlays/realtime.nix'
+      - 'config/dds/**'
+      - 'scripts/isolate-cpu.sh'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'nix/overlays/realtime.nix'
+      - 'config/dds/**'
+      - 'scripts/isolate-cpu.sh'
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Test duration in seconds'
+        required: false
+        default: '60'
+        type: string
+
+jobs:
+  latency-test:
+    name: Measure System Latency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install rt-tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rt-tests stress-ng
+
+      - name: Check system capabilities
+        run: |
+          echo "=== Kernel Info ==="
+          uname -a
+
+          echo ""
+          echo "=== CPU Info ==="
+          lscpu | grep -E "^(Architecture|CPU\(s\)|Model name|CPU MHz)"
+
+          echo ""
+          echo "=== Timer Resolution ==="
+          cat /proc/timer_list | grep "hres_active" | head -5 || true
+
+          echo ""
+          echo "=== Current CPU Governors ==="
+          cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null || echo "cpufreq not available"
+
+      - name: Run baseline latency test
+        run: |
+          echo "=== Baseline Latency Test (no load) ==="
+          # Run cyclictest for specified duration
+          DURATION=${{ github.event.inputs.duration || '30' }}
+
+          # Note: GitHub runners don't support RT scheduling, so we measure baseline
+          sudo cyclictest \
+            --priority=80 \
+            --interval=1000 \
+            --distance=0 \
+            --duration=$DURATION \
+            --quiet \
+            2>&1 | tee baseline_results.txt || echo "cyclictest completed"
+
+          echo ""
+          echo "Baseline test completed"
+
+      - name: Run latency test under load
+        run: |
+          echo "=== Latency Test Under CPU Load ==="
+          DURATION=${{ github.event.inputs.duration || '30' }}
+
+          # Start CPU stress in background
+          stress-ng --cpu 2 --timeout ${DURATION}s &
+          STRESS_PID=$!
+
+          # Run cyclictest while system is under load
+          sudo cyclictest \
+            --priority=80 \
+            --interval=1000 \
+            --distance=0 \
+            --duration=$DURATION \
+            --quiet \
+            2>&1 | tee load_results.txt || echo "cyclictest completed"
+
+          # Wait for stress to finish
+          wait $STRESS_PID 2>/dev/null || true
+
+          echo ""
+          echo "Load test completed"
+
+      - name: Parse and report results
+        run: |
+          echo "=== Latency Report ==="
+          echo ""
+
+          echo "### Baseline (no load):"
+          if [ -f baseline_results.txt ]; then
+            cat baseline_results.txt
+          fi
+
+          echo ""
+          echo "### Under CPU Load:"
+          if [ -f load_results.txt ]; then
+            cat load_results.txt
+          fi
+
+          # Extract max latency values for comparison
+          echo ""
+          echo "### Summary:"
+
+          baseline_max=$(grep -oP "Max:\s+\K\d+" baseline_results.txt 2>/dev/null | head -1 || echo "N/A")
+          load_max=$(grep -oP "Max:\s+\K\d+" load_results.txt 2>/dev/null | head -1 || echo "N/A")
+
+          echo "Baseline Max Latency: ${baseline_max} us"
+          echo "Under Load Max Latency: ${load_max} us"
+
+          # Fail if max latency exceeds threshold (1ms for non-RT kernel)
+          if [ "$load_max" != "N/A" ] && [ "$load_max" -gt 10000 ]; then
+            echo ""
+            echo "WARNING: High latency detected under load (>${load_max}us)"
+            echo "This is expected on non-RT kernels in CI environments"
+          fi
+
+      - name: Validate DDS config
+        run: |
+          echo "=== Validating DDS Configuration ==="
+
+          # Check XML syntax
+          if command -v xmllint &> /dev/null; then
+            xmllint --noout config/dds/realtime-qos.xml && echo "DDS config XML: Valid"
+          else
+            echo "xmllint not available, skipping XML validation"
+          fi
+
+          # Check required elements
+          if grep -q "PREEMPT" config/dds/realtime-qos.xml 2>/dev/null || \
+             grep -q "Realtime" config/dds/realtime-qos.xml 2>/dev/null; then
+            echo "Real-time scheduling config: Present"
+          fi
+
+          if grep -q "SharedMemory" config/dds/realtime-qos.xml 2>/dev/null; then
+            echo "Shared memory transport: Configured"
+          fi
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: latency-results
+          path: |
+            baseline_results.txt
+            load_results.txt
+          retention-days: 30

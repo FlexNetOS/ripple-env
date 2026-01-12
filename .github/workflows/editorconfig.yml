@@ -1,0 +1,27 @@
+name: EditorConfig Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  editorconfig:
+    name: Check EditorConfig
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run EditorConfig Checker
+        uses: editorconfig-checker/action-editorconfig-checker@main
+        with:
+          # Exclude generated files and lock files
+          exclude: |
+            pixi.lock
+            flake.lock
+            package-lock.json
+            .pixi/**
+            result/**
+            *.lock

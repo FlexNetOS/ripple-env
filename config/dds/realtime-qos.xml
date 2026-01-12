@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CycloneDDS Real-Time QoS Configuration
+
+  Optimized for deterministic, low-latency ROS2 communication.
+  Use with: export CYCLONEDDS_URI=file:///path/to/realtime-qos.xml
+
+  References:
+  - https://docs.ros.org/en/humble/How-To-Guides/DDS-tuning.html
+  - https://cyclonedds.io/docs/cyclonedds/latest/config/
+-->
+<CycloneDDS xmlns="https://cdds.io/config">
+  <Domain id="any">
+
+    <!-- General Settings -->
+    <General>
+      <!-- Use shared memory for local communication (lowest latency) -->
+      <AllowMulticast>default</AllowMulticast>
+
+      <!-- Network interface selection -->
+      <!-- <NetworkInterfaceAddress>eth0</NetworkInterfaceAddress> -->
+    </General>
+
+    <!-- Real-Time Optimizations -->
+    <Internal>
+      <!-- Reduce latency by using busy-wait instead of blocking -->
+      <BuswaitTimeFraction>0.05</BuswaitTimeFraction>
+
+      <!-- Thread priorities for real-time scheduling -->
+      <ReceiveBufferSize>1MB</ReceiveBufferSize>
+      <SendBufferSize>1MB</SendBufferSize>
+
+      <!-- Minimize latency -->
+      <DeliveryQueueMaxSamples>256</DeliveryQueueMaxSamples>
+
+      <!-- Writer history for reliability -->
+      <WriterHistoryDepth>16</WriterHistoryDepth>
+
+      <!-- Heartbeat interval for reliable communication -->
+      <HeartbeatInterval>100ms</HeartbeatInterval>
+
+      <!-- Response delay (lower = faster but more CPU) -->
+      <NackResponseDelay>10ms</NackResponseDelay>
+
+      <!-- Pre-emptive acknowledgment -->
+      <PreEmptiveAckDelay>10ms</PreEmptiveAckDelay>
+
+      <!-- Disable tracing for production -->
+      <Tracing>
+        <OutputFile>stderr</OutputFile>
+        <Verbosity>warning</Verbosity>
+      </Tracing>
+    </Internal>
+
+    <!-- Shared Memory Transport (zero-copy for local nodes) -->
+    <SharedMemory>
+      <Enable>true</Enable>
+      <LogLevel>warning</LogLevel>
+    </SharedMemory>
+
+    <!-- Thread Configuration -->
+    <Threads>
+      <!-- Receive thread with high priority -->
+      <Recv name="recv">
+        <Scheduling>
+          <Class>Realtime</Class>
+          <Priority>89</Priority>
+        </Scheduling>
+        <StackSize>128kB</StackSize>
+      </Recv>
+
+      <!-- Timed events thread -->
+      <Timed name="tev">
+        <Scheduling>
+          <Class>Realtime</Class>
+          <Priority>85</Priority>
+        </Scheduling>
+        <StackSize>64kB</StackSize>
+      </Timed>
+    </Threads>
+
+    <!-- Discovery Configuration -->
+    <Discovery>
+      <!-- Faster discovery for dynamic systems -->
+      <ParticipantIndex>auto</ParticipantIndex>
+
+      <!-- Discovery timing -->
+      <SPDPInterval>1s</SPDPInterval>
+
+      <!-- Limit discovery traffic -->
+      <MaxParticipants>64</MaxParticipants>
+    </Discovery>
+
+    <!-- Tracing (disable for production) -->
+    <Tracing>
+      <Verbosity>warning</Verbosity>
+      <OutputFile>stderr</OutputFile>
+    </Tracing>
+
+  </Domain>
+</CycloneDDS>
