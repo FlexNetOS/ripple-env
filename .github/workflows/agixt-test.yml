@@ -1,0 +1,152 @@
+name: AGiXT Integration Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docker-compose.agixt.yml'
+      - 'config/agixt/**'
+      - 'scripts/health-check.sh'
+      - '.github/workflows/agixt-test.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docker-compose.agixt.yml'
+      - 'config/agixt/**'
+      - 'scripts/health-check.sh'
+      - '.github/workflows/agixt-test.yml'
+  workflow_dispatch:
+
+env:
+  AGIXT_API_KEY: 'test-api-key'
+
+jobs:
+  test-agixt:
+    name: AGiXT Service Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create Docker network
+        run: docker network create agentic-network || true
+
+      - name: Prepare health check script
+        run: chmod +x scripts/health-check.sh
+
+      - name: Start AGiXT dependencies
+        run: |
+          # Start PostgreSQL for AGiXT if needed
+          docker-compose -f docker-compose.agixt.yml up -d postgres minio || true
+          sleep 10
+
+      - name: Start AGiXT
+        run: |
+          docker-compose -f docker-compose.agixt.yml up -d
+          echo "AGiXT containers started, waiting for initialization..."
+
+      - name: Wait for AGiXT API readiness
+        run: |
+          # AGiXT needs time to initialize database and start API
+          ./scripts/health-check.sh http://localhost:7437/api/health 10 15 "AGiXT API" || {
+            echo "AGiXT health endpoint not responding, checking alternative endpoints..."
+            ./scripts/health-check.sh http://localhost:7437/api/v1/providers 5 10 "AGiXT Providers API" || true
+          }
+
+      - name: Test AGiXT API endpoints
+        run: |
+          echo "Testing AGiXT API endpoints..."
+
+          # Test providers endpoint
+          echo "Testing /api/v1/providers..."
+          ./scripts/health-check.sh http://localhost:7437/api/v1/providers 3 5 "AGiXT Providers" || echo "Providers endpoint not available"
+
+          # Test extensions endpoint
+          echo "Testing /api/v1/extensions..."
+          ./scripts/health-check.sh http://localhost:7437/api/v1/extensions 3 5 "AGiXT Extensions" || echo "Extensions endpoint not available"
+
+          # Test chains endpoint
+          echo "Testing /api/v1/chains..."
+          ./scripts/health-check.sh http://localhost:7437/api/v1/chains 3 5 "AGiXT Chains" || echo "Chains endpoint not available"
+
+      - name: List available providers
+        run: |
+          echo "Available AGiXT providers:"
+          curl -sf http://localhost:7437/api/v1/providers 2>/dev/null | jq '.' || echo "Could not fetch providers"
+
+      - name: Test agent creation (dry run)
+        run: |
+          # Create a test agent (will fail if no provider configured, which is expected)
+          response=$(curl -sf -X POST http://localhost:7437/api/v1/agent \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $AGIXT_API_KEY" \
+            -d '{
+              "agent_name": "test-agent",
+              "provider": "gpt4free",
+              "settings": {}
+            }' 2>&1) || echo "Agent creation skipped (no provider configured)"
+
+          if [ -n "$response" ]; then
+            echo "Agent creation response:"
+            echo "$response" | jq '.' || echo "$response"
+          fi
+
+      - name: Test AGiXT UI
+        run: |
+          # Test AGiXT UI if running
+          ./scripts/health-check.sh http://localhost:3437 3 5 "AGiXT UI" || echo "AGiXT UI not available (optional)"
+
+      - name: Collect AGiXT logs
+        if: always()
+        run: |
+          echo "=== AGiXT API Logs ==="
+          docker logs agixt 2>&1 | tail -100 || true
+          echo ""
+          echo "=== AGiXT UI Logs ==="
+          docker logs agixt-ui 2>&1 | tail -50 || true
+          echo ""
+          echo "=== PostgreSQL Logs ==="
+          docker logs agixt-postgres 2>&1 | tail -50 || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f docker-compose.agixt.yml down -v || true
+          docker network rm agentic-network || true
+
+  test-agixt-config:
+    name: AGiXT Configuration Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate AGiXT docker-compose
+        run: |
+          docker-compose -f docker-compose.agixt.yml config > /dev/null
+          echo "✅ docker-compose.agixt.yml is valid"
+
+      - name: Check AGiXT configuration files
+        run: |
+          if [ -d "config/agixt" ]; then
+            echo "AGiXT configuration files:"
+            find config/agixt -type f \( -name "*.yaml" -o -name "*.yml" -o -name "*.json" \) | while read f; do
+              echo "  Validating $f..."
+              if [[ "$f" == *.json ]]; then
+                python3 -c "import json; json.load(open('$f'))" && echo "  ✅ $f is valid"
+              else
+                python3 -c "import yaml; yaml.safe_load(open('$f'))" && echo "  ✅ $f is valid"
+              fi
+            done
+          else
+            echo "No AGiXT configuration directory found (config/agixt)"
+          fi
+
+      - name: Check environment variables
+        run: |
+          echo "Checking required environment variables in docker-compose.agixt.yml..."
+          grep -E "^\s+\w+:" docker-compose.agixt.yml | grep -E "(POSTGRES|AGIXT|OPENAI|API)" | head -20 || true

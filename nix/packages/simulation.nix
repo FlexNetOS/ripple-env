@@ -3,7 +3,10 @@
 #
 # Usage:
 #   packages.simulation - Simulation stack
-{ pkgs, ... }:
+#
+# Parameters:
+#   rosDistro - ROS2 distribution (humble, iron, rolling). Default: humble
+{ pkgs, lib ? pkgs.lib, rosDistro ? "humble", ... }:
 
 with pkgs; [
   # 3D visualization and rendering
@@ -31,16 +34,19 @@ with pkgs; [
   xvfb-run           # Virtual framebuffer for headless testing
 ]
 
-# Note: Full simulation environments should be installed via robostack/pixi:
-#   - ros-humble-rviz2
-#   - ros-humble-gazebo-ros-pkgs
-#   - ros-humble-ros-gz-bridge
-#   - ros-humble-ros-gz-sim
-#   - ros-humble-nav2-bringup
-#   - ros-humble-slam-toolbox
-#   - ros-humble-turtlebot3-gazebo
+# Note: Full simulation environments should be installed via robostack/pixi.
+# The rosDistro parameter (default: "humble") determines the package prefix:
+#   - ros-${rosDistro}-rviz2
+#   - ros-${rosDistro}-gazebo-ros-pkgs
+#   - ros-${rosDistro}-ros-gz-bridge
+#   - ros-${rosDistro}-ros-gz-sim
+#   - ros-${rosDistro}-nav2-bringup
+#   - ros-${rosDistro}-slam-toolbox
+#   - ros-${rosDistro}-turtlebot3-gazebo
 # Install via:
-#   pixi add ros-humble-<package-name>
+#   pixi add ros-${rosDistro}-<package-name>
+# Example for Humble: pixi add ros-humble-rviz2
+# Example for Iron:   pixi add ros-iron-rviz2
 #
 # For Gazebo simulation, see:
 #   https://gazebosim.org/docs/harmonic/install_ubuntu

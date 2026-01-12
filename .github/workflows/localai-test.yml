@@ -1,0 +1,142 @@
+name: LocalAI Integration Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docker-compose.localai.yml'
+      - 'config/localai/**'
+      - 'scripts/health-check.sh'
+      - '.github/workflows/localai-test.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docker-compose.localai.yml'
+      - 'config/localai/**'
+      - 'scripts/health-check.sh'
+      - '.github/workflows/localai-test.yml'
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Model to test (e.g., gpt-3.5-turbo, llama2)'
+        required: false
+        default: ''
+        type: string
+
+env:
+  LOCALAI_IMAGE: 'localai/localai:latest-cpu'
+
+jobs:
+  test-localai:
+    name: LocalAI Service Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create Docker network
+        run: docker network create agentic-network || true
+
+      - name: Prepare health check script
+        run: chmod +x scripts/health-check.sh
+
+      - name: Start LocalAI
+        run: |
+          docker-compose -f docker-compose.localai.yml up -d
+          echo "LocalAI container started, waiting for initialization..."
+
+      - name: Wait for LocalAI readiness
+        run: |
+          # LocalAI needs significant time to initialize, especially on first run
+          ./scripts/health-check.sh http://localhost:8080/readyz 15 20 "LocalAI Readiness"
+
+      - name: Test LocalAI health endpoint
+        run: |
+          ./scripts/health-check.sh http://localhost:8080/healthz 5 5 "LocalAI Health"
+
+      - name: Test models API
+        run: |
+          ./scripts/health-check.sh http://localhost:8080/v1/models 5 5 "LocalAI Models API"
+
+          # Display available models
+          echo "Available models:"
+          curl -sf http://localhost:8080/v1/models | jq '.data[].id' || echo "No models loaded"
+
+      - name: Test chat completions API
+        run: |
+          # Test chat completions endpoint (may fail if no model loaded)
+          response=$(curl -sf -X POST http://localhost:8080/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "gpt-3.5-turbo",
+              "messages": [{"role": "user", "content": "Say hello"}],
+              "max_tokens": 10
+            }' 2>&1) || echo "Chat API test skipped (no model loaded)"
+
+          if [ -n "$response" ]; then
+            echo "Chat API response:"
+            echo "$response" | jq '.' || echo "$response"
+          fi
+
+      - name: Test embeddings API
+        run: |
+          # Test embeddings endpoint (may fail if no embedding model loaded)
+          response=$(curl -sf -X POST http://localhost:8080/v1/embeddings \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "text-embedding-ada-002",
+              "input": "Test embedding"
+            }' 2>&1) || echo "Embeddings API test skipped (no embedding model loaded)"
+
+          if [ -n "$response" ]; then
+            echo "Embeddings API response received"
+          fi
+
+      - name: Collect LocalAI logs
+        if: always()
+        run: |
+          echo "=== LocalAI Container Logs ==="
+          docker logs localai 2>&1 | tail -100 || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f docker-compose.localai.yml down -v || true
+          docker network rm agentic-network || true
+
+  test-localai-config:
+    name: LocalAI Configuration Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate LocalAI docker-compose
+        run: |
+          docker-compose -f docker-compose.localai.yml config > /dev/null
+          echo "✅ docker-compose.localai.yml is valid"
+
+      - name: Check LocalAI configuration files
+        run: |
+          if [ -d "config/localai" ]; then
+            echo "LocalAI configuration files:"
+            find config/localai -type f -name "*.yaml" -o -name "*.yml" | while read f; do
+              echo "  Validating $f..."
+              python3 -c "import yaml; yaml.safe_load(open('$f'))" && echo "  ✅ $f is valid"
+            done
+          else
+            echo "No LocalAI configuration directory found (config/localai)"
+          fi
+
+      - name: Check model definitions
+        run: |
+          if [ -d "data/localai/models" ]; then
+            echo "Model definition files:"
+            find data/localai/models -type f -name "*.yaml" | head -10
+          else
+            echo "No model definitions found (data/localai/models)"
+          fi

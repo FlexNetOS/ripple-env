@@ -272,8 +272,8 @@ jobs:
           # LocalAI needs more time to initialize, use longer retries
           ./scripts/health-check.sh http://localhost:8080/readyz 8 15 "LocalAI"
 
-          # Test model listing
-          curl -sf http://localhost:8080/v1/models || exit 1
+          # Test model listing API with retry logic
+          ./scripts/health-check.sh http://localhost:8080/v1/models 3 5 "LocalAI Models API"
           echo "✅ LocalAI model API works"
 
       - name: Start AGiXT Stack

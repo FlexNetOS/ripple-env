@@ -4,7 +4,10 @@
 # Usage:
 #   packages.hardware - Full hardware interface stack
 #   packages.hardwareCore - Minimal hardware tools
-{ pkgs, ... }:
+#
+# Parameters:
+#   rosDistro - ROS2 distribution (humble, iron, rolling). Default: humble
+{ pkgs, lib ? pkgs.lib, rosDistro ? "humble", ... }:
 
 with pkgs; [
   # Camera drivers and utilities
@@ -31,12 +34,15 @@ with pkgs; [
   i2c-tools           # I2C/SMBus tools (i2cdetect, i2cget, etc.)
 ]
 
-# Note: ROS2-specific hardware packages should be added via robostack/pixi:
-#   - ros-humble-librealsense2
-#   - ros-humble-realsense2-camera
-#   - ros-humble-ros2-control
-#   - ros-humble-ros2-controllers
-#   - ros-humble-canopen-master
-#   - ros-humble-canopen-402-driver
+# Note: ROS2-specific hardware packages should be added via robostack/pixi.
+# The rosDistro parameter (default: "humble") determines the package prefix:
+#   - ros-${rosDistro}-librealsense2
+#   - ros-${rosDistro}-realsense2-camera
+#   - ros-${rosDistro}-ros2-control
+#   - ros-${rosDistro}-ros2-controllers
+#   - ros-${rosDistro}-canopen-master
+#   - ros-${rosDistro}-canopen-402-driver
 # These are not available in nixpkgs and should be installed via:
-#   pixi add ros-humble-<package-name>
+#   pixi add ros-${rosDistro}-<package-name>
+# Example for Humble: pixi add ros-humble-ros2-control
+# Example for Iron:   pixi add ros-iron-ros2-control
