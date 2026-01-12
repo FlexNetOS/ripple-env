@@ -1,0 +1,459 @@
+# FlexStack Helm Chart Values
+# Default configuration for the FlexStack platform
+
+# Global settings
+global:
+  # Image pull secrets
+  imagePullSecrets: []
+  # Storage class for persistent volumes
+  storageClass: ""
+  # Domain for ingress
+  domain: "flexstack.local"
+
+# Namespace configuration
+namespaces:
+  create: true
+  core: flexstack
+  observability: flexstack-observability
+  ai: flexstack-ai
+  identity: flexstack-identity
+  edge: flexstack-edge
+  messaging: flexstack-messaging
+
+# =============================================================================
+# CORE SERVICES
+# =============================================================================
+
+# PostgreSQL - Shared database
+postgresql:
+  enabled: true
+  auth:
+    username: postgres
+    password: changeme
+    database: postgres
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      limits:
+        memory: 2Gi
+        cpu: "2"
+      requests:
+        memory: 512Mi
+        cpu: "500m"
+  # Multiple databases initialization
+  initdbScripts:
+    init-multi-db.sh: |
+      #!/bin/bash
+      for db in keycloak temporal n8n mindsdb mlflow agixt kong; do
+        psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+          SELECT 'CREATE DATABASE $db' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$db')\gexec
+          GRANT ALL PRIVILEGES ON DATABASE $db TO $POSTGRES_USER;
+      EOSQL
+      done
+
+# Redis - Cache and state management
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+    resources:
+      limits:
+        memory: 2Gi
+      requests:
+        memory: 256Mi
+
+# MinIO - S3-compatible object storage
+minio:
+  enabled: true
+  auth:
+    rootUser: minioadmin
+    rootPassword: minioadmin
+  persistence:
+    enabled: true
+    size: 50Gi
+  defaultBuckets: "flexstack-artifacts,flexstack-models,flexstack-logs,agixt"
+  resources:
+    limits:
+      memory: 2Gi
+    requests:
+      memory: 512Mi
+
+# =============================================================================
+# OBSERVABILITY
+# =============================================================================
+
+observability:
+  enabled: true
+
+  prometheus:
+    enabled: true
+    server:
+      retention: 30d
+      persistentVolume:
+        enabled: true
+        size: 50Gi
+      resources:
+        limits:
+          memory: 2Gi
+          cpu: "2"
+        requests:
+          memory: 512Mi
+          cpu: "500m"
+
+  grafana:
+    enabled: true
+    adminUser: admin
+    adminPassword: admin
+    persistence:
+      enabled: true
+      size: 10Gi
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            url: http://{{ .Release.Name }}-prometheus-server
+            isDefault: true
+          - name: Loki
+            type: loki
+            url: http://{{ .Release.Name }}-loki:3100
+          - name: Tempo
+            type: tempo
+            url: http://{{ .Release.Name }}-tempo:3200
+
+  loki:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 50Gi
+
+  tempo:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 20Gi
+
+  alertmanager:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 5Gi
+
+# =============================================================================
+# AI/ML SERVICES
+# =============================================================================
+
+ai:
+  enabled: true
+
+  localai:
+    enabled: true
+    image:
+      repository: localai/localai
+      tag: v2.24.2-aio-cpu
+    replicas: 1
+    resources:
+      limits:
+        memory: 8Gi
+        cpu: "4"
+      requests:
+        memory: 4Gi
+        cpu: "2"
+    persistence:
+      models:
+        enabled: true
+        size: 100Gi
+      images:
+        enabled: true
+        size: 20Gi
+    config:
+      threads: "4"
+      contextSize: "2048"
+      parallel: "2"
+      f16: "true"
+      debug: "false"
+
+  agixt:
+    enabled: true
+    image:
+      repository: joshxt/agixt
+      tag: main
+    replicas: 1
+    resources:
+      limits:
+        memory: 4Gi
+        cpu: "4"
+      requests:
+        memory: 1Gi
+        cpu: "500m"
+    persistence:
+      models:
+        enabled: true
+        size: 20Gi
+      workspace:
+        enabled: true
+        size: 10Gi
+    config:
+      uvicornWorkers: "4"
+      defaultProvider: openai
+
+  agixtUi:
+    enabled: true
+    image:
+      repository: joshxt/agixt-interactive
+      tag: main
+    replicas: 1
+    resources:
+      limits:
+        memory: 1Gi
+      requests:
+        memory: 256Mi
+
+# =============================================================================
+# IDENTITY & SECURITY
+# =============================================================================
+
+identity:
+  enabled: true
+
+  keycloak:
+    enabled: true
+    image:
+      repository: quay.io/keycloak/keycloak
+      tag: "26.0"
+    replicas: 1
+    resources:
+      limits:
+        memory: 2Gi
+        cpu: "2"
+      requests:
+        memory: 1Gi
+        cpu: "500m"
+    auth:
+      adminUser: admin
+      adminPassword: changeme
+
+  vault:
+    enabled: true
+    image:
+      repository: hashicorp/vault
+      tag: "1.18"
+    replicas: 1
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: "1"
+      requests:
+        memory: 256Mi
+        cpu: "250m"
+    persistence:
+      enabled: true
+      size: 10Gi
+    devMode:
+      enabled: true
+      rootToken: root
+
+# =============================================================================
+# DATA SERVICES
+# =============================================================================
+
+data:
+  enabled: true
+
+  neo4j:
+    enabled: true
+    image:
+      repository: neo4j
+      tag: 5-community
+    replicas: 1
+    resources:
+      limits:
+        memory: 2Gi
+        cpu: "2"
+      requests:
+        memory: 1Gi
+        cpu: "500m"
+    persistence:
+      data:
+        enabled: true
+        size: 20Gi
+      logs:
+        enabled: true
+        size: 5Gi
+    auth:
+      username: neo4j
+      password: changeme
+
+# =============================================================================
+# EDGE SERVICES
+# =============================================================================
+
+edge:
+  enabled: true
+
+  kong:
+    enabled: true
+    replicaCount: 2
+    resources:
+      limits:
+        memory: 1Gi
+        cpu: "2"
+      requests:
+        memory: 256Mi
+        cpu: "250m"
+    proxy:
+      enabled: true
+      type: LoadBalancer
+    admin:
+      enabled: true
+
+# =============================================================================
+# MESSAGING & WORKFLOWS
+# =============================================================================
+
+messaging:
+  enabled: true
+
+  nats:
+    enabled: true
+    nats:
+      jetstream:
+        enabled: true
+        memoryStore:
+          enabled: true
+          maxMemory: 1Gi
+        fileStore:
+          enabled: true
+          size: 10Gi
+    resources:
+      limits:
+        memory: 1Gi
+        cpu: "1"
+      requests:
+        memory: 256Mi
+        cpu: "250m"
+
+  temporal:
+    enabled: true
+    image:
+      repository: temporalio/auto-setup
+      tag: "1.26.2"
+    replicas: 1
+    resources:
+      limits:
+        memory: 2Gi
+        cpu: "2"
+      requests:
+        memory: 1Gi
+        cpu: "500m"
+
+  temporalUi:
+    enabled: true
+    image:
+      repository: temporalio/ui
+      tag: "2.34.0"
+    replicas: 1
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        memory: 64Mi
+
+# =============================================================================
+# AUTOMATION
+# =============================================================================
+
+automation:
+  enabled: true
+
+  n8n:
+    enabled: true
+    image:
+      repository: n8nio/n8n
+      tag: "1.73.1"
+    replicas: 1
+    resources:
+      limits:
+        memory: 1Gi
+        cpu: "2"
+      requests:
+        memory: 256Mi
+        cpu: "250m"
+    persistence:
+      enabled: true
+      size: 10Gi
+    auth:
+      basicAuthUser: admin
+      basicAuthPassword: changeme
+
+  opa:
+    enabled: true
+    image:
+      repository: openpolicyagent/opa
+      tag: 0.71.0-rootless
+    replicas: 2
+    resources:
+      limits:
+        memory: 256Mi
+        cpu: "500m"
+      requests:
+        memory: 64Mi
+        cpu: "100m"
+
+# =============================================================================
+# INGRESS
+# =============================================================================
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: flexstack.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# =============================================================================
+# SERVICE ACCOUNTS
+# =============================================================================
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# =============================================================================
+# POD SECURITY
+# =============================================================================
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# =============================================================================
+# NETWORK POLICIES
+# =============================================================================
+
+networkPolicies:
+  enabled: false
+
+# =============================================================================
+# POD DISRUPTION BUDGETS
+# =============================================================================
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1

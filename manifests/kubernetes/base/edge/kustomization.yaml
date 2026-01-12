@@ -1,0 +1,17 @@
+# Edge Services Kustomization
+# API gateway and traffic management
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: flexstack-edge
+
+namespace: flexstack-edge
+
+commonLabels:
+  app.kubernetes.io/part-of: flexstack
+  app.kubernetes.io/managed-by: kustomize
+  flexstack.io/profile: edge
+
+resources:
+  - kong.yaml

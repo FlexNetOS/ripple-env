@@ -1,0 +1,811 @@
+# FlexStack Configuration Summary
+# Generated: 2026-01-12
+# Repository: github.com/FlexNetOS/ripple-env
+# Description: ROS2 Humble development environment with Nix flakes and Pixi
+
+# =============================================================================
+# NIX FLAKE CONFIGURATION (flake.nix)
+# =============================================================================
+nix_flake:
+  description: "Ripple development environment with ROS2 Humble, Nix flakes and pixi"
+
+  inputs:
+    nixpkgs:
+      url: "github:nixos/nixpkgs/nixos-unstable"
+      strategy: "development (unstable, more packages)"
+
+    nixpkgs-stable:
+      url: "github:nixos/nixpkgs/nixos-24.11"
+      strategy: "production (well-tested packages)"
+
+    flake-parts:
+      url: "github:hercules-ci/flake-parts"
+
+    systems:
+      url: "github:nix-systems/default"
+
+    home-manager:
+      url: "github:nix-community/home-manager"
+      nixpkgs_follows: true
+
+    home-manager-stable:
+      url: "github:nix-community/home-manager/release-24.11"
+      nixpkgs_follows: "nixpkgs-stable"
+
+    nixos-wsl:
+      url: "github:nix-community/NixOS-WSL"
+      nixpkgs_follows: true
+
+    nixos-wsl-stable:
+      url: "github:nix-community/NixOS-WSL"
+      nixpkgs_follows: "nixpkgs-stable"
+
+    holochain_overlay:
+      source: "github:spartan-holochain-counsel/nix-overlay"
+      pinned_commit: "2a321bc7d6d94f169c6071699d9a89acd55039bb"
+      method: "fetchFromGitHub (not flake input to reduce evaluation time)"
+
+    agenticsorg-devops:
+      url: "github:agenticsorg/devops"
+      flake: false
+
+    agenix:
+      url: "github:ryantm/agenix"
+      nixpkgs_follows: true
+
+  binary_caches:
+    - "https://cache.nixos.org"
+    - "https://nix-community.cachix.org"
+    - "https://cuda-maintainers.cachix.org"
+
+  nixos_configurations:
+    development:
+      - "wsl-ripple (WSL2 tarball)"
+      - "iso-ripple (ISO installer)"
+      - "vm-ripple (QEMU VM)"
+    production:
+      - "wsl-ripple-stable (WSL2 stable)"
+      - "iso-ros2-stable (ISO stable)"
+      - "vm-ros2-stable (VM stable)"
+
+  development_shells:
+    default:
+      description: "ROS2 Humble with modular tools and commands"
+    stable:
+      description: "Production shell using nixos-24.11 packages"
+    full:
+      description: "All tools including CUDA, identity services"
+    cuda:
+      description: "CUDA-enabled development (Linux only)"
+    identity:
+      description: "Identity & secrets management tools"
+
+  home_manager_modules:
+    common:
+      path: "./modules/common"
+      scope: "cross-platform (Linux & macOS)"
+    linux:
+      path: "./modules/linux"
+      scope: "Linux-specific configuration"
+    macos:
+      path: "./modules/macos"
+      scope: "macOS-specific configuration"
+    default: "auto-detects platform"
+
+  tests_and_checks:
+    - "flake-syntax-check"
+    - "module-syntax-check"
+    - "module-tests-git"
+    - "module-tests-direnv"
+    - "module-tests-packages"
+    - "lib-tests (library functions)"
+    - "shell-tests (shell packages)"
+
+# =============================================================================
+# PIXI CONFIGURATION (pixi.toml)
+# =============================================================================
+pixi:
+  workspace:
+    name: "robostack"
+    description: "Development environment for RoboStack ROS packages"
+
+  channels:
+    priority_order:
+      - "robostack-humble (ROS2 packages - highest priority)"
+      - "conda-forge (general dependencies)"
+    cuda_priority:
+      - "pytorch (CUDA-linked PyTorch)"
+      - "nvidia (CUDA runtime & cuDNN)"
+      - "conda-forge (supporting packages)"
+
+  platforms:
+    - "linux-64"
+    - "osx-64"
+    - "osx-arm64"
+    - "linux-aarch64"
+
+  core_dependencies:
+    python: ">=3.11,<3.13"
+    build_tools:
+      - "compilers >=1.11.0,<2"
+      - "cmake >=3.28,<4"
+      - "pkg-config >=0.29.2,<0.30"
+      - "make >=4.4.1,<5"
+      - "ninja >=1.13.2,<2"
+    compilation_cache:
+      - "ccache >=4.10,<5"
+      - "sccache >=0.8,<1"
+    ros_tools:
+      - "rosdep >=0.26.0,<0.27"
+      - "colcon-common-extensions >=0.3.0,<0.4"
+      - "ros-humble-desktop >=0.10.0,<0.11"
+      - "catkin_tools >=0.8.2,<0.10"
+    code_quality:
+      - "ruff >=0.8.0"
+      - "pyupgrade >=3.19.0"
+      - "flynt >=1.0.0"
+      - "pytest >=8.0,<9"
+      - "pytest-cov >=4.0,<6"
+      - "mypy >=1.0,<2"
+      - "black >=24.0,<25"
+      - "isort >=5.0,<6"
+    nodejs: ">=22.0,<23 (LTS Jod)"
+    pnpm: ">=9.0"
+
+  ml_and_scientific:
+    numpy: ">=1.24,<3"
+    pandas: ">=2.0,<3"
+    scikit-learn: ">=1.3,<2"
+    jupyterlab: ">=4.3,<5"
+    ipython: ">=8.30,<9"
+    ipywidgets: ">=8.0,<9"
+
+  pytorch_stack:
+    cpu_default:
+      pytorch: ">=2.5,<2.6"
+      torchvision: ">=0.20,<0.21"
+      torchaudio: ">=2.5,<2.6"
+    cuda_12_4:
+      pytorch: ">=2.5,<2.6 (cuda)"
+      torchvision: ">=0.20,<0.21 (cuda)"
+      torchaudio: ">=2.5,<2.6 (cuda)"
+      pytorch-cuda: "12.4.*"
+
+  huggingface_ecosystem:
+    transformers: ">=4.47,<5"
+    accelerate: ">=1.2,<2"
+    sentence-transformers: ">=3.3,<4"
+    datasets: ">=3.2,<4"
+    tokenizers: ">=0.21,<1"
+
+  messaging_and_orchestration:
+    nats-py: ">=2.9"
+    temporalio: ">=1.7"
+
+  agent_frameworks:
+    agno: ">=0.1 (multi-agent framework)"
+
+  llmops_tools:
+    mlflow: ">=2.19,<3"
+    tensorboard: ">=2.0,<3"
+    wandb: ">=0.19,<1"
+
+  features:
+    cuda:
+      description: "CUDA-enabled PyTorch (Linux only)"
+      platforms: ["linux-64"]
+      channels: ["pytorch", "nvidia", "conda-forge"]
+
+    aios:
+      description: "AIOS Agent OS (Python 3.10-3.11 only)"
+      platforms: ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+      critical_pins:
+        pydantic: "==2.7.0"
+        numpy: "==1.24.3"
+        click: "==8.1.7"
+      dependencies:
+        - "litellm >=1.0"
+        - "transformers >=4.30"
+        - "sentence-transformers >=2.0"
+        - "chromadb >=0.4"
+        - "redis-py >=4.5.1"
+        - "fastapi >=0.100"
+        - "uvicorn >=0.20"
+        - "python-dotenv >=1.0"
+        - "watchdog >=2.1.9"
+        - "rich >=13.0"
+        - "nltk >=3.8"
+        - "pyautogen >=0.2"
+      pypi_packages:
+        - "aios-agent-sdk >=0.1"
+
+    aios-cuda:
+      description: "AIOS with GPU acceleration via vLLM"
+      platforms: ["linux-64"]
+      inherits: "aios"
+
+    llmops:
+      description: "LLM evaluation and experiment tracking"
+      dependencies:
+        - "trulens-eval >=0.30"
+        - "mlflow >=2.10"
+        - "opentelemetry-api >=1.20"
+        - "opentelemetry-sdk >=1.20"
+        - "opentelemetry-exporter-otlp >=1.20"
+        - "pandas >=2.0"
+        - "scipy >=1.10"
+        - "scikit-learn >=1.3"
+
+    finetuning:
+      description: "LLM finetuning with Unsloth (2x faster, 80% less memory)"
+      gpu_requirements: "NVIDIA GPU with CUDA 11.8+ or 12.1+"
+      min_vram: "8GB recommended"
+      dependencies:
+        - "pytorch >=2.5,<3"
+        - "transformers >=4.47,<5"
+        - "accelerate >=1.2,<2"
+        - "peft >=0.8"
+        - "bitsandbytes >=0.44"
+      pypi_packages:
+        - "unsloth >=2024.0"
+
+    finetuning-cuda:
+      description: "Finetuning with GPU acceleration"
+      inherits: ["finetuning", "cuda"]
+
+    caching:
+      description: "Semantic LLM caching (vCache, prompt-cache)"
+      dependencies:
+        - "redis-py >=4.5.1"
+        - "openai >=1.0"
+        - "numpy >=1.24,<3"
+      notes: "vCache not yet on PyPI - install from source"
+
+    docs:
+      description: "Documentation generation with MkDocs Material"
+      dependencies:
+        - "mkdocs >=1.6"
+        - "mkdocs-material >=9.5"
+        - "mkdocs-material-extensions >=1.3"
+        - "mkdocs-minify-plugin >=0.8"
+        - "pymdown-extensions >=10.7"
+        - "pillow >=10.0"
+        - "cairosvg >=2.7"
+
+  environments:
+    default:
+      features: []
+      solve_group: "default"
+    cuda:
+      features: ["cuda"]
+      solve_group: "cuda"
+    aios:
+      features: ["aios"]
+      solve_group: "aios"
+    aios-cuda:
+      features: ["aios", "aios-cuda", "cuda"]
+      solve_group: "aios-cuda"
+    llmops:
+      features: ["llmops"]
+      solve_group: "llmops"
+    finetuning:
+      features: ["finetuning"]
+      solve_group: "finetuning"
+    finetuning-cuda:
+      features: ["finetuning", "cuda"]
+      solve_group: "finetuning-cuda"
+    caching:
+      features: ["caching"]
+      solve_group: "caching"
+    docs:
+      features: ["docs"]
+      solve_group: "docs"
+
+# =============================================================================
+# DOCKER COMPOSE CONFIGURATION (docker-compose.yml & profiles)
+# =============================================================================
+docker_compose:
+  main_file: "/home/user/ripple-env/docker/docker-compose.yml"
+  additional_files:
+    agixt: "docker-compose.agixt.yml"
+    localai: "docker-compose.localai.yml"
+    inference: "docker-compose.inference.yml"
+    identity: "docker-compose.identity.yml"
+    data: "docker-compose.data.yml"
+    edge: "docker-compose.edge.yml"
+    messaging: "docker-compose.messaging.yml"
+    automation: "docker-compose.automation.yml"
+    observability: "docker-compose.observability.yml"
+    caching: "docker-compose.caching.yml"
+    state: "docker-compose.state.yml"
+    bytebase: "docker-compose.bytebase.yml"
+    refact: "docker-compose.refact.yml"
+    holochain: "docker-compose.holochain.yml"
+    llmops: "docker-compose.llmops.yml"
+    temporal: "docker-compose.temporal.yml"
+    argo: "docker-compose.argo.yml"
+    lightweight: "docker-compose.lightweight.yml"
+    ui: "docker-compose.ui.yml"
+
+  network: "flexstack-network"
+  network_subnet: "172.28.0.0/16"
+
+  profiles:
+    core:
+      description: "Essential infrastructure (required by most services)"
+      services:
+        - "postgres:17.2-alpine (shared database, 2GB limit)"
+        - "redis:7.4-alpine (cache & state, 2GB limit)"
+        - "minio:latest (S3-compatible storage, 2GB limit)"
+        - "minio-init (bucket initialization)"
+      priority: 1
+      ports:
+        postgres: 5432
+        redis: 6379
+        minio_api: 9000
+        minio_console: 9001
+
+    observability:
+      description: "Monitoring, logging, and tracing stack"
+      services:
+        - "prometheus:v2.48.0 (metrics, 2GB limit)"
+        - "grafana:11.4.0 (visualization, 1GB limit)"
+        - "loki:3.3.2 (log aggregation, 1GB limit)"
+        - "promtail:3.3.2 (log shipper)"
+        - "tempo:2.7.2 (distributed tracing, 1GB limit)"
+        - "alertmanager:v0.27.0 (alert routing)"
+        - "node-exporter:v1.8.2 (host metrics)"
+        - "cadvisor:v0.51.0 (container metrics)"
+      priority: 2
+      ports:
+        prometheus: 9090
+        grafana: 3000
+        loki: 3100
+        tempo: 3200
+        alertmanager: 9093
+        node_exporter: 9100
+        cadvisor: 8085
+
+    ai:
+      description: "AI/ML services (inference, orchestration, ML ops)"
+      services:
+        - "localai:v2.24.2-aio-cpu (LLM inference, 8GB limit)"
+        - "agixt:main (agent orchestration, 4GB limit)"
+        - "agixt-interactive:main (Next.js UI, 1GB limit)"
+        - "mindsdb:latest (AI/ML database, 4GB limit)"
+      priority: 3
+      ports:
+        localai: 8080
+        agixt_api: 7437
+        agixt_ui: 3437
+        mindsdb: "47334,47335,47336"
+      gpu_support: "optional for localai"
+
+    identity:
+      description: "Authentication, authorization, and secrets management"
+      services:
+        - "step-ca:0.27.5 (certificate authority, mTLS)"
+        - "keycloak:26.0 (OIDC identity provider, 2GB limit)"
+        - "vault:1.18 (secrets management)"
+        - "vaultwarden:1.32.5 (password vault)"
+      priority: 2
+      ports:
+        step_ca: 9443
+        keycloak: 8082 (http), 8443 (https)
+        vault: 8200
+        vaultwarden: 8081 (http), 3012 (websocket)
+
+    data:
+      description: "Graph database and data query services"
+      services:
+        - "neo4j:5-community (graph database, 2GB limit)"
+      priority: 2
+      ports:
+        neo4j_http: 7474
+        neo4j_bolt: 7687
+
+    edge:
+      description: "API gateway and agent traffic management"
+      services:
+        - "kong-db:17.2-alpine (Kong database)"
+        - "kong-migrations (database migration)"
+        - "kong:3.9.0-alpine (API gateway, 1GB limit)"
+        - "agentgateway:0.2.0 (agent/MCP traffic plane)"
+      priority: 2
+      ports:
+        kong_proxy: 8000
+        kong_proxy_ssl: 8443
+        kong_admin: 8001
+        kong_admin_gui: 8002
+        agentgateway: "8090,8091,8092"
+
+    messaging:
+      description: "Event bus and durable workflow orchestration"
+      services:
+        - "nats:2.10.24-alpine (high-performance event bus, priority 1)"
+        - "temporal:1.26.2 (durable workflows, 2GB limit)"
+        - "temporal-ui:2.34.0 (workflow UI)"
+      priority: 2
+      ports:
+        nats_client: 4222
+        nats_monitoring: 8222
+        nats_route: 6222
+        temporal: 7233
+        temporal_grpc: 7239
+        temporal_ui: 8088
+
+    automation:
+      description: "Workflow automation and policy management"
+      services:
+        - "n8n:1.73.1 (workflow automation, 1GB limit)"
+        - "opa:0.71.0-rootless (open policy agent)"
+      priority: 2
+      ports:
+        n8n: 5678
+        opa: 8181
+
+    dev:
+      description: "Development stack (core + ai)"
+      includes: ["core", "ai"]
+
+    full:
+      description: "Complete stack (all services)"
+      includes: ["core", "observability", "ai", "identity", "data", "edge", "messaging", "automation"]
+
+  postgres_databases:
+    - "keycloak"
+    - "temporal"
+    - "n8n"
+    - "mindsdb"
+    - "mlflow"
+    - "agixt"
+
+  minio_buckets:
+    - "flexstack-artifacts"
+    - "flexstack-models"
+    - "flexstack-logs"
+    - "agixt"
+
+  resource_limits:
+    postgres: { memory: "2G", cpus: "2.0", reservation: { memory: "512M", cpus: "0.5" } }
+    redis: { memory: "2G", reservation: { memory: "256M" } }
+    minio: { memory: "2G", reservation: { memory: "512M" } }
+    prometheus: { memory: "2G", cpus: "2.0", reservation: { memory: "512M" } }
+    grafana: { memory: "1G", reservation: { memory: "256M" } }
+    loki: { memory: "1G", reservation: { memory: "256M" } }
+    tempo: { memory: "1G", reservation: { memory: "256M" } }
+    localai: { memory: "8G", cpus: "4.0", reservation: { memory: "4G", cpus: "2.0" } }
+    agixt: { memory: "4G", cpus: "4.0", reservation: { memory: "1G" } }
+    keycloak: { memory: "2G", cpus: "2.0", reservation: { memory: "1G" } }
+    temporal: { memory: "2G", cpus: "2.0", reservation: { memory: "1G" } }
+    neo4j: { memory: "2G", cpus: "2.0", reservation: { memory: "1G" } }
+    kong: { memory: "1G", cpus: "2.0", reservation: { memory: "256M" } }
+    n8n: { memory: "1G", cpus: "2.0", reservation: { memory: "256M" } }
+
+# =============================================================================
+# RUST CONFIGURATION (Cargo.toml files)
+# =============================================================================
+rust:
+  workspace:
+    root: "/home/user/ripple-env/rust"
+    name: "ripple-env"
+    edition: "2021"
+    members:
+      - "agixt-bridge"
+    workspace_dependencies:
+      version: "0.1.0"
+      license: "MIT"
+      authors: ["FlexNetOS"]
+      repository: "github.com/FlexNetOS/ripple-env"
+
+  workspace_shared_dependencies:
+    # AGiXT Integration (P2-004)
+    agixt-sdk: "0.1 (Rust SDK for AGiXT)"
+
+    # Async Runtime
+    tokio: { version: "1.0", features: ["full"] }
+
+    # HTTP Client
+    reqwest: { version: "0.11", features: ["json"] }
+
+    # Serialization
+    serde: { version: "1.0", features: ["derive"] }
+    serde_json: "1.0"
+
+    # Error Handling
+    anyhow: "1.0"
+    thiserror: "1.0"
+
+    # Logging
+    tracing: "0.1"
+    tracing-subscriber: { version: "0.3", features: ["env-filter"] }
+
+    # Configuration
+    config: "0.14"
+    dotenvy: "0.15"
+
+    # Utilities
+    uuid: { version: "1.4", features: ["v4"] }
+    chrono: "0.4"
+
+    # Agent Runtime Orchestration (P1-001)
+    arkflow: "0.1 (Rust streaming orchestration)"
+
+    # Tool Execution & Temporal Processing (P2-007)
+    temporal-compare: "0.1"
+    nanosecond-scheduler: "0.1"
+    temporal-attractor-studio: "0.1"
+    temporal-neural-solver: "0.1"
+    strange-loop: "0.1"
+
+    # Neural Networks (P2-008)
+    ruv-fann: "0.1 (Rust FANN rewrite - from git)"
+
+    # Holochain Coordination (P0 priority)
+    hdk: "0.4.0 (Holochain Development Kit)"
+    hdi: "0.5.0 (Holochain Integrity)"
+    holochain: "0.4.0"
+    holochain_types: "0.4.0"
+    holochain_zome_types: "0.4.0"
+
+    # State & Storage (P1 priority)
+    redis: { version: "0.27", features: ["tokio-comp", "connection-manager"] }
+
+    # Distributed Vector Database (P1-001)
+    ruvector: "0.1 (from git, GNN self-learning)"
+
+    # SQL Database (P1-003)
+    sqlx: { version: "0.8", features: ["postgres", "runtime-tokio-rustls", "macros", "migrate"] }
+
+    # Query Engine (P1-004)
+    datafusion: "43 (Apache Arrow-based SQL engine)"
+
+  packages:
+    agixt-bridge:
+      type: "binary library"
+      edition: "2021"
+      description: "ROS2-AGiXT bridge for natural language robot control"
+      dependencies:
+        agixt-sdk: "0.1"
+        tokio: { version: "1.0", features: ["full"] }
+        reqwest: { version: "0.11", features: ["json"] }
+        serde: { version: "1.0", features: ["derive"] }
+        serde_json: "1.0"
+        anyhow: "1.0"
+        thiserror: "1.0"
+        tracing: "0.1"
+        tracing-subscriber: { version: "0.3", features: ["env-filter"] }
+        config: "0.14"
+        dotenvy: "0.15"
+        uuid: { version: "1.4", features: ["v4"] }
+        chrono: "0.4"
+      features:
+        - "default: []"
+        - "ros2: (enable ROS2 bindings)"
+      binaries:
+        - name: "agixt-bridge"
+          path: "src/main.rs"
+      examples:
+        - name: "basic_chat"
+          path: "examples/basic_chat.rs"
+        - name: "robot_commands"
+          path: "examples/robot_commands.rs"
+      dev_dependencies:
+        tokio-test: "0.4"
+        mockito: "1.2"
+
+  holochain_zomes:
+    location: "/home/user/ripple-env/manifests/holochain/dnas/aria/zomes"
+    zomes:
+      storage:
+        edition: "2021"
+        crate_type: ["cdylib", "rlib"]
+        dependencies:
+          hdk: "0.4.0"
+          storage_integrity: "local path reference"
+          serde: { version: "1.0", features: ["derive"] }
+          serde_json: "1.0"
+        profile_release:
+          opt_level: "z"
+          lto: true
+          codegen_units: 1
+          panic: "abort"
+
+      identity:
+        edition: "2021"
+        crate_type: ["cdylib", "rlib"]
+        dependencies:
+          hdk: "0.4.0"
+          identity_integrity: "local path reference"
+        profile_release:
+          opt_level: "z"
+          lto: true
+          codegen_units: 1
+          panic: "abort"
+
+      permissions:
+        edition: "2021"
+        crate_type: ["cdylib", "rlib"]
+        dependencies:
+          hdk: "0.4.0"
+          permissions_integrity: "local path reference"
+        profile_release:
+          opt_level: "z"
+          lto: true
+          codegen_units: 1
+          panic: "abort"
+
+      consensus:
+        edition: "2021"
+        crate_type: ["cdylib", "rlib"]
+        dependencies:
+          hdk: "0.4.0"
+          consensus_integrity: "local path reference"
+        profile_release:
+          opt_level: "z"
+          lto: true
+          codegen_units: 1
+          panic: "abort"
+
+      logging:
+        edition: "2021"
+        crate_type: ["cdylib", "rlib"]
+        dependencies:
+          hdk: "0.4.0"
+          logging_integrity: "local path reference"
+        profile_release:
+          opt_level: "z"
+          lto: true
+          codegen_units: 1
+          panic: "abort"
+
+# =============================================================================
+# KEY ARCHITECTURE PATTERNS
+# =============================================================================
+architecture_patterns:
+  supply_chain_security:
+    dual_nixpkgs_strategy:
+      development: "nixos-unstable (latest packages)"
+      production: "nixos-24.11 (well-tested, stable)"
+    benefits:
+      - "Rapid development with latest features"
+      - "Predictable production builds"
+      - "Security updates from stable channel"
+
+  modular_structure:
+    nix_directory:
+      packages: "Package collections by category"
+      shells: "DevShell definitions"
+      commands: "Command wrapper scripts"
+      overlays: "Package overrides"
+      modules: "NixOS/Darwin/Home-manager modules"
+      images: "NixOS image builders"
+      lib: "Utility functions"
+    benefits:
+      - "Smaller files (~300-600 lines)"
+      - "Parallel development"
+      - "Faster Nix evaluation"
+      - "Independent testing"
+
+  docker_profile_system:
+    organization: "Separate compose files with shared network/volumes"
+    benefits:
+      - "Selective service deployment"
+      - "Clear responsibility boundaries"
+      - "Easy to customize for different use cases"
+    example_usage:
+      dev_stack: "docker compose --profile core --profile ai up"
+      full_stack: "docker compose --profile full up"
+
+  holochain_zome_optimization:
+    compiled_targets: "cdylib (shared library) + rlib (Rust library)"
+    optimization: "Aggressive (opt-level z, LTO, abort on panic)"
+    purpose: "Minimal wasm binary size for DHT deployment"
+
+  agent_framework_layering:
+    layer_7_runtime: "P1: arkflow (Rust streaming orchestration)"
+    layer_8_tools: "P2-007: midstream (temporal response analysis)"
+    layer_8_neural: "P2-008: ruv-FANN (fast neural networks)"
+    integration: "Composed via AGiXT orchestration"
+
+# =============================================================================
+# BUILDKIT_STARTER_SPEC.md IMPLEMENTATION STATUS
+# =============================================================================
+buildkit_spec_implementation:
+  layer_1_base:
+    status: "Complete"
+    components:
+      - "ROS2 Humble base (pixi robostack-humble)"
+      - "Nix development environment (flake.nix)"
+      - "AIOS Agent OS (pixi aios feature)"
+
+  layer_2_persistence:
+    status: "Complete"
+    components:
+      - "PostgreSQL (core profile)"
+      - "Redis (core profile)"
+      - "MinIO S3 storage (core profile)"
+      - "Neo4j graph DB (data profile)"
+
+  layer_3_infrastructure:
+    status: "Complete"
+    components:
+      - "NATS event bus (messaging profile)"
+      - "Temporal workflows (messaging profile)"
+      - "Kong API gateway (edge profile)"
+      - "AgentGateway MCP traffic (edge profile)"
+
+  layer_4_identity:
+    status: "Complete"
+    components:
+      - "Keycloak OIDC (identity profile)"
+      - "Vault secrets (identity profile)"
+      - "Step-CA mTLS (identity profile)"
+      - "Vaultwarden password vault (identity profile)"
+
+  layer_5_observability:
+    status: "Complete"
+    components:
+      - "Prometheus metrics (observability profile)"
+      - "Grafana dashboards (observability profile)"
+      - "Loki logs (observability profile)"
+      - "Tempo tracing (observability profile)"
+      - "AlertManager alerts (observability profile)"
+
+  layer_6_messaging:
+    status: "Complete"
+    components:
+      - "NATS pub/sub (nats-py in pixi)"
+      - "Temporal SDK (temporalio in pixi)"
+
+  layer_7_agent_runtime:
+    status: "Partial - In Development"
+    completed:
+      - "P1: arkflow (workspace dependency)"
+      - "P2-001: agno (pixi >=0.1)"
+    in_progress:
+      - "P2-004: AGiXT integration (docker agixt service)"
+      - "P2-006: High-performance runtime (arkflow in workspace)"
+    needs_integration:
+      - "P2-002: agentic-flow (Node.js only, not pixi)"
+      - "P2-003: claude-flow (Node.js only, not pixi)"
+      - "P2-005: daa SDK (Rust/Node bindings, in workspace)"
+
+  layer_8_tools_and_skills:
+    status: "Partial - In Development"
+    completed:
+      - "P2-007: midstream temporal processing (workspace)"
+      - "P2-008: ruv-FANN neural networks (workspace)"
+    in_progress:
+      - "P2-009: sublinear-time-solver (npx in flake.nix)"
+      - "P2-015: remote-agentic-coding-system (Node.js/Docker)"
+
+  layer_9_holochain_coordination:
+    status: "Complete"
+    components:
+      - "Holochain SDK (hdk 0.4.0, hdi 0.5.0)"
+      - "ARIA DNA with 5 zomes (storage, identity, permissions, consensus, logging)"
+      - "Integrity zomes for type safety"
+      - "Optimized compilation (LTO, -z optimization)"
+
+  layer_10_storage:
+    status: "Complete"
+    components:
+      - "P0-005: Redis client (workspace redis)"
+      - "P1-001: ruvector distributed VDB (workspace, from git)"
+      - "P1-003: sqlx async SQL (workspace)"
+      - "P1-004: datafusion query engine (workspace)"
+
+  layer_12_llmops:
+    status: "Complete"
+    components:
+      - "TruLens evaluation (pixi llmops feature)"
+      - "MLflow experiment tracking (pixi)"
+      - "OpenTelemetry instrumentation (pixi llmops)"
+      - "Unsloth finetuning (pixi finetuning feature)"
+
+  layer_12_caching:
+    status: "Partial"
+    components:
+      - "P3-001: vCache (not yet on PyPI, needs manual setup)"
+      - "P3-002: prompt-cache (Go binary, in flake.nix)"

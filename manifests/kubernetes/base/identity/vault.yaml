@@ -1,0 +1,126 @@
+# HashiCorp Vault Deployment for FlexStack
+# Secrets management
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vault-credentials
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: vault
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: flexstack
+type: Opaque
+stringData:
+  VAULT_DEV_ROOT_TOKEN_ID: root
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vault-data
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: vault
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: flexstack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: vault
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: flexstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vault
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vault
+        app.kubernetes.io/component: secrets
+        app.kubernetes.io/part-of: flexstack
+    spec:
+      containers:
+        - name: vault
+          image: hashicorp/vault:1.18
+          ports:
+            - containerPort: 8200
+              name: http
+          env:
+            - name: VAULT_DEV_ROOT_TOKEN_ID
+              valueFrom:
+                secretKeyRef:
+                  name: vault-credentials
+                  key: VAULT_DEV_ROOT_TOKEN_ID
+            - name: VAULT_DEV_LISTEN_ADDRESS
+              value: "0.0.0.0:8200"
+            - name: VAULT_ADDR
+              value: "http://0.0.0.0:8200"
+            - name: VAULT_SKIP_VERIFY
+              value: "true"
+          volumeMounts:
+            - name: vault-data
+              mountPath: /vault/file
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "250m"
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+          livenessProbe:
+            exec:
+              command:
+                - vault
+                - status
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - vault
+                - status
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 5
+      volumes:
+        - name: vault-data
+          persistentVolumeClaim:
+            claimName: vault-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+  namespace: flexstack-identity
+  labels:
+    app.kubernetes.io/name: vault
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: flexstack
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8200
+      targetPort: 8200
+      name: http
+  selector:
+    app.kubernetes.io/name: vault

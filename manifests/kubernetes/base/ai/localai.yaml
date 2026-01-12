@@ -1,0 +1,147 @@
+# LocalAI Deployment for FlexStack
+# Local LLM inference (CPU-based)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: localai-config
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: localai
+    app.kubernetes.io/component: inference
+    app.kubernetes.io/part-of: flexstack
+data:
+  THREADS: "4"
+  CONTEXT_SIZE: "2048"
+  PARALLEL: "2"
+  F16: "true"
+  MODELS_PATH: "/models"
+  DEBUG: "false"
+  LOCALAI_MMAP: "true"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: localai-models
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: localai
+    app.kubernetes.io/component: inference
+    app.kubernetes.io/part-of: flexstack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: localai-images
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: localai
+    app.kubernetes.io/component: inference
+    app.kubernetes.io/part-of: flexstack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localai
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: localai
+    app.kubernetes.io/component: inference
+    app.kubernetes.io/part-of: flexstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: localai
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: localai
+        app.kubernetes.io/component: inference
+        app.kubernetes.io/part-of: flexstack
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: localai
+          image: localai/localai:v2.24.2-aio-cpu
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: localai-config
+          volumeMounts:
+            - name: localai-models
+              mountPath: /models
+            - name: localai-images
+              mountPath: /tmp/generated/images
+          resources:
+            limits:
+              memory: 8Gi
+              cpu: "4"
+            requests:
+              memory: 4Gi
+              cpu: "2"
+          livenessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+      volumes:
+        - name: localai-models
+          persistentVolumeClaim:
+            claimName: localai-models
+        - name: localai-images
+          persistentVolumeClaim:
+            claimName: localai-images
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: localai
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: localai
+    app.kubernetes.io/component: inference
+    app.kubernetes.io/part-of: flexstack
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  selector:
+    app.kubernetes.io/name: localai

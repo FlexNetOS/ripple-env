@@ -1,0 +1,46 @@
+# FlexStack Development Overlay
+# Development environment with reduced resources
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: flexstack-development
+
+namespace: flexstack
+
+commonLabels:
+  environment: development
+
+resources:
+  - ../../base
+
+patches:
+  # Reduce replicas for development
+  - patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+    target:
+      kind: Deployment
+
+  # Reduce resource limits for development
+  - patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 512Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 128Mi
+    target:
+      kind: Deployment
+      labelSelector: "app.kubernetes.io/component!=inference"
+
+# Use smaller storage classes for development
+patchesStrategicMerge:
+  - development-storage.yaml
+
+configMapGenerator:
+  - name: flexstack-env
+    literals:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=debug

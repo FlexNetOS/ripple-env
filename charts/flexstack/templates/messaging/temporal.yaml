@@ -1,0 +1,180 @@
+{{- if and .Values.messaging.enabled .Values.messaging.temporal.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "flexstack.fullname" . }}-temporal-config
+  namespace: {{ .Values.namespaces.messaging }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow
+data:
+  development.yaml: |
+    system.forceSearchAttributesCacheRefreshOnRead:
+      - value: true
+        constraints: {}
+    frontend.enableTokenNamespaceEnforcement:
+      - value: false
+        constraints: {}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "flexstack.fullname" . }}-temporal-credentials
+  namespace: {{ .Values.namespaces.messaging }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow
+type: Opaque
+stringData:
+  POSTGRES_USER: {{ .Values.postgresql.auth.username }}
+  POSTGRES_PWD: {{ .Values.postgresql.auth.password }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "flexstack.fullname" . }}-temporal
+  namespace: {{ .Values.namespaces.messaging }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow
+spec:
+  replicas: {{ .Values.messaging.temporal.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: temporal
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: temporal
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: workflow
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7239"
+    spec:
+      containers:
+        - name: temporal
+          image: "{{ .Values.messaging.temporal.image.repository }}:{{ .Values.messaging.temporal.image.tag }}"
+          ports:
+            - containerPort: 7233
+              name: grpc
+            - containerPort: 7239
+              name: metrics
+          env:
+            - name: DB
+              value: postgresql
+            - name: DB_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "flexstack.fullname" . }}-temporal-credentials
+                  key: POSTGRES_USER
+            - name: POSTGRES_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "flexstack.fullname" . }}-temporal-credentials
+                  key: POSTGRES_PWD
+            - name: POSTGRES_SEEDS
+              value: {{ include "flexstack.postgresql.host" . }}
+            - name: DYNAMIC_CONFIG_FILE_PATH
+              value: "/etc/temporal/dynamicconfig/development.yaml"
+          volumeMounts:
+            - name: temporal-config
+              mountPath: /etc/temporal/dynamicconfig
+          resources:
+            {{- toYaml .Values.messaging.temporal.resources | nindent 12 }}
+          livenessProbe:
+            tcpSocket:
+              port: 7233
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 7233
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: temporal-config
+          configMap:
+            name: {{ include "flexstack.fullname" . }}-temporal-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "flexstack.fullname" . }}-temporal
+  namespace: {{ .Values.namespaces.messaging }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow
+spec:
+  type: ClusterIP
+  ports:
+    - port: 7233
+      targetPort: 7233
+      name: grpc
+    - port: 7239
+      targetPort: 7239
+      name: metrics
+  selector:
+    app.kubernetes.io/name: temporal
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{- if and .Values.messaging.enabled .Values.messaging.temporalUi.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "flexstack.fullname" . }}-temporal-ui
+  namespace: {{ .Values.namespaces.messaging }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+spec:
+  replicas: {{ .Values.messaging.temporalUi.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: temporal-ui
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: temporal-ui
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: ui
+    spec:
+      containers:
+        - name: temporal-ui
+          image: "{{ .Values.messaging.temporalUi.image.repository }}:{{ .Values.messaging.temporalUi.image.tag }}"
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: TEMPORAL_ADDRESS
+              value: "{{ include "flexstack.fullname" . }}-temporal:7233"
+            - name: TEMPORAL_CORS_ORIGINS
+              value: "http://localhost:3000"
+          resources:
+            {{- toYaml .Values.messaging.temporalUi.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "flexstack.fullname" . }}-temporal-ui
+  namespace: {{ .Values.namespaces.messaging }}
+  labels:
+    {{- include "flexstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  selector:
+    app.kubernetes.io/name: temporal-ui
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

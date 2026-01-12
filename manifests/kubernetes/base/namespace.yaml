@@ -1,0 +1,50 @@
+# FlexStack Kubernetes Namespaces
+# Generated from docker-compose.yml profiles
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flexstack
+  labels:
+    app.kubernetes.io/name: flexstack
+    app.kubernetes.io/part-of: flexstack
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flexstack-observability
+  labels:
+    app.kubernetes.io/name: flexstack-observability
+    app.kubernetes.io/part-of: flexstack
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flexstack-ai
+  labels:
+    app.kubernetes.io/name: flexstack-ai
+    app.kubernetes.io/part-of: flexstack
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flexstack-identity
+  labels:
+    app.kubernetes.io/name: flexstack-identity
+    app.kubernetes.io/part-of: flexstack
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flexstack-edge
+  labels:
+    app.kubernetes.io/name: flexstack-edge
+    app.kubernetes.io/part-of: flexstack
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flexstack-messaging
+  labels:
+    app.kubernetes.io/name: flexstack-messaging
+    app.kubernetes.io/part-of: flexstack

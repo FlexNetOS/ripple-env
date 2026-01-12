@@ -1,0 +1,41 @@
+# FlexStack Production Overlay
+# Production environment with high availability and security
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: flexstack-production
+
+namespace: flexstack
+
+commonLabels:
+  environment: production
+
+resources:
+  - ../../base
+  - network-policies.yaml
+  - pod-disruption-budgets.yaml
+
+patches:
+  # Increase replicas for production
+  - patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 3
+    target:
+      kind: Deployment
+      labelSelector: "app.kubernetes.io/component in (gateway,policy)"
+
+  - patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+    target:
+      kind: Deployment
+      labelSelector: "app.kubernetes.io/component in (orchestration,workflow)"
+
+configMapGenerator:
+  - name: flexstack-env
+    literals:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=info

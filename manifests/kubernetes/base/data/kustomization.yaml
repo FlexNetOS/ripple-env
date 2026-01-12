@@ -1,0 +1,17 @@
+# Data Services Kustomization
+# Graph database and data services
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: flexstack-data
+
+namespace: flexstack
+
+commonLabels:
+  app.kubernetes.io/part-of: flexstack
+  app.kubernetes.io/managed-by: kustomize
+  flexstack.io/profile: data
+
+resources:
+  - neo4j.yaml

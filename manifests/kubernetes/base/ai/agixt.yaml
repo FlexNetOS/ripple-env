@@ -1,0 +1,226 @@
+# AGiXT Deployment for FlexStack
+# Agent orchestration platform
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: agixt-credentials
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: agixt
+    app.kubernetes.io/component: orchestration
+    app.kubernetes.io/part-of: flexstack
+type: Opaque
+stringData:
+  AGIXT_API_KEY: agixt-dev-key
+  DATABASE_PASSWORD: changeme
+  OPENAI_API_KEY: sk-localai
+  AWS_SECRET_ACCESS_KEY: minioadmin
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agixt-config
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: agixt
+    app.kubernetes.io/component: orchestration
+    app.kubernetes.io/part-of: flexstack
+data:
+  AGIXT_URI: "http://agixt:7437"
+  UVICORN_WORKERS: "4"
+  DB_CONNECTED: "true"
+  DATABASE_TYPE: "postgresql"
+  DATABASE_NAME: "agixt"
+  DATABASE_USER: "postgres"
+  DATABASE_HOST: "postgres.flexstack.svc.cluster.local"
+  DATABASE_PORT: "5432"
+  USING_S3: "true"
+  AWS_ACCESS_KEY_ID: "minioadmin"
+  S3_BUCKET: "agixt"
+  S3_ENDPOINT_URL: "http://minio.flexstack.svc.cluster.local:9000"
+  OPENAI_API_BASE: "http://localai:8080/v1"
+  DEFAULT_PROVIDER: "openai"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agixt-models
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: agixt
+    app.kubernetes.io/component: orchestration
+    app.kubernetes.io/part-of: flexstack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agixt-workspace
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: agixt
+    app.kubernetes.io/component: orchestration
+    app.kubernetes.io/part-of: flexstack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agixt
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: agixt
+    app.kubernetes.io/component: orchestration
+    app.kubernetes.io/part-of: flexstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: agixt
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: agixt
+        app.kubernetes.io/component: orchestration
+        app.kubernetes.io/part-of: flexstack
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7437"
+    spec:
+      containers:
+        - name: agixt
+          image: joshxt/agixt:main
+          ports:
+            - containerPort: 7437
+              name: http
+          envFrom:
+            - configMapRef:
+                name: agixt-config
+            - secretRef:
+                name: agixt-credentials
+          volumeMounts:
+            - name: agixt-models
+              mountPath: /agixt/models
+            - name: agixt-workspace
+              mountPath: /agixt/WORKSPACE
+          resources:
+            limits:
+              memory: 4Gi
+              cpu: "4"
+            requests:
+              memory: 1Gi
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 7437
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 7437
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+      volumes:
+        - name: agixt-models
+          persistentVolumeClaim:
+            claimName: agixt-models
+        - name: agixt-workspace
+          persistentVolumeClaim:
+            claimName: agixt-workspace
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agixt
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: agixt
+    app.kubernetes.io/component: orchestration
+    app.kubernetes.io/part-of: flexstack
+spec:
+  type: ClusterIP
+  ports:
+    - port: 7437
+      targetPort: 7437
+      name: http
+  selector:
+    app.kubernetes.io/name: agixt
+---
+# AGiXT Interactive UI
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agixt-ui
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: agixt-ui
+    app.kubernetes.io/component: ui
+    app.kubernetes.io/part-of: flexstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: agixt-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: agixt-ui
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: flexstack
+    spec:
+      containers:
+        - name: agixt-ui
+          image: joshxt/agixt-interactive:main
+          ports:
+            - containerPort: 3437
+              name: http
+          env:
+            - name: AGIXT_SERVER
+              value: "http://agixt:7437"
+            - name: AGIXT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agixt-credentials
+                  key: AGIXT_API_KEY
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agixt-ui
+  namespace: flexstack-ai
+  labels:
+    app.kubernetes.io/name: agixt-ui
+    app.kubernetes.io/component: ui
+    app.kubernetes.io/part-of: flexstack
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3437
+      targetPort: 3437
+      name: http
+  selector:
+    app.kubernetes.io/name: agixt-ui
