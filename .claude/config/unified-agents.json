@@ -1,0 +1,543 @@
+{
+  "$schema": "./agent-schema.json",
+  "version": "1.0.0",
+  "name": "ripple-env",
+  "description": "ROS2 Humble development environment agent configuration",
+  "agents": {
+    "coordinator": "coordinator",
+    "default": "coordinator",
+    "enabled": [
+      "migration",
+      "security",
+      "full-stack-architect",
+      "devops",
+      "config-consistency-agent",
+      "nix-environment",
+      "pre-verify",
+      "kubernetes",
+      "agent-coordinator",
+      "identity",
+      "cross-analysis",
+      "test-runner",
+      "robotics",
+      "documentation"
+    ],
+    "definitions": [
+      {
+        "name": "migration",
+        "role": "migration Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "security",
+        "role": "security Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "full-stack-architect",
+        "role": "full-stack-architect Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "devops",
+        "role": "devops Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "config-consistency-agent",
+        "role": "",
+        "model": "kimi-k2-thinking",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "nix-environment",
+        "role": "nix-environment Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "pre-verify",
+        "role": "pre-verify Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "kubernetes",
+        "role": "kubernetes Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "agent-coordinator",
+        "role": "agent-coordinator Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "identity",
+        "role": "identity Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "cross-analysis",
+        "role": "cross-analysis Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "test-runner",
+        "role": "test-runner Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "robotics",
+        "role": "robotics Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      },
+      {
+        "name": "documentation",
+        "role": "documentation Agent",
+        "model": "sonnet",
+        "context": "",
+        "priority": "medium"
+      }
+    ]
+  },
+  "skills": {
+    "enabled": [
+      "ros2-development",
+      "devops",
+      "configuration-patterns",
+      "Python Ruff Linter & Formatter",
+      "AI Inference & Model Serving",
+      "aios-cerebrum",
+      "Identity & Authentication",
+      "distributed-systems",
+      "llm-evaluation",
+      "Messaging & Event Systems",
+      "Python Pyupgrade Syntax Modernizer",
+      "nix-environment",
+      "multi-model",
+      "Kubernetes & Container Orchestration",
+      "observability",
+      "ai-assistants",
+      "Holochain Development",
+      "Python Flynt F-String Converter",
+      "rust-tooling"
+    ],
+    "definitions": [
+      {
+        "name": "ros2-development",
+        "description": "ROS2 Humble development skills for building, testing, and running robotics packages",
+        "icon": "\ud83e\udd16",
+        "category": "robotics",
+        "tools": [
+          "colcon",
+          "ros2",
+          "rosdep",
+          "rviz2",
+          "gazebo"
+        ]
+      },
+      {
+        "name": "devops",
+        "description": "DevOps skills for CI/CD, GitHub workflows, and infrastructure automation",
+        "icon": "\ud83d\ude80",
+        "category": "automation",
+        "tools": [
+          "git",
+          "gh",
+          "docker",
+          "nix",
+          "github-actions"
+        ]
+      },
+      {
+        "name": "configuration-patterns",
+        "description": "Enforce Nix + Pixi + direnv + Home-manager configuration patterns",
+        "icon": "shield",
+        "category": "infrastructure",
+        "tools": [
+          "conftest",
+          "nix",
+          "pixi",
+          "direnv"
+        ]
+      },
+      {
+        "name": "Python Ruff Linter & Formatter",
+        "description": "Use ruff to lint, format, and modernize Python code. Activate when: (1) Fixing PEP 8 violations, (2) Removing unused imports, (3) Upgrading deprecated Python syntax (UP rules), (4) Auto-fixing code quality issues, (5) Formatting Python files, or (6) Replacing Flake8, isort, pyupgrade, autoflake, or Black.",
+        "icon": "",
+        "category": "development",
+        "tools": []
+      },
+      {
+        "name": "AI Inference & Model Serving",
+        "description": "AI model inference and serving. Activate when: (1) Setting up LocalAI or vLLM, (2) Configuring model serving, (3) Working with GGUF/GGML models, (4) Implementing inference pipelines, or (5) Optimizing model performance.",
+        "icon": "",
+        "category": "development",
+        "tools": []
+      },
+      {
+        "name": "aios-cerebrum",
+        "description": "AIOS Agent Operating System and Cerebrum SDK for building, deploying, and orchestrating AI agents",
+        "icon": "\ud83e\udde0",
+        "category": "agent-orchestration",
+        "tools": [
+          "aios",
+          "cerebrum",
+          "run-agent",
+          "list-agents",
+          "download-agent",
+          "upload-agent"
+        ]
+      },
+      {
+        "name": "Identity & Authentication",
+        "description": "Identity management and authentication systems. Activate when: (1) Configuring Keycloak realms/clients, (2) Writing OPA policies, (3) Managing Vault secrets, (4) Implementing OIDC/OAuth2 flows, or (5) Setting up RBAC/ABAC authorization.",
+        "icon": "",
+        "category": "development",
+        "tools": []
+      },
+      {
+        "name": "distributed-systems",
+        "description": "Distributed systems tools including NATS messaging, libp2p networking, and Temporal workflows",
+        "icon": "\ud83c\udf10",
+        "category": "infrastructure",
+        "tools": [
+          "nats",
+          "nats-server",
+          "nats-cli",
+          "temporal",
+          "temporalite"
+        ]
+      },
+      {
+        "name": "llm-evaluation",
+        "description": "LLM testing and evaluation tools including promptfoo, trulens, and evals frameworks",
+        "icon": "\ud83e\uddea",
+        "category": "ai",
+        "tools": [
+          "promptfoo",
+          "trulens",
+          "openai-evals"
+        ]
+      },
+      {
+        "name": "Messaging & Event Systems",
+        "description": "Messaging and event-driven architecture. Activate when: (1) Working with NATS pub/sub, (2) Configuring Temporal workflows, (3) Implementing event sourcing, (4) Setting up message queues, or (5) Designing async communication patterns.",
+        "icon": "",
+        "category": "development",
+        "tools": []
+      },
+      {
+        "name": "Python Pyupgrade Syntax Modernizer",
+        "description": "Use pyupgrade to automatically upgrade Python syntax to newer versions. Activate when: (1) Migrating code from Python 2 to 3, (2) Removing deprecated syntax like 'class Foo(object)', (3) Converting old-style string formatting to f-strings, (4) Updating type hints to modern union syntax (X | Y), (5) Removing obsolete __future__ imports, or (6) Upgrading to a newer Python minimum version.",
+        "icon": "",
+        "category": "development",
+        "tools": []
+      },
+      {
+        "name": "nix-environment",
+        "description": "Nix flakes, home-manager, and reproducible environment management",
+        "icon": "\u2744\ufe0f",
+        "category": "environment",
+        "tools": [
+          "nix",
+          "nom",
+          "direnv",
+          "home-manager"
+        ]
+      },
+      {
+        "name": "multi-model",
+        "description": "Multi-model orchestration for ARIA. Activate when dispatching tasks to different LLM providers (OpenAI, local models, cloud providers) or when optimizing cost/latency tradeoffs.",
+        "icon": "",
+        "category": "development",
+        "tools": []
+      },
+      {
+        "name": "Kubernetes & Container Orchestration",
+        "description": "Kubernetes deployment and management. Activate when: (1) Creating or modifying K8s manifests, (2) Working with Helm charts, (3) Configuring ArgoCD GitOps, (4) Managing cluster resources, or (5) Troubleshooting pod/service issues.",
+        "icon": "",
+        "category": "development",
+        "tools": []
+      },
+      {
+        "name": "observability",
+        "description": "Monitoring and observability tools including Prometheus, OpenTelemetry, and Netdata",
+        "icon": "\ud83d\udcca",
+        "category": "infrastructure",
+        "tools": [
+          "prometheus",
+          "promtool",
+          "alertmanager",
+          "grafana",
+          "netdata",
+          "otel-collector"
+        ]
+      },
+      {
+        "name": "ai-assistants",
+        "description": "AI-powered development tools configuration and usage",
+        "icon": "\ud83e\udd16",
+        "category": "development",
+        "tools": [
+          "aichat",
+          "aider",
+          "ai",
+          "ai-code",
+          "ai-explain",
+          "ai-review",
+          "pair",
+          "pair-voice",
+          "pair-watch",
+          "localai",
+          "agixt"
+        ]
+      },
+      {
+        "name": "Holochain Development",
+        "description": "Holochain DHT development for distributed coordination. Activate when: (1) Building Holochain applications (hApps), (2) Writing Zome code in Rust, (3) Configuring conductor and lair-keystore, (4) Working with DHT entries and links, or (5) Setting up Holochain development environment.",
+        "icon": "",
+        "category": "development",
+        "tools": []
+      },
+      {
+        "name": "Python Flynt F-String Converter",
+        "description": "Use flynt to convert old Python string formatting to f-strings. Activate when: (1) Converting %-formatting to f-strings, (2) Converting .format() calls to f-strings, (3) Modernizing string concatenation to f-strings, (4) Improving code readability through f-string adoption, or (5) Batch-converting legacy Python codebases.",
+        "icon": "",
+        "category": "development",
+        "tools": []
+      },
+      {
+        "name": "rust-tooling",
+        "description": "Rust development tools including PyO3 bindings, sqlx database access, AGiXT SDK, and Rust-Python interop",
+        "icon": "\ud83e\udd80",
+        "category": "development",
+        "tools": [
+          "cargo",
+          "rustc",
+          "rust-analyzer",
+          "rustfmt",
+          "clippy",
+          "maturin",
+          "pyo3",
+          "sqlx-cli",
+          "agixt_sdk"
+        ]
+      }
+    ]
+  },
+  "commands": {
+    "enabled": [
+      "build",
+      "aria-tasks",
+      "test",
+      "aria-scan",
+      "aria-audit-ci",
+      "aria-audit-agents",
+      "aria-audit",
+      "aria-audit-nix",
+      "update-deps",
+      "flake-check"
+    ],
+    "definitions": [
+      {
+        "name": "build",
+        "description": "Build ROS2 packages with colcon"
+      },
+      {
+        "name": "aria-tasks",
+        "description": "Generate task backlog from previous ARIA audit findings"
+      },
+      {
+        "name": "test",
+        "description": "Run ROS2 package tests with colcon"
+      },
+      {
+        "name": "aria-scan",
+        "description": "Quick codebase scan with ARIA (discovery only, no team deployment)"
+      },
+      {
+        "name": "aria-audit-ci",
+        "description": "ARIA audit focused on CI/CD workflows"
+      },
+      {
+        "name": "aria-audit-agents",
+        "description": "ARIA audit focused on AI agents and skills configuration"
+      },
+      {
+        "name": "aria-audit",
+        "description": "Run comprehensive codebase audit with ARIA orchestrator"
+      },
+      {
+        "name": "aria-audit-nix",
+        "description": "ARIA audit focused on Nix/Flake configuration"
+      },
+      {
+        "name": "update-deps",
+        "description": "Update project dependencies (Nix and Pixi)"
+      },
+      {
+        "name": "flake-check",
+        "description": "Validate the Nix flake configuration"
+      }
+    ]
+  },
+  "models": {
+    "default": "claude.sonnet",
+    "definitions": {
+      "claude": {
+        "opus": {
+          "id": "claude-opus-4-5-20251101",
+          "use_case": "orchestrator, complex architecture",
+          "cost_tier": "high"
+        },
+        "sonnet": {
+          "id": "claude-sonnet-4-20250514",
+          "use_case": "domain leads, analysis",
+          "cost_tier": "medium"
+        },
+        "haiku": {
+          "id": "claude-haiku-3-5-20241022",
+          "use_case": "validation, counting, fast tasks",
+          "cost_tier": "low"
+        }
+      },
+      "openai": {
+        "gpt4": {
+          "id": "gpt-4-turbo",
+          "use_case": "alternative reasoning",
+          "env_key": "OPENAI_API_KEY"
+        },
+        "gpt4o": {
+          "id": "gpt-4o",
+          "use_case": "vision, multimodal",
+          "env_key": "OPENAI_API_KEY"
+        }
+      },
+      "local": {
+        "localai": {
+          "id": "localai/llama3",
+          "endpoint": "http://localhost:8080/v1",
+          "use_case": "offline, private data",
+          "env_key": "LOCALAI_API_KEY"
+        },
+        "vllm": {
+          "id": "vllm/mixtral",
+          "endpoint": "http://localhost:8000/v1",
+          "use_case": "high-throughput inference",
+          "env_key": "VLLM_API_KEY"
+        },
+        "ollama": {
+          "id": "ollama/llama3.2",
+          "endpoint": "http://localhost:11434/api",
+          "use_case": "local development",
+          "env_key": null
+        }
+      },
+      "anthropic_partners": {
+        "bedrock": {
+          "id": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+          "region": "us-east-1",
+          "use_case": "AWS integration",
+          "env_key": "AWS_ACCESS_KEY_ID"
+        },
+        "vertex": {
+          "id": "claude-3-5-sonnet-v2@20241022",
+          "project": "${GCP_PROJECT_ID}",
+          "use_case": "GCP integration",
+          "env_key": "GOOGLE_APPLICATION_CREDENTIALS"
+        }
+      },
+      "moonshot": {
+        "kimi_k2": {
+          "id": "kimi-k2-instruct",
+          "endpoint": "https://api.moonshot.ai/v1",
+          "use_case": "agentic tasks, reasoning, coding",
+          "env_key": "MOONSHOT_API_KEY",
+          "params": {
+            "total": "1T",
+            "active": "32B",
+            "type": "MoE"
+          },
+          "recommended_temp": 0.6
+        },
+        "kimi_k2_thinking": {
+          "id": "kimi-k2-thinking",
+          "endpoint": "https://api.moonshot.ai/v1",
+          "use_case": "step-by-step reasoning, tool use",
+          "env_key": "MOONSHOT_API_KEY",
+          "note": "Thinking agent with dynamic tool invocation"
+        }
+      },
+      "openrouter": {
+        "kimi_k2": {
+          "id": "moonshotai/kimi-k2",
+          "endpoint": "https://openrouter.ai/api/v1",
+          "use_case": "unified access to Kimi K2",
+          "env_key": "OPENROUTER_API_KEY"
+        }
+      }
+    },
+    "routing": [
+      {
+        "taskType": "orchestration",
+        "model": "claude.opus"
+      },
+      {
+        "taskType": "domain_analysis",
+        "model": "claude.sonnet"
+      },
+      {
+        "taskType": "validation",
+        "model": "claude.haiku"
+      },
+      {
+        "taskType": "vision",
+        "model": "openai.gpt4o"
+      },
+      {
+        "taskType": "offline",
+        "model": "local.ollama"
+      },
+      {
+        "taskType": "high_throughput",
+        "model": "local.vllm"
+      },
+      {
+        "taskType": "agentic",
+        "model": "moonshot.kimi_k2"
+      },
+      {
+        "taskType": "reasoning",
+        "model": "moonshot.kimi_k2_thinking"
+      },
+      {
+        "taskType": "coding",
+        "model": "moonshot.kimi_k2"
+      }
+    ]
+  }
+}

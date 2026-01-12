@@ -1,0 +1,503 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://flexnetos.github.io/ripple-env/schemas/agent-config.json",
+  "title": "Unified Agent Configuration Schema",
+  "description": "Schema for validating all agent, skill, and model configurations",
+  "type": "object",
+
+  "definitions": {
+    "modelId": {
+      "type": "string",
+      "description": "Model identifier (e.g., opus, sonnet, haiku, kimi-k2)",
+      "enum": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "gpt4",
+        "gpt4o",
+        "kimi-k2",
+        "kimi-k2-thinking",
+        "localai",
+        "ollama",
+        "vllm"
+      ]
+    },
+
+    "priority": {
+      "type": "string",
+      "enum": ["highest", "high", "medium", "low"],
+      "description": "Agent priority level for routing"
+    },
+
+    "category": {
+      "type": "string",
+      "enum": [
+        "core",
+        "domain",
+        "analysis",
+        "specialized",
+        "robotics",
+        "devops",
+        "infrastructure",
+        "security",
+        "development"
+      ],
+      "description": "Agent or skill category"
+    },
+
+    "triggerKeyword": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Keyword that triggers agent routing"
+    },
+
+    "handoffRule": {
+      "type": "object",
+      "properties": {
+        "to": {
+          "type": "string",
+          "description": "Target agent name"
+        },
+        "when": {
+          "type": "string",
+          "description": "Condition for handoff"
+        },
+        "context": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files/data to pass during handoff"
+        }
+      },
+      "required": ["to", "when"]
+    },
+
+    "decisionRule": {
+      "type": "object",
+      "properties": {
+        "condition": {
+          "type": "string",
+          "description": "When this rule applies"
+        },
+        "action": {
+          "type": "string",
+          "description": "What action to take"
+        },
+        "commands": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Commands to execute"
+        }
+      },
+      "required": ["condition", "action"]
+    },
+
+    "agent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+(-agent)?$",
+          "description": "Agent identifier"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Human-readable role description"
+        },
+        "model": { "$ref": "#/definitions/modelId" },
+        "context": {
+          "type": "string",
+          "description": "Domain context (e.g., robotics, devops, all)"
+        },
+        "priority": { "$ref": "#/definitions/priority" },
+        "category": { "$ref": "#/definitions/category" },
+        "triggerKeywords": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/triggerKeyword" },
+          "minItems": 1,
+          "description": "Keywords that route to this agent"
+        },
+        "responsibilities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "Core responsibilities of the agent"
+        },
+        "decisionRules": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/decisionRule" },
+          "description": "Rules for decision making"
+        },
+        "handoffs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/handoffRule" },
+          "description": "Rules for handing off to other agents"
+        },
+        "contextFiles": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files to load for context"
+        },
+        "tools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tools available to this agent"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this agent is active"
+        }
+      },
+      "required": ["name", "role", "model", "triggerKeywords", "responsibilities"]
+    },
+
+    "skill": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Skill identifier"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "description": "What this skill provides"
+        },
+        "icon": {
+          "type": "string",
+          "maxLength": 4,
+          "description": "Emoji icon for the skill"
+        },
+        "category": { "$ref": "#/definitions/category" },
+        "tools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "Tools provided by this skill"
+        },
+        "agents": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Agents that use this skill"
+        },
+        "prerequisites": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Required setup before using this skill"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this skill is active"
+        }
+      },
+      "required": ["name", "description", "category", "tools"]
+    },
+
+    "command": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Command name (without slash)"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5,
+          "description": "What this command does"
+        },
+        "agent": {
+          "type": "string",
+          "description": "Agent that handles this command"
+        },
+        "skill": {
+          "type": "string",
+          "description": "Skill associated with this command"
+        },
+        "arguments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["string", "boolean", "number", "path"] },
+              "required": { "type": "boolean", "default": false },
+              "description": { "type": "string" }
+            },
+            "required": ["name", "type"]
+          }
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "required": ["name", "description"]
+    },
+
+    "modelConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Full model identifier"
+        },
+        "alias": { "$ref": "#/definitions/modelId" },
+        "provider": {
+          "type": "string",
+          "enum": ["anthropic", "openai", "moonshot", "local", "openrouter"],
+          "description": "Model provider"
+        },
+        "endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "API endpoint for non-default providers"
+        },
+        "envKey": {
+          "type": ["string", "null"],
+          "description": "Environment variable for API key"
+        },
+        "useCase": {
+          "type": "string",
+          "description": "Recommended use case"
+        },
+        "costTier": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "Relative cost tier"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["text", "vision", "code", "reasoning", "tools", "offline"]
+          },
+          "description": "Model capabilities"
+        }
+      },
+      "required": ["id", "provider", "useCase"]
+    },
+
+    "routingRule": {
+      "type": "object",
+      "properties": {
+        "taskType": {
+          "type": "string",
+          "description": "Type of task to route"
+        },
+        "model": { "$ref": "#/definitions/modelId" },
+        "fallback": { "$ref": "#/definitions/modelId" },
+        "conditions": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional routing conditions"
+        }
+      },
+      "required": ["taskType", "model"]
+    },
+
+    "mcpServer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "MCP server name"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["stdio", "http"],
+          "default": "stdio"
+        },
+        "command": {
+          "type": "string",
+          "description": "Command to start the server"
+        },
+        "args": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "HTTP endpoint for http type servers"
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "disabled": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": ["name"]
+    },
+
+    "permission": {
+      "type": "object",
+      "properties": {
+        "allow": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Allowed operations (glob patterns)"
+        },
+        "deny": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Denied operations (glob patterns)"
+        }
+      }
+    }
+  },
+
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Configuration version (semver)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "description": {
+      "type": "string"
+    },
+
+    "agents": {
+      "type": "object",
+      "properties": {
+        "coordinator": {
+          "type": "string",
+          "description": "Name of the coordinator agent"
+        },
+        "default": {
+          "type": "string",
+          "description": "Default agent for unrouted requests"
+        },
+        "enabled": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of enabled agent names"
+        },
+        "definitions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/agent" },
+          "description": "Agent definitions"
+        }
+      },
+      "required": ["coordinator", "default", "enabled"]
+    },
+
+    "skills": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of enabled skill names"
+        },
+        "definitions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/skill" },
+          "description": "Skill definitions"
+        }
+      }
+    },
+
+    "commands": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of enabled command names"
+        },
+        "definitions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/command" },
+          "description": "Command definitions"
+        }
+      }
+    },
+
+    "models": {
+      "type": "object",
+      "properties": {
+        "default": { "$ref": "#/definitions/modelId" },
+        "definitions": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/modelConfig" }
+        },
+        "routing": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/routingRule" },
+          "description": "Model routing rules"
+        }
+      },
+      "required": ["default"]
+    },
+
+    "mcp": {
+      "type": "object",
+      "properties": {
+        "servers": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/mcpServer" }
+        }
+      }
+    },
+
+    "permissions": { "$ref": "#/definitions/permission" },
+
+    "context": {
+      "type": "object",
+      "properties": {
+        "include": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files to include in context"
+        },
+        "exclude": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Patterns to exclude from context"
+        }
+      }
+    },
+
+    "hooks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["command", "script"] },
+            "matcher": { "type": "string" },
+            "command": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "timeout": { "type": "integer", "minimum": 1000 }
+          },
+          "required": ["type", "command"]
+        }
+      }
+    },
+
+    "environment": {
+      "type": "object",
+      "description": "Environment-specific settings",
+      "additionalProperties": true
+    }
+  },
+
+  "required": ["version", "name", "agents", "models"]
+}
