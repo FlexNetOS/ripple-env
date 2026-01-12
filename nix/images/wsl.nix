@@ -4,14 +4,27 @@
 # Build command:
 #   nix build .#nixosConfigurations.wsl-ripple.config.system.build.tarballBuilder
 #
+# Build command (production/stable):
+#   nix build .#nixosConfigurations.wsl-ros2-stable.config.system.build.tarballBuilder
+#
 # Import command (PowerShell):
 #   wsl --import NixOS-Ripple $env:USERPROFILE\WSL\NixOS-Ripple result/nixos-wsl.tar.gz
 #
 # Launch:
 #   wsl -d NixOS-Ripple
-{ inputs, pkgs, lib, ... }:
+#
+# Supply Chain Security:
+#   - Use *-stable variants for production deployments
+#   - Stable uses nixos-24.11 with vetted packages
+#   - Development uses nixos-unstable for latest features
+{ inputs, pkgs, lib, isStable ? false, ... }:
 
-inputs.nixos-wsl.lib.nixosSystem {
+let
+  wslInput = if isStable then inputs.nixos-wsl-stable else inputs.nixos-wsl;
+  nixpkgsInput = if isStable then inputs.nixpkgs-stable else inputs.nixpkgs;
+  channelLabel = if isStable then "stable (nixos-24.11)" else "unstable";
+in
+wslInput.lib.nixosSystem {
   system = "x86_64-linux";
 
   modules = [
