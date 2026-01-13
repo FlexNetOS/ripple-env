@@ -14,12 +14,35 @@ RUN mkdir -p /etc/nix && \
     echo "sandbox = false" >> /etc/nix/nix.conf
 
 # Create non-root user (vscode for devcontainer compatibility)
-RUN nix-env -iA nixpkgs.shadow && \
-    groupadd --gid 1000 vscode && \
-    useradd --uid 1000 --gid 1000 -m vscode && \
-    mkdir -p /etc/sudoers.d && \
-    echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode && \
-    chmod 0440 /etc/sudoers.d/vscode
+#
+# IMPORTANT (Codespaces): The nixos/nix image can have /etc/passwd and /etc/group
+# implemented as symlinks. During Codespaces builds (with the Dev Containers
+# CLI "Dockerfile-with-features" wrapper), these links can become cyclic,
+# causing errors like:
+#   groupadd: cannot open /etc/group: Too many levels of symbolic links
+#
+# To keep nixos/nix as our base while remaining Codespaces-friendly, we:
+#   1) Ensure /etc/passwd and /etc/group are *regular files* (break symlink loops)
+#   2) Add vscode user/group entries without relying on useradd/groupadd
+RUN set -eu; \
+        if [ -L /etc/passwd ] || [ -L /etc/group ]; then \
+            rm -f /etc/passwd /etc/group; \
+        fi; \
+        if [ ! -f /etc/passwd ]; then \
+            printf 'root:x:0:0:root:/root:/bin/sh\n' > /etc/passwd; \
+        fi; \
+        if [ ! -f /etc/group ]; then \
+            printf 'root:x:0:\n' > /etc/group; \
+        fi; \
+        grep -q '^root:' /etc/passwd || printf 'root:x:0:0:root:/root:/bin/sh\n' >> /etc/passwd; \
+        grep -q '^root:' /etc/group || printf 'root:x:0:\n' >> /etc/group; \
+        grep -q '^vscode:' /etc/group || printf 'vscode:x:1000:\n' >> /etc/group; \
+        grep -q '^vscode:' /etc/passwd || printf 'vscode:x:1000:1000::/home/vscode:/bin/sh\n' >> /etc/passwd; \
+        mkdir -p /home/vscode; \
+        chown -R 1000:1000 /home/vscode; \
+        mkdir -p /etc/sudoers.d; \
+        printf 'vscode ALL=(ALL) NOPASSWD:ALL\n' > /etc/sudoers.d/vscode; \
+        chmod 0440 /etc/sudoers.d/vscode
 
 # Install core system packages via Nix
 # These mirror what's in nix/images/wsl.nix for consistency
