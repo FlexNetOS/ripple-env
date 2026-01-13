@@ -207,7 +207,7 @@ Agent Request → Redis Cache Check → [HIT] Return cached response
 **Performance:**
 - Storage: Unlimited (disk-based)
 - Buckets: aria-artifacts, aria-models, aria-logs, aria-vectors
-- API: S3-compatible (works with AWS SDKs)
+- API: S3 compatible (works with AWS SDKs)
 - Console: Web UI on port 9001
 
 **Data Flow:**

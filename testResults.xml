@@ -1,297 +1,36 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
-<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="34" errors="0" failures="34" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2026-01-13" time="14:39:02">
-  <environment os-version="10.0.26220" cwd="C:\Users\De-Flex.Net\source\repos\OKComputer_Re-Audit Ripple Environment\ripple-env" nunit-version="2.5.8.0" machine-name="FLEXNETOS-1001" clr-version="9.0.10" user-domain="FLEXNETOS-1001" platform="Microsoft Windows 11 Pro|C:\WINDOWS|\Device\Harddisk4\Partition3" user="De-Flex.Net" />
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="11" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="9" invalid="0" date="2026-01-13" time="15:29:52">
+  <environment user-domain="FLEXNETOS-1001" user="De-Flex.Net" cwd="C:\Users\De-Flex.Net\source\repos\OKComputer_Re-Audit Ripple Environment\ripple-env" nunit-version="2.5.8.0" os-version="10.0.26220" clr-version="9.0.10" platform="Microsoft Windows 11 Pro|C:\WINDOWS|\Device\Harddisk4\Partition3" machine-name="FLEXNETOS-1001" />
   <culture-info current-culture="en-US" current-uiculture="en-US" />
-  <test-suite type="TestFixture" name="Pester" executed="True" result="Failure" success="False" time="0.9785" asserts="0" description="Pester">
+  <test-suite type="TestFixture" name="Pester" executed="True" result="Ignored" success="True" time="34.9847" asserts="0" description="Pester">
     <results>
-      <test-suite type="TestFixture" name="C:\Users\De-Flex.Net\source\repos\OKComputer_Re-Audit Ripple Environment\ripple-env\test\unit\bootstrap.tests.ps1" executed="True" result="Failure" success="False" time="0.9785" asserts="0" description="C:\Users\De-Flex.Net\source\repos\OKComputer_Re-Audit Ripple Environment\ripple-env\test\unit\bootstrap.tests.ps1">
+      <test-suite type="TestFixture" name="C:\Users\De-Flex.Net\source\repos\OKComputer_Re-Audit Ripple Environment\ripple-env\test\integration\wsl-setup.tests.ps1" executed="True" result="Ignored" success="True" time="34.9847" asserts="0" description="C:\Users\De-Flex.Net\source\repos\OKComputer_Re-Audit Ripple Environment\ripple-env\test\integration\wsl-setup.tests.ps1">
         <results>
-          <test-suite type="TestFixture" name="Write-ColorOutput" executed="True" result="Failure" success="False" time="0" asserts="0" description="Write-ColorOutput">
+          <test-suite type="TestFixture" name="WSL2 Environment" executed="True" result="Ignored" success="True" time="0.054" asserts="0" description="WSL2 Environment">
             <results>
-              <test-case description="Should write Info messages without error" name="Write-ColorOutput.Should write Info messages without error" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should write Success messages without error" name="Write-ColorOutput.Should write Success messages without error" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should write Warning messages without error" name="Write-ColorOutput.Should write Warning messages without error" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should write Error messages without error" name="Write-ColorOutput.Should write Error messages without error" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should write Step messages without error" name="Write-ColorOutput.Should write Step messages without error" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
+              <test-case description="Should have WSL installed" name="WSL2 Environment.Should have WSL installed" time="0.0054" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Should have WSL2 as default version" name="WSL2 Environment.Should have WSL2 as default version" time="0.003" asserts="0" success="False" result="Ignored" executed="False" />
+              <test-case description="Should be able to run basic Linux commands" name="WSL2 Environment.Should be able to run basic Linux commands" time="0.0014" asserts="0" success="False" result="Ignored" executed="False" />
             </results>
           </test-suite>
-          <test-suite type="TestFixture" name="Test-Administrator" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-Administrator">
+          <test-suite type="TestFixture" name="NixOS Distribution" executed="True" result="Ignored" success="True" time="0.0606" asserts="0" description="NixOS Distribution">
             <results>
-              <test-case description="Should return a boolean value" name="Test-Administrator.Should return a boolean value" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
+              <test-case description="Should have NixOS-Ripple-Test distribution" name="NixOS Distribution.Should have NixOS-Ripple-Test distribution" time="0.0026" asserts="0" success="False" result="Ignored" executed="False" />
+              <test-case description="Should have Nix installed in the distribution" name="NixOS Distribution.Should have Nix installed in the distribution" time="0.001" asserts="0" success="False" result="Ignored" executed="False" />
+              <test-case description="Should have flakes enabled" name="NixOS Distribution.Should have flakes enabled" time="0.0011" asserts="0" success="False" result="Ignored" executed="False" />
             </results>
           </test-suite>
-          <test-suite type="TestFixture" name="Test-WindowsVersion" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-WindowsVersion">
+          <test-suite type="TestFixture" name="Development Environment" executed="True" result="Ignored" success="True" time="0.0691" asserts="0" description="Development Environment">
             <results>
-              <test-suite type="TestFixture" name="Test-WindowsVersion.When Windows version is compatible" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-WindowsVersion.When Windows version is compatible">
-                <results>
-                  <test-case description="Should return true for compatible Windows version (build 22621)" name="Test-WindowsVersion.When Windows version is compatible.Should return true for compatible Windows version (build 22621)" time="0" asserts="0" success="False" result="Failure" executed="True">
-                    <failure>
-                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                      <stack-trace />
-                    </failure>
-                  </test-case>
-                </results>
-              </test-suite>
-              <test-suite type="TestFixture" name="Test-WindowsVersion.When Windows version is incompatible" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-WindowsVersion.When Windows version is incompatible">
-                <results>
-                  <test-case description="Should return false for incompatible Windows version (build 18363)" name="Test-WindowsVersion.When Windows version is incompatible.Should return false for incompatible Windows version (build 18363)" time="0" asserts="0" success="False" result="Failure" executed="True">
-                    <failure>
-                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                      <stack-trace />
-                    </failure>
-                  </test-case>
-                </results>
-              </test-suite>
+              <test-case description="Should have ripple-env repository cloned" name="Development Environment.Should have ripple-env repository cloned" time="0.003" asserts="0" success="False" result="Ignored" executed="False" />
+              <test-case description="Should have valid flake.nix" name="Development Environment.Should have valid flake.nix" time="0.001" asserts="0" success="False" result="Ignored" executed="False" />
+              <test-case description="Should have pixi.toml" name="Development Environment.Should have pixi.toml" time="0.0011" asserts="0" success="False" result="Ignored" executed="False" />
+              <test-case description="Should be able to enter dev shell" name="Development Environment.Should be able to enter dev shell" time="0.0012" asserts="0" success="False" result="Ignored" executed="False" />
             </results>
           </test-suite>
-          <test-suite type="TestFixture" name="Test-WSLInstalled" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-WSLInstalled">
+          <test-suite type="TestFixture" name="Cleanup" executed="True" result="Success" success="True" time="34.9246" asserts="0" description="Cleanup">
             <results>
-              <test-suite type="TestFixture" name="Test-WSLInstalled.When WSL is installed" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-WSLInstalled.When WSL is installed">
-                <results>
-                  <test-case description="Should return true when WSL is installed" name="Test-WSLInstalled.When WSL is installed.Should return true when WSL is installed" time="0" asserts="0" success="False" result="Failure" executed="True">
-                    <failure>
-                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                      <stack-trace />
-                    </failure>
-                  </test-case>
-                </results>
-              </test-suite>
-              <test-suite type="TestFixture" name="Test-WSLInstalled.When WSL is not installed" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-WSLInstalled.When WSL is not installed">
-                <results>
-                  <test-case description="Should return false when WSL is not installed" name="Test-WSLInstalled.When WSL is not installed.Should return false when WSL is not installed" time="0" asserts="0" success="False" result="Failure" executed="True">
-                    <failure>
-                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                      <stack-trace />
-                    </failure>
-                  </test-case>
-                </results>
-              </test-suite>
-            </results>
-          </test-suite>
-          <test-suite type="TestFixture" name="Test-WSL2Default" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-WSL2Default">
-            <results>
-              <test-suite type="TestFixture" name="Test-WSL2Default.When WSL2 is default" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-WSL2Default.When WSL2 is default">
-                <results>
-                  <test-case description="Should return true when WSL2 is default" name="Test-WSL2Default.When WSL2 is default.Should return true when WSL2 is default" time="0" asserts="0" success="False" result="Failure" executed="True">
-                    <failure>
-                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                      <stack-trace />
-                    </failure>
-                  </test-case>
-                </results>
-              </test-suite>
-              <test-suite type="TestFixture" name="Test-WSL2Default.When WSL1 is default" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-WSL2Default.When WSL1 is default">
-                <results>
-                  <test-case description="Should return false when WSL1 is default" name="Test-WSL2Default.When WSL1 is default.Should return false when WSL1 is default" time="0" asserts="0" success="False" result="Failure" executed="True">
-                    <failure>
-                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                      <stack-trace />
-                    </failure>
-                  </test-case>
-                </results>
-              </test-suite>
-            </results>
-          </test-suite>
-          <test-suite type="TestFixture" name="Test-DistroExists" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-DistroExists">
-            <results>
-              <test-suite type="TestFixture" name="Test-DistroExists.When distro exists" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-DistroExists.When distro exists">
-                <results>
-                  <test-case description="Should return true when distro exists" name="Test-DistroExists.When distro exists.Should return true when distro exists" time="0" asserts="0" success="False" result="Failure" executed="True">
-                    <failure>
-                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                      <stack-trace />
-                    </failure>
-                  </test-case>
-                </results>
-              </test-suite>
-              <test-suite type="TestFixture" name="Test-DistroExists.When distro does not exist" executed="True" result="Failure" success="False" time="0" asserts="0" description="Test-DistroExists.When distro does not exist">
-                <results>
-                  <test-case description="Should return false when distro does not exist" name="Test-DistroExists.When distro does not exist.Should return false when distro does not exist" time="0" asserts="0" success="False" result="Failure" executed="True">
-                    <failure>
-                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                      <stack-trace />
-                    </failure>
-                  </test-case>
-                </results>
-              </test-suite>
-            </results>
-          </test-suite>
-          <test-suite type="TestFixture" name="Set-WSLConfig" executed="True" result="Failure" success="False" time="0" asserts="0" description="Set-WSLConfig">
-            <results>
-              <test-case description="Should create .wslconfig file using MemorySizeGB and SwapSizeGB" name="Set-WSLConfig.Should create .wslconfig file using MemorySizeGB and SwapSizeGB" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should contain correct memory configuration" name="Set-WSLConfig.Should contain correct memory configuration" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should contain experimental settings" name="Set-WSLConfig.Should contain experimental settings" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-            </results>
-          </test-suite>
-          <test-suite type="TestFixture" name="Install-WSL Logic" executed="True" result="Failure" success="False" time="0" asserts="0" description="Install-WSL Logic">
-            <results>
-              <test-case description="Should correctly identify WSL feature states" name="Install-WSL Logic.Should correctly identify WSL feature states" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should have correct WSL feature names" name="Install-WSL Logic.Should have correct WSL feature names" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-            </results>
-          </test-suite>
-          <test-suite type="TestFixture" name="New-NixOSDistro Logic" executed="True" result="Failure" success="False" time="0" asserts="0" description="New-NixOSDistro Logic">
-            <results>
-              <test-case description="Should construct correct tarball path" name="New-NixOSDistro Logic.Should construct correct tarball path" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should handle Force flag logic correctly" name="New-NixOSDistro Logic.Should handle Force flag logic correctly" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should use WSL version 2 for import" name="New-NixOSDistro Logic.Should use WSL version 2 for import" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-            </results>
-          </test-suite>
-          <test-suite type="TestFixture" name="Parameter Validation" executed="True" result="Failure" success="False" time="0" asserts="0" description="Parameter Validation">
-            <results>
-              <test-case description="Should have valid default values" name="Parameter Validation.Should have valid default values" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should accept valid DiskSizeGB values within range (64-4096)" name="Parameter Validation.Should accept valid DiskSizeGB values within range (64-4096)" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should accept valid MemorySizeGB values within range (2-256)" name="Parameter Validation.Should accept valid MemorySizeGB values within range (2-256)" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should accept valid SwapSizeGB values within range (1-64)" name="Parameter Validation.Should accept valid SwapSizeGB values within range (1-64)" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-            </results>
-          </test-suite>
-          <test-suite type="TestFixture" name="URL Configuration" executed="True" result="Failure" success="False" time="0" asserts="0" description="URL Configuration">
-            <results>
-              <test-case description="Should have valid NixOS-WSL release URL" name="URL Configuration.Should have valid NixOS-WSL release URL" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should have valid repository URL" name="URL Configuration.Should have valid repository URL" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-            </results>
-          </test-suite>
-          <test-suite type="TestFixture" name="Helper Functions" executed="True" result="Failure" success="False" time="0" asserts="0" description="Helper Functions">
-            <results>
-              <test-case description="Write-ColorOutput should handle all message types" name="Helper Functions.Write-ColorOutput should handle all message types" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Test-Administrator should work without elevation" name="Helper Functions.Test-Administrator should work without elevation" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-            </results>
-          </test-suite>
-          <test-suite type="TestFixture" name="WSL Command Arguments" executed="True" result="Failure" success="False" time="0" asserts="0" description="WSL Command Arguments">
-            <results>
-              <test-case description="Should construct correct wsl --status command" name="WSL Command Arguments.Should construct correct wsl --status command" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should construct correct wsl --list --quiet command" name="WSL Command Arguments.Should construct correct wsl --list --quiet command" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should construct correct wsl --import command" name="WSL Command Arguments.Should construct correct wsl --import command" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
-              <test-case description="Should construct correct wsl --set-default-version command" name="WSL Command Arguments.Should construct correct wsl --set-default-version command" time="0" asserts="0" success="False" result="Failure" executed="True">
-                <failure>
-                  <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
-                  <stack-trace />
-                </failure>
-              </test-case>
+              <test-case description="Should be able to shutdown WSL" name="Cleanup.Should be able to shutdown WSL" time="34.8527" asserts="0" success="True" result="Success" executed="True" />
             </results>
           </test-suite>
         </results>

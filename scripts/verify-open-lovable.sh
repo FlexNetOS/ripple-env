@@ -61,6 +61,11 @@ if [ -f "docker/docker-compose.ui.yml" ]; then
     UI_COMPOSE_FILE="docker/docker-compose.ui.yml"
 fi
 
+LOCALAI_COMPOSE_FILE="docker-compose.localai.yml"
+if [ -f "docker/docker-compose.localai.yml" ]; then
+    LOCALAI_COMPOSE_FILE="docker/docker-compose.localai.yml"
+fi
+
 # Prefer v2 plugin (`docker compose`), fallback to legacy `docker-compose`.
 COMPOSE=()
 if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
@@ -247,7 +252,7 @@ if docker ps --format '{{.Names}}' | grep -q "localai"; then
     print_pass "LocalAI container is running"
 else
     print_warn "LocalAI is not running - open-lovable requires LocalAI"
-    print_info "  Start LocalAI: docker-compose -f docker-compose.localai.yml up -d"
+    print_info "  Start LocalAI: ${COMPOSE[*]:-docker compose} -f $LOCALAI_COMPOSE_FILE up -d"
 fi
 
 # =============================================================================
@@ -279,7 +284,7 @@ if [ $FAILED -eq 0 ]; then
     echo -e "${GREEN}✓ All critical tests passed!${NC}"
     echo ""
     echo "Next steps:"
-    echo "  1. Ensure LocalAI is running: ${COMPOSE[*]:-docker compose} -f docker-compose.localai.yml up -d"
+    echo "  1. Ensure LocalAI is running: ${COMPOSE[*]:-docker compose} -f $LOCALAI_COMPOSE_FILE up -d"
     echo "  2. Build and start open-lovable: ${COMPOSE[*]:-docker compose} -f $UI_COMPOSE_FILE up -d --build open-lovable"
     echo "  3. Access the application: http://localhost:3211"
     echo "  4. Check logs: ${COMPOSE[*]:-docker compose} -f $UI_COMPOSE_FILE logs -f open-lovable"

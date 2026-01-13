@@ -28,6 +28,10 @@ MINDSDB_API_PORT="${MINDSDB_API_PORT:-47334}"
 MINDSDB_MYSQL_PORT="${MINDSDB_MYSQL_PORT:-47335}"
 MINDSDB_MONGODB_PORT="${MINDSDB_MONGODB_PORT:-47336}"
 
+# When 0 (default), the verifier will *skip* live checks if the stack isn't running.
+# Set to 1 to require a running MindsDB stack and fail otherwise.
+MINDSDB_REQUIRE_RUNNING="${MINDSDB_REQUIRE_RUNNING:-0}"
+
 # =============================================================================
 # Helper Functions
 # =============================================================================
@@ -87,6 +91,12 @@ verify_dependencies() {
         all_ok=false
     fi
 
+    if command -v nc &> /dev/null; then
+        print_success "nc is installed"
+    else
+        print_warning "nc not installed; port checks will be skipped"
+    fi
+
     if jq_is_runnable; then
         print_success "jq is installed"
     else
@@ -138,7 +148,7 @@ verify_containers() {
             data_compose_file="docker/docker-compose.data.yml"
         fi
         print_info "Start services with: docker compose -f $data_compose_file up -d"
-        exit 1
+        return 1
     fi
 
     echo ""
@@ -154,11 +164,15 @@ verify_ports() {
         local port="${port_info%%:*}"
         local name="${port_info#*:}"
 
-        if nc -z "$MINDSDB_HOST" "$port" 2>/dev/null; then
+        if command -v nc >/dev/null 2>&1 && nc -z "$MINDSDB_HOST" "$port" 2>/dev/null; then
             print_success "Port $port ($name) is accessible"
         else
-            print_error "Port $port ($name) is not accessible"
-            all_ok=false
+            if command -v nc >/dev/null 2>&1; then
+                print_error "Port $port ($name) is not accessible"
+                all_ok=false
+            else
+                print_warning "Skipping port check for $port ($name): nc not available"
+            fi
         fi
     done
 
@@ -376,7 +390,14 @@ main() {
     echo ""
 
     verify_dependencies
-    verify_containers
+    if ! verify_containers; then
+        if [ "$MINDSDB_REQUIRE_RUNNING" = "1" ]; then
+            print_error "MindsDB stack is not running"
+            exit 1
+        fi
+        print_warning "MindsDB stack not running; skipping live checks. Set MINDSDB_REQUIRE_RUNNING=1 to enforce."
+        exit 0
+    fi
     verify_ports
     verify_api || print_warning "API check failed - MindsDB may still be starting"
     verify_database

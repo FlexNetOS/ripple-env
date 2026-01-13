@@ -26,6 +26,29 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
+# Prefer v2 plugin (`docker compose`), fallback to legacy `docker-compose`.
+COMPOSE=()
+if docker compose version >/dev/null 2>&1; then
+    COMPOSE=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE=(docker-compose)
+else
+    echo -e "${RED}✗ Docker Compose is not available (docker compose / docker-compose)${NC}"
+    exit 1
+fi
+
+resolve_compose_file() {
+    # usage: resolve_compose_file docker-compose.observability.yml
+    local base="$1"
+    if [ -f "docker/$base" ]; then
+        echo "docker/$base"
+    else
+        echo "$base"
+    fi
+}
+
+OBS_COMPOSE_FILE="$(resolve_compose_file docker-compose.observability.yml)"
+
 echo -e "${GREEN}✓ Docker is available${NC}"
 echo ""
 
@@ -55,8 +78,20 @@ if grep -q "UMAMI_APP_SECRET=changeme" .env 2>/dev/null || \
    ! grep -q "UMAMI_APP_SECRET" .env 2>/dev/null; then
     echo -e "${YELLOW}⚠ Generating secure secrets...${NC}"
 
-    UMAMI_APP_SECRET=$(openssl rand -base64 32)
-    UMAMI_DB_PASSWORD=$(openssl rand -base64 32)
+    gen_secret() {
+        if command -v openssl >/dev/null 2>&1; then
+            openssl rand -base64 32
+        elif command -v python3 >/dev/null 2>&1; then
+            python3 -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
+        elif command -v python >/dev/null 2>&1; then
+            python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
+        else
+            return 1
+        fi
+    }
+
+    UMAMI_APP_SECRET="$(gen_secret)" || { echo -e "${RED}✗ Unable to generate secrets (need openssl or python)${NC}"; exit 1; }
+    UMAMI_DB_PASSWORD="$(gen_secret)" || { echo -e "${RED}✗ Unable to generate secrets (need openssl or python)${NC}"; exit 1; }
 
     # Update or append to .env
     if grep -q "UMAMI_APP_SECRET" .env; then
@@ -96,10 +131,10 @@ echo ""
 echo "Step 4: Pulling Docker Images"
 echo "-----------------------------"
 echo "Pulling netdata..."
-docker compose -f docker-compose.observability.yml pull netdata
+"${COMPOSE[@]}" -f "$OBS_COMPOSE_FILE" pull netdata
 
 echo "Pulling umami..."
-docker compose -f docker-compose.observability.yml pull umami umami-db
+"${COMPOSE[@]}" -f "$OBS_COMPOSE_FILE" pull umami umami-db
 
 echo -e "${GREEN}✓ All images pulled${NC}"
 echo ""
@@ -108,7 +143,7 @@ echo ""
 echo "Step 5: Deploying Services"
 echo "--------------------------"
 echo "Starting observability stack..."
-docker compose -f docker-compose.observability.yml up -d
+"${COMPOSE[@]}" -f "$OBS_COMPOSE_FILE" up -d
 
 echo -e "${GREEN}✓ Services started${NC}"
 echo ""

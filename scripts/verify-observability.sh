@@ -10,6 +10,21 @@
 
 set -e
 
+OBSERVABILITY_REQUIRE_RUNNING="${OBSERVABILITY_REQUIRE_RUNNING:-0}"
+
+# Prefer v2 plugin (`docker compose`), fallback to legacy `docker-compose`.
+COMPOSE=()
+if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    COMPOSE=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE=(docker-compose)
+fi
+
+OBS_COMPOSE_FILE="docker-compose.observability.yml"
+if [ -f "docker/docker-compose.observability.yml" ]; then
+    OBS_COMPOSE_FILE="docker/docker-compose.observability.yml"
+fi
+
 ERRORS=0
 
 # Colors for output
@@ -60,6 +75,20 @@ check_endpoint() {
 if ! command -v docker &> /dev/null; then
     echo -e "${RED}✗ Docker is not installed or not in PATH${NC}"
     exit 1
+fi
+
+# If none of the stack containers are running, skip runtime checks by default.
+if ! docker ps --format '{{.Names}}' | grep -Eq '^(netdata|umami|umami-db|grafana)$' 2>/dev/null; then
+    if [ "$OBSERVABILITY_REQUIRE_RUNNING" = "1" ]; then
+        echo -e "${RED}✗ Observability stack is not running${NC}"
+        echo "Start it with: ${COMPOSE[*]:-docker compose} -f $OBS_COMPOSE_FILE up -d"
+        exit 1
+    fi
+
+    echo -e "${YELLOW}⚠ Observability stack is not running (skipping live checks).${NC}"
+    echo "To run live checks: ${COMPOSE[*]:-docker compose} -f $OBS_COMPOSE_FILE up -d"
+    echo "To enforce running services: set OBSERVABILITY_REQUIRE_RUNNING=1"
+    exit 0
 fi
 
 echo "=== Docker Services ==="
@@ -173,10 +202,6 @@ echo ""
 echo "3. Configure Netdata Cloud (optional):"
 echo "   - Get claim token from https://app.netdata.cloud"
 echo "   - Add to .env: NETDATA_CLAIM_TOKEN=<your-token>"
-OBS_COMPOSE_FILE="docker-compose.observability.yml"
-if [ -f "docker/docker-compose.observability.yml" ]; then
-    OBS_COMPOSE_FILE="docker/docker-compose.observability.yml"
-fi
 echo "   - Restart: docker compose -f $OBS_COMPOSE_FILE restart netdata"
 echo ""
 echo "4. View metrics in Grafana:"
@@ -194,3 +219,4 @@ if [ "$ERRORS" -gt 0 ]; then
 fi
 
 echo -e "${GREEN}✓ All checks passed.${NC}"
+

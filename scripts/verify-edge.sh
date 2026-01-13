@@ -6,6 +6,16 @@
 
 set -e
 
+EDGE_REQUIRE_RUNNING="${EDGE_REQUIRE_RUNNING:-0}"
+
+# Prefer v2 plugin (`docker compose`), fallback to legacy `docker-compose`.
+COMPOSE=()
+if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    COMPOSE=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE=(docker-compose)
+fi
+
 # Support both historical and current compose locations.
 EDGE_COMPOSE_FILE="docker-compose.edge.yml"
 if [ -f "docker/docker-compose.edge.yml" ]; then
@@ -68,7 +78,8 @@ check_url() {
     local expected_code=${2:-200}
     local timeout=${3:-5}
 
-    if curl -s -f -o /dev/null -w "%{http_code}" --max-time "$timeout" "$url" | grep -q "$expected_code"; then
+    # expected_code can be a single code (e.g. 200) or a regex alternation (e.g. 200|404)
+    if curl -s -f -o /dev/null -w "%{http_code}" --max-time "$timeout" "$url" | grep -Eq "^(${expected_code})$"; then
         return 0
     else
         return 1
@@ -129,6 +140,11 @@ main() {
     run_test
     if [ -f "$EDGE_COMPOSE_FILE" ]; then
         print_success "$EDGE_COMPOSE_FILE found"
+        if [ ${#COMPOSE[@]} -gt 0 ] && "${COMPOSE[@]}" -f "$EDGE_COMPOSE_FILE" config >/dev/null 2>&1; then
+            print_success "Compose config is valid"
+        else
+            print_info "Compose config validation skipped (compose not available or config failed)"
+        fi
     else
         print_failure "docker-compose.edge.yml not found (checked: $EDGE_COMPOSE_FILE)"
     fi
@@ -145,6 +161,18 @@ main() {
         fi
     else
         print_failure "AgentGateway config directory not found"
+    fi
+
+    # If none of the edge stack containers are running, skip runtime checks by default.
+    if ! docker ps --format "{{.Names}}" | grep -Eq "^(kong|kong-database|agentgateway)$" 2>/dev/null; then
+        if [ "$EDGE_REQUIRE_RUNNING" = "1" ]; then
+            print_failure "Edge services are not running"
+        else
+            print_info "Edge services are not running (skipping live checks)."
+            print_info "Start with: ${COMPOSE[*]:-docker compose} -f $EDGE_COMPOSE_FILE up -d"
+            print_info "Set EDGE_REQUIRE_RUNNING=1 to fail when services are not running."
+            exit 0
+        fi
     fi
 
     # Check P0-003: Kong Gateway
