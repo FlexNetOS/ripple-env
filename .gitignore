@@ -115,6 +115,8 @@ Thumbs.db
 # === Backup Files ===
 *.backup
 *.bak
+*.bak.*
+*.bak[0-9]*
 *.orig
 *.rej
 *.tmp
