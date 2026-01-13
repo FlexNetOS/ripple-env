@@ -286,7 +286,7 @@ clean_models() {
     echo ""
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        rm -rf "$MODELS_DIR"
+        rm -rf "${MODELS_DIR:?}"
         log_success "Models directory cleaned"
     else
         log_info "Cancelled"

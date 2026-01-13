@@ -24,12 +24,12 @@ let
   nixpkgsInput = if isStable then inputs.nixpkgs-stable else inputs.nixpkgs;
   channelLabel = if isStable then "stable (nixos-24.11)" else "unstable";
 in
-wslInput.lib.nixosSystem {
+nixpkgsInput.lib.nixosSystem {
   system = "x86_64-linux";
 
   modules = [
     # NixOS-WSL base module
-    inputs.nixos-wsl.nixosModules.wsl
+    wslInput.nixosModules.wsl
 
     # Security hardening module
     ./security-hardening.nix
@@ -46,7 +46,6 @@ wslInput.lib.nixosSystem {
       wsl = {
         enable = true;
         defaultUser = "nixos";
-        nativeSystemd = true;
 
         # Enable Windows interop
         interop = {
@@ -149,8 +148,12 @@ wslInput.lib.nixosSystem {
         pkg-config
 
         # Version control
-        jujutsu
         lazygit
+      ] ++ lib.optionals (!isStable) [
+        # NOTE: jujutsu is marked insecure in some stable nixpkgs releases.
+        # Keep it in unstable images, but avoid breaking evaluation for
+        # stable/production builds.
+        jujutsu
       ];
 
       # Enable Docker

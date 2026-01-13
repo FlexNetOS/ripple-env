@@ -18,6 +18,10 @@ services:
       - REDIS_REPLICATION_DISKLESS_SYNC=yes
 
   embedding-service:
+    # SECURITY RISK: Using :latest tag exposes system to supply chain attacks
+    # TODO: URGENT - Pin to specific version/digest when available
+    # Get digest: docker pull ghcr.io/xenova/transformers.js:latest && docker inspect --format='{{.RepoDigests}}' ghcr.io/xenova/transformers.js:latest
+    # Consider using semitechnologies/transformers-inference with pinned version instead
     image: ghcr.io/xenova/transformers.js:latest
     container_name: vcache-embedding
     ports:
@@ -34,6 +38,7 @@ services:
       - redis
 
   vcache:
+    # Local build - version controlled via git, not Docker tag
     image: vcache:latest
     container_name: vcache-server
     build:

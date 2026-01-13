@@ -236,7 +236,8 @@ clean_build() {
     fi
 
     if [ "$DRY_RUN" = false ]; then
-        local freed_mb=$((freed_total / 1024 / 1024))
+        local freed_mb
+        freed_mb=$((freed_total / 1024 / 1024))
         if [ $freed_mb -gt 0 ]; then
             log_success "Freed ${freed_mb} MB from build artifacts"
         fi

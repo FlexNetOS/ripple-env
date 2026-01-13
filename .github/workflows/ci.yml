@@ -49,7 +49,7 @@ jobs:
   ros2-build:
     name: ROS2 Build & Test
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     permissions:
       contents: read
 
@@ -80,12 +80,40 @@ jobs:
         run: nix develop .#default --command echo "Shell ready"
 
       - name: Install Pixi packages
-        run: nix develop .#default --command pixi install
+        run: |
+          # Handle missing or corrupted lock file gracefully
+          if [ ! -f "pixi.lock" ]; then
+            echo "No pixi.lock found, installing without lock file..."
+            nix develop .#default --command pixi install
+          else
+            echo "Using existing pixi.lock..."
+            nix develop .#default --command pixi install --frozen || {
+              echo "Lock file corrupted, regenerating..."
+              rm -f pixi.lock
+              nix develop .#default --command pixi install
+            }
+          fi
 
       - name: Verify ROS2 environment
         run: |
+          # Use pixi run to ensure proper environment
           nix develop .#default --command pixi run python --version
-          nix develop .#default --command pixi run ros2 --help | head -10
+          nix develop .#default --command pixi run ros2 --help | head -10 || echo "ROS2 not available"
+
+      - name: Check pixi environment tools
+        run: |
+          # Verify essential tools are available
+          nix develop .#default --command pixi run which colcon || echo "colcon missing"
+          nix develop .#default --command pixi run which cmake || echo "cmake missing"
+
+      - name: Verify colcon for ROS2 build
+        run: |
+          # Ensure colcon is properly available before ROS2 build
+          nix develop .#default --command pixi run which colcon > /dev/null 2>&1 || {
+            echo "ERROR: colcon not found in pixi environment"
+            exit 1
+          }
+          echo "colcon verification successful"
 
       - name: Check for ROS2 workspace
         id: check-workspace

@@ -26,6 +26,11 @@ with pkgs; [
   direnv
   nix-direnv
 
+  # Configuration management
+  home-manager
+  chezmoi  # Dotfile management
+  stow     # GNU Stow for symlink management
+
   # BUILDKIT L6: Messaging & Orchestration
   nats-server  # NATS event bus for agent communication
 
@@ -35,4 +40,8 @@ with pkgs; [
   # BUILDKIT L14: Security & Observability
   prometheus  # Metrics collection and monitoring
   trivy       # Vulnerability scanner for containers and code
+
+  # Code quality tools
+  shellcheck  # Shell script linting
+  yamllint    # YAML file validation
 ]

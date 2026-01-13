@@ -1,161 +1,330 @@
 {
-  description = "FlexNetOS - Enterprise Agentic Operating System";
+  description = "Ripple development environment with ROS2 Humble, Nix flakes and pixi";
+
+  # =================================================================
+  # NIX EVALUATION OPTIMIZATION
+  # =================================================================
+  # Performance tips for fast evaluation:
+  # 1. Use `flake = false` for inputs that don't need flake features
+  # 2. Pin inputs to specific commits/tags when possible
+  # 3. Use `follows` to deduplicate nixpkgs across inputs
+  # 4. Lazy-load heavy features (CUDA, identity shells) only on Linux
+  #
+  # Benchmark: nix flake show --no-build 2>&1 | tail -1
+  # Target: < 10 seconds for flake evaluation
+  # =================================================================
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixos-wsl.url = "github:nix-community/NixOS-WSL";
-    flake-utils.url = "github:numtide/flake-utils";
-    
-    # FlexNetOS specific inputs
-    holonix.url = "github:holochain/holonix";
-    agixt.url = "github:AGiXT/agixt";
-    
-    # Additional overlays
-    nur.url = "github:nix-community/NUR";
+    # Supply Chain Security: Dual nixpkgs strategy
+    # - nixpkgs-stable: For production builds and NixOS images (pinned release)
+    # - nixpkgs: For development (unstable, more packages)
+    # See: docs/SUPPLY_CHAIN_SECURITY.md
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.11";
+
+    flake-parts.url = "github:hercules-ci/flake-parts";
+
+    # Systems input - minimal overhead
+    systems.url = "github:nix-systems/default";
+
+    # Home-manager for user configuration
+    # Uses `follows` to avoid duplicate nixpkgs evaluation
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Home-manager stable variant for production
+    home-manager-stable = {
+      url = "github:nix-community/home-manager/release-24.11";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
+    };
+
+    # Holochain overlay for P2P coordination (BUILDKIT_STARTER_SPEC.md L11)
+    # NOTE: Use flake=false so we only fetch the source (no extra nixpkgs).
+    # This also avoids Import-From-Derivation (IFD) during flake evaluation.
+    # See: https://github.com/spartan-holochain-counsel/nix-overlay
+    holochain-overlay = {
+      url = "github:spartan-holochain-counsel/nix-overlay/2a321bc7d6d94f169c6071699d9a89acd55039bb";
+      flake = false;
+    };
+
+    # P2-017: Agentic DevOps automation layer (BUILDKIT_STARTER_SPEC.md L301)
+    # flake = false: Only need the source, not flake outputs
+    agenticsorg-devops = {
+      url = "github:agenticsorg/devops";
+      flake = false;
+    };
+
+    # NixOS-WSL for WSL2 image generation
+    # Uses `follows` to avoid duplicate nixpkgs evaluation
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Agenix for encrypted secrets management (security audit remediation)
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # NixOS-WSL stable variant for production images
+    nixos-wsl-stable = {
+      url = "github:nix-community/NixOS-WSL";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
+    };
   };
 
-  outputs = { self, nixpkgs, nixos-wsl, flake-utils, holonix, agixt, nur, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-          overlays = [
-            nixos-wsl.overlays.default
-            agixt.overlays.default
-            (import ./nix/overlays/flexnetos.nix)
-          ];
-        };
+  # =================================================================
+  # NIX SETTINGS FOR PERFORMANCE
+  # =================================================================
+  nixConfig = {
+    # Binary caches for faster builds
+    extra-substituters = [
+      "https://cache.nixos.org"
+      "https://nix-community.cachix.org"
+      "https://cuda-maintainers.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+    ];
+  };
 
-        # WSL-specific configuration
-        wslConfig = {
-          wsl = {
-            enable = true;
-            defaultUser = "flexnet";
-            automountPath = "/mnt";
-            docker-desktop.enable = false;
+  outputs =
+    inputs@{
+      self,
+      nixpkgs,
+      nixpkgs-stable,
+      flake-parts,
+      systems,
+      home-manager,
+      home-manager-stable,
+      nixos-wsl,
+      holochain-overlay,
+      agenix,
+      nixos-wsl-stable,
+      ...
+    }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = import systems;
+
+      # Flake-level outputs (not per-system)
+      flake = {
+        # Export library functions
+        lib =
+          (import ./lib {
+            inherit (nixpkgs) lib;
+            inherit inputs;
+          })
+          // {
+            homeManagerModules = {
+              common = ./modules/common;
+              linux = ./modules/linux;
+              macos = ./modules/macos;
+
+              default =
+                { config, lib, pkgs, ... }:
+                {
+                  imports = [ ./modules/common ]
+                    ++ lib.optionals pkgs.stdenv.isLinux [ ./modules/linux ]
+                    ++ lib.optionals pkgs.stdenv.isDarwin [ ./modules/macos ];
+                };
+            };
+          };
+
+        # Export NixOS/Darwin modules
+        nixosModules.default = ./modules/linux;
+        darwinModules.default = ./modules/macos;
+
+        # NixOS configurations for image generation
+        # Development images (nixos-unstable)
+        nixosConfigurations = {
+          wsl-ripple = import ./nix/images/wsl.nix {
+            inherit inputs;
+            pkgs = nixpkgs.legacyPackages.x86_64-linux;
+            lib = nixpkgs.lib;
+          };
+
+          iso-ripple = import ./nix/images/iso.nix {
+            inherit inputs;
+            pkgs = nixpkgs.legacyPackages.x86_64-linux;
+            lib = nixpkgs.lib;
+          };
+
+          vm-ripple = import ./nix/images/vm.nix {
+            inherit inputs;
+            pkgs = nixpkgs.legacyPackages.x86_64-linux;
+            lib = nixpkgs.lib;
+          };
+
+          # Production images (nixos-stable) - Supply Chain Security
+          # Use these for production deployments with stable, well-tested packages
+          wsl-ripple-stable = import ./nix/images/wsl.nix {
+            inherit inputs;
+            pkgs = nixpkgs-stable.legacyPackages.x86_64-linux;
+            lib = nixpkgs-stable.lib;
+            isStable = true;
+          };
+
+          iso-ros2-stable = import ./nix/images/iso.nix {
+            inherit inputs;
+            pkgs = nixpkgs-stable.legacyPackages.x86_64-linux;
+            lib = nixpkgs-stable.lib;
+            isStable = true;
+          };
+
+          vm-ros2-stable = import ./nix/images/vm.nix {
+            inherit inputs;
+            pkgs = nixpkgs-stable.legacyPackages.x86_64-linux;
+            lib = nixpkgs-stable.lib;
+            isStable = true;
           };
         };
+      };
 
-      in {
-        nixosConfigurations.flexnetos-wsl = nixpkgs.lib.nixosSystem {
-          inherit system;
-          modules = [
-            nixos-wsl.nixosModules.wsl
-            ./nix/modules/flexnetos-configuration.nix
-          ];
-          specialArgs = { inherit wslConfig; };
+      # Per-system outputs
+      perSystem =
+        { pkgs, system, ... }:
+        let
+          # Import NixOS image tests
+          imageTests = import ./nix/tests {
+            inherit inputs system;
+            pkgs = nixpkgs.legacyPackages.${system};
+            lib = nixpkgs.lib;
+          };
+        in
+        let
+          # Holochain overlay source (pinned via flake input)
+          holochainSrc = inputs.holochain-overlay;
+
+          # P2-017: AgenticsOrg DevOps source
+          agenticsorgDevopsSrc = inputs.agenticsorg-devops;
+
+          # Configure nixpkgs with Holochain overlay
+          pkgs = import inputs.nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+            overlays = [
+              (import "${holochainSrc}/holochain-overlay/default.nix")
+            ];
+          };
+
+          inherit (pkgs.lib) optionalString;
+          isDarwin = pkgs.stdenv.isDarwin;
+
+          # Colcon defaults configuration
+          colconDefaults = pkgs.writeText "defaults.yaml" ''
+            build:
+              cmake-args:
+                - -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+                - -DPython_FIND_VIRTUALENV=ONLY
+                - -DPython3_FIND_VIRTUALENV=ONLY
+                - -Wno-dev
+                ${optionalString isDarwin "- -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON"}
+          '';
+
+          # =================================================================
+          # MODULAR STRUCTURE - All definitions in nix/ directory
+          # Benefits: Faster evaluation, easier reviews, fewer conflicts
+          # =================================================================
+
+          # Import modular packages (nix/packages/)
+          modularPackages = import ./nix/packages { inherit pkgs; lib = pkgs.lib; };
+
+          # Import modular commands (nix/commands/)
+          modularCommands = import ./nix/commands { inherit pkgs; };
+
+          # Import modular shells (nix/shells/)
+          # Contains: default, full, cuda, identity shells
+          modularShells = import ./nix/shells {
+            inherit pkgs system colconDefaults;
+            lib = pkgs.lib;
+            packages = modularPackages;
+            commands = modularCommands;
+          };
+
+          # Stable packages for production shells
+          pkgsStable = import inputs.nixpkgs-stable {
+            inherit system;
+            config.allowUnfree = true;
+          };
+
+          # Stable shell packages (subset for production use)
+          stableShellPackages = import ./nix/packages { pkgs = pkgsStable; lib = pkgsStable.lib; };
+          stableShellCommands = import ./nix/commands { pkgs = pkgsStable; };
+
+          # Import test suite
+          nixTests = import ./nix/tests { inherit pkgs; lib = pkgs.lib; };
+
+        in
+        let
+          baseChecks = {
+            # Nix module unit tests
+            module-tests-git = nixTests.test-git-module;
+            module-tests-direnv = nixTests.test-direnv-module;
+            module-tests-packages = nixTests.test-packages-module;
+
+            # Library function tests
+            lib-tests = nixTests.test-lib-functions;
+
+            # Shell configuration tests
+            shell-tests = nixTests.test-shell-packages;
+
+            # Flake syntax validation
+            flake-syntax = pkgs.runCommand "flake-syntax-check" { } ''
+              ${pkgs.nix}/bin/nix-instantiate --parse ${./flake.nix} > /dev/null
+              touch $out
+            '';
+
+            # Module syntax validation
+            module-syntax = pkgs.runCommand "module-syntax-check" { } ''
+              for f in ${./modules/common}/*.nix ${./modules/linux}/*.nix ${./modules/macos}/*.nix; do
+                ${pkgs.nix}/bin/nix-instantiate --parse "$f" > /dev/null
+              done
+              touch $out
+            '';
+          };
+        in
+        {
+          # =================================================================
+          # FLAKE CHECKS - Run with: nix flake check
+          # =================================================================
+          checks =
+            baseChecks
+            // pkgs.lib.optionalAttrs (system == "x86_64-linux") imageTests;
+
+          # Development shells - use modular structure from nix/shells/
+          # See nix/shells/default.nix for shell definitions
+          devShells = modularShells // {
+            # Override default to add AgenticsOrg DevOps source path
+            default = modularShells.default.overrideAttrs (old: {
+              AGENTICSORG_DEVOPS_SRC = toString agenticsorgDevopsSrc;
+            });
+
+            # Stable shell for production work (nixos-24.11)
+            # Use: nix develop .#stable
+            # Benefits: Well-tested packages, security updates, predictable behavior
+            stable = pkgsStable.mkShell {
+              packages = stableShellPackages.defaultShell ++ stableShellCommands.defaultShell;
+              COLCON_DEFAULTS_FILE = colconDefaults;
+              EDITOR = "nvim";
+              VISUAL = "nvim";
+              NIXPKGS_CHANNEL = "stable";
+
+              shellHook = ''
+                echo "╔══════════════════════════════════════════════════════════╗"
+                echo "║  ROS2 Humble Environment (STABLE - nixos-24.11)          ║"
+                echo "║  Supply chain verified with pinned dependencies          ║"
+                echo "╚══════════════════════════════════════════════════════════╝"
+                echo ""
+                echo "Channel: nixos-24.11 (stable)"
+                echo "Use 'nix develop .#default' for latest packages"
+              '';
+            };
+          };
+
         };
-
-        packages.default = self.nixosConfigurations.flexnetos-wsl.config.system.build.toplevel;
-        
-        # FlexNetOS specific packages
-        packages.flexnetos-config = pkgs.callPackage ./nix/packages/config.nix {};
-        packages.flexnetos-cli = pkgs.callPackage ./nix/packages/cli.nix {};
-        
-        # Development shell
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            nixos-generators
-            wslu
-            git
-            curl
-            jq
-            yq
-            docker-compose
-            rustc
-            cargo
-            go_1_21
-            nodejs_20
-            python311
-            # Security scanning tools
-            gitleaks        # Git secrets scanner
-            detect-secrets  # Baseline secrets detection
-            trufflehog      # Git history secrets scanner
-          ] ++ (with pkgs.flexnetos; [
-            flexnetos-config
-            flexnetos-cli
-          ]);
-          
-          shellHook = ''
-            echo "Welcome to FlexNetOS Development Environment"
-            echo "Version: $(cat ./VERSION)"
-            echo "Available services: holochain, nats, vault, kong, agixt, localai, prometheus, grafana"
-            echo "Quick start: docker-compose up -d"
-          '';
-        };
-
-        # Docker image building
-        packages.docker-images = pkgs.writeScript "build-docker-images" ''
-          #!/usr/bin/env bash
-          set -euo pipefail
-          
-          echo "Building FlexNetOS Docker images..."
-          
-          # Build each service image
-          for service in holochain nats vault kong agixt localai prometheus grafana keycloak minio ipfs tensorzero lobe-chat; do
-            echo "Building $service image..."
-            docker-compose -f docker/$service.yml build
-          done
-          
-          echo "All FlexNetOS Docker images built successfully!"
-        '';
-
-        # Checks and validations
-        checks = {
-          nixos-config = pkgs.runCommand "check-nixos-config" { } ''
-            ${pkgs.nixos-rebuild}/bin/nixos-rebuild dry-activate --flake .#flexnetos-wsl
-            touch $out
-          '';
-          
-          docker-configs = pkgs.runCommand "check-docker-configs" { } ''
-            for file in ${./docker}/*.yml; do
-              ${pkgs.docker-compose}/bin/docker-compose -f "$file" config > /dev/null
-            done
-            touch $out
-          '';
-          
-          security-audit = pkgs.writeScript "security-audit" ''
-            #!/usr/bin/env bash
-            echo "Running security audit..."
-            ${pkgs.trivy}/bin/trivy fs --security-checks vuln,config .
-          '';
-        };
-
-        # Deployment automation
-        apps.deploy = flake-utils.lib.mkApp {
-          drv = pkgs.writeShellScriptBin "deploy-flexnetos" ''
-            #!/usr/bin/env bash
-            set -euo pipefail
-            
-            echo "Deploying FlexNetOS..."
-            
-            # Start core services
-            docker-compose -f docker/holochain.yml up -d
-            docker-compose -f docker/nats.yml up -d
-            docker-compose -f docker/vault.yml up -d
-            
-            # Wait for services to be ready
-            sleep 30
-            
-            # Start remaining services
-            for service in kong agixt localai prometheus grafana keycloak minio ipfs tensorzero lobe-chat; do
-              echo "Starting $service..."
-              docker-compose -f docker/$service.yml up -d
-            done
-            
-            echo "FlexNetOS deployment completed!"
-            echo "Access Grafana: http://localhost:3000"
-            echo "Access Prometheus: http://localhost:9090"
-            echo "Access Kong Gateway: http://localhost:8000"
-          '';
-        };
-
-        # NixOS modules for reuse
-        nixosModules.flexnetos = ./nix/modules/flexnetos.nix;
-        nixosModules.flexnetos-core = ./nix/modules/flexnetos-core.nix;
-        nixosModules.flexnetos-services = ./nix/modules/flexnetos-services.nix;
-        nixosModules.flexnetos-security = ./nix/modules/flexnetos-security.nix;
-        nixosModules.flexnetos-monitoring = ./nix/modules/flexnetos-monitoring.nix;
-      });
+    };
 }

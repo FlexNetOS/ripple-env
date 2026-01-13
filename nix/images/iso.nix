@@ -39,10 +39,15 @@ nixpkgsInput.lib.nixosSystem {
       };
       # ISO-specific configuration
       isoImage = {
-        isoName = "nixos-ros2-${config.system.nixos.label}-x86_64-linux.iso";
+        isoName = lib.mkForce "nixos-ros2-${config.system.nixos.label}-x86_64-linux.iso";
         volumeID = "NIXOS_ROS2";
         makeEfiBootable = true;
         makeUsbBootable = true;
+      };
+
+      # Use new image module format (fixes deprecation warning)
+      image = {
+        fileName = "nixos-ros2-${config.system.nixos.label}-x86_64-linux.iso";
       };
 
       # Nix configuration

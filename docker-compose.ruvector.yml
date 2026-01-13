@@ -46,6 +46,10 @@ services:
   # RuVector Primary Node
   # ===========================================================================
   ruvector-primary:
+    # SECURITY RISK: Using :latest tag exposes system to supply chain attacks
+    # TODO: URGENT - Pin to specific version/digest when available, or build from source
+    # Get digest: docker pull ruvector/ruvector:latest && docker inspect --format='{{.RepoDigests}}' ruvector/ruvector:latest
+    # Alternative: Build from source - see docs/CONTAINER_SECURITY.md
     image: ruvector/ruvector:latest
     container_name: ruvector-primary
     hostname: ruvector-primary
@@ -127,6 +131,9 @@ services:
   # RuVector Replica Node (for HA deployments)
   # ===========================================================================
   ruvector-replica:
+    # SECURITY RISK: Using :latest tag exposes system to supply chain attacks
+    # TODO: URGENT - Pin to specific version/digest when available, or build from source
+    # Get digest: docker pull ruvector/ruvector:latest && docker inspect --format='{{.RepoDigests}}' ruvector/ruvector:latest
     image: ruvector/ruvector:latest
     container_name: ruvector-replica
     hostname: ruvector-replica
@@ -178,6 +185,9 @@ services:
   # RuVector Web UI (optional)
   # ===========================================================================
   ruvector-ui:
+    # SECURITY RISK: Using :latest tag exposes system to supply chain attacks
+    # TODO: URGENT - Pin to specific version/digest when available, or build from source
+    # Get digest: docker pull ruvector/ruvector-ui:latest && docker inspect --format='{{.RepoDigests}}' ruvector/ruvector-ui:latest
     image: ruvector/ruvector-ui:latest
     container_name: ruvector-ui
     hostname: ruvector-ui
@@ -204,7 +214,8 @@ services:
   # Embedding Service (for vector generation)
   # ===========================================================================
   embedding-service:
-    image: sentence-transformers/all-MiniLM-L6-v2:latest
+    # Using semitechnologies inference image with pinned version for security
+    image: semitechnologies/transformers-inference:sentence-transformers-all-MiniLM-L6-v2-1.8.5
     container_name: ruvector-embedding
     hostname: ruvector-embedding
     restart: unless-stopped

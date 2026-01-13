@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   holochain-bootstrap:
-    image: holochain/bootstrap-server:latest
+    image: holochain/bootstrap-server:0.6.0
     container_name: holochain-bootstrap
     ports:
       - "8888:8888"
@@ -15,7 +15,7 @@ services:
       retries: 3
 
   holochain-conductor:
-    image: holochain/holochain:0.3.0
+    image: holochain/holochain:0.6.0
     container_name: holochain-conductor
     depends_on:
       holochain-bootstrap:

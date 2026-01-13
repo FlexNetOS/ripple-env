@@ -4,6 +4,95 @@
 - A reproducible and declarative development environment for ROS2 Humble using Nix flakes and pixi for cross-platform compatibility.
 - This repository is meant to be used as a "template" repository for robotics projects to offer an easy starting environment with a working ROS2 install.
 
+## 🚨 WSL Stability Issues - Quick Fix Guide
+
+### Problem: Commands fail and window reloads
+
+This is a **common WSL issue** with memory pressure and timeout problems. Here's the immediate fix:
+
+### ⚡ Quick Fix (Run These Now)
+
+```bash
+# 1. Apply WSL stability fixes
+./scripts/fix-wsl-stability.sh
+
+# 2. Enter stable environment (use this instead of regular commands)
+source scripts/stable-env.sh
+
+# 3. Use safe commands with timeouts
+pixi-safe install --no-update-lockfile
+nix-safe develop
+```
+
+### 🎯 Stable Command Aliases
+
+After running the fix script, these **timeout-protected** commands are available:
+
+| Command | Purpose | Timeout |
+|---------|---------|---------|
+| `ripple-enter` | Enter stable environment | - |
+| `pixi-safe` | Safe pixi commands | 5 min |
+| `nix-safe` | Safe nix commands | 10 min |
+| `docker-safe` | Safe docker commands | 2 min |
+| `ripple-save` | Save session state | - |
+| `ripple-restore` | Restore after reload | - |
+
+### 🔄 Recovery After Reload
+
+When WSL reloads, run:
+```bash
+cd-ripple  # Returns to project + restores environment
+ripple-restore  # Recovers saved state
+```
+
+### 📋 Windows WSL Config (Required)
+
+**Copy this to Windows (run in WSL):**
+```bash
+cp /tmp/.wslconfig /mnt/c/Users/$USER/.wslconfig
+```
+
+**Then restart WSL:**
+```powershell
+# In Windows PowerShell:
+wsl --shutdown
+# Wait 10 seconds, then reopen
+```
+
+### 🐧 Why This Happens
+
+1. **Memory Pressure**: WSL has limited memory vs native Linux
+2. **Timeout Issues**: Long-running commands trigger WSL timeouts
+3. **Docker Conflicts**: Network and resource conflicts
+4. **Nix Memory Usage**: Heavy builds cause WSL instability
+
+### 💎 The Fix Addresses
+
+✅ **Memory Limits**: Sets 8GB max, 2GB swap
+✅ **Timeout Protection**: All commands have safe timeouts
+✅ **Resource Optimization**: Reduces parallel jobs
+✅ **Session Recovery**: Saves/restores working state
+✅ **WSL Configuration**: Optimizes Windows WSL settings
+
+### 💡 Pro Tips
+
+1. **Always save first**: `ripple-save` before heavy operations
+2. **Use safe commands**: `pixi-safe` instead of `pixi`
+3. **Monitor memory**: `free -h` to check WSL memory usage
+4. **Regular cleanup**: `docker system prune -f` weekly
+
+### 🆘 Emergency Recovery
+
+If completely stuck:
+```bash
+# Minimal recovery
+source scripts/stable-env.sh
+cd /home/nixos/ripple-env
+./scripts/session-restore.sh
+```
+
+**This should resolve the reload issues!** The stable environment prevents the memory/timeout problems that cause WSL to disconnect.
+
 ## Quick Start
 
 ### Windows (WSL2 + NixOS)
