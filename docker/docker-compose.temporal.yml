@@ -34,7 +34,7 @@ services:
 
   # Temporal Server
   temporal:
-    image: temporalio/auto-setup:latest
+    image: temporalio/auto-setup:1.28.2
     container_name: temporal
     restart: unless-stopped
     depends_on:
@@ -61,7 +61,7 @@ services:
 
   # Temporal Web UI
   temporal-ui:
-    image: temporalio/ui:latest
+    image: temporalio/ui:2.34.0
     container_name: temporal-ui
     restart: unless-stopped
     depends_on:
@@ -81,7 +81,7 @@ services:
 
   # Temporal Admin Tools (optional)
   temporal-admin-tools:
-    image: temporalio/admin-tools:latest
+    image: temporalio/admin-tools:1.28.2
     container_name: temporal-admin-tools
     restart: unless-stopped
     depends_on:
