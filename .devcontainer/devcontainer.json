@@ -1,53 +1,44 @@
 {
-  "name": "ripple-env (Codespaces)",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "name": "ripple-env (NixOS)",
 
-  "features": {
-    // Core utilities
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "configureZshAsDefaultShell": false
-    },
-    "ghcr.io/devcontainers/features/git-lfs:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-
-    // Nix with flakes support
-    "ghcr.io/devcontainers/features/nix:1": {
-      "multiUser": false,
-      "extraNixConfig": "experimental-features = nix-command flakes\naccept-flake-config = true\nwarn-dirty = false\n"
-    },
-
-    // Nushell - modern shell with structured data
-    // See: https://github.com/eitsupi/devcontainer-features
-    "ghcr.io/eitsupi/devcontainer-features/nushell:0": {},
-
-    // Cachix for faster Nix builds
-    "ghcr.io/cachix/devenv/cachix:1": {}
+  // Use custom Dockerfile based on nixos/nix
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
   },
 
+  // No features needed - everything installed via Nix in Dockerfile
+  // This provides consistency with WSL NixOS and local Nix environments
+
   "mounts": [
-    // Persistent volumes for caches (critical for performance)
+    // Persistent Nix store for faster rebuilds
     "source=ripple-env-nix-store,target=/nix,type=volume",
-    "source=ripple-env-nix-cache,target=/home/vscode/.cache/nix,type=volume",
+    // Pixi cache persistence
     "source=ripple-env-pixi-cache,target=/home/vscode/.pixi,type=volume",
-    "source=ripple-env-pixi-global,target=/home/vscode/.local/share/pixi,type=volume"
+    // Local bin persistence
+    "source=ripple-env-local-bin,target=/home/vscode/.local,type=volume"
   ],
 
+  "remoteUser": "vscode",
   "updateRemoteUserUID": true,
 
   "containerEnv": {
     "TMPDIR": "/tmp",
     "TMP": "/tmp",
     "TEMP": "/tmp",
-    // Pixi configuration
     "PIXI_HOME": "/home/vscode/.pixi",
-    // Ensure Nix paths are available
-    "PATH": "/home/vscode/.nix-profile/bin:/home/vscode/.local/bin:/home/vscode/.pixi/bin:${containerEnv:PATH}"
+    "EDITOR": "hx",
+    "VISUAL": "hx"
   },
 
-  "onCreateCommand": "sudo mkdir -p /tmp && sudo chmod 1777 /tmp && sudo chown -R vscode:vscode /home/vscode/.pixi /home/vscode/.local/share/pixi 2>/dev/null || true",
+  // Ensure proper permissions on mounted volumes
+  "onCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.pixi /home/vscode/.local 2>/dev/null || true",
 
+  // Setup workspace environment
   "postCreateCommand": ".devcontainer/setup.sh",
+
+  // Start shell automatically
+  "postStartCommand": "direnv allow . 2>/dev/null || true",
 
   "customizations": {
     "vscode": {
@@ -56,15 +47,15 @@
         "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {
           "zsh": {
-            "path": "/bin/zsh",
+            "path": "/nix/var/nix/profiles/default/bin/zsh",
             "icon": "terminal"
           },
           "bash": {
-            "path": "/bin/bash",
+            "path": "/nix/var/nix/profiles/default/bin/bash",
             "icon": "terminal-bash"
           },
           "nushell": {
-            "path": "nu",
+            "path": "/nix/var/nix/profiles/default/bin/nu",
             "icon": "terminal-powershell"
           }
         },
@@ -79,18 +70,18 @@
         "git.enableCommitSigning": false,
         "git.autofetch": true,
 
-        // Nix settings
+        // Nix settings (nil language server installed via Nix)
         "nix.enableLanguageServer": true,
-        "nix.serverPath": "nil",
+        "nix.serverPath": "/nix/var/nix/profiles/default/bin/nil",
         "nix.serverSettings": {
           "nil": {
             "formatting": {
-              "command": ["nixfmt"]
+              "command": ["/nix/var/nix/profiles/default/bin/nixfmt"]
             }
           }
         },
 
-        // Python settings
+        // Python settings (via Pixi environment)
         "python.defaultInterpreterPath": "${workspaceFolder}/.pixi/envs/default/bin/python",
         "[python]": {
           "editor.defaultFormatter": "charliermarsh.ruff",
@@ -98,7 +89,8 @@
         },
 
         // Direnv auto-reload
-        "direnv.restart.automatic": true
+        "direnv.restart.automatic": true,
+        "direnv.path.executable": "/nix/var/nix/profiles/default/bin/direnv"
       },
       "extensions": [
         // Nix ecosystem
@@ -107,7 +99,6 @@
 
         // Shell & scripting
         "timonwong.shellcheck",
-        "ms-vscode.powershell",
         "thenuprojectcontributors.vscode-nushell-lang",
 
         // Python
