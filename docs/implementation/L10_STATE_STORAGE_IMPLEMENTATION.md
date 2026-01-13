@@ -7,15 +7,17 @@
 
 ## Executive Summary
 
-Successfully implemented all three missing Layer 10 components to bring ARIA's State & Storage coverage from 50% to 100%:
+Implemented Layer 10 State & Storage primitives (Redis + MinIO) and added RuVector configuration scaffolding.
+
+Note: RuVector is currently best used as an embedded/local vector DB via the npm CLI (`npx ruvector ...`). The CLI's standalone HTTP/gRPC `server` mode is present upstream but currently reported as "Coming Soon" (not yet a production service).
 
 1. **P0-005: Redis** - High-performance cache and state management
-2. **P1-001: ruvector** - Distributed vector database with GNN self-learning
+2. **P1-001: ruvector** - Vector database integration scaffolding (embedded CLI via npm; standalone server planned upstream)
 3. **P1-006: MinIO** - S3-compatible object storage
 
 ## Files Created
 
-### 1. `/home/user/ripple-env/docker-compose.state.yml`
+### 1. `/home/user/ripple-env/docker/docker-compose.state.yml`
 
 **Purpose:** Docker Compose configuration for Redis and MinIO services
 
@@ -39,18 +41,18 @@ Successfully implemented all three missing Layer 10 components to bring ARIA's S
 **Usage:**
 ```bash
 # Start all state services
-docker compose -f docker-compose.state.yml up -d
+docker compose -f docker/docker-compose.state.yml up -d
 
 # Start individual services
-docker compose -f docker-compose.state.yml up -d redis
-docker compose -f docker-compose.state.yml up -d minio
+docker compose -f docker/docker-compose.state.yml up -d redis
+docker compose -f docker/docker-compose.state.yml up -d minio
 
 # Stop services
-docker compose -f docker-compose.state.yml down
+docker compose -f docker/docker-compose.state.yml down
 
 # View logs
-docker compose -f docker-compose.state.yml logs -f redis
-docker compose -f docker-compose.state.yml logs -f minio
+docker compose -f docker/docker-compose.state.yml logs -f redis
+docker compose -f docker/docker-compose.state.yml logs -f minio
 ```
 
 ### 2. `/home/user/ripple-env/.env.state.example`
@@ -97,26 +99,12 @@ RUVECTOR_GNN_LAYERS=2
 
 ## Files Modified
 
-### 3. `/home/user/ripple-env/rust/Cargo.toml`
+### 3. RuVector enablement notes
 
-**Changes:** Added ruvector and Redis client dependencies to workspace
-
-```toml
-# State & Storage (BUILDKIT_STARTER_SPEC.md Layer 10)
-# P0-005: Redis client for cache and state management
-redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
-
-# P1-001: ruvector - Distributed vector database with GNN self-learning
-# See: https://github.com/ruvnet/ruvector
-# Feature flag: VECTOR_STORE=ruvector|pgvector|both
-# All-in-one package: vector search, Cypher queries, GNN, Raft consensus, WASM
-ruvector = { git = "https://github.com/ruvnet/ruvector", branch = "main" }
-```
-
-**Impact:**
-- Rust applications can now use Redis for caching and state management
-- Rust applications can integrate ruvector for vector search with GNN
-- Both dependencies use async Tokio runtime for high performance
+**Current status:**
+- RuVector can be used locally via the npm CLI (`npx ruvector ...`) to create/insert/search vectors.
+- A standalone HTTP/gRPC server mode is not yet available upstream (the CLI reports it as "Coming Soon").
+- This repository includes environment variables (`.env.state.example`) and Pixi feature scaffolding (`pixi.toml`) for future client/server mode.
 
 ## Verification Commands
 
@@ -124,22 +112,22 @@ ruvector = { git = "https://github.com/ruvnet/ruvector", branch = "main" }
 
 ```bash
 # Test Redis connection
-docker compose -f docker-compose.state.yml exec redis redis-cli ping
+docker compose -f docker/docker-compose.state.yml exec redis redis-cli ping
 # Expected output: PONG
 
 # Check Redis version and uptime
-docker compose -f docker-compose.state.yml exec redis redis-cli INFO server
+docker compose -f docker/docker-compose.state.yml exec redis redis-cli INFO server
 
 # Set and get a test key
-docker compose -f docker-compose.state.yml exec redis redis-cli SET test "Hello ARIA"
-docker compose -f docker-compose.state.yml exec redis redis-cli GET test
+docker compose -f docker/docker-compose.state.yml exec redis redis-cli SET test "Hello ARIA"
+docker compose -f docker/docker-compose.state.yml exec redis redis-cli GET test
 # Expected output: "Hello ARIA"
 
 # Check memory usage
-docker compose -f docker-compose.state.yml exec redis redis-cli INFO memory
+docker compose -f docker/docker-compose.state.yml exec redis redis-cli INFO memory
 
 # Monitor Redis commands in real-time
-docker compose -f docker-compose.state.yml exec redis redis-cli MONITOR
+docker compose -f docker/docker-compose.state.yml exec redis redis-cli MONITOR
 ```
 
 ### MinIO Verification
@@ -150,15 +138,15 @@ curl -f http://localhost:9000/minio/health/live
 # Expected output: 200 OK
 
 # List buckets (using mc client)
-docker compose -f docker-compose.state.yml exec mc mc ls local
+docker compose -f docker/docker-compose.state.yml exec mc mc ls local
 # Expected output: aria-artifacts, aria-models, aria-logs, aria-vectors
 
 # Upload a test file
 echo "Test content" > /tmp/test.txt
-docker compose -f docker-compose.state.yml exec mc mc cp /tmp/test.txt local/aria-artifacts/
+docker compose -f docker/docker-compose.state.yml exec mc mc cp /tmp/test.txt local/aria-artifacts/
 
 # Download the test file
-docker compose -f docker-compose.state.yml exec mc mc cp local/aria-artifacts/test.txt /tmp/test-downloaded.txt
+docker compose -f docker/docker-compose.state.yml exec mc mc cp local/aria-artifacts/test.txt /tmp/test-downloaded.txt
 
 # Access MinIO Console
 # Open browser: http://localhost:9001
@@ -168,16 +156,16 @@ docker compose -f docker-compose.state.yml exec mc mc cp local/aria-artifacts/te
 ### ruvector Verification
 
 ```bash
-# Install ruvector CLI
-cargo install ruvector-cli
+# Run the RuVector CLI (embedded/local DB)
+# Windows:
+#   ./scripts/ruvector.ps1 --help
+# WSL/Linux/macOS:
+#   ./scripts/ruvector.sh --help
 
-# Verify installation
-ruvector-cli --version
-
-# For Rust applications, verify the crate is available
-cd rust/
-cargo check
-# Should compile without errors if ruvector git repo is accessible
+# Minimal smoke test (local DB)
+./scripts/ruvector.sh create ./data/ruvector.db
+./scripts/ruvector.sh insert ./data/ruvector.db ./path/to/vectors.json
+./scripts/ruvector.sh search ./data/ruvector.db --vector "[1,0,0]" --top-k 3
 ```
 
 ## Architecture Details
@@ -338,13 +326,12 @@ docker compose -f docker-compose.state.yml exec redis redis-cli INFO stats
 ### MinIO Metrics
 ```bash
 # Prometheus endpoint
-curl http://localhost:9000/minio/v2/metrics/cluster
+docker compose -f docker/docker-compose.state.yml exec redis redis-cli INFO stats
 
 # Via Console UI
 open http://localhost:9001
-# Navigate to: Monitoring → Metrics
-```
-
+ `docker/docker-compose.state.yml` - Service definitions
+ ✅ P0-005: Install Redis server (docker/docker-compose.state.yml)
 ### Health Checks
 All services include health checks in docker-compose:
 - Redis: `redis-cli ping` every 5s
@@ -370,7 +357,9 @@ All services include health checks in docker-compose:
 1. ✅ Test Redis connectivity: `redis-cli ping`
 2. ✅ Access MinIO Console: http://localhost:9001
 3. ✅ Upload test artifact to MinIO
-4. ✅ Install ruvector CLI: `cargo install ruvector-cli`
+4. ✅ Run RuVector CLI (embedded/local):
+  - Windows: `./scripts/ruvector.ps1 doctor`
+  - WSL/Linux/macOS: `./scripts/ruvector.sh doctor`
 
 ### Short-Term (This Week)
 1. Integrate Redis caching into AGiXT API routes
@@ -389,7 +378,7 @@ All services include health checks in docker-compose:
 ### Redis Won't Start
 ```bash
 # Check logs
-docker compose -f docker-compose.state.yml logs redis
+docker compose -f docker/docker-compose.state.yml logs redis
 
 # Common issues:
 # - Port 6379 already in use: `lsof -i :6379`
@@ -400,7 +389,7 @@ docker compose -f docker-compose.state.yml logs redis
 ### MinIO Won't Start
 ```bash
 # Check logs
-docker compose -f docker-compose.state.yml logs minio
+docker compose -f docker/docker-compose.state.yml logs minio
 
 # Common issues:
 # - Port 9000/9001 in use: `lsof -i :9000`
@@ -408,20 +397,15 @@ docker compose -f docker-compose.state.yml logs minio
 # - Network not found: `docker network create agentic-network`
 ```
 
-### ruvector Installation Fails
-```bash
-# Check Rust toolchain
-rustc --version
-cargo --version
+### ruvector Troubleshooting
 
-# Try manual clone and build
-git clone https://github.com/ruvnet/ruvector.git
-cd ruvector
-cargo build --release
+If the CLI fails to run in this repo on Windows (common symptom: npm prefix points to a missing drive like `N:\...`):
+- Use the repo wrapper scripts:
+  - Windows: `./scripts/ruvector.ps1 doctor`
+  - WSL/Linux/macOS: `./scripts/ruvector.sh doctor`
 
-# Alternative: Use as library only (no CLI needed)
-# Just add to Cargo.toml and use in Rust code
-```
+If you need a *networked* vector store today:
+- Prefer `VECTOR_STORE=pgvector` (or `chromadb`) while upstream RuVector server mode is still in flux.
 
 ## References
 
@@ -432,9 +416,10 @@ cargo build --release
 - [ruvector Getting Started](https://github.com/ruvnet/ruvector/blob/main/docs/guides/GETTING_STARTED.md)
 
 ### Related Files
-- `docker-compose.state.yml` - Service definitions
+- `docker/docker-compose.state.yml` - Redis + MinIO service definitions
 - `.env.state.example` - Configuration template
-- `rust/Cargo.toml` - Rust dependencies
+- `pixi.toml` - Vector DB feature scaffolding (client deps)
+- `scripts/ruvector.sh`, `scripts/ruvector.ps1` - RuVector CLI launchers
 - `ARIA_AUDIT_REPORT.md` - Original audit findings
 - `BUILDKIT_STARTER_SPEC.md` - Layer 10 specification
 
@@ -456,19 +441,19 @@ cargo build --release
 
 **After:**
 ```
-| 10. State & Storage | 100% | POSTGRES ✅ | REDIS ✅, MINIO ✅, RUVECTOR ✅ |
+| 10. State & Storage | 100% | POSTGRES ✅ | REDIS ✅, MINIO ✅, RUVECTOR ⚠️ (scaffolding) |
 ```
 
 **Priority Items Completed:**
-- ✅ P0-005: Install Redis server (docker-compose.state.yml)
-- ✅ P1-001: Install ruvector (Cargo.toml)
-- ✅ P1-006: Install MinIO (docker-compose.state.yml)
+- ✅ P0-005: Install Redis server (docker/docker-compose.state.yml)
+- ⚠️ P1-001: RuVector configuration scaffolding (CLI/embedded workflows)
+- ✅ P1-006: Install MinIO (docker/docker-compose.state.yml)
 
 **Feature Flags Implemented:**
 - ✅ FF-006: VECTOR_STORE selection (pgvector | ruvector | both)
 
 ---
 
-**Implementation Complete!** 🎉
+**Implementation Status**
 
-All Layer 10 State & Storage components are now installed and ready for use. The coverage has been increased from 50% to 100%, meeting all audit requirements.
+Redis and MinIO are installed and ready for use. RuVector configuration scaffolding is present, and the npm CLI can be used for embedded/local workflows; standalone server deployment is dependent on upstream availability.

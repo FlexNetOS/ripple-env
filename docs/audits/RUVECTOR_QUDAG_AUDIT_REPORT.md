@@ -12,18 +12,12 @@ This audit examines the integration completeness of **ruvector** (distributed ve
 
 | Component | Integration Level | Status |
 |-----------|------------------|--------|
-| **ruvector** | Complete (100%) | ✅ Full integration with all features |
-| **QuDAG** | Complete (100%) | ✅ Full integration with all features |
+| **ruvector** | Partial (scaffolding) | ⚠️ CLI/embedded mode documented; `ruvector server` (HTTP/gRPC) command exists but `server --info` reports “Coming Soon” (not yet verified as runnable in this repo) |
+| **QuDAG** | Documentation-only | ⚠️ Referenced in README; no code/config integration present |
 
-**Update 2026-01-12:** Both ruvector and QuDAG have been fully integrated with complete feature sets including:
-- Rust dependencies in Cargo.toml
-- Docker Compose configurations
-- Pixi feature flags
-- Nix packages
-- MCP server configurations
-- Environment templates
-- Verification scripts
-- Implementation documentation
+**Update 2026-01-12:** This report initially overstated QuDAG integration; later sections correctly show QuDAG is documentation-only. RuVector integration currently consists of configuration scaffolding (env templates + Pixi features) and a usable npm CLI for embedded/local DB workflows.
+
+**Validation 2026-01-13 (Windows):** `npx ruvector server --help` documents HTTP + gRPC options, but `npx ruvector server --info` currently reports **Status: Coming Soon**.
 
 ---
 
@@ -47,12 +41,12 @@ RuVector is a distributed vector database that learns, combining:
 
 | Component | Location | Status |
 |-----------|----------|--------|
-| Rust dependency | `rust/Cargo.toml:95` | `ruvector = { git = "...", branch = "main" }` |
-| Redis client | `rust/Cargo.toml:89` | `redis = "0.27"` with tokio features |
+| npm CLI (embedded/local) | `docs/ref-sources/ruvector_README.md` | `npx ruvector ...` workflows |
+| Repo launcher scripts | `scripts/ruvector.sh`, `scripts/ruvector.ps1` | Reliable `npx ruvector` with local npm cache/prefix |
 | Environment variables | `.env.state.example` | `VECTOR_STORE`, `RUVECTOR_*` configs |
-| Docker Compose | `docker-compose.state.yml` | Redis service configured |
-| Verification script | `scripts/verify-state-storage.sh` | Checks ruvector in Cargo.toml |
-| Implementation docs | `docs/implementation/L10_STATE_STORAGE_IMPLEMENTATION.md` | Comprehensive guide |
+| Docker Compose (state only) | `docker/docker-compose.state.yml` | Redis + MinIO configured |
+| Verification scripts | `scripts/verify-state-storage.sh`, `scripts/verify-ruvector.sh` | CLI + config checks |
+| Implementation docs | `docs/implementation/L10_STATE_STORAGE_IMPLEMENTATION.md` | Updated notes for current RuVector state |
 | Feature flag | `.env.state.example:88` | `VECTOR_STORE=pgvector\|ruvector\|both` |
 
 #### ❌ Missing (Integration Gaps)
@@ -61,27 +55,20 @@ RuVector is a distributed vector database that learns, combining:
 |----------------|-------------------|--------|----------|
 | Pixi vectordb-ruvector feature | `pixi.toml` | Python/conda integration unavailable | P1 |
 | Pixi vectordb-chromadb feature | `pixi.toml` | A/B testing not possible via pixi | P2 |
-| Node.js bindings | `package.json` or flake.nix | No WASM/browser support | P2 |
-| HTTP/gRPC server config | Docker compose | No standalone server deployment | P2 |
-| ruvector-cli installation | `flake.nix` | CLI tool not in Nix packages | P2 |
+| Standalone server (verified runtime) | Upstream RuVector | `ruvector server --help` exists, but `ruvector server --info` reports "Coming Soon"; treat server mode as unverified/experimental for this repo | P1 |
+| Metrics endpoint | Upstream RuVector | Planned, not currently available | P2 |
 | Integration tests | `tests/` | No automated verification | P3 |
 
 ### 1.3 Configuration Details
 
-**Current Rust Cargo.toml Entry:**
-```toml
-# rust/Cargo.toml:91-95
-# P1-001: ruvector - Distributed vector database with GNN self-learning
-# See: https://github.com/ruvnet/ruvector
-# Feature flag: VECTOR_STORE=ruvector|pgvector|both
-# All-in-one package: vector search, Cypher queries, GNN, Raft consensus, WASM
-ruvector = { git = "https://github.com/ruvnet/ruvector", branch = "main" }
-```
+**Current recommended workflow (embedded/local DB):**
+- Windows: `./scripts/ruvector.ps1 --help`
+- WSL/Linux/macOS: `./scripts/ruvector.sh --help`
 
 **Environment Variables (.env.state.example):**
 ```bash
 VECTOR_STORE=pgvector                   # Options: pgvector | ruvector | both
-RUVECTOR_ENDPOINT=http://localhost:8000
+RUVECTOR_ENDPOINT=http://localhost:8080  # Default `ruvector server --port` (when server mode is available)
 RUVECTOR_EMBEDDING_DIM=384
 RUVECTOR_INDEX_TYPE=hnsw-gnn
 RUVECTOR_GNN_ENABLED=true
@@ -108,9 +95,9 @@ chromadb = { features = ["vectordb-chromadb"], solve-group = "chromadb" }
 ```
 
 **Actual (pixi.toml):**
-- ChromaDB is only in `[feature.aios]` and `[feature.aios-cuda]`
-- No `vectordb-ruvector` or `vectordb-chromadb` standalone features
-- No feature flag switching mechanism for vector DB
+ - `feature.vectordb-chromadb` exists (standalone)
+ - `feature.vectordb-ruvector` exists (standalone; provides client-side deps)
+ - Vector-store selection is controlled via `.env.state.example` (`VECTOR_STORE=pgvector|ruvector|chromadb|both`)
 
 ### 1.5 Recommended Actions for RuVector
 
@@ -118,8 +105,8 @@ chromadb = { features = ["vectordb-chromadb"], solve-group = "chromadb" }
 |----------|--------|-----------------|
 | P1 | Add Node.js bindings to flake.nix | `flake.nix` |
 | P1 | Create vectordb feature documentation | `docs/` |
-| P2 | Add ruvector-cli to Nix packages | `flake.nix` |
-| P2 | Create ruvector Docker service | `docker-compose.ruvector.yml` |
+| P2 | Ensure reliable CLI invocation (wrapper scripts) | `scripts/ruvector.sh`, `scripts/ruvector.ps1` |
+| P2 | Remove/deprecate Docker compose references | `docker-compose.ruvector.yml`, docs |
 | P3 | Add integration tests | `tests/integration/` |
 
 ---
@@ -227,21 +214,16 @@ qudag/
 ### 4.1 ruvector Verification
 
 ```bash
-# Check Cargo.toml dependency
-grep -n "ruvector" rust/Cargo.toml
-# Expected: Line ~95 with git dependency
-
 # Verify environment template
 grep -n "RUVECTOR" .env.state.example
 # Expected: RUVECTOR_ENDPOINT, RUVECTOR_EMBEDDING_DIM, etc.
 
-# Run verification script
+# Run verification scripts
+./scripts/verify-ruvector.sh
 ./scripts/verify-state-storage.sh
-# Expected: "ruvector dependency found in Cargo.toml"
 
-# Test Rust compilation (requires network)
-cd rust && cargo check
-# Expected: Compiles without errors
+# Run the CLI (embedded/local DB)
+./scripts/ruvector.sh --version
 ```
 
 ### 4.2 QuDAG Verification
@@ -269,10 +251,8 @@ grep -n "qudag" README.md
 - Feature flag mechanism designed
 
 **Gaps:**
-- Missing pixi feature flags for A/B testing
-- No Node.js/WASM bindings configured
-- No standalone server deployment
-- No automated integration tests
+ - HTTP/gRPC server is documented (`ruvector server --help` exists), but `ruvector server --info` reports "Coming Soon" and server mode has not been verified as runnable in this repo
+ - No automated integration tests
 
 **Recommendation:** Complete the integration by adding pixi features and Node.js bindings. This aligns with BUILDKIT_STARTER_SPEC.md Layer 10 requirements.
 
@@ -291,14 +271,14 @@ grep -n "qudag" README.md
 ### Immediate (P1)
 
 1. [ ] Document ruvector feature flag status in CONFIG_SUMMARY.yaml
-2. [ ] Verify ruvector git dependency resolves correctly
+2. [ ] Validate RuVector CLI workflows across OS targets (Windows vs WSL)
 3. [ ] Update BUILDKIT_STARTER_SPEC.md if QuDAG is intended for integration
 
 ### Short-term (P2)
 
-4. [ ] Add ruvector-cli to flake.nix Nix packages
-5. [ ] Create `docker-compose.ruvector.yml` for standalone deployment
-6. [ ] Add ruvector Node.js bindings to development environment
+4. [ ] Add RuVector CLI to flake.nix (or document using scripts/ruvector.* wrappers)
+5. [ ] Remove/avoid Docker-based RuVector startup assumptions
+6. [ ] Add RuVector Node.js bindings to development environment (if needed beyond CLI)
 
 ### Long-term (P3)
 

@@ -3,7 +3,7 @@
 #
 # RuVector: Distributed vector database with GNN self-learning
 #   - npm install ruvector (Node.js bindings)
-#   - cargo install ruvector-cli (CLI tools)
+#   - npx ruvector (CLI; embedded/local workflows)
 #   - https://github.com/ruvnet/ruvector
 #
 # QuDAG: Quantum-resistant distributed communication platform

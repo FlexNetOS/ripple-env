@@ -5,11 +5,18 @@
 # BUILDKIT_STARTER_SPEC.md Layer 10: State & Storage (P1-001)
 #
 # Verifies that RuVector is properly installed and configured:
-#   - Rust dependencies in Cargo.toml
-#   - Docker Compose configuration
+#   - npm/npx CLI availability (primary)
 #   - Environment variables
 #   - Pixi feature flags
 #   - Nix packages
+#
+# Notes:
+#   - RuVector currently runs as an embedded/local DB via the CLI (npm package).
+#   - The CLI includes a `server` subcommand with HTTP + gRPC options.
+#     If you intend to use it as a networked service, verify runtime behavior by
+#     starting the server and probing an endpoint (e.g. GET /health).
+#   - This repo may contain a docker-compose.ruvector.yml; treat it as
+#     deprecated/experimental unless you have a known-good image.
 #
 # Usage:
 #   chmod +x scripts/verify-ruvector.sh
@@ -54,52 +61,62 @@ info() {
     echo -e "${BLUE}ℹ${NC} $1"
 }
 
+# Some environments have a global npm prefix/cache pointing to a missing drive.
+# Use repo-local locations for this script's npx invocations.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+mkdir -p "$REPO_ROOT/.npm-cache" "$REPO_ROOT/.npm-prefix" >/dev/null 2>&1 || true
+export NPM_CONFIG_CACHE="${NPM_CONFIG_CACHE:-$REPO_ROOT/.npm-cache}"
+export NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-$REPO_ROOT/.npm-prefix}"
+
 # =============================================================================
-# 1. Check Rust Dependencies
+# 1. Check CLI Availability (npm/npx)
 # =============================================================================
 
-echo "[1/6] Checking Rust dependencies..."
+echo "[1/6] Checking RuVector CLI availability (npm/npx)..."
 echo ""
 
-if [ -f "rust/Cargo.toml" ]; then
-    if grep -q 'ruvector.*=.*{.*git.*=.*"https://github.com/ruvnet/ruvector"' rust/Cargo.toml; then
-        pass "ruvector git dependency found in Cargo.toml"
-    else
-        fail "ruvector git dependency not found in Cargo.toml"
-    fi
-
-    if grep -q 'redis.*=.*{.*version.*=.*"0.27"' rust/Cargo.toml; then
-        pass "redis client dependency found in Cargo.toml"
-    else
-        fail "redis client dependency not found in Cargo.toml"
-    fi
+if command -v node >/dev/null 2>&1; then
+    pass "Node.js is installed"
 else
-    fail "rust/Cargo.toml not found"
+    fail "Node.js not found"
+fi
+
+if command -v npx >/dev/null 2>&1; then
+    pass "npx is available"
+else
+    fail "npx not found"
+fi
+
+if [ -f ".npmrc" ]; then
+    pass ".npmrc exists (repo-local npm config)"
+else
+    warn ".npmrc not found (npx may fail if global npm config points to a missing drive)"
+fi
+
+# Attempt a lightweight CLI invocation. This may download the package on first run.
+if command -v npx >/dev/null 2>&1; then
+    if RUVECTOR_VERSION=$(npx --yes ruvector --version 2>/dev/null); then
+        pass "ruvector CLI is runnable via npx"
+        echo "   Version: $RUVECTOR_VERSION"
+    else
+        warn "ruvector CLI did not run via npx"
+        echo "   Hint: use scripts/ruvector.(ps1|sh) or set NPM_CONFIG_PREFIX/NPM_CONFIG_CACHE"
+    fi
 fi
 
 echo ""
 
 # =============================================================================
-# 2. Check Docker Compose Configuration
+# 2. Check Deprecated Docker Compose (informational)
 # =============================================================================
 
-echo "[2/6] Checking Docker Compose configuration..."
+echo "[2/6] Checking deprecated Docker Compose artifacts..."
 echo ""
 
 if [ -f "docker-compose.ruvector.yml" ]; then
-    pass "docker-compose.ruvector.yml exists"
-
-    if command -v docker >/dev/null 2>&1; then
-        if docker compose -f docker-compose.ruvector.yml config --quiet 2>/dev/null; then
-            pass "docker-compose.ruvector.yml syntax is valid"
-        else
-            fail "docker-compose.ruvector.yml has syntax errors"
-        fi
-    else
-        warn "Docker not available, skipping compose validation"
-    fi
+    warn "docker-compose.ruvector.yml exists (deprecated/experimental; RuVector is not primarily run via Docker)"
 else
-    fail "docker-compose.ruvector.yml not found"
+    pass "docker-compose.ruvector.yml not present (ok)"
 fi
 
 if [ -f "docker-compose.state.yml" ] || [ -f "docker/docker-compose.state.yml" ]; then
@@ -212,27 +229,103 @@ fi
 echo ""
 
 # =============================================================================
-# 6. Check Service Status (if running)
+# 6. Functional smoke test (embedded/local CLI)
 # =============================================================================
 
-echo "[6/6] Checking service status..."
+echo "[6/6] Running embedded/local CLI smoke test..."
 echo ""
 
-if command -v docker >/dev/null 2>&1; then
-    if docker compose -f docker-compose.ruvector.yml ps 2>/dev/null | grep -q "ruvector-primary.*Up"; then
-        pass "RuVector primary node is running"
+if command -v npx >/dev/null 2>&1; then
+    if npx --yes ruvector doctor >/dev/null 2>&1; then
+        pass "ruvector doctor passed"
+    else
+        warn "ruvector doctor reported issues"
+    fi
 
-        # Test health endpoint
-        if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
-            pass "RuVector health check passed"
+    if npx --yes ruvector info >/dev/null 2>&1; then
+        pass "ruvector info ran"
+    else
+        warn "ruvector info failed"
+    fi
+
+    # Validate the server command is present (does not start the server).
+    if npx --yes ruvector server --help >/dev/null 2>&1; then
+        pass "ruvector server subcommand is available (HTTP/gRPC options present)"
+    else
+        warn "ruvector server subcommand not available"
+    fi
+
+    # Optional: require "full" feature set (GNN + graph) for elite mode.
+    # Enable with: RUVECTOR_REQUIRE_FULL=1
+    if [ "${RUVECTOR_REQUIRE_FULL:-0}" = "1" ]; then
+        GNN_OUT="$(npx --yes ruvector gnn info 2>&1 || true)"
+        if echo "$GNN_OUT" | grep -qi "Not installed"; then
+            fail "GNN module is not installed (RUVECTOR_REQUIRE_FULL=1)"
+        elif [ -z "$GNN_OUT" ]; then
+            fail "GNN check produced no output (RUVECTOR_REQUIRE_FULL=1)"
+        elif echo "$GNN_OUT" | grep -qi "error\|failed"; then
+            fail "GNN check reported an error (RUVECTOR_REQUIRE_FULL=1)"
         else
-            warn "RuVector health check failed (service may still be starting)"
+            pass "GNN module appears installed"
+        fi
+
+        if npx --yes ruvector graph --help >/dev/null 2>&1; then
+            pass "Graph subcommand is available"
+        else
+            fail "Graph subcommand is not usable (RUVECTOR_REQUIRE_FULL=1)"
         fi
     else
-        info "RuVector not running (start with: docker compose -f docker-compose.ruvector.yml up -d)"
+        GNN_OUT="$(npx --yes ruvector gnn info 2>&1 || true)"
+        if [ -z "$GNN_OUT" ]; then
+            warn "GNN check produced no output"
+        elif echo "$GNN_OUT" | grep -qi "Not installed"; then
+            warn "GNN module not installed (set RUVECTOR_REQUIRE_FULL=1 to enforce)"
+        else
+            pass "GNN module appears installed"
+        fi
+    fi
+
+    # Optional deeper test: create/insert/search a tiny local DB.
+    # Enabled only when RUVECTOR_SMOKE_DB=1 is set.
+    if [ "${RUVECTOR_SMOKE_DB:-0}" = "1" ]; then
+        TMPDIR=$(mktemp -d 2>/dev/null || true)
+        if [ -n "$TMPDIR" ] && [ -d "$TMPDIR" ]; then
+            DB_PATH="$TMPDIR/ruvector-test.db"
+            JSON_PATH="$TMPDIR/vectors.json"
+
+            cat > "$JSON_PATH" <<'EOF'
+[
+  {"id": "a", "vector": [1.0, 0.0, 0.0]},
+  {"id": "b", "vector": [0.0, 1.0, 0.0]},
+  {"id": "c", "vector": [0.0, 0.0, 1.0]}
+]
+EOF
+
+            if npx --yes ruvector create "$DB_PATH" --dimension 3 >/dev/null 2>&1; then
+                pass "Created local RuVector DB"
+            else
+                warn "Failed to create local RuVector DB (DB commands may be experimental on some platforms)"
+            fi
+
+            if npx --yes ruvector insert "$DB_PATH" "$JSON_PATH" >/dev/null 2>&1; then
+                pass "Inserted test vectors"
+            else
+                warn "Failed to insert test vectors"
+            fi
+
+            if npx --yes ruvector search "$DB_PATH" --vector "[1,0,0]" --top-k 1 >/dev/null 2>&1; then
+                pass "Search query executed"
+            else
+                warn "Search query failed"
+            fi
+
+            rm -rf "$TMPDIR" >/dev/null 2>&1 || true
+        else
+            warn "Could not create temp directory for smoke test"
+        fi
     fi
 else
-    info "Docker not available, skipping service status check"
+    warn "Skipping smoke test (npx not available)"
 fi
 
 echo ""
@@ -254,10 +347,10 @@ if [ $FAILED -eq 0 ]; then
     echo -e "${GREEN}RuVector integration verification passed!${NC}"
     echo ""
     echo "Next steps:"
-    echo "  1. Start RuVector: docker compose -f docker-compose.ruvector.yml up -d"
-    echo "  2. Test health: curl http://localhost:8000/health"
-    echo "  3. Access gRPC: grpcurl -plaintext localhost:8001 list"
-    echo "  4. View metrics: curl http://localhost:8002/metrics"
+    echo "  1. Explore CLI: npx --yes ruvector --help"
+    echo "  2. Create a local DB: npx --yes ruvector create ./data/ruvector.db"
+    echo "  3. Insert vectors: npx --yes ruvector insert ./data/ruvector.db ./path/to/vectors.json"
+    echo "  4. If you need HTTP/gRPC: run 'ruvector server --help' and validate runtime by starting the server and probing /health"
     exit 0
 else
     echo -e "${RED}RuVector integration verification failed.${NC}"

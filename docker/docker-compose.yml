@@ -513,7 +513,7 @@ services:
     networks:
       - flexstack-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7437/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:7437/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -536,7 +536,7 @@ services:
   agixt-ui:
     image: joshxt/agixt-interactive:main
     container_name: flexstack-agixt-ui
-    profiles: ["ai", "full"]
+    profiles: ["ui", "full"]
     environment:
       AGIXT_SERVER: http://agixt:7437
       AGIXT_API_KEY: ${AGIXT_API_KEY:-agixt-dev-key}
