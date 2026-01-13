@@ -1,0 +1,238 @@
+# AGiXT - Agent Orchestration Platform (BUILDKIT L7)
+# P1-002: AGiXT provides multi-agent orchestration and control
+#
+# AGiXT features:
+#   - Multi-agent conversation management
+#   - Chain-of-thought reasoning
+#   - Tool integration and execution
+#   - Memory management and persistence
+#   - Extension system for capabilities
+#   - Provider abstraction for different AI models
+#   - Workflow automation
+#
+# Components:
+#   - AGiXT Core: Main orchestration service
+#   - Database: PostgreSQL for persistence
+#   - Redis: Caching and session storage
+#   - Extensions: Pluggable capabilities
+#
+# References:
+#   - https://github.com/Josh-XT/AGiXT
+#   - https://agixt.com
+#   - BUILDKIT_STARTER_SPEC.md L7: Agent Runtime
+
+version: '3.8'
+
+services:
+  # AGiXT Core Service
+  agixt:
+    image: joshxt/agixt:latest
+    container_name: agixt
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      # Database configuration
+      DATABASE_URL: postgresql://agixt:agixt@postgres:5432/agixt
+      
+      # Redis configuration
+      REDIS_URL: redis://redis:6379/0
+      
+      # Application settings
+      APP_NAME: AGiXT
+      APP_VERSION: latest
+      
+      # API configuration
+      API_KEY: dev-api-key-change-in-production
+      UVICORN_WORKERS: 4
+      
+      # Logging
+      LOG_LEVEL: INFO
+      
+      # Extension settings
+      EXTENSIONS_ENABLED: "true"
+      ALLOWED_EXTENSIONS: "txt,json,yaml,yml,md,py,js,ts"
+      
+      # Memory settings
+      MAX_TOKENS: 8192
+      
+      # Provider settings (can be overridden)
+      DEFAULT_PROVIDER: openai
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      
+      # Security
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      
+      # CORS
+      CORS_ORIGINS: "*"
+    
+    # Ports
+    ports:
+      - "7437:7437"  # AGiXT API
+    
+    # Volumes
+    volumes:
+      # AGiXT data
+      - ./data/agixt:/app/data
+      # Extensions
+      - ./extensions:/app/extensions
+      # Config
+      - ./config/agixt:/app/config
+    
+    # Dependencies
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7437/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - agixt-network
+    
+    # Labels for documentation and management
+    labels:
+      - "service=agixt"
+      - "layer=L7-Agent-Runtime"
+      - "description=AGiXT agent orchestration platform"
+      - "traefik.enable=true"
+      - "traefik.http.routers.agixt.rule=Host(`agixt.localhost`)"
+      - "traefik.http.routers.agixt.entrypoints=web"
+      - "traefik.http.services.agixt.loadbalancer.server.port=7437"
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: agixt-postgres
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      POSTGRES_DB: agixt
+      POSTGRES_USER: agixt
+      POSTGRES_PASSWORD: agixt
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+      
+      # Performance tuning
+      POSTGRES_SHARED_PRELOAD_LIBRARIES: pg_stat_statements
+      POSTGRES_MAX_CONNECTIONS: 200
+      POSTGRES_WORK_MEM: 4MB
+    
+    # Volumes
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Initialization scripts
+      - ./config/agixt/postgres/init:/docker-entrypoint-initdb.d
+    
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agixt"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    
+    # Network
+    networks:
+      - agixt-network
+    
+    # Labels
+    labels:
+      - "service=postgres"
+      - "layer=L10-State-Storage"
+      - "description=PostgreSQL database for AGiXT"
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: agixt-redis
+    restart: unless-stopped
+    
+    # Redis configuration
+    command: >
+      redis-server 
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+      --tcp-keepalive 60
+      --timeout 300
+    
+    # Volumes
+    volumes:
+      - redis-data:/data
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    
+    # Network
+    networks:
+      - agixt-network
+    
+    # Labels
+    labels:
+      - "service=redis"
+      - "layer=L10-State-Storage"
+      - "description=Redis cache for AGiXT"
+
+# Volumes
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+# Networks
+networks:
+  agixt-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
