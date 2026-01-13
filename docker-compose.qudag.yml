@@ -54,6 +54,7 @@ services:
   # QuDAG Primary Node
   # ===========================================================================
   qudag-node:
+    # TODO: Pin to specific version when qudag publishes releases (security)
     image: ruvector/qudag:latest
     container_name: qudag-node
     hostname: qudag-node
@@ -151,6 +152,7 @@ services:
   # QuDAG MCP Gateway (dedicated MCP server)
   # ===========================================================================
   qudag-mcp:
+    # TODO: Pin to specific version when qudag publishes releases (security)
     image: ruvector/qudag-mcp:latest
     container_name: qudag-mcp
     hostname: qudag-mcp
@@ -193,6 +195,7 @@ services:
   # QuDAG Cluster Node 2 (for HA/testing)
   # ===========================================================================
   qudag-node-2:
+    # TODO: Pin to specific version when qudag publishes releases (security)
     image: ruvector/qudag:latest
     container_name: qudag-node-2
     hostname: qudag-node-2
@@ -238,6 +241,7 @@ services:
   # QuDAG Cluster Node 3 (for HA/testing)
   # ===========================================================================
   qudag-node-3:
+    # TODO: Pin to specific version when qudag publishes releases (security)
     image: ruvector/qudag:latest
     container_name: qudag-node-3
     hostname: qudag-node-3
@@ -285,6 +289,7 @@ services:
   # QuDAG Testnet Connector (connects to public testnet)
   # ===========================================================================
   qudag-testnet:
+    # TODO: Pin to specific version when qudag publishes releases (security)
     image: ruvector/qudag:latest
     container_name: qudag-testnet
     hostname: qudag-testnet

@@ -18,6 +18,7 @@ services:
       - REDIS_REPLICATION_DISKLESS_SYNC=yes
 
   embedding-service:
+    # TODO: Pin to specific version when available (security)
     image: ghcr.io/xenova/transformers.js:latest
     container_name: vcache-embedding
     ports:
@@ -34,6 +35,7 @@ services:
       - redis
 
   vcache:
+    # Local build - version controlled via git, not Docker tag
     image: vcache:latest
     container_name: vcache-server
     build:

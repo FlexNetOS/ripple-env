@@ -369,6 +369,39 @@ For comprehensive mTLS setup, refer to:
 
 ## Container Image Security
 
+### Pinned Image Versions (January 2026)
+
+All production images are pinned to specific versions to prevent supply chain attacks:
+
+| Category | Image | Version | Notes |
+|----------|-------|---------|-------|
+| **Workflow** | temporalio/auto-setup | 1.28.2 | CVE-2025-14987, CVE-2025-14986 fixed |
+| **Workflow** | temporalio/ui | 2.34.0 | Security patches included |
+| **Workflow** | temporalio/admin-tools | 1.28.2 | Matches server version |
+| **LLMOps** | tensorzero/tensorzero | 2025.10.6 | CalVer pinning |
+| **LLMOps** | tensorzero/tensorzero-ui | 2025.10.6 | CalVer pinning |
+| **AI/ML** | mindsdb/mindsdb | 25.14.0 | Monthly release pinning |
+| **Holochain** | holochain/holochain | 0.6.0 | Latest stable with K2 |
+| **Holochain** | holochain/bootstrap-server | 0.6.0 | Matches conductor version |
+| **Embedding** | semitechnologies/transformers-inference | 1.8.5 | MiniLM-L6-v2 model |
+
+#### Images Awaiting Version Pinning
+
+The following images use `:latest` and are marked with TODO comments for version pinning when releases become available:
+
+- `ruvector/ruvector:latest` - Custom vector database (no public releases yet)
+- `ruvector/ruvector-ui:latest` - Vector DB UI
+- `ruvector/qudag:latest` - Quantum-resistant DAG
+- `ruvector/qudag-mcp:latest` - QuDAG MCP gateway
+- `ghcr.io/xenova/transformers.js:latest` - Embedding service
+
+#### Locally Built Images
+
+These images are version-controlled via git, not Docker tags:
+
+- `vcache:latest` - Built from `docker/vcache/Dockerfile`
+- `aria/open-lovable:latest` - Built from `config/dockerfiles/Dockerfile.open-lovable`
+
 ### Image Scanning
 
 Container images are automatically scanned for vulnerabilities:

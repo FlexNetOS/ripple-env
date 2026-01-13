@@ -555,7 +555,7 @@ services:
   # MindsDB - AI/ML Database Layer
   # ---------------------------------------------------------------------------
   mindsdb:
-    image: mindsdb/mindsdb:latest
+    image: mindsdb/mindsdb:25.14.0
     container_name: flexstack-mindsdb
     profiles: ["ai", "data", "full"]
     environment:

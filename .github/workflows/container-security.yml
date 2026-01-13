@@ -76,7 +76,7 @@ jobs:
           - minio/minio:RELEASE.2024-12-18T13-15-44Z
           # AI/ML Services (MEDIUM-HIGH PRIORITY)
           - localai/localai:v2.24.2-aio-cpu
-          - mindsdb/mindsdb:latest
+          - mindsdb/mindsdb:25.14.0
           - joshxt/agixt:main
           # API Gateway (HIGH PRIORITY)
           - kong:3.9.0-alpine
@@ -165,9 +165,9 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - temporalio/auto-setup:1.26.2
+          - temporalio/auto-setup:1.28.2
           - temporalio/ui:2.34.0
-          - temporalio/admin-tools:1.26.2
+          - temporalio/admin-tools:1.28.2
           - n8nio/n8n:1.73.1
           - nats:2.10.24-alpine
     steps:

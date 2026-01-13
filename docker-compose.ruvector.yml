@@ -46,6 +46,7 @@ services:
   # RuVector Primary Node
   # ===========================================================================
   ruvector-primary:
+    # TODO: Pin to specific version when ruvector publishes releases (security)
     image: ruvector/ruvector:latest
     container_name: ruvector-primary
     hostname: ruvector-primary
@@ -127,6 +128,7 @@ services:
   # RuVector Replica Node (for HA deployments)
   # ===========================================================================
   ruvector-replica:
+    # TODO: Pin to specific version when ruvector publishes releases (security)
     image: ruvector/ruvector:latest
     container_name: ruvector-replica
     hostname: ruvector-replica
@@ -178,6 +180,7 @@ services:
   # RuVector Web UI (optional)
   # ===========================================================================
   ruvector-ui:
+    # TODO: Pin to specific version when ruvector publishes releases (security)
     image: ruvector/ruvector-ui:latest
     container_name: ruvector-ui
     hostname: ruvector-ui
@@ -204,7 +207,8 @@ services:
   # Embedding Service (for vector generation)
   # ===========================================================================
   embedding-service:
-    image: sentence-transformers/all-MiniLM-L6-v2:latest
+    # Using semitechnologies inference image with pinned version for security
+    image: semitechnologies/transformers-inference:sentence-transformers-all-MiniLM-L6-v2-1.8.5
     container_name: ruvector-embedding
     hostname: ruvector-embedding
     restart: unless-stopped
