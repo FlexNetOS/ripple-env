@@ -61,7 +61,7 @@ services:
       # SESSION_SECRET must be a strong, random value in production.
       # Generate a secure value, for example:
       #   openssl rand -base64 32
-      SESSION_SECRET: ${LOBE_CHAT_SESSION_SECRET:-changeme}
+      SESSION_SECRET: ${LOBE_CHAT_SESSION_SECRET:-}
       
       # Database (for user sessions and history)
       # DATABASE_URL: postgresql://lobechat:lobechat@postgres:5432/lobechat
