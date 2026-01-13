@@ -407,16 +407,17 @@ All production images are pinned to specific versions to prevent supply chain at
    image: ruvector/ruvector:latest
    
    # Use:
-   image: ruvector/ruvector@sha256:abc123...
+   image: ruvector/ruvector@sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
    ```
    Get current digest: `docker pull ruvector/ruvector:latest && docker inspect --format='{{.RepoDigests}}' ruvector/ruvector:latest`
 
 2. **Build From Source**: For critical services, vendor the code and build locally:
    ```yaml
    build:
-     context: https://github.com/ruvnet/ruvector.git#main
+     context: ./vendored/ruvector  # Use local clone, not remote URL
      dockerfile: Dockerfile
    ```
+   **Important**: Verify source integrity before building. Clone the repository, review the code and commit signatures, then build from the local copy. Building directly from remote Git URLs (`https://github.com/...`) still presents supply chain risks if the remote repository is compromised.
 
 3. **Monitor for Releases**: Set up GitHub notifications for these repositories to pin versions as soon as they're available.
 
