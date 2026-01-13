@@ -68,6 +68,10 @@
             go_1_21
             nodejs_20
             python311
+            # Security scanning tools
+            gitleaks
+            detect-secrets
+            trufflehog
           ] ++ (with pkgs.flexnetos; [
             flexnetos-config
             flexnetos-cli

@@ -43,7 +43,9 @@ services:
       APP_VERSION: latest
       
       # API configuration
-      API_KEY: ${AGIXT_API_KEY:-}
+      # API_KEY must be a strong, random value in production.
+      # See .env.example "Security Best Practices" for guidance on generating secure values.
+      API_KEY: ${AGIXT_API_KEY:-changeme}
       UVICORN_WORKERS: 4
       
       # Logging
@@ -61,7 +63,9 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       
       # Security
-      JWT_SECRET: ${AGIXT_JWT_SECRET:-}
+      # JWT_SECRET must be a strong, random value in production.
+      # See .env.example "Security Best Practices" for guidance on generating secure values.
+      JWT_SECRET: ${AGIXT_JWT_SECRET:-changeme}
       
       # CORS
       CORS_ORIGINS: "*"
