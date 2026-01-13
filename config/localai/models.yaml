@@ -1,0 +1,33 @@
+# LocalAI Models Configuration
+# P1-001: Model definitions for LocalAI inference service
+
+# Default model configuration
+# This file defines available models and their settings
+
+# Example model configurations (uncomment as needed):
+
+# llama-3.2-3b-instruct:
+#   name: llama-3.2-3b-instruct
+#   backend: llama
+#   parameters:
+#     model: llama-3.2-3b-instruct.Q4_K_M.gguf
+#     temperature: 0.7
+#     top_p: 0.9
+#     top_k: 40
+#     max_tokens: 2048
+#   context_size: 2048
+#   threads: 4
+#   roles:
+#     user: "user"
+#     assistant: "assistant"
+#     system: "system"
+
+# embeddings:
+#   name: embeddings
+#   backend: bert-embeddings
+#   parameters:
+#     model: all-MiniLM-L6-v2
+#   context_size: 512
+
+# For now, we'll use the default model that comes with the aio image
+# Models can be added here as needed for specific use cases
