@@ -48,7 +48,7 @@ if [ -f "$PKI_DIR/root_ca.crt" ]; then
         exit 0
     fi
     echo "🗑️  Removing existing PKI..."
-    rm -rf "$PKI_DIR"/* "$DB_DIR"/*
+    rm -rf "${PKI_DIR:?}"/* "${DB_DIR:?}"/*
 fi
 
 echo "🔑 Generating Root CA..."

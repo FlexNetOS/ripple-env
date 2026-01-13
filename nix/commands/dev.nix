@@ -131,4 +131,4 @@
               # See: https://github.com/NixOS/nixpkgs/issues/195677
               exec npx -y @swc/cli@latest "$@"
             '')
-          ];
+          ]

@@ -1,61 +1,59 @@
 # Nix Test Suite for ripple-env
-# Unit tests for Nix modules using testers.runNixOSTest
 #
-# Run tests:
-#   nix build .#checks.x86_64-linux.module-tests
+# Provides:
+# - Unit tests for Nix modules
+# - Library tests
+# - Shell configuration tests
+# - Optional NixOS VM image tests (only when `inputs` is provided)
+#
+# Usage:
 #   nix flake check
+#   nix build .#checks.x86_64-linux.test-git-module
 #
-{ pkgs ? import <nixpkgs> { }, lib ? pkgs.lib }:
+{ inputs ? null
+, pkgs ? import <nixpkgs> { }
+, lib ? pkgs.lib
+, system ? (pkgs.stdenv.hostPlatform.system or "x86_64-linux")
+, ...
+}:
 
 let
-  # Import test modules
+  # Unit tests
   moduleTests = import ./modules.nix { inherit pkgs lib; };
   libTests = import ./lib.nix { inherit pkgs lib; };
   shellTests = import ./shells.nix { inherit pkgs lib; };
 
+  # Image tests (NixOS VM tests) are only available when the flake `inputs`
+  # are provided (so we can reference nixos modules deterministically).
+  imageTestsDef = if inputs == null then null else import ./image-tests.nix { inherit inputs pkgs lib; };
+  imageTestDrvs = if imageTestsDef == null then { } else imageTestsDef.mkTests { inherit system; };
+
+  imageChecks = if imageTestsDef == null then { } else {
+    inherit (imageTestDrvs)
+      basic-services
+      docker-services
+      dev-tools
+      security-hardening
+      network;
+
+    all-image-tests = pkgs.runCommand "all-image-tests" { } ''
+      echo "All image tests passed"
+      mkdir -p $out
+      touch $out/success
+    '';
+  };
+
 in
 {
-  # Module unit tests
   inherit (moduleTests)
     test-git-module
     test-direnv-module
     test-packages-module;
 
-  # Library function tests
   inherit (libTests)
     test-lib-functions;
 
-  # Shell configuration tests
   inherit (shellTests)
     test-shell-packages;
-# NixOS Tests Aggregator
-# Exports all test definitions for use in flake checks
-#
-# Usage in flake.nix:
-#   checks = import ./nix/tests { inherit inputs pkgs lib system; };
-{ inputs, pkgs, lib, system ? "x86_64-linux", ... }:
-
-let
-  # Import image tests
-  imageTests = import ./image-tests.nix { inherit inputs pkgs lib; };
-
-  # Create test derivations
-  testDrvs = imageTests.mkTests { inherit system; };
-
-in
-{
-  # Individual test checks
-  inherit (testDrvs)
-    basic-services
-    docker-services
-    dev-tools
-    security-hardening
-    network;
-
-  # Meta check that runs all tests
-  all-image-tests = pkgs.runCommand "all-image-tests" { } ''
-    echo "All image tests passed"
-    mkdir -p $out
-    touch $out/success
-  '';
 }
+// imageChecks

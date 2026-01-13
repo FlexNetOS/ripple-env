@@ -206,12 +206,14 @@ generate_report() {
     <h1>🔒 ARIA Container Security Report</h1>
 EOF
 
-    echo "    <p class=\"timestamp\">Generated: $(date)</p>" >> "$report_file"
-    echo "    <div class=\"summary\">" >> "$report_file"
-    echo "        <h2>Summary</h2>" >> "$report_file"
-    echo "        <p>Severity filter: <strong>$SEVERITY</strong></p>" >> "$report_file"
-    echo "        <p>Total images: <strong>$(extract_images | wc -l)</strong></p>" >> "$report_file"
-    echo "    </div>" >> "$report_file"
+    {
+        echo "    <p class=\"timestamp\">Generated: $(date)</p>"
+        echo "    <div class=\"summary\">"
+        echo "        <h2>Summary</h2>"
+        echo "        <p>Severity filter: <strong>$SEVERITY</strong></p>"
+        echo "        <p>Total images: <strong>$(extract_images | wc -l)</strong></p>"
+        echo "    </div>"
+    } >> "$report_file"
 
     echo "    <h2>Scan Results</h2>" >> "$report_file"
 
@@ -242,10 +244,12 @@ EOF
     local json_file="$REPORT_DIR/container-scan-$timestamp.json"
     log_info "Generating JSON summary..."
 
-    echo "{" > "$json_file"
-    echo "  \"timestamp\": \"$(date -Iseconds)\"," >> "$json_file"
-    echo "  \"severity_filter\": \"$SEVERITY\"," >> "$json_file"
-    echo "  \"images\": [" >> "$json_file"
+    {
+        echo "{"
+        echo "  \"timestamp\": \"$(date -Iseconds)\","
+        echo "  \"severity_filter\": \"$SEVERITY\","
+        echo "  \"images\": ["
+    } > "$json_file"
 
     local first=true
     while read -r image; do
@@ -256,9 +260,11 @@ EOF
         echo -n "    \"$image\"" >> "$json_file"
     done < <(extract_images)
 
-    echo "" >> "$json_file"
-    echo "  ]" >> "$json_file"
-    echo "}" >> "$json_file"
+    {
+        echo ""
+        echo "  ]"
+        echo "}"
+    } >> "$json_file"
 
     log_success "JSON summary: $json_file"
 }

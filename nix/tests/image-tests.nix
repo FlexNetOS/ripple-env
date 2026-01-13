@@ -7,14 +7,12 @@
 { inputs, pkgs, lib, ... }:
 
 let
-  # Base test configuration shared across all image tests
-  baseTestConfig = {
-    # Test timeout (5 minutes)
-    testTimeout = 300;
-
-    # Skip interactive tests in CI
-    skipLint = true;
-  };
+  # Base test configuration shared across all image tests.
+  #
+  # NOTE: nixpkgs' NixOS test API has evolved (e.g. `pkgs.nixosTest` ->
+  # `pkgs.testers.nixosTest`, and accepted attributes changed). Keep this empty
+  # unless you have verified attribute names against your pinned nixpkgs.
+  baseTestConfig = { };
 
   # Test that basic system services are working
   basicServicesTest = {
@@ -79,8 +77,6 @@ let
       virtualisation = {
         memorySize = 2048;
         cores = 2;
-        # Enable nested virtualization for Docker
-        docker.enable = true;
       };
 
       # Docker configuration
@@ -258,7 +254,7 @@ in
   # Create actual NixOS test derivations
   mkTests = { system ? "x86_64-linux" }:
     let
-      mkTest = test: pkgs.nixosTest (test // baseTestConfig);
+      mkTest = test: pkgs.testers.nixosTest (test // baseTestConfig);
     in
     {
       basic-services = mkTest basicServicesTest;

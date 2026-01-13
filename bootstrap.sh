@@ -408,8 +408,12 @@ source_nix_profile() {
     # updates and make `nix` appear "not found".
     unset __ETC_PROFILE_NIX_SOURCED 2>/dev/null || true
 
+    # Multi-user installs typically provide nix-daemon.sh; single-user installs
+    # provide nix.sh.
     if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
         . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    elif [ -f /nix/var/nix/profiles/default/etc/profile.d/nix.sh ]; then
+        . /nix/var/nix/profiles/default/etc/profile.d/nix.sh
     elif [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
         . "$HOME/.nix-profile/etc/profile.d/nix.sh"
     fi
@@ -424,6 +428,16 @@ ensure_nix_daemon() {
     # If Nix was installed in multi-user mode but the daemon isn't running (e.g.
     # inside containers without systemd), nix commands will fail with permission
     # errors or missing daemon socket.
+    #
+    # In single-user installs (common in devcontainers/Codespaces), there is no
+    # nix-daemon socket and that's fine—don't warn or try to start it.
+    if [ ! -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ] \
+        && [ -f /nix/var/nix/profiles/default/etc/profile.d/nix.sh ] \
+        && [ ! -S /nix/var/nix/daemon-socket/socket ]; then
+        log DEBUG "Single-user Nix detected; skipping nix-daemon checks"
+        return 0
+    fi
+
     if [ -S /nix/var/nix/daemon-socket/socket ]; then
         return 0
     fi
@@ -442,7 +456,7 @@ ensure_nix_daemon() {
     # Fall back to starting the daemon directly.
     sudo mkdir -p /nix/var/nix/daemon-socket
     sudo chmod 755 /nix/var/nix/daemon-socket
-    (sudo /nix/var/nix/profiles/default/bin/nix-daemon --daemon >/tmp/nix-daemon.log 2>&1 &) || true
+    (sudo sh -c '/nix/var/nix/profiles/default/bin/nix-daemon --daemon >/tmp/nix-daemon.log 2>&1 &') || true
     sleep 1
 
     if [ -S /nix/var/nix/daemon-socket/socket ]; then
@@ -622,17 +636,26 @@ enable_flakes() {
 
     mkdir -p "$nix_conf_dir"
 
-    if [ -f "$nix_conf" ]; then
-        if grep -q "experimental-features.*flakes" "$nix_conf"; then
-            log_info "Flakes already enabled"
-            save_state "enable_flakes"
-            return 0
-        fi
+    # Add flakes configuration (idempotent)
+    if [ ! -f "$nix_conf" ]; then
+        touch "$nix_conf"
     fi
 
-    # Add flakes configuration
-    echo "experimental-features = nix-command flakes" >> "$nix_conf"
-    log_success "Flakes enabled in $nix_conf"
+    if grep -qE '^\s*experimental-features\s*=.*\bflakes\b' "$nix_conf"; then
+        log_info "Flakes already enabled"
+    else
+        echo "experimental-features = nix-command flakes" >> "$nix_conf"
+        log_success "Flakes enabled in $nix_conf"
+    fi
+
+    # Allow per-flake nixConfig (needed to pick up caches/keys from flake.nix)
+    if grep -qE '^\s*accept-flake-config\s*=\s*true\s*$' "$nix_conf"; then
+        log_info "accept-flake-config already enabled"
+    else
+        echo "accept-flake-config = true" >> "$nix_conf"
+        log_success "Enabled accept-flake-config in $nix_conf"
+    fi
+
     save_state "enable_flakes"
 }
 
@@ -883,16 +906,16 @@ verify_environment() {
         flake_check_args+=(--all-systems)
     fi
 
-    if ! nix flake check "${flake_check_args[@]}"; then
+    if ! nix flake check --accept-flake-config "${flake_check_args[@]}"; then
         log_error "nix flake check failed"
         log_info "flake output (for debugging):"
-        nix flake show || true
+        nix flake show --accept-flake-config || true
         return 1
     fi
 
     # Build the devshell (this validates the configuration)
     log_info "Building development shell..."
-    if ! nix develop --command echo "Development shell verified successfully"; then
+    if ! nix develop --accept-flake-config --command echo "Development shell verified successfully"; then
         log_error "Failed to build development shell"
         return 1
     fi
@@ -919,7 +942,7 @@ verify_pixi() {
 
     # Run pixi install within the nix environment
     log_info "Running pixi install..."
-    if ! nix develop --command pixi install; then
+    if ! nix develop --accept-flake-config --command pixi install; then
         log_error "pixi install failed"
         return 1
     fi
@@ -945,18 +968,12 @@ verify_manifest_components() {
         return 0
     fi
 
-    # Check for Python (needed for manifest validation)
-    if ! check_command python3; then
-        log_warn "Python3 not available, skipping manifest validation"
-        save_state "verify_manifest"
-        return 0
-    fi
-
     # Validate manifest first (if validation script exists)
     local validate_script="$SCRIPT_DIR/scripts/validate-manifest.py"
     if [ -f "$validate_script" ]; then
         log_info "Validating ARIA_MANIFEST.yaml..."
-        if python3 "$validate_script" --manifest "$MANIFEST_FILE" 2>/dev/null; then
+        # Run using pixi's Python so dependencies are consistent and available.
+        if nix develop --command pixi run python "$validate_script" --manifest "$MANIFEST_FILE" 2>/dev/null; then
             log_success "Manifest validation passed"
         else
             log_warn "Manifest validation had issues (non-fatal)"
@@ -967,7 +984,7 @@ verify_manifest_components() {
     local generator_script="$SCRIPT_DIR/scripts/generate-verification.py"
     if [ -f "$generator_script" ]; then
         log_info "Generating verification script from manifest..."
-        python3 "$generator_script" --manifest "$MANIFEST_FILE" --output "$VERIFY_SCRIPT" 2>/dev/null || true
+        nix develop --command pixi run python "$generator_script" --manifest "$MANIFEST_FILE" --output "$VERIFY_SCRIPT" 2>/dev/null || true
     fi
 
     # Run verification script if it exists

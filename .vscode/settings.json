@@ -1,22 +1,54 @@
 {
-  // Keep the workspace consistent across Windows/macOS/Linux contributors
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
-
-  // Terminals
   "terminal.integrated.defaultProfile.linux": "bash",
   "terminal.integrated.shellIntegration.enabled": true,
   "terminal.integrated.scrollback": 10000,
-
-  // Nix
   "nix.enableLanguageServer": true,
   "nix.serverPath": "nil",
   "nix.formatterPath": "nixfmt",
-
-  // direnv
   "direnv.restart.automatic": true,
-
-  // Shell scripts
-  "shellcheck.enable": true
+  "shellcheck.enable": true,
+  "chat.agent.maxRequests": 2500,
+  "chat.agent.thinking.collapsedTools": "withThinking",
+  "chat.allowAnonymousAccess": true,
+  "chat.checkpoints.showFileChanges": true,
+  "chat.customAgentInSubagent.enabled": true,
+  "chat.editor.wordWrap": "on",
+  "chat.edits2.enabled": true,
+  "chat.mcp.assisted.nuget.enabled": true,
+  "chat.mcp.discovery.enabled": {
+    "claude-desktop": true,
+    "cursor-global": true,
+    "cursor-workspace": true
+  },
+  "chat.mcp.gallery.enabled": true,
+  "chat.renderRelatedFiles": true,
+  "chat.restoreLastPanelSession": true,
+  "chat.tools.terminal.autoReplyToPrompts": true,
+  "chat.tools.terminal.blockDetectedFileWrites": "never",
+  "chat.useAgentSkills": true,
+  "inlineChat.enableV2": true,
+  "inlineChat.finishOnType": true,
+  "inlineChat.notebookAgent": true,
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "github.copilot.nextEditSuggestions.extendedRange": true,
+  "github.copilot.chat.tools.memory.enabled": true,
+  "github.copilot.chat.languageContext.fix.typescript.enabled": true,
+  "github.copilot.chat.languageContext.typescript.enabled": true,
+  "github.copilot.chat.languageContext.inline.typescript.enabled": true,
+  "github.copilot.chat.languageContext.typescript.includeDocumentation": true,
+  "github.copilot.chat.nesFetcher": "node-fetch",
+  "github.copilot.chat.notebook.enhancedNextEditSuggestions.enabled": true,
+  "github.copilot.chat.notebook.followCellExecution.enabled": true,
+  "github.copilot.chat.scopeSelection": true,
+  "github.copilot.chat.anthropic.useMessagesApi": true,
+  "github.copilot.chat.anthropic.tools.websearch.maxUses": 20,
+  "github.copilot.chat.anthropic.tools.websearch.enabled": true,
+  "github.copilot.chat.agent.autoFix": true,
+  "github.copilot.chat.alternateGeminiModelFPrompt.enabled": true,
+  "github.copilot.chat.alternateGptPrompt.enabled": true,
+  "github.copilot.chat.anthropic.thinking.budgetTokens": 32000,
+  "terminal.integrated.windowsUseConptyDll": true
 }

@@ -105,8 +105,10 @@ verify_containers() {
 
     for container in "${containers[@]}"; do
         if docker ps --format '{{.Names}}' | grep -q "^${container}$"; then
-            local status=$(docker inspect --format='{{.State.Status}}' "$container")
-            local health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "none")
+            local status
+            status=$(docker inspect --format='{{.State.Status}}' "$container")
+            local health
+            health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "none")
 
             if [ "$status" = "running" ]; then
                 if [ "$health" = "healthy" ]; then
@@ -192,7 +194,8 @@ verify_database() {
         print_success "PostgreSQL database is ready"
 
         # Check database exists and has tables
-        local table_count=$(docker exec "$db_container" psql -U mindsdb -d mindsdb -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" 2>/dev/null | tr -d ' ')
+        local table_count
+        table_count=$(docker exec "$db_container" psql -U mindsdb -d mindsdb -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" 2>/dev/null | tr -d ' ')
         print_info "Database has $table_count tables"
     else
         print_error "PostgreSQL database is not ready"

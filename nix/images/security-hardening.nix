@@ -255,10 +255,12 @@ in
     # =================================================================
     services.openssh.settings = mkIf config.services.openssh.enable {
       # Disable root login
-      PermitRootLogin = "no";
+      # Use mkOverride with higher priority to resolve conflicts with installer
+      # profiles (e.g. installation-device) that may intentionally enable root login.
+      PermitRootLogin = lib.mkOverride 500 "no";
 
       # Disable password authentication
-      PasswordAuthentication = false;
+      PasswordAuthentication = mkDefault false;
 
       # Use only strong key exchange algorithms
       KexAlgorithms = [
@@ -313,14 +315,12 @@ in
       logRefusedPackets = cfg.level == "strict";
 
       # Strict mode: deny all by default
-      allowedTCPPorts = mkIf (!cfg.firewall.strict) [ ];
-      allowedUDPPorts = mkIf (!cfg.firewall.strict) [ ];
-
-      # Allow SSH if enabled
-      allowedTCPPorts = mkIf config.services.openssh.enable [ 22 ];
+      # Default policy is deny; explicitly allow only what we need.
+      allowedTCPPorts = optionals config.services.openssh.enable [ 22 ];
+      allowedUDPPorts = [ ];
 
       # Rate limiting for SSH (via iptables)
-      extraCommands = mkIf (cfg.level != "minimal") ''
+      extraCommands = mkIf (cfg.level != "minimal" && config.services.openssh.enable) ''
         # Rate limit SSH connections
         iptables -I INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
         iptables -I INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 -j DROP
