@@ -14,11 +14,6 @@ description = "Development environment for RoboStack ROS packages"
 channels = ["conda-forge"]
 platforms = ["linux-64"]
 
-[system-requirements]
-# WSL exposes the NVIDIA driver from Windows. `nvidia-smi` reports CUDA Version 13.1 on this machine.
-# Declaring this lets Pixi satisfy conda virtual packages like `__cuda` needed for GPU builds.
-cuda = "13.1"
-
 [dependencies]
 python = ">=3.11,<3.13"
 

@@ -14,11 +14,6 @@ description = "Development environment for RoboStack ROS packages"
 channels = ["conda-forge"]
 platforms = ["linux-64"]
 
-[system-requirements]
-# WSL exposes the NVIDIA driver from Windows. `nvidia-smi` reports CUDA Version 13.1 on this machine.
-# Declaring this lets Pixi satisfy conda virtual packages like `__cuda` needed for GPU builds.
-cuda = "13.1"
-
 [dependencies]
 python = ">=3.11,<3.13"
 
@@ -173,9 +168,10 @@ channels = ["conda-forge"]
 # CUDA-enabled PyTorch from conda-forge.
 # Rationale: the official `pytorch` conda channel currently tops out at PyTorch 2.5.x / CUDA 12.4
 # and does not include kernels for RTX 5090 (sm_120). conda-forge provides newer CUDA builds.
-
-# Use the explicit GPU metapackage to prevent the solver from selecting CPU-only PyTorch builds.
-pytorch-gpu = ">=2.7,<3"
+#
+# Pin to a CUDA toolchain generation new enough for Blackwell (but still widely available).
+cuda-version = ">=12.9,<13"
+pytorch = ">=2.7,<3"
 
 # =============================================================================
 # AIOS Agent OS Feature
@@ -201,7 +197,6 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
 
 [feature.aios.dependencies]
 # Core AIOS dependencies with strict pins for compatibility
-python = ">=3.11,<3.12"
 pydantic = "==2.7.0"
 numpy = ">=1.26.4,<3"
 
@@ -255,7 +250,6 @@ platforms = ["linux-64"]
 
 [feature.aios-cuda.dependencies]
 # Includes all AIOS dependencies plus vLLM
-python = ">=3.11,<3.12"
 pydantic = "==2.7.0"
 numpy = ">=1.26.4,<3"
 litellm = ">=1.0"

@@ -19,13 +19,7 @@ export MALLOC_TOP_PAD_=131072
 export WSLENV="NIX_BUILD_CORES/w:NIX_MAX_JOBS/w"
 
 # Stable PATH setup (prevents command not found)
-export PATH="/usr/lib/wsl/lib:/usr/local/bin:/usr/bin:/bin:/home/nixos/.nix-profile/bin:$PATH"
-
-# Make NVIDIA WSL GPU libraries discoverable (needed for CUDA + nvidia-smi)
-# In WSL2 the Windows NVIDIA driver exposes user-space libraries under:
-#   /usr/lib/wsl/lib
-# NixOS does not run ldconfig by default, so we add it explicitly.
-export LD_LIBRARY_PATH="/usr/lib/wsl/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export PATH="/usr/local/bin:/usr/bin:/bin:/home/nixos/.nix-profile/bin:$PATH"
 
 # Load AI/ML environment variables
 if [[ -f "scripts/env-vars.sh" ]]; then
