@@ -41,6 +41,7 @@ volumes/
 
 # === Rust & Cargo ===
 /target/
+**/target/
 **/*.rs.bk
 Cargo.lock
 
