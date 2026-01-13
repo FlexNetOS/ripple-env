@@ -38,8 +38,8 @@ services:
       GF_DATABASE_SSL_MODE: disable
       
       # Security
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin  # Change in production!
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
       GF_SECURITY_SECRET_KEY: dev-secret-key-change-in-production
       GF_SECURITY_LOGIN_REMEMBER_DAYS: 7
       GF_SECURITY_COOKIE_USERNAME: grafana_user
