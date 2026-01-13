@@ -17,6 +17,10 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
 [dependencies]
 python = ">=3.11,<3.13"
 
+# Used by scripts/validate-manifest.py and scripts/generate-verification.py
+pyyaml = ">=6.0,<7"
+jsonschema = ">=4.23,<5"
+
 # Build tools
 compilers = ">=1.11.0,<2"
 cmake = ">=3.28,<4"
