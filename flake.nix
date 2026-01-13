@@ -41,9 +41,13 @@
     };
 
     # Holochain overlay for P2P coordination (BUILDKIT_STARTER_SPEC.md L11)
-    # NOTE: Loaded via fetchFromGitHub to pin specific commit (see perSystem)
-    # This avoids adding another flake input with its own nixpkgs
+    # NOTE: Use flake=false so we only fetch the source (no extra nixpkgs).
+    # This also avoids Import-From-Derivation (IFD) during flake evaluation.
     # See: https://github.com/spartan-holochain-counsel/nix-overlay
+    holochain-overlay = {
+      url = "github:spartan-holochain-counsel/nix-overlay/2a321bc7d6d94f169c6071699d9a89acd55039bb";
+      flake = false;
+    };
 
     # P2-017: Agentic DevOps automation layer (BUILDKIT_STARTER_SPEC.md L301)
     # flake = false: Only need the source, not flake outputs
@@ -98,6 +102,7 @@
       home-manager,
       home-manager-stable,
       nixos-wsl,
+      holochain-overlay,
       agenix,
       nixos-wsl-stable,
       ...
@@ -191,13 +196,8 @@
           };
         in
         let
-          # Holochain overlay source (pinned commit)
-          holochainSrc = inputs.nixpkgs.legacyPackages.${system}.fetchFromGitHub {
-            owner = "spartan-holochain-counsel";
-            repo = "nix-overlay";
-            rev = "2a321bc7d6d94f169c6071699d9a89acd55039bb";
-            sha256 = "sha256-LZkgXdLY+C+1CxynKzsdtM0g4gC0NJjPP3d24pHPyIU=";
-          };
+          # Holochain overlay source (pinned via flake input)
+          holochainSrc = inputs.holochain-overlay;
 
           # P2-017: AgenticsOrg DevOps source
           agenticsorgDevopsSrc = inputs.agenticsorg-devops;
@@ -259,11 +259,8 @@
           nixTests = import ./nix/tests { inherit pkgs; lib = pkgs.lib; };
 
         in
-        {
-          # =================================================================
-          # FLAKE CHECKS - Run with: nix flake check
-          # =================================================================
-          checks = {
+        let
+          baseChecks = {
             # Nix module unit tests
             module-tests-git = nixTests.test-git-module;
             module-tests-direnv = nixTests.test-direnv-module;
@@ -289,6 +286,14 @@
               touch $out
             '';
           };
+        in
+        {
+          # =================================================================
+          # FLAKE CHECKS - Run with: nix flake check
+          # =================================================================
+          checks =
+            baseChecks
+            // pkgs.lib.optionalAttrs (system == "x86_64-linux") imageTests;
 
           # Development shells - use modular structure from nix/shells/
           # See nix/shells/default.nix for shell definitions
@@ -320,10 +325,6 @@
             };
           };
 
-          # Flake checks including image tests
-          # Run with: nix flake check
-          # Individual tests: nix build .#checks.x86_64-linux.basic-services
-          checks = pkgs.lib.optionalAttrs (system == "x86_64-linux") imageTests;
         };
     };
 }
