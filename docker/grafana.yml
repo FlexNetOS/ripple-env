@@ -1,0 +1,212 @@
+# Grafana - Metrics Visualization and Dashboards (BUILDKIT L14)
+# P2-001: Grafana provides visualization for Prometheus metrics
+#
+# Grafana features:
+#   - Time-series data visualization
+#   - Dashboard creation and sharing
+#   - Alert visualization
+#   - Multi-source data support
+#   - Team collaboration
+#   - Plugin ecosystem
+#
+# Components:
+#   - Grafana Server: Main application
+#   - PostgreSQL: Database for dashboards and users
+#
+# References:
+#   - https://grafana.com/docs
+#   - https://github.com/grafana/grafana
+#   - BUILDKIT_STARTER_SPEC.md L14: Security & Observability
+
+version: '3.8'
+
+services:
+  # Grafana Server
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: grafana
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      # Database configuration
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: postgres:5432
+      GF_DATABASE_NAME: grafana
+      GF_DATABASE_USER: grafana
+      GF_DATABASE_PASSWORD: grafana
+      GF_DATABASE_SSL_MODE: disable
+      
+      # Security
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
+      GF_SECURITY_SECRET_KEY: ${GRAFANA_SECRET_KEY:-}
+      GF_SECURITY_LOGIN_REMEMBER_DAYS: 7
+      GF_SECURITY_COOKIE_USERNAME: grafana_user
+      GF_SECURITY_COOKIE_REMEMBER_NAME: grafana_remember
+      
+      # Server configuration
+      GF_SERVER_HTTP_PORT: 3000
+      GF_SERVER_DOMAIN: localhost
+      GF_SERVER_ROOT_URL: http://localhost:3000
+      
+      # Logging
+      GF_LOG_MODE: console
+      GF_LOG_LEVEL: info
+      
+      # Features
+      GF_FEATURE_TOGGLES_ENABLE: ngalert
+      
+      # Alerting
+      GF_ALERTING_ENABLED: true
+      GF_UNIFIED_ALERTING_ENABLED: true
+      
+      # Users
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_USERS_ALLOW_ORG_CREATE: false
+      GF_USERS_AUTO_ASSIGN_ORG: true
+      GF_USERS_AUTO_ASSIGN_ORG_ROLE: Viewer
+      
+      # Analytics
+      GF_ANALYTICS_REPORTING_ENABLED: false
+      GF_ANALYTICS_CHECK_FOR_UPDATES: false
+      
+      # SMTP (for alerts)
+      # GF_SMTP_ENABLED: true
+      # GF_SMTP_HOST: localhost:587
+      # GF_SMTP_USER: 
+      # GF_SMTP_PASSWORD: 
+      # GF_SMTP_FROM_ADDRESS: alerts@example.com
+      
+      # Plugins
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+      
+      # Dashboard provisioning
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      
+      # CORS
+      GF_SERVER_CORS_ENABLED: true
+      GF_SERVER_CORS_ALLOW_ORIGIN: "*"
+    
+    # Ports
+    ports:
+      - "3000:3000"  # Grafana web interface
+    
+    # Volumes
+    volumes:
+      # Grafana data
+      - grafana-data:/var/lib/grafana
+      # Configuration
+      - ./config/grafana:/etc/grafana/provisioning
+      # Dashboards
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards
+      # Plugins
+      - ./data/grafana/plugins:/var/lib/grafana/plugins
+    
+    # Dependencies
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - grafana-network
+    
+    # Labels for documentation and management
+    labels:
+      - "service=grafana"
+      - "layer=L14-Security-Observability"
+      - "description=Grafana metrics visualization"
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.localhost`)"
+      - "traefik.http.routers.grafana.entrypoints=web"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: grafana-postgres
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      POSTGRES_DB: grafana
+      POSTGRES_USER: grafana
+      POSTGRES_PASSWORD: grafana
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+      
+      # Performance tuning
+      POSTGRES_SHARED_PRELOAD_LIBRARIES: pg_stat_statements
+      POSTGRES_MAX_CONNECTIONS: 200
+      POSTGRES_WORK_MEM: 4MB
+    
+    # Volumes
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Initialization scripts
+      - ./config/grafana/postgres/init:/docker-entrypoint-initdb.d
+    
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grafana"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    
+    # Network
+    networks:
+      - grafana-network
+    
+    # Labels
+    labels:
+      - "service=postgres"
+      - "layer=L10-State-Storage"
+      - "description=PostgreSQL database for Grafana"
+
+# Volumes
+volumes:
+  postgres-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# Networks
+networks:
+  grafana-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16
