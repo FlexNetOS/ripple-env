@@ -203,7 +203,7 @@ if docker ps -a --format '{{.Names}}' | grep -q "^open-lovable$"; then
         fi
 
         print_test "Checking logs for errors..."
-        ERROR_COUNT=$(docker logs open-lovable 2>&1 | grep -i "error" | wc -l)
+        ERROR_COUNT=$(docker logs open-lovable 2>&1 | grep -ci "error")
         if [ "$ERROR_COUNT" -eq 0 ]; then
             print_pass "No errors found in logs"
         else
