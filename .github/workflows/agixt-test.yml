@@ -148,5 +148,5 @@ jobs:
 
       - name: Check environment variables
         run: |
-          echo "Checking required environment variables in docker-compose.agixt.yml..."
+          echo "Checking required environment variables in docker/docker-compose.agixt.yml..."
           grep -E "^\s+\w+:" docker/docker-compose.agixt.yml | grep -E "(POSTGRES|AGIXT|OPENAI|API)" | head -20 || true
