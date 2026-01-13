@@ -103,7 +103,8 @@ clean_nix() {
     fi
 
     # Get size before
-    local before=$(du -sb /nix/store 2>/dev/null | cut -f1 || echo 0)
+    local before
+    before=$(du -sb /nix/store 2>/dev/null | cut -f1 || echo 0)
 
     if [ "$AGGRESSIVE" = true ]; then
         log_info "Running aggressive cleanup (removing all old generations)..."
@@ -118,7 +119,8 @@ clean_nix() {
     nix store optimise 2>/dev/null || true
 
     # Get size after
-    local after=$(du -sb /nix/store 2>/dev/null | cut -f1 || echo 0)
+    local after
+    after=$(du -sb /nix/store 2>/dev/null | cut -f1 || echo 0)
     local freed=$((before - after))
     local freed_mb=$((freed / 1024 / 1024))
 
@@ -149,7 +151,8 @@ clean_docker() {
     fi
 
     # Get size before
-    local before=$(docker system df --format '{{.Size}}' 2>/dev/null | head -1 || echo "0B")
+    local before
+    before=$(docker system df --format '{{.Size}}' 2>/dev/null | head -1 || echo "0B")
 
     if [ "$AGGRESSIVE" = true ]; then
         log_info "Running aggressive Docker cleanup (including volumes)..."
@@ -159,7 +162,8 @@ clean_docker() {
         docker system prune -a -f 2>/dev/null || true
     fi
 
-    local after=$(docker system df --format '{{.Size}}' 2>/dev/null | head -1 || echo "0B")
+    local after
+    after=$(docker system df --format '{{.Size}}' 2>/dev/null | head -1 || echo "0B")
     log_success "Docker cleaned. Before: $before, After: $after"
 }
 
@@ -177,11 +181,13 @@ clean_pixi() {
         return
     fi
 
-    local before=$(du -sb ~/.pixi 2>/dev/null | cut -f1 || echo 0)
+    local before
+    before=$(du -sb ~/.pixi 2>/dev/null | cut -f1 || echo 0)
 
     pixi clean 2>/dev/null || true
 
-    local after=$(du -sb ~/.pixi 2>/dev/null | cut -f1 || echo 0)
+    local after
+    after=$(du -sb ~/.pixi 2>/dev/null | cut -f1 || echo 0)
     local freed=$((before - after))
     local freed_mb=$((freed / 1024 / 1024))
 
@@ -206,7 +212,8 @@ clean_build() {
 
     for dir in "${build_dirs[@]}"; do
         if [ -d "$dir" ]; then
-            local size=$(du -sb "$dir" 2>/dev/null | cut -f1 || echo 0)
+            local size
+            size=$(du -sb "$dir" 2>/dev/null | cut -f1 || echo 0)
             if [ "$DRY_RUN" = true ]; then
                 log_info "[DRY-RUN] Would remove: $dir ($(du -sh "$dir" | cut -f1))"
             else
@@ -229,7 +236,8 @@ clean_build() {
     fi
 
     if [ "$DRY_RUN" = false ]; then
-        local freed_mb=$((freed_total / 1024 / 1024))
+        local freed_mb
+        freed_mb=$((freed_total / 1024 / 1024))
         if [ $freed_mb -gt 0 ]; then
             log_success "Freed ${freed_mb} MB from build artifacts"
         fi
@@ -237,14 +245,16 @@ clean_build() {
 }
 
 run_all_cleanup() {
-    local start_free=$(df / 2>/dev/null | tail -1 | awk '{print $4}')
+    local start_free
+    start_free=$(df / 2>/dev/null | tail -1 | awk '{print $4}')
 
     clean_nix
     clean_docker
     clean_pixi
     clean_build
 
-    local end_free=$(df / 2>/dev/null | tail -1 | awk '{print $4}')
+    local end_free
+    end_free=$(df / 2>/dev/null | tail -1 | awk '{print $4}')
     local freed=$((end_free - start_free))
     local freed_mb=$((freed / 1024))
 

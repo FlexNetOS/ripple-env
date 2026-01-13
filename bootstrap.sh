@@ -442,7 +442,7 @@ ensure_nix_daemon() {
     # Fall back to starting the daemon directly.
     sudo mkdir -p /nix/var/nix/daemon-socket
     sudo chmod 755 /nix/var/nix/daemon-socket
-    (sudo /nix/var/nix/profiles/default/bin/nix-daemon --daemon >/tmp/nix-daemon.log 2>&1 &) || true
+    (sudo sh -c '/nix/var/nix/profiles/default/bin/nix-daemon --daemon >/tmp/nix-daemon.log 2>&1' &) || true
     sleep 1
 
     if [ -S /nix/var/nix/daemon-socket/socket ]; then

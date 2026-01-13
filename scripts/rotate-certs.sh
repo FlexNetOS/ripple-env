@@ -104,7 +104,8 @@ renew_certificate() {
 
     # Create backup of existing certificate
     if [ -f "$cert_file" ]; then
-        local backup_file="${cert_file}.backup.$(date +%Y%m%d_%H%M%S)"
+        local backup_file
+        backup_file="${cert_file}.backup.$(date +%Y%m%d_%H%M%S)"
         cp "$cert_file" "$backup_file"
         log "   Backup created: $backup_file"
     fi

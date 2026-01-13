@@ -330,7 +330,8 @@ EOF
 create_bundle() {
     log_info "Creating offline bundle archive..."
 
-    local bundle_name="ripple-env-offline-${PACKAGE_SET}-$(date +%Y%m%d).tar.gz"
+    local bundle_name
+    bundle_name="ripple-env-offline-${PACKAGE_SET}-$(date +%Y%m%d).tar.gz"
     local bundle_path="$PROJECT_ROOT/$bundle_name"
 
     # Create archive (excluding large model files if minimal)
