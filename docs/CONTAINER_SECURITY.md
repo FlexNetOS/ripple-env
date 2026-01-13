@@ -383,7 +383,7 @@ All production images are pinned to specific versions to prevent supply chain at
 | **AI/ML** | mindsdb/mindsdb | 25.14.0 | Monthly release pinning |
 | **Holochain** | holochain/holochain | 0.6.0 | Latest stable with K2 |
 | **Holochain** | holochain/bootstrap-server | 0.6.0 | Matches conductor version |
-| **Embedding** | semitechnologies/transformers-inference | 1.8.5 | MiniLM-L6-v2 model |
+| **Embedding** | semitechnologies/transformers-inference | 1.8.5 | MiniLM-L6-v2 model (full tag: `semitechnologies/transformers-inference:sentence-transformers-all-MiniLM-L6-v2-1.8.5`) |
 
 #### Images Awaiting Version Pinning
 
