@@ -157,6 +157,7 @@ services:
   qudag-mcp:
     # SECURITY RISK: Using :latest tag exposes system to supply chain attacks
     # TODO: URGENT - Pin to specific version/digest when available, or build from source
+    # Get digest: docker pull ruvector/qudag-mcp:latest && docker inspect --format='{{.RepoDigests}}' ruvector/qudag-mcp:latest
     image: ruvector/qudag-mcp:latest
     container_name: qudag-mcp
     hostname: qudag-mcp
@@ -201,6 +202,7 @@ services:
   qudag-node-2:
     # SECURITY RISK: Using :latest tag exposes system to supply chain attacks
     # TODO: URGENT - Pin to specific version/digest when available, or build from source
+    # Get digest: docker pull ruvector/qudag:latest && docker inspect --format='{{.RepoDigests}}' ruvector/qudag:latest
     image: ruvector/qudag:latest
     container_name: qudag-node-2
     hostname: qudag-node-2
@@ -248,6 +250,7 @@ services:
   qudag-node-3:
     # SECURITY RISK: Using :latest tag exposes system to supply chain attacks
     # TODO: URGENT - Pin to specific version/digest when available, or build from source
+    # Get digest: docker pull ruvector/qudag:latest && docker inspect --format='{{.RepoDigests}}' ruvector/qudag:latest
     image: ruvector/qudag:latest
     container_name: qudag-node-3
     hostname: qudag-node-3
@@ -297,6 +300,7 @@ services:
   qudag-testnet:
     # SECURITY RISK: Using :latest tag exposes system to supply chain attacks
     # TODO: URGENT - Pin to specific version/digest when available, or build from source
+    # Get digest: docker pull ruvector/qudag:latest && docker inspect --format='{{.RepoDigests}}' ruvector/qudag:latest
     image: ruvector/qudag:latest
     container_name: qudag-testnet
     hostname: qudag-testnet

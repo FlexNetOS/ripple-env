@@ -407,7 +407,7 @@ All production images are pinned to specific versions to prevent supply chain at
    image: ruvector/ruvector:latest
    
    # Use:
-   image: ruvector/ruvector@sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+   image: ruvector/ruvector@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
    ```
    Get current digest: `docker pull ruvector/ruvector:latest && docker inspect --format='{{.RepoDigests}}' ruvector/ruvector:latest`
 
