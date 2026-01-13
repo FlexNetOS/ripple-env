@@ -1,154 +1,117 @@
+# AgentGateway MCP Routing - Rust Implementation (BUILDKIT L4)
+# P3-001: AgentGateway provides MCP (Model Context Protocol) routing for agents
+#
+# This Cargo.toml defines the Rust workspace for AgentGateway integration
+# AgentGateway enables:
+#   - MCP protocol routing
+#   - Agent-to-tool communication
+#   - Context protocol translation
+#   - Plugin system for capabilities
+#
+# References:
+#   - https://github.com/agentgateway/agentgateway
+#   - https://modelcontextprotocol.io
+#   - BUILDKIT_STARTER_SPEC.md L4: Edge & Agent Traffic
+
 [workspace]
-resolver = "2"
 members = [
-    "agixt-bridge",
+    "crates/agentgateway-core",
+    "crates/agentgateway-mcp",
+    "crates/agentgateway-routing",
+    "crates/agentgateway-plugins",
 ]
+resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-license = "MIT"
-authors = ["FlexNetOS"]
+authors = ["FlexNetOS Contributors"]
+description = "AgentGateway MCP routing for the agentic OS"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/FlexNetOS/ripple-env"
 
+# Workspace dependencies
 [workspace.dependencies]
-# AGiXT SDK (package name on crates.io uses hyphen)
-agixt-sdk = "0.1"
-
 # Async runtime
-tokio = { version = "1.0", features = ["full"] }
+tokio = { version = "1.35", features = ["full"] }
+tokio-util = "0.7"
 
-# HTTP client
-reqwest = { version = "0.11", features = ["json"] }
+# HTTP client/server
+hyper = { version = "0.14", features = ["full"] }
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["full"] }
+reqwest = { version = "0.11", features = ["json", "stream"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yaml = "0.9"
+
+# MCP Protocol
+mcp-rust-sdk = { version = "0.1", git = "https://github.com/modelcontextprotocol/rust-sdk" }
 
 # Error handling
 anyhow = "1.0"
 thiserror = "1.0"
+eyre = "0.6"
 
 # Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-opentelemetry = "0.22"
+
+# OpenTelemetry
+opentelemetry = { version = "0.21", features = ["rt-tokio"] }
+opentelemetry-jaeger = "0.20"
 
 # Configuration
-config = "0.14"
-dotenvy = "0.15"
+config = "0.13"
+dotenv = "0.15"
+clap = { version = "4.4", features = ["derive", "env"] }
 
-# UUID
-uuid = { version = "1.4", features = ["v4"] }
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "sqlite"] }
+sea-orm = { version = "0.12", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
 
-# Time
-chrono = "0.4"
+# Authentication
+jsonwebtoken = "9.2"
+argon2 = "0.5"
 
-# Agent Runtime - Rust Orchestration (BUILDKIT_STARTER_SPEC.md Layer 7)
-# P1: arkflow - Rust streaming orchestration runtime
-# See: https://github.com/arkflow-rs/arkflow
-# P2-006: High performance stream processing engine with AI capabilities
-arkflow = "0.1"
+# Utilities
+uuid = { version = "1.6", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+once = "0.12"
+base64 = "0.21"
+hex = "0.4"
+url = "2.5"
 
-# Tool Execution - Rust utilities (BUILDKIT_STARTER_SPEC.md Layer 8)
-# P2-007: midstream - Streaming response analysis with temporal processing
-# See: https://github.com/ruvnet/midstream
-# MidStream is a platform for real-time AI conversation analysis
-temporal-compare = "0.1"
-nanosecond-scheduler = "0.1"
-temporal-attractor-studio = "0.1"
-temporal-neural-solver = "0.1"
-strange-loop = "0.1"
+# Testing
+#[cfg(test)]
+tokio-test = "0.4"
+mockall = "0.12"
 
-# P2-008: ruv-fann - Fast neural network utility
-# See: https://github.com/ruvnet/ruv-FANN
-# Blazing-fast, memory-safe neural network library (pure Rust FANN rewrite)
-ruv-fann = { git = "https://github.com/ruvnet/ruv-FANN", branch = "main" }
+# Development
+#[cfg(dev)]
+criterion = "0.5"
 
-# P2-009: sublinear-time-solver - Fast solver tool (installed via npx in flake.nix)
-# See: https://github.com/ruvnet/sublinear-time-solver
+[profile.dev]
+opt-level = 0
+debug = true
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = 'unwind'
+incremental = true
+codegen-units = 256
 
-# P2-015: remote-agentic-coding-system - Remote Coding Agent
-# NOTE: Repository FlexNetOS/remote-agentic-coding-system does not exist
-# Similar project available: https://github.com/coleam00/remote-agentic-coding-system
-# Description: Remote Coding Agent for connecting Claude Code/Codex to Slack, Telegram, GitHub
-# Installation: Node.js/TypeScript project with Docker support
-# Requires: npx, docker-compose (already available in this environment)
-# Usage: See repository README for setup instructions
-
-# Holochain Coordination (BUILDKIT_STARTER_SPEC.md Section 9.7)
-# P0: Holochain Development Kit - Required for building DNAs and zomes
-# P1-002: Holochain crate integration
-hdk = "0.4.0"
-hdi = "0.5.0"
-holochain = "0.4.0"
-holochain_types = "0.4.0"
-holochain_zome_types = "0.4.0"
-
-# State & Storage (BUILDKIT_STARTER_SPEC.md Layer 10)
-# P0-005: Redis client for cache and state management
-redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
-
-# P1-001: ruvector - Distributed vector database with GNN self-learning
-# See: https://github.com/ruvnet/ruvector
-# Feature flag: VECTOR_STORE=ruvector|pgvector|both
-# All-in-one package: vector search, Cypher queries, GNN, Raft consensus, WASM
-ruvector = { git = "https://github.com/ruvnet/ruvector", branch = "main" }
-
-# P1-003: sqlx - Async SQL toolkit with compile-time checked queries
-# Features: postgres (PostgreSQL driver), runtime-tokio-rustls (tokio runtime + rustls TLS)
-# Compatible with tokio 1.0 runtime and holochain async patterns
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "macros", "migrate"] }
-
-# P1-004: datafusion - Apache Arrow-based query engine for data processing
-# High-performance SQL query engine compatible with async tokio runtime
-# Used for distributed query processing and analytics
-datafusion = { version = "43" }
-
-# =============================================================================
-# QuDAG - Quantum-Resistant Distributed Communication (P3-011)
-# =============================================================================
-# BUILDKIT_STARTER_SPEC.md Layer 11: P2P Coordination
-# See: https://github.com/ruvnet/qudag
-#
-# QuDAG is a quantum-resistant distributed communication platform featuring:
-#   - Post-quantum cryptography (ML-KEM-768, ML-DSA, BLAKE3, HQC)
-#   - DAG-based consensus (QR-Avalanche)
-#   - Multi-hop onion routing with ChaCha20Poly1305
-#   - Native MCP server (stdio, HTTP, WebSocket)
-#   - AI agent coordination for autonomous systems
-#   - rUv token economy for resource exchange
-#
-# Crates from the QuDAG repository:
-#   - qudag-core: Core DAG implementation and consensus
-#   - qudag-crypto: Post-quantum cryptography primitives
-#   - qudag-network: P2P networking and onion routing
-#   - qudag-mcp: Model Context Protocol server implementation
-
-# QuDAG Core - DAG implementation and QR-Avalanche consensus
-qudag-core = { git = "https://github.com/ruvnet/qudag", branch = "main" }
-
-# QuDAG Crypto - Post-quantum cryptography (ML-KEM, ML-DSA, BLAKE3, HQC)
-qudag-crypto = { git = "https://github.com/ruvnet/qudag", branch = "main" }
-
-# QuDAG Network - P2P networking and onion routing
-qudag-network = { git = "https://github.com/ruvnet/qudag", branch = "main" }
-
-# QuDAG MCP - Model Context Protocol server for AI agent coordination
-qudag-mcp = { git = "https://github.com/ruvnet/qudag", branch = "main" }
-
-# =============================================================================
-# Post-Quantum Cryptography Support
-# =============================================================================
-# Additional crypto libraries for QuDAG post-quantum features
-
-# BLAKE3 - Fast cryptographic hash function
-blake3 = "1.5"
-
-# ChaCha20Poly1305 - AEAD cipher for onion routing
-chacha20poly1305 = "0.10"
-
-# x25519-dalek - Key exchange (hybrid with ML-KEM)
-x25519-dalek = { version = "2.0", features = ["static_secrets"] }
-
-# ed25519-dalek - Digital signatures (hybrid with ML-DSA)
-ed25519-dalek = { version = "2.1", features = ["serde"] }
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = "fat"
+panic = 'abort'
+incremental = false
+codegen-units = 1
+strip = true
