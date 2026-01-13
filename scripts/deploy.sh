@@ -19,16 +19,36 @@ check_service_health() {
     local service=$1
     local max_attempts=30
     local attempt=0
-    
+
     while [ $attempt -lt $max_attempts ]; do
-        if docker-compose -f "docker/$service.yml" ps | grep -q "Up (healthy)\|Up"; then
-            echo "$service is ready"
-            return 0
+        # Get the container ID for this service (if any)
+        local container_id
+        container_id="$(docker-compose -f "docker/$service.yml" ps -q 2>/dev/null || true)"
+
+        if [ -n "${container_id:-}" ]; then
+            # Try to read explicit health status (if a health check is defined)
+            local health_status
+            health_status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container_id" 2>/dev/null || true)"
+
+            if [ -n "$health_status" ]; then
+                if [ "$health_status" = "healthy" ]; then
+                    echo "$service is ready"
+                    return 0
+                fi
+            else
+                # No health check defined; fall back to container state
+                local container_state
+                container_state="$(docker inspect -f '{{.State.Status}}' "$container_id" 2>/dev/null || true)"
+                if [ "$container_state" = "running" ]; then
+                    echo "$service is ready"
+                    return 0
+                fi
+            fi
         fi
+
         attempt=$((attempt + 1))
         sleep 2
     done
-    
     echo "Warning: $service may not be fully ready"
     return 1
 }
