@@ -69,9 +69,9 @@
             nodejs_20
             python311
             # Security scanning tools
-            gitleaks
-            detect-secrets
-            trufflehog
+            gitleaks        # Git secrets scanner
+            detect-secrets  # Baseline secrets detection
+            trufflehog      # Git history secrets scanner
           ] ++ (with pkgs.flexnetos; [
             flexnetos-config
             flexnetos-cli
