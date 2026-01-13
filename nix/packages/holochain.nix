@@ -25,4 +25,5 @@ with pkgs; [
   holochain       # Holochain conductor (agent-centric P2P runtime)
   hc              # Holochain dev CLI (scaffold/sandbox/pack/launch)
   lair-keystore   # Secure keystore for Holochain agent keys (cryptographic identity)
+  nats-server     # NATS event bus for agent messaging (BUILDKIT L6)
 ]

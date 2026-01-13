@@ -31,10 +31,6 @@ in
   # Holochain P2P packages (requires overlay applied to pkgs)
   holochain = import ./holochain.nix { inherit pkgs; };
 
-  # Distributed systems packages (ruvector, QuDAG, gRPC, WASM)
-  # BUILDKIT_STARTER_SPEC.md Layer 10: State & Storage
-  distributed = import ./distributed.nix { inherit pkgs; };
-
   # Hardware interface packages (cameras, CAN, serial, GPIO)
   hardware = import ./hardware.nix { inherit pkgs lib; };
 
@@ -52,25 +48,17 @@ in
   # Convenience: all packages combined for default shell
   defaultShell = (import ./base.nix { inherit pkgs; })
     ++ (import ./holochain.nix { inherit pkgs; })
-    ++ (import ./distributed.nix { inherit pkgs; })
     ++ platform.all;
 
   # Convenience: all packages combined for full shell
   fullShell = (import ./base.nix { inherit pkgs; })
     ++ (import ./dev-tools.nix { inherit pkgs; })
     ++ (import ./holochain.nix { inherit pkgs; })
-    ++ (import ./distributed.nix { inherit pkgs; })
     ++ platform.all;
 
   # Robotics shell: includes hardware and simulation packages
   roboticsShell = (import ./base.nix { inherit pkgs; })
     ++ (import ./hardware.nix { inherit pkgs lib; })
     ++ (import ./simulation.nix { inherit pkgs lib; })
-    ++ platform.all;
-
-  # Distributed shell: includes ruvector, QuDAG, and related tools
-  # Use: nix develop .#distributed
-  distributedShell = (import ./base.nix { inherit pkgs; })
-    ++ (import ./distributed.nix { inherit pkgs; })
     ++ platform.all;
 }

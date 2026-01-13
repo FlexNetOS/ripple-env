@@ -17,7 +17,7 @@ services:
   # https://github.com/tensorzero/tensorzero
   # Primary LLMOps gateway for evals/experiments/telemetry control
   tensorzero:
-    image: tensorzero/tensorzero:latest
+    image: tensorzero/tensorzero:2025.10.6
     container_name: tensorzero
     ports:
       - "3030:3000"
@@ -42,7 +42,7 @@ services:
 
   # TensorZero UI - Dashboard for observability
   tensorzero-ui:
-    image: tensorzero/tensorzero-ui:latest
+    image: tensorzero/tensorzero-ui:2025.10.6
     container_name: tensorzero-ui
     ports:
       - "3031:3000"

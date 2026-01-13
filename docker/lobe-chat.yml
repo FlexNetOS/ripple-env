@@ -1,0 +1,196 @@
+# Lobe Chat - Primary Operator UI (BUILDKIT L13)
+# P2-003: Lobe Chat provides the main user interface for the agentic OS
+#
+# Lobe Chat features:
+#   - Modern, responsive chat interface
+#   - Multi-provider AI support
+#   - Plugin system
+#   - Conversation history
+#   - File uploads and downloads
+#   - Theme customization
+#   - Mobile-friendly design
+#
+# Components:
+#   - Lobe Chat UI: Main web application
+#   - Nginx: Web server (optional)
+#
+# References:
+#   - https://github.com/lobehub/lobe-chat
+#   - https://lobechat.com
+#   - BUILDKIT_STARTER_SPEC.md L13: UI & Developer Tools
+
+version: '3.8'
+
+services:
+  # Lobe Chat UI
+  lobe-chat:
+    image: lobehub/lobe-chat:latest
+    container_name: lobe-chat
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      # General configuration
+      APP_NAME: Lobe Chat
+      APP_VERSION: latest
+      
+      # API configuration
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_PROXY_URL: ${OPENAI_PROXY_URL:-}
+      
+      # Default provider
+      DEFAULT_AGENT_CONFIG: |
+        {
+          "provider": "openai",
+          "model": "gpt-4",
+          "apiKey": "${OPENAI_API_KEY:-}"
+        }
+      
+      # Feature flags
+      ENABLE_OAUTH_SSO: "false"
+      ENABLE_UPLOAD_IMAGE: "true"
+      ENABLE_UPLOAD_DOCUMENT: "true"
+      
+      # CORS
+      CORS_ORIGIN: "*"
+      
+      # Logging
+      LOG_LEVEL: info
+      
+      # Session configuration
+      # SESSION_SECRET must be a strong, random value in production.
+      # Generate a secure value, for example:
+      #   openssl rand -base64 32
+      SESSION_SECRET: ${LOBE_CHAT_SESSION_SECRET:-}
+      
+      # Database (for user sessions and history)
+      # DATABASE_URL: postgresql://lobechat:lobechat@postgres:5432/lobechat
+      
+      # Redis (for caching)
+      # REDIS_URL: redis://redis:6379/0
+      
+      # File storage
+      FILE_LIMIT: 10485760  # 10MB
+      FILE_EXPIRES: 2592000  # 30 days
+      
+      # Rate limiting
+      RATE_LIMIT_WINDOW_MS: 60000  # 1 minute
+      RATE_LIMIT_MAX: 100
+      
+      # Theme
+      DEFAULT_THEME: auto
+      
+      # Language
+      DEFAULT_LANG: en-US
+      
+      # Privacy
+      PRIVACY_URL: "/privacy"
+      TERMS_URL: "/terms"
+    
+    # Ports
+    ports:
+      - "3210:3210"  # Lobe Chat web interface
+    
+    # Volumes
+    volumes:
+      # Lobe Chat data
+      - ./data/lobe-chat:/app/data
+      # Custom themes
+      - ./config/lobe-chat/themes:/app/themes
+      # Static files
+      - ./config/lobe-chat/static:/app/static
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3210/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - lobe-chat-network
+    
+    # Labels for documentation and management
+    labels:
+      - "service=lobe-chat"
+      - "layer=L13-UI-DevTools"
+      - "description=Lobe Chat operator UI"
+      - "traefik.enable=true"
+      - "traefik.http.routers.lobe-chat.rule=Host(`chat.localhost`)"
+      - "traefik.http.routers.lobe-chat.entrypoints=web"
+      - "traefik.http.services.lobe-chat.loadbalancer.server.port=3210"
+
+  # Optional: Nginx reverse proxy for Lobe Chat
+  nginx:
+    image: nginx:alpine
+    container_name: lobe-chat-nginx
+    restart: unless-stopped
+    
+    # Ports
+    ports:
+      - "8080:80"  # HTTP
+      # - "8443:443"  # HTTPS (production)
+    
+    # Volumes
+    volumes:
+      # Nginx configuration
+      - ./config/lobe-chat/nginx.conf:/etc/nginx/nginx.conf:ro
+      # SSL certificates (production)
+      # - ./config/lobe-chat/ssl:/etc/ssl:ro
+    
+    # Dependencies
+    depends_on:
+      - lobe-chat
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - lobe-chat-network
+    
+    # Labels
+    labels:
+      - "service=nginx"
+      - "layer=L13-UI-DevTools"
+      - "description=Nginx reverse proxy for Lobe Chat"
+
+# Volumes
+volumes:
+  lobe-chat-data:
+    driver: local
+
+# Networks
+networks:
+  lobe-chat-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
