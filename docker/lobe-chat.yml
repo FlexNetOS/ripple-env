@@ -58,7 +58,9 @@ services:
       LOG_LEVEL: info
       
       # Session configuration
-      SESSION_SECRET: ${LOBE_CHAT_SESSION_SECRET:-}
+      # SESSION_SECRET must be a strong, random value in production.
+      # See .env.example "Security Best Practices" for guidance on generating secure values.
+      SESSION_SECRET: ${LOBE_CHAT_SESSION_SECRET:-changeme}
       
       # Database (for user sessions and history)
       # DATABASE_URL: postgresql://lobechat:lobechat@postgres:5432/lobechat
