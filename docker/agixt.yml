@@ -43,7 +43,7 @@ services:
       APP_VERSION: latest
       
       # API configuration
-      API_KEY: dev-api-key-change-in-production
+      API_KEY: ${AGIXT_API_KEY:-}
       UVICORN_WORKERS: 4
       
       # Logging
@@ -61,7 +61,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       
       # Security
-      JWT_SECRET: dev-jwt-secret-change-in-production
+      JWT_SECRET: ${AGIXT_JWT_SECRET:-}
       
       # CORS
       CORS_ORIGINS: "*"
