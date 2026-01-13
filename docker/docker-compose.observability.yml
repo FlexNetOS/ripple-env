@@ -220,10 +220,8 @@ services:
       - DAC_READ_SEARCH  # For reading proc files
     # Alternative: If these capabilities aren't sufficient, consider:
     # privileged: true  # Only if absolutely necessary
-    devices:
-      - /dev/kmsg
-    devices:
-      - /dev/kmsg
+      devices:
+        - /dev/kmsg
     networks:
       - agentic-network
     healthcheck:
