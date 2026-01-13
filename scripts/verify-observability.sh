@@ -173,7 +173,11 @@ echo ""
 echo "3. Configure Netdata Cloud (optional):"
 echo "   - Get claim token from https://app.netdata.cloud"
 echo "   - Add to .env: NETDATA_CLAIM_TOKEN=<your-token>"
-echo "   - Restart: docker compose -f docker-compose.observability.yml restart netdata"
+OBS_COMPOSE_FILE="docker-compose.observability.yml"
+if [ -f "docker/docker-compose.observability.yml" ]; then
+    OBS_COMPOSE_FILE="docker/docker-compose.observability.yml"
+fi
+echo "   - Restart: docker compose -f $OBS_COMPOSE_FILE restart netdata"
 echo ""
 echo "4. View metrics in Grafana:"
 echo "   http://localhost:3000"

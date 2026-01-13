@@ -133,7 +133,11 @@ verify_containers() {
     done
 
     if [ "$all_running" = false ]; then
-        print_info "Start services with: docker compose -f docker-compose.data.yml up -d"
+        local data_compose_file="docker-compose.data.yml"
+        if [ -f "docker/docker-compose.data.yml" ]; then
+            data_compose_file="docker/docker-compose.data.yml"
+        fi
+        print_info "Start services with: docker compose -f $data_compose_file up -d"
         exit 1
     fi
 
@@ -325,6 +329,11 @@ EOF
 print_summary() {
     print_header "Summary"
 
+    local data_compose_file="docker-compose.data.yml"
+    if [ -f "docker/docker-compose.data.yml" ]; then
+        data_compose_file="docker/docker-compose.data.yml"
+    fi
+
     cat <<EOF
 MindsDB is now running and ready to use!
 
@@ -335,10 +344,10 @@ Service URLs:
   - MongoDB:     mongodb://${MINDSDB_HOST}:${MINDSDB_MONGODB_PORT}
 
 Container Management:
-  - Start:   docker compose -f docker-compose.data.yml up -d
-  - Stop:    docker compose -f docker-compose.data.yml down
-  - Logs:    docker compose -f docker-compose.data.yml logs -f mindsdb
-  - Restart: docker compose -f docker-compose.data.yml restart mindsdb
+    - Start:   docker compose -f ${data_compose_file} up -d
+    - Stop:    docker compose -f ${data_compose_file} down
+    - Logs:    docker compose -f ${data_compose_file} logs -f mindsdb
+    - Restart: docker compose -f ${data_compose_file} restart mindsdb
 
 MySQL Client Access:
   docker exec -it mindsdb mysql -h localhost -P 47335 -u mindsdb
