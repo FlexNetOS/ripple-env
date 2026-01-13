@@ -21,10 +21,10 @@
     "dotenv": "^16.4.7",
     "chalk": "^5.4.1"
   },
-  "ruvectorDependencies": {
+  "optionalDependencies": {
     "ruvector": "^0.1.96",
     "@ruvector/core": "^0.1.30",
-    "@ruvector/gnn": "^0.1.22",
+    "@ruvector/gnn": "0.1.19",
     "@ruvector/graph-node": "^0.1.26",
     "@ruvector/attention": "^0.1.0",
     "@ruvector/router": "^0.1.15",

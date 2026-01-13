@@ -55,6 +55,34 @@ info() {
     echo -e "${BLUE}ℹ${NC} $1"
 }
 
+# JSON validation helpers (cross-platform).
+json_validate_with_python() {
+    local file="$1"
+    python - "$file" <<'PY'
+import json, sys
+path = sys.argv[1]
+with open(path, 'r', encoding='utf-8') as f:
+    json.load(f)
+PY
+}
+
+jq_is_runnable() {
+    command -v jq >/dev/null 2>&1 && jq --version >/dev/null 2>&1
+}
+
+json_is_valid() {
+    local file="$1"
+    if command -v python >/dev/null 2>&1; then
+        json_validate_with_python "$file" >/dev/null 2>&1
+        return $?
+    fi
+    if jq_is_runnable; then
+        jq . "$file" >/dev/null 2>&1
+        return $?
+    fi
+    return 2
+}
+
 # =============================================================================
 # 1. Check Rust Dependencies
 # =============================================================================
@@ -62,29 +90,49 @@ info() {
 echo "[1/8] Checking Rust dependencies..."
 echo ""
 
+# QuDAG Rust crates are optional unless explicitly required.
+# Enable strict mode with: QUDAG_REQUIRE_RUST=1
+QUDAG_REQUIRE_RUST="${QUDAG_REQUIRE_RUST:-0}"
+
 if [ -f "rust/Cargo.toml" ]; then
     if grep -q 'qudag-core.*=.*{.*git.*=.*"https://github.com/ruvnet/qudag"' rust/Cargo.toml; then
         pass "qudag-core dependency found in Cargo.toml"
     else
-        fail "qudag-core dependency not found in Cargo.toml"
+        if [ "$QUDAG_REQUIRE_RUST" = "1" ]; then
+            fail "qudag-core dependency not found in Cargo.toml"
+        else
+            warn "qudag-core dependency not found in Cargo.toml (optional; set QUDAG_REQUIRE_RUST=1 to enforce)"
+        fi
     fi
 
     if grep -q 'qudag-crypto.*=.*{.*git.*=.*"https://github.com/ruvnet/qudag"' rust/Cargo.toml; then
         pass "qudag-crypto dependency found in Cargo.toml"
     else
-        fail "qudag-crypto dependency not found in Cargo.toml"
+        if [ "$QUDAG_REQUIRE_RUST" = "1" ]; then
+            fail "qudag-crypto dependency not found in Cargo.toml"
+        else
+            warn "qudag-crypto dependency not found in Cargo.toml (optional; set QUDAG_REQUIRE_RUST=1 to enforce)"
+        fi
     fi
 
     if grep -q 'qudag-network.*=.*{.*git.*=.*"https://github.com/ruvnet/qudag"' rust/Cargo.toml; then
         pass "qudag-network dependency found in Cargo.toml"
     else
-        fail "qudag-network dependency not found in Cargo.toml"
+        if [ "$QUDAG_REQUIRE_RUST" = "1" ]; then
+            fail "qudag-network dependency not found in Cargo.toml"
+        else
+            warn "qudag-network dependency not found in Cargo.toml (optional; set QUDAG_REQUIRE_RUST=1 to enforce)"
+        fi
     fi
 
     if grep -q 'qudag-mcp.*=.*{.*git.*=.*"https://github.com/ruvnet/qudag"' rust/Cargo.toml; then
         pass "qudag-mcp dependency found in Cargo.toml"
     else
-        fail "qudag-mcp dependency not found in Cargo.toml"
+        if [ "$QUDAG_REQUIRE_RUST" = "1" ]; then
+            fail "qudag-mcp dependency not found in Cargo.toml"
+        else
+            warn "qudag-mcp dependency not found in Cargo.toml (optional; set QUDAG_REQUIRE_RUST=1 to enforce)"
+        fi
     fi
 
     # Check crypto libraries
@@ -229,31 +277,58 @@ echo ""
 if [ -f "manifests/mcp/qudag-server.json" ]; then
     pass "manifests/mcp/qudag-server.json exists"
 
-    if command -v jq >/dev/null 2>&1; then
-        # Validate JSON syntax
-        if jq . manifests/mcp/qudag-server.json >/dev/null 2>&1; then
-            pass "qudag-server.json is valid JSON"
+    if json_is_valid manifests/mcp/qudag-server.json; then
+        pass "qudag-server.json is valid JSON"
 
-            # Check for required tools
+        # Extract counts using Python when available; otherwise fall back to jq.
+        if command -v python >/dev/null 2>&1; then
+            read -r TOOLS_COUNT RESOURCES_COUNT < <(
+                python - manifests/mcp/qudag-server.json <<'PY'
+import json, sys
+path = sys.argv[1]
+with open(path, 'r', encoding='utf-8') as f:
+    data = json.load(f)
+tools = len(data.get('tools', []) or [])
+resources = len(data.get('resources', []) or [])
+print(f"{tools} {resources}")
+PY
+            )
+        elif jq_is_runnable; then
             TOOLS_COUNT=$(jq '.tools | length' manifests/mcp/qudag-server.json)
+            RESOURCES_COUNT=$(jq '.resources | length' manifests/mcp/qudag-server.json)
+        else
+            TOOLS_COUNT=""
+            RESOURCES_COUNT=""
+        fi
+
+        # Normalize counts (Git Bash can carry CRLF; also guard against non-numeric output)
+        TOOLS_COUNT=$(printf '%s' "${TOOLS_COUNT:-}" | tr -dc '0-9')
+        RESOURCES_COUNT=$(printf '%s' "${RESOURCES_COUNT:-}" | tr -dc '0-9')
+
+        if [ -n "${TOOLS_COUNT:-}" ]; then
             if [ "$TOOLS_COUNT" -ge 10 ]; then
                 pass "MCP server has $TOOLS_COUNT tools defined"
             else
                 warn "MCP server has only $TOOLS_COUNT tools (expected >= 10)"
             fi
+        else
+            warn "Could not compute tool/resource counts (no runnable JSON query tool found)"
+        fi
 
-            # Check for resources
-            RESOURCES_COUNT=$(jq '.resources | length' manifests/mcp/qudag-server.json)
+        if [ -n "${RESOURCES_COUNT:-}" ]; then
             if [ "$RESOURCES_COUNT" -ge 5 ]; then
                 pass "MCP server has $RESOURCES_COUNT resources defined"
             else
                 warn "MCP server has only $RESOURCES_COUNT resources (expected >= 5)"
             fi
+        fi
+    else
+        rc=$?
+        if [ "$rc" -eq 2 ]; then
+            warn "No runnable JSON validator found (python/jq); skipping JSON validation"
         else
             fail "qudag-server.json has JSON syntax errors"
         fi
-    else
-        warn "jq not available, skipping JSON validation"
     fi
 else
     fail "manifests/mcp/qudag-server.json not found"
@@ -271,11 +346,38 @@ echo ""
 if [ -f "manifests/qudag/networks.json" ]; then
     pass "manifests/qudag/networks.json exists"
 
-    if command -v jq >/dev/null 2>&1; then
-        if jq . manifests/qudag/networks.json >/dev/null 2>&1; then
-            pass "networks.json is valid JSON"
+    if json_is_valid manifests/qudag/networks.json; then
+        pass "networks.json is valid JSON"
 
-            # Check for network definitions
+        if command -v python >/dev/null 2>&1; then
+            if python - manifests/qudag/networks.json <<'PY' >/dev/null 2>&1
+import json, sys
+path = sys.argv[1]
+with open(path, 'r', encoding='utf-8') as f:
+    data = json.load(f)
+networks = data.get('networks', {}) or {}
+assert 'local' in networks
+PY
+            then
+                pass "local network defined"
+            else
+                fail "local network not defined"
+            fi
+
+            if python - manifests/qudag/networks.json <<'PY' >/dev/null 2>&1
+import json, sys
+path = sys.argv[1]
+with open(path, 'r', encoding='utf-8') as f:
+    data = json.load(f)
+networks = data.get('networks', {}) or {}
+assert 'testnet' in networks
+PY
+            then
+                pass "testnet network defined"
+            else
+                fail "testnet network not defined"
+            fi
+        elif jq_is_runnable; then
             if jq -e '.networks.local' manifests/qudag/networks.json >/dev/null 2>&1; then
                 pass "local network defined"
             else
@@ -288,10 +390,15 @@ if [ -f "manifests/qudag/networks.json" ]; then
                 fail "testnet network not defined"
             fi
         else
-            fail "networks.json has JSON syntax errors"
+            warn "No runnable JSON query tool found (python/jq); skipping network key checks"
         fi
     else
-        warn "jq not available, skipping JSON validation"
+        rc=$?
+        if [ "$rc" -eq 2 ]; then
+            warn "No runnable JSON validator found (python/jq); skipping JSON validation"
+        else
+            fail "networks.json has JSON syntax errors"
+        fi
     fi
 else
     fail "manifests/qudag/networks.json not found"

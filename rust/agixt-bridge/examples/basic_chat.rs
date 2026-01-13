@@ -48,8 +48,15 @@ async fn main() -> Result<()> {
     }
 
     // Try to create a conversation
-    println!("\nCreating conversation with ros2-agent...");
-    match client.new_conversation("ros2-agent", None, None).await {
+    let conversation_name = "basic-chat";
+    println!(
+        "\nCreating conversation with ros2-agent (name: {})...",
+        conversation_name
+    );
+    match client
+        .new_conversation("ros2-agent", conversation_name, None)
+        .await
+    {
         Ok(conversation) => {
             println!("Conversation created: {:?}", conversation);
         }

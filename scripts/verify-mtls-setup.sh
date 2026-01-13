@@ -6,6 +6,12 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Support both historical and current locations for the identity compose file.
+IDENTITY_COMPOSE_FILE="$PROJECT_ROOT/docker-compose.identity.yml"
+if [ -f "$PROJECT_ROOT/docker/docker-compose.identity.yml" ]; then
+    IDENTITY_COMPOSE_FILE="$PROJECT_ROOT/docker/docker-compose.identity.yml"
+fi
+
 echo "🔐 ARIA mTLS Setup Verification"
 echo "==============================="
 echo ""
@@ -35,7 +41,7 @@ if command -v step &> /dev/null; then
     VERSION=$(step version 2>&1 | head -1)
     pass "step-cli installed: $VERSION"
 else
-    fail "step-cli not found. Run: nix develop"
+    fail "step-cli not found. Install step-cli (recommended) or run in a Nix devShell (nix develop)"
     ERRORS=$((ERRORS + 1))
 fi
 echo ""
@@ -60,7 +66,21 @@ echo "3. Checking PKI certificates..."
 if [ -f "$PROJECT_ROOT/config/step-ca/pki/root_ca.crt" ]; then
     pass "Root CA certificate exists"
     if command -v step &> /dev/null; then
-        EXPIRY=$(step certificate inspect "$PROJECT_ROOT/config/step-ca/pki/root_ca.crt" --format json 2>/dev/null | jq -r '.validity.end // "unknown"')
+        # Avoid jq dependency (often not runnable on Windows Git Bash); prefer python for JSON parsing.
+        if command -v python &> /dev/null; then
+            EXPIRY=$(step certificate inspect "$PROJECT_ROOT/config/step-ca/pki/root_ca.crt" --format json 2>/dev/null | \
+                python - <<'PY'
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    print((data.get('validity', {}) or {}).get('end', 'unknown'))
+except Exception:
+    print('unknown')
+PY
+            )
+        else
+            EXPIRY="unknown"
+        fi
         echo "   Valid until: $EXPIRY"
     fi
 else
@@ -102,7 +122,7 @@ if command -v docker &> /dev/null; then
         fi
     else
         warn "Step-CA container not running. Start with:"
-        echo "   docker-compose -f docker-compose.identity.yml up -d step-ca"
+        echo "   docker compose -f $IDENTITY_COMPOSE_FILE up -d step-ca"
     fi
 else
     warn "Docker not available - cannot check Step-CA service"
@@ -137,10 +157,10 @@ fi
 echo ""
 
 echo "8. Checking docker-compose configuration..."
-if grep -q "step-ca:" "$PROJECT_ROOT/docker-compose.identity.yml"; then
-    pass "Step-CA service configured in docker-compose.identity.yml"
+if [ -f "$IDENTITY_COMPOSE_FILE" ] && grep -q "step-ca:" "$IDENTITY_COMPOSE_FILE"; then
+    pass "Step-CA service configured in $(basename "$IDENTITY_COMPOSE_FILE")"
 else
-    fail "Step-CA not configured in docker-compose.identity.yml"
+    fail "Step-CA not configured in docker-compose.identity.yml (checked: $IDENTITY_COMPOSE_FILE)"
     ERRORS=$((ERRORS + 1))
 fi
 echo ""

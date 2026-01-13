@@ -132,8 +132,8 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
-    depends_on:
-      - localai
+    # Note: LocalAI is expected to be started separately (e.g. via docker-compose.localai.yml)
+    # on the shared external network, so we do not declare a local `depends_on` here.
 
 volumes:
   lobe-chat-data:

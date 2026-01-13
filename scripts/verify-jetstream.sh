@@ -86,12 +86,12 @@ log_info() {
 
 log_pass() {
     echo "[PASS] $*"
-    ((PASS_COUNT++))
+    PASS_COUNT=$((PASS_COUNT + 1))
 }
 
 log_fail() {
     echo "[FAIL] $*" >&2
-    ((FAIL_COUNT++))
+    FAIL_COUNT=$((FAIL_COUNT + 1))
 }
 
 log_section() {

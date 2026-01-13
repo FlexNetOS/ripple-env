@@ -6,6 +6,12 @@
 
 set -e
 
+# Support both historical and current compose locations.
+EDGE_COMPOSE_FILE="docker-compose.edge.yml"
+if [ -f "docker/docker-compose.edge.yml" ]; then
+    EDGE_COMPOSE_FILE="docker/docker-compose.edge.yml"
+fi
+
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -40,12 +46,12 @@ print_test() {
 
 print_success() {
     echo -e "${GREEN}[PASS]${NC} $1"
-    ((TESTS_PASSED++))
+    TESTS_PASSED=$((TESTS_PASSED + 1))
 }
 
 print_failure() {
     echo -e "${RED}[FAIL]${NC} $1"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 }
 
 print_info() {
@@ -53,7 +59,7 @@ print_info() {
 }
 
 run_test() {
-    ((TESTS_TOTAL++))
+    TESTS_TOTAL=$((TESTS_TOTAL + 1))
 }
 
 # Check if a URL is accessible
@@ -121,10 +127,10 @@ main() {
     # Check Docker Compose file
     print_test "Checking docker-compose.edge.yml..."
     run_test
-    if [ -f "docker-compose.edge.yml" ]; then
-        print_success "docker-compose.edge.yml found"
+    if [ -f "$EDGE_COMPOSE_FILE" ]; then
+        print_success "$EDGE_COMPOSE_FILE found"
     else
-        print_failure "docker-compose.edge.yml not found"
+        print_failure "docker-compose.edge.yml not found (checked: $EDGE_COMPOSE_FILE)"
     fi
 
     # Check config directory
@@ -358,9 +364,9 @@ main() {
         echo -e "${RED}Some tests failed. Please review the errors above.${NC}"
         echo ""
         echo "Troubleshooting:"
-        echo "  - Check service logs: docker-compose -f docker-compose.edge.yml logs <service>"
-        echo "  - Restart services: docker-compose -f docker-compose.edge.yml restart"
-        echo "  - View service status: docker-compose -f docker-compose.edge.yml ps"
+        echo "  - Check service logs: docker compose -f $EDGE_COMPOSE_FILE logs <service>"
+        echo "  - Restart services: docker compose -f $EDGE_COMPOSE_FILE restart"
+        echo "  - View service status: docker compose -f $EDGE_COMPOSE_FILE ps"
         return 1
     fi
 }

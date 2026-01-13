@@ -48,6 +48,25 @@ volumes:
     driver: local
   qudag-dag:
     driver: local
+  # Additional volumes for cluster/testnet nodes
+  qudag-node2-data:
+    driver: local
+  qudag-node2-keys:
+    driver: local
+  qudag-node2-dag:
+    driver: local
+  qudag-node3-data:
+    driver: local
+  qudag-node3-keys:
+    driver: local
+  qudag-node3-dag:
+    driver: local
+  qudag-testnet-data:
+    driver: local
+  qudag-testnet-keys:
+    driver: local
+  qudag-testnet-dag:
+    driver: local
 
 services:
   # ===========================================================================
@@ -338,25 +357,4 @@ services:
       timeout: 10s
       retries: 5
 
-# ===========================================================================
-# Additional volumes for cluster nodes
-# ===========================================================================
-volumes:
-  qudag-node2-data:
-    driver: local
-  qudag-node2-keys:
-    driver: local
-  qudag-node2-dag:
-    driver: local
-  qudag-node3-data:
-    driver: local
-  qudag-node3-keys:
-    driver: local
-  qudag-node3-dag:
-    driver: local
-  qudag-testnet-data:
-    driver: local
-  qudag-testnet-keys:
-    driver: local
-  qudag-testnet-dag:
-    driver: local
+## NOTE: Additional volumes are declared in the primary `volumes:` block above.

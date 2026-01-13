@@ -10,6 +10,8 @@
 
 set -e
 
+ERRORS=0
+
 # Colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -64,24 +66,36 @@ echo "=== Docker Services ==="
 echo ""
 
 # Check Netdata (P1-008)
-check_service "Netdata" "netdata"
+if ! check_service "Netdata" "netdata"; then
+    ERRORS=$((ERRORS + 1))
+fi
 
 # Check Umami (P1-009)
-check_service "Umami" "umami"
-check_service "Umami Database" "umami-db"
+if ! check_service "Umami" "umami"; then
+    ERRORS=$((ERRORS + 1))
+fi
+if ! check_service "Umami Database" "umami-db"; then
+    ERRORS=$((ERRORS + 1))
+fi
 
 echo ""
 echo "=== Service Endpoints ==="
 echo ""
 
 # Check Netdata endpoint
-check_endpoint "Netdata Dashboard" "http://localhost:19999"
+if ! check_endpoint "Netdata Dashboard" "http://localhost:19999"; then
+    ERRORS=$((ERRORS + 1))
+fi
 
 # Check Umami endpoint
-check_endpoint "Umami Dashboard" "http://localhost:3001/api/heartbeat"
+if ! check_endpoint "Umami Dashboard" "http://localhost:3001/api/heartbeat"; then
+    ERRORS=$((ERRORS + 1))
+fi
 
 # Check Grafana (should include Netdata datasource)
-check_endpoint "Grafana" "http://localhost:3000/api/health"
+if ! check_endpoint "Grafana" "http://localhost:3000/api/health"; then
+    ERRORS=$((ERRORS + 1))
+fi
 
 echo ""
 echo "=== Environment Variables ==="
@@ -169,3 +183,10 @@ echo ""
 echo "========================================================================="
 echo "  Verification Complete"
 echo "========================================================================="
+
+if [ "$ERRORS" -gt 0 ]; then
+    echo -e "${YELLOW}⚠ Completed with $ERRORS failing check(s).${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ All checks passed.${NC}"

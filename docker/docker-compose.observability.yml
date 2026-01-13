@@ -222,8 +222,6 @@ services:
     # privileged: true  # Only if absolutely necessary
     devices:
       - /dev/kmsg
-    devices:
-      - /dev/kmsg
     networks:
       - agentic-network
     healthcheck:

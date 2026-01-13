@@ -54,6 +54,10 @@ print_info() {
     echo -e "${BLUE}ℹ $1${NC}"
 }
 
+jq_is_runnable() {
+    command -v jq >/dev/null 2>&1 && jq --version >/dev/null 2>&1
+}
+
 check_command() {
     if ! command -v "$1" &> /dev/null; then
         print_error "Command '$1' is required but not installed"
@@ -83,10 +87,10 @@ verify_dependencies() {
         all_ok=false
     fi
 
-    if check_command jq; then
+    if jq_is_runnable; then
         print_success "jq is installed"
     else
-        print_warning "jq not installed (optional, for JSON parsing)"
+        print_warning "jq not available/runnable (optional, for JSON parsing)"
     fi
 
     if [ "$all_ok" = false ]; then
@@ -171,7 +175,7 @@ verify_api() {
     if response=$(curl -s -f "${api_url}/api/status" 2>/dev/null); then
         print_success "MindsDB API is responding"
 
-        if command -v jq &> /dev/null; then
+        if jq_is_runnable; then
             echo "$response" | jq '.' 2>/dev/null || echo "$response"
         else
             echo "$response"

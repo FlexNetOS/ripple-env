@@ -93,7 +93,7 @@ services:
       # KC_HTTPS_CERTIFICATE_KEY_FILE: /etc/certs/keycloak.key
       # KC_HTTPS_CLIENT_AUTH: request
       # KC_HTTPS_TRUST_STORE_FILE: /etc/ssl/certs/aria-root-ca.crt
-    volumes:
+    volumes: []
       # mTLS certificates (mount when available)
       # - ./config/step-ca/pki/root_ca.crt:/etc/ssl/certs/aria-root-ca.crt:ro
       # - ./data/certs/keycloak:/etc/certs:ro
