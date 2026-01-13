@@ -4,14 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docker/docker-compose.agixt.yml'
+      - 'docker/agixt.yml'
       - 'config/agixt/**'
       - 'scripts/health-check.sh'
       - '.github/workflows/agixt-test.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'docker/docker-compose.agixt.yml'
+      - 'docker/agixt.yml'
       - 'config/agixt/**'
       - 'scripts/health-check.sh'
       - '.github/workflows/agixt-test.yml'
@@ -40,13 +40,13 @@ jobs:
 
       - name: Start AGiXT dependencies
         run: |
-          # Start PostgreSQL for AGiXT if needed
-          docker compose -f docker/docker-compose.agixt.yml up -d postgres minio || true
+          # Start PostgreSQL and Redis for AGiXT
+          docker compose -f docker/agixt.yml up -d postgres redis
           sleep 10
 
       - name: Start AGiXT
         run: |
-          docker compose -f docker/docker-compose.agixt.yml up -d
+          docker compose -f docker/agixt.yml up -d
           echo "AGiXT containers started, waiting for initialization..."
 
       - name: Wait for AGiXT API readiness
@@ -95,27 +95,22 @@ jobs:
             echo "$response" | jq '.' || echo "$response"
           fi
 
-      - name: Test AGiXT UI
-        run: |
-          # Test AGiXT UI if running
-          ./scripts/health-check.sh http://localhost:3437 3 5 "AGiXT UI" || echo "AGiXT UI not available (optional)"
-
       - name: Collect AGiXT logs
         if: always()
         run: |
           echo "=== AGiXT API Logs ==="
           docker logs agixt 2>&1 | tail -100 || true
           echo ""
-          echo "=== AGiXT UI Logs ==="
-          docker logs agixt-ui 2>&1 | tail -50 || true
-          echo ""
           echo "=== PostgreSQL Logs ==="
           docker logs agixt-postgres 2>&1 | tail -50 || true
+          echo ""
+          echo "=== Redis Logs ==="
+          docker logs agixt-redis 2>&1 | tail -50 || true
 
       - name: Cleanup
         if: always()
         run: |
-          docker compose -f docker/docker-compose.agixt.yml down -v || true
+          docker compose -f docker/agixt.yml down -v || true
           docker network rm agentic-network || true
 
   test-agixt-config:
@@ -127,7 +122,7 @@ jobs:
 
       - name: Validate AGiXT docker-compose
         run: |
-          docker compose -f docker/docker-compose.agixt.yml config > /dev/null
+          docker compose -f docker/agixt.yml config > /dev/null
           echo "✅ docker-compose.agixt.yml is valid"
 
       - name: Check AGiXT configuration files
@@ -148,5 +143,5 @@ jobs:
 
       - name: Check environment variables
         run: |
-          echo "Checking required environment variables in docker/docker-compose.agixt.yml..."
-          grep -E "^\s+\w+:" docker/docker-compose.agixt.yml | grep -E "(POSTGRES|AGIXT|OPENAI|API)" | head -20 || true
+          echo "Checking required environment variables in docker/agixt.yml..."
+          grep -E "^\s+\w+:" docker/agixt.yml | grep -E "(POSTGRES|AGIXT|OPENAI|API)" | head -20 || true
