@@ -20,9 +20,9 @@ if command -v gitleaks &> /dev/null; then
 elif command -v detect-secrets &> /dev/null; then
     echo "Running detect-secrets scan..."
     detect-secrets scan --baseline .secrets.baseline || true
-# Fall back to truffleHog if available
+# Fall back to trufflehog if available
 elif command -v trufflehog &> /dev/null; then
-    echo "Running truffleHog scan..."
+    echo "Running trufflehog scan..."
     trufflehog filesystem . --json || true
 else
     echo "Warning: No dedicated secret scanning tool found (gitleaks, detect-secrets, trufflehog)"
