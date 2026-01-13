@@ -52,8 +52,8 @@ services:
       # Anonymous metrics
       MINIO_ANONYMOUS: "off"
       
-      # Encryption
-      MINIO_KMS_SECRET_KEY: my-secret-key-change-in-production
+      # Encryption (set MINIO_KMS_SECRET_KEY externally in production)
+      MINIO_KMS_SECRET_KEY: ${MINIO_KMS_SECRET_KEY:-}
       
       # Compression
       MINIO_COMPRESSION_ENABLE: "on"
