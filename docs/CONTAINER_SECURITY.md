@@ -385,15 +385,54 @@ All production images are pinned to specific versions to prevent supply chain at
 | **Holochain** | holochain/bootstrap-server | 0.6.0 | Matches conductor version |
 | **Embedding** | semitechnologies/transformers-inference | 1.8.5 | MiniLM-L6-v2 model (full tag: `semitechnologies/transformers-inference:sentence-transformers-all-MiniLM-L6-v2-1.8.5`) |
 
-#### Images Awaiting Version Pinning
+#### ⚠️ HIGH-PRIORITY SECURITY DEBT: Images Awaiting Version Pinning
 
-The following images use `:latest` and are marked with TODO comments for version pinning when releases become available:
+**SECURITY RISK**: The following images use `:latest` tags from third-party registries, exposing the system to supply chain attacks. An attacker who compromises these upstream registries or publishes a malicious update could gain code execution in workloads that share networks or credentials with other services.
 
-- `ruvector/ruvector:latest` - Custom vector database (no public releases yet)
-- `ruvector/ruvector-ui:latest` - Vector DB UI
-- `ruvector/qudag:latest` - Quantum-resistant DAG
-- `ruvector/qudag-mcp:latest` - QuDAG MCP gateway
-- `ghcr.io/xenova/transformers.js:latest` - Embedding service
+**Status**: These images currently have no public releases with version tags available.
+
+| Image | Security Risk | Recommended Action |
+|-------|--------------|-------------------|
+| `ruvector/ruvector:latest` | HIGH - Custom vector database | Pin to digest when available, or build from source |
+| `ruvector/ruvector-ui:latest` | MEDIUM - Vector DB UI | Pin to digest when available, or build from source |
+| `ruvector/qudag:latest` | HIGH - Quantum-resistant DAG | Pin to digest when available, or build from source |
+| `ruvector/qudag-mcp:latest` | HIGH - QuDAG MCP gateway | Pin to digest when available, or build from source |
+| `ghcr.io/xenova/transformers.js:latest` | HIGH - Embedding service | Pin to digest or use alternative with versioned releases |
+
+**Immediate Mitigation Steps**:
+
+1. **Use Digest Pinning**: Even without version tags, pin to specific image digests:
+   ```yaml
+   # Instead of:
+   image: ruvector/ruvector:latest
+   
+   # Use (example digest - replace with actual):
+   image: ruvector/ruvector@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+   ```
+   Get current digest: `docker pull ruvector/ruvector:latest && docker inspect --format='{{.RepoDigests}}' ruvector/ruvector:latest`
+
+2. **Build From Source**: For critical services, vendor the code and build locally:
+   ```yaml
+   build:
+     context: ./vendored/ruvector  # Use local clone, not remote URL
+     dockerfile: Dockerfile
+   ```
+   **Important**: Verify source integrity before building:
+   ```bash
+   # Clone and verify
+   git clone https://github.com/ruvnet/ruvector.git ./vendored/ruvector
+   cd ./vendored/ruvector
+   git log --show-signature  # Check commit signatures
+   git verify-commit HEAD    # Verify latest commit (requires GPG)
+   # Review code, then build
+   ```
+   Building directly from remote Git URLs presents supply chain risks if the remote repository is compromised.
+
+3. **Monitor for Releases**: Set up GitHub notifications for these repositories to pin versions as soon as they're available.
+
+4. **Network Isolation**: Until pinned, ensure these services run in isolated networks with minimal privileges.
+
+**Long-term Solution**: Treat unpinned images as unacceptable for production. Pin all images to specific versions or digests before deploying to production environments.
 
 #### Locally Built Images
 
