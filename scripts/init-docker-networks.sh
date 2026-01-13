@@ -35,6 +35,15 @@ declare -A NETWORKS=(
     ["messaging-network"]="172.24.0.0/16:172.24.1.0/24"
 )
 
+# Alternative network ranges for conflict resolution
+declare -A ALT_NETWORKS=(
+    ["identity-network"]="172.25.0.0/16:172.25.1.0/24"
+    ["agentic-network"]="172.26.0.0/16:172.26.1.0/24"
+    ["observability-network"]="172.27.0.0/16:172.27.1.0/24"
+    ["data-network"]="172.28.0.0/16:172.28.1.0/24"
+    ["messaging-network"]="172.29.0.0/16:172.29.1.0/24"
+)
+
 # Network descriptions
 declare -A DESCRIPTIONS=(
     ["identity-network"]="Identity, authentication, and secrets management"
@@ -58,6 +67,26 @@ log_warn() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Check if network subnet conflicts with existing networks
+check_subnet_conflict() {
+    local subnet=$1
+    local network_name=$2
+
+    # Check if any Docker network uses this subnet
+    if docker network ls --format "{{.Name}}" | xargs -I {} docker network inspect {} --format "{{.Name}} {{range .IPAM.Config}}{{.Subnet}}{{end}}" 2>/dev/null | grep -q "$subnet"; then
+        log_warn "Subnet $subnet conflicts with existing Docker network for $network_name"
+        return 1
+    fi
+
+    # Check if subnet is in use by host interfaces
+    if ip route show | grep -q "$subnet"; then
+        log_warn "Subnet $subnet is in use by host routing table for $network_name"
+        return 1
+    fi
+
+    return 0
 }
 
 show_help() {
@@ -163,12 +192,74 @@ create_all_networks() {
     log_info "Creating ARIA Docker networks..."
     echo ""
 
+    local failed_networks=()
     for network in "${!NETWORKS[@]}"; do
-        create_network "$network"
+        if ! create_network "$network"; then
+            failed_networks+=("$network")
+        fi
     done
 
     echo ""
-    log_success "All networks created successfully"
+    if [[ ${#failed_networks[@]} -eq 0 ]]; then
+        log_success "All networks created successfully"
+    else
+        log_error "Failed to create the following networks: ${failed_networks[*]}"
+        log_info "Attempting conflict resolution..."
+        for network in "${failed_networks[@]}"; do
+            if check_subnet_conflict "$network"; then
+                log_warn "Subnet conflict detected for '$network'"
+                log_info "Please resolve conflicts manually or use --clean flag"
+            fi
+        done
+        return 1
+    fi
+}
+
+main() {
+    local clean_mode=false
+
+    # Parse arguments
+    if [[ $# -gt 0 ]]; then
+        case "$1" in
+            --clean|-c)
+                clean_mode=true
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+    fi
+
+    # Check if Docker is running
+    if ! docker info >/dev/null 2>&1; then
+        log_error "Docker is not running or not accessible"
+        exit 1
+    fi
+
+    # Clean mode: remove existing networks
+    if [[ "$clean_mode" == true ]]; then
+        log_info "Cleaning existing ARIA networks..."
+        for network in "${!NETWORKS[@]}"; do
+            if network_exists "$network"; then
+                remove_network "$network" || log_warn "Failed to remove network '$network'"
+            fi
+        done
+        log_success "Network cleanup completed"
+    fi
+
+    # Create networks with conflict detection
+    create_all_networks
+
+    if [[ $? -ne 0 ]]; then
+        log_error "Network creation failed"
+        exit 1
+    fi
     echo ""
     show_status
 }

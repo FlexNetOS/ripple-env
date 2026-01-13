@@ -255,9 +255,9 @@ in
     # =================================================================
     services.openssh.settings = mkIf config.services.openssh.enable {
       # Disable root login
-      # Use mkDefault to avoid conflicts with installer profiles (e.g.
-      # installation-device) that may intentionally enable root login.
-      PermitRootLogin = mkDefault "no";
+      # Use mkOverride with higher priority to resolve conflicts with installer
+      # profiles (e.g. installation-device) that may intentionally enable root login.
+      PermitRootLogin = lib.mkOverride 500 "no";
 
       # Disable password authentication
       PasswordAuthentication = mkDefault false;
