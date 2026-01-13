@@ -15,10 +15,7 @@
 
 [workspace]
 members = [
-    "crates/agentgateway-core",
-    "crates/agentgateway-mcp",
-    "crates/agentgateway-routing",
-    "crates/agentgateway-plugins",
+    "agixt-bridge",
 ]
 resolver = "2"
 
