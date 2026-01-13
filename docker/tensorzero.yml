@@ -11,7 +11,7 @@
 #   - Rate limiting
 #
 # Components:
-   - TensorZero Gateway: Main proxy server
+#   - TensorZero Gateway: Main proxy server
 #   - ClickHouse: Analytics database
 #   - Redis: Caching and coordination
 #   - Prometheus: Metrics collection
