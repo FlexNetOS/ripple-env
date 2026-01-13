@@ -210,7 +210,18 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
-    privileged: true
+    # Security: Minimize privileges (was: privileged: true)
+    # Required capabilities for cAdvisor monitoring
+    cap_add:
+      - SYS_PTRACE    # For process monitoring
+      - SYS_ADMIN     # For filesystem operations  
+      - SYS_CHROOT    # For container inspection
+      - SYS_MODULE    # For kernel module info
+      - DAC_READ_SEARCH  # For reading proc files
+    # Alternative: If these capabilities aren't sufficient, consider:
+    # privileged: true  # Only if absolutely necessary
+    devices:
+      - /dev/kmsg
     devices:
       - /dev/kmsg
     networks:

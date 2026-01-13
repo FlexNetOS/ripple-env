@@ -1,88 +1,43 @@
-# =============================================================================
-# HashiCorp Vault Configuration
-# =============================================================================
-# Development Mode Configuration
-# WARNING: DO NOT use this configuration in production!
-#
-# This configuration is for local development only. In production:
-# 1. Use proper storage backend (Consul, Raft, or cloud storage)
-# 2. Enable TLS with valid certificates
-# 3. Configure proper authentication methods
-# 4. Set up audit logging
-# 5. Use seal/unseal with proper key management
-#
-# For production setup, see: https://developer.hashicorp.com/vault/docs/configuration
-# =============================================================================
+# Vault Configuration
+# P0-003: HashiCorp Vault secrets management configuration
 
-# Storage Backend - File system (dev only)
-storage "file" {
-  path = "/vault/file"
-}
-
-# Listener - HTTP (dev mode)
+# Listener configuration
 listener "tcp" {
   address     = "0.0.0.0:8200"
-  tls_disable = 1
+  tls_disable = 1  # Development only - enable TLS for production
 }
 
-# API Address
-api_addr = "http://0.0.0.0:8200"
+# Storage backend
+# For development: use in-memory ("inmem")
+# For production: use "file" or "consul"
+storage "inmem" {}
 
-# UI Configuration
+# Audit logging
+audit "file" {
+  path = "/vault/logs/audit.log"
+  mode = "0644"
+}
+
+# UI configuration
 ui = true
 
-# Development Mode Settings
-# In dev mode, Vault runs entirely in-memory and starts unsealed
-# with a single unseal key. The root token is logged to stdout.
+# Maximum request size (default: 32MB)
+# max_request_size = 33554432
 
-# Disable mlock in containerized environments
-disable_mlock = true
+# Maximum response size (default: 32MB)
+# max_response_size = 33554432
 
-# Log level
-log_level = "info"
+# Default lease TTL for tokens and secrets
+default_lease_ttl = "768h"
 
-# =============================================================================
-# Production Configuration Template (commented out)
-# =============================================================================
-# Uncomment and modify for production use:
+# Maximum lease TTL for tokens and secrets
+max_lease_ttl = "768h"
 
-# # Storage Backend - Raft (recommended for production)
-# storage "raft" {
-#   path    = "/vault/data"
-#   node_id = "vault-node-1"
-#
-#   retry_join {
-#     leader_api_addr = "https://vault-2:8200"
-#   }
-#   retry_join {
-#     leader_api_addr = "https://vault-3:8200"
-#   }
-# }
+# Disable cache for development (performance impact)
+disable_cache = false
 
-# # Listener - HTTPS with mTLS
-# listener "tcp" {
-#   address       = "0.0.0.0:8200"
-#   tls_cert_file = "/vault/certs/vault.crt"
-#   tls_key_file  = "/vault/certs/vault.key"
-#   tls_client_ca_file = "/etc/ssl/certs/aria-root-ca.crt"
-#   tls_require_and_verify_client_cert = true
-# }
+# Enable raw endpoint (for advanced operations)
+raw_storage_endpoint = true
 
-# # Cluster Address for HA
-# cluster_addr = "https://vault-1:8201"
-# api_addr = "https://vault-1:8200"
-
-# # Seal Configuration - Auto-unseal with cloud KMS
-# seal "awskms" {
-#   region     = "us-east-1"
-#   kms_key_id = "alias/vault-unseal-key"
-# }
-
-# # Telemetry
-# telemetry {
-#   prometheus_retention_time = "30s"
-#   disable_hostname = true
-# }
-
-# # Audit Logging
-# # Enable via CLI: vault audit enable file file_path=/vault/logs/audit.log
+# Plugin directory
+plugin_directory = "/vault/plugins"

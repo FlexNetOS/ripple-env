@@ -1,0 +1,247 @@
+# Trivy - Vulnerability Scanner (BUILDKIT L14)
+# P2-005: Trivy provides comprehensive vulnerability scanning
+#
+# Trivy features:
+#   - Container image scanning
+#   - Filesystem scanning
+#   - Git repository scanning
+#   - Kubernetes cluster scanning
+#   - SBOM (Software Bill of Materials) generation
+#   - Multiple output formats
+#   - CI/CD integration
+#
+# Components:
+#   - Trivy Server: API server for scanning
+#   - Trivy DB: Vulnerability database
+#   - Trivy Client: CLI tool
+#
+# References:
+#   - https://aquasecurity.github.io/trivy
+#   - https://github.com/aquasecurity/trivy
+#   - BUILDKIT_STARTER_SPEC.md L14: Security & Observability
+
+version: '3.8'
+
+services:
+  # Trivy Server
+  trivy-server:
+    image: aquasec/trivy:0.48.1
+    container_name: trivy-server
+    restart: unless-stopped
+    
+    # Command
+    command: >
+      server
+      --listen 0.0.0.0:4954
+      --cache-backend redis://redis:6379
+      --db-repository ghcr.io/aquasecurity/trivy-db
+      --java-db-repository ghcr.io/aquasecurity/trivy-java-db
+    
+    # Environment variables
+    environment:
+      # Trivy configuration
+      TRIVY_CACHE_DIR: /cache
+      TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db
+      TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db
+      
+      # Logging
+      TRIVY_LOG_LEVEL: info
+      
+      # Cache
+      TRIVY_CACHE_BACKEND: redis
+      TRIVY_CACHE_REDIS_URL: redis://redis:6379
+      
+      # Database
+      TRIVY_SKIP_DB_UPDATE: "false"
+      TRIVY_SKIP_JAVA_DB_UPDATE: "false"
+      
+      # Security
+      TRIVY_DEBUG: "false"
+      TRIVY_QUIET: "false"
+      
+      # Vulnerability sources
+      TRIVY_VULN_TYPE: os,library
+      
+      # Severity levels
+      TRIVY_SEVERITY: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+      
+      # Ignore unfixed
+      TRIVY_IGNORE_UNFIXED: "false"
+      
+      # Security checks
+      TRIVY_SECURITY_CHECKS: vuln,config
+      
+      # Compliance
+      TRIVY_COMPLIANCE: 
+      
+      # Rego policies
+      TRIVY_POLICY_BUNDLE_REPOSITORY: ghcr.io/aquasecurity/trivy-policies
+      
+      # Cache TTL
+      TRIVY_CACHE_TTL: 24h
+      
+      # Timeout
+      TRIVY_TIMEOUT: 5m0s
+    
+    # Ports
+    ports:
+      - "4954:4954"  # Trivy server API
+    
+    # Volumes
+    volumes:
+      # Cache directory
+      - trivy-cache:/cache
+      # Configuration
+      - ./config/trivy:/etc/trivy
+      # Policies
+      - ./config/trivy/policies:/policies
+      # Reports
+      - ./reports/trivy:/reports
+    
+    # Dependencies
+    depends_on:
+      redis:
+        condition: service_healthy
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 512M
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - trivy-network
+    
+    # Labels for documentation and management
+    labels:
+      - "service=trivy-server"
+      - "layer=L14-Security-Observability"
+      - "description=Trivy vulnerability scanner server"
+      - "traefik.enable=true"
+      - "traefik.http.routers.trivy.rule=Host(`security.localhost`) && PathPrefix(`/trivy`)"
+      - "traefik.http.routers.trivy.entrypoints=web"
+      - "traefik.http.services.trivy.loadbalancer.server.port=4954"
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: trivy-redis
+    restart: unless-stopped
+    
+    # Redis configuration
+    command: >
+      redis-server 
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+      --tcp-keepalive 60
+      --timeout 300
+    
+    # Volumes
+    volumes:
+      - redis-data:/data
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    
+    # Network
+    networks:
+      - trivy-network
+    
+    # Labels
+    labels:
+      - "service=redis"
+      - "layer=L10-State-Storage"
+      - "description=Redis cache for Trivy"
+
+  # Optional: Trivy Worker (for scheduled scans)
+  trivy-worker:
+    image: aquasec/trivy:0.48.1
+    container_name: trivy-worker
+    restart: unless-stopped
+    
+    # Command
+    command: >
+      /bin/sh -c "
+        while true; do
+          echo 'Running scheduled scan...';
+          trivy image --server http://trivy-server:4954 --format json --output /reports/scan-$(date +%Y%m%d-%H%M%S).json alpine:latest;
+          sleep 3600;  # Run every hour
+        done
+      "
+    
+    # Volumes
+    volumes:
+      # Reports
+      - ./reports/trivy:/reports
+      # Configuration
+      - ./config/trivy:/etc/trivy
+    
+    # Dependencies
+    depends_on:
+      trivy-server:
+        condition: service_healthy
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - trivy-network
+    
+    # Labels
+    labels:
+      - "service=trivy-worker"
+      - "layer=L14-Security-Observability"
+      - "description=Trivy scheduled scanner"
+
+# Volumes
+volumes:
+  trivy-cache:
+    driver: local
+  redis-data:
+    driver: local
+
+# Networks
+networks:
+  trivy-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16

@@ -9,7 +9,9 @@ services:
     image: rancher/k3s:v1.31.4-k3s1
     container_name: k3s-server
     command: server --disable traefik --disable servicelb --disable metrics-server
-    privileged: true
+    # Security Note: k3s requires privileged mode for Kubernetes functionality
+    # This is for development only - use proper Kubernetes cluster for production
+    privileged: true  # Required for k3s Kubernetes - use with caution
     environment:
       - K3S_TOKEN=${K3S_TOKEN:-changeme}
       - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
