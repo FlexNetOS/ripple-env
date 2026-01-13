@@ -23,7 +23,7 @@ check_service_health() {
     while [ $attempt -lt $max_attempts ]; do
         # Get the container ID for this service (if any)
         local container_id
-        container_id="$(docker-compose -f "docker/$service.yml" ps -q 2>/dev/null || true)"
+        container_id="$(docker-compose -f "docker/$service.yml" ps -q 2>/dev/null | head -n1 || true)"
 
         if [ -n "${container_id:-}" ]; then
             # Try to read explicit health status (if a health check is defined)
