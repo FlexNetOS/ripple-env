@@ -1,0 +1,210 @@
+# Kong Declarative Configuration
+# P2-002: Kong API Gateway declarative configuration
+
+# This file defines Kong entities in a declarative format
+# For DB-less mode or initial configuration
+
+# Services define upstream APIs
+services:
+  # LocalAI inference service
+  - name: localai
+    url: http://localai:8080
+    plugins:
+      - name: key-auth
+      - name: rate-limiting
+        config:
+          minute: 60
+          hour: 1000
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - "X-Forwarded-By:Kong"
+    routes:
+      - name: localai-api
+        paths:
+          - /ai
+        strip_path: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+  # AGiXT orchestration service
+  - name: agixt
+    url: http://agixt:7437
+    plugins:
+      - name: key-auth
+      - name: rate-limiting
+        config:
+          minute: 120
+          hour: 2000
+    routes:
+      - name: agixt-api
+        paths:
+          - /agents
+        strip_path: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+  # Keycloak identity service
+  - name: keycloak
+    url: http://keycloak:8080
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 1000
+    routes:
+      - name: keycloak-auth
+        paths:
+          - /auth
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+  # Prometheus metrics service
+  - name: prometheus
+    url: http://prometheus:9090
+    plugins:
+      - name: basic-auth
+    routes:
+      - name: prometheus-metrics
+        paths:
+          - /metrics
+        strip_path: false
+        methods:
+          - GET
+
+  # Grafana dashboard service
+  - name: grafana
+    url: http://grafana:3000
+    plugins:
+      - name: basic-auth
+    routes:
+      - name: grafana-dashboard
+        paths:
+          - /dashboards
+        strip_path: false
+        methods:
+          - GET
+
+# Consumers define API consumers
+consumers:
+  - username: admin
+    custom_id: admin-user
+    keyauth_credentials:
+      - key: admin-key-change-in-production
+  
+  - username: service-a
+    custom_id: service-a-client
+    keyauth_credentials:
+      - key: service-a-key-change-in-production
+  
+  - username: service-b
+    custom_id: service-b-client
+    keyauth_credentials:
+      - key: service-b-key-change-in-production
+
+# Basic auth credentials
+basicauth_credentials:
+  - consumer: admin
+    username: admin
+    password: admin-password-change-in-production
+
+# Plugins define global plugins
+plugins:
+  # CORS plugin
+  - name: cors
+    config:
+      origins:
+        - "*"
+      methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - X-Auth-Token
+        - Authorization
+      exposed_headers:
+        - X-Auth-Token
+      credentials: true
+      max_age: 3600
+
+  # Request ID plugin
+  - name: request-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid
+
+  # Rate limiting plugin (global)
+  - name: rate-limiting
+    config:
+      minute: 100
+      hour: 10000
+      policy: local
+
+  # Response transformer
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Powered-By:Kong"
+          - "X-Content-Type-Options:nosniff"
+          - "X-Frame-Options:DENY"
+          - "X-XSS-Protection:1; mode=block"
+
+# Upstream definitions
+upstreams:
+  - name: localai-upstream
+    targets:
+      - target: localai:8080
+        weight: 100
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          http_statuses:
+            - 200
+            - 302
+        unhealthy:
+          interval: 10
+          http_failures: 3
+          http_statuses:
+            - 429
+            - 500
+            - 503
+
+  - name: agixt-upstream
+    targets:
+      - target: agixt:7437
+        weight: 100
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          http_statuses:
+            - 200
+            - 302
+        unhealthy:
+          interval: 10
+          http_failures: 3
+          http_statuses:
+            - 429
+            - 500
+            - 503

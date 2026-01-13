@@ -1,47 +1,100 @@
+# Prometheus Configuration
+# P1-004: Prometheus metrics collection configuration
+
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    cluster: 'ripple-env'
-    environment: 'development'
+    monitor: 'ripple-monitor'
 
+# Alertmanager configuration
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: ['alertmanager:9093']
+        - targets:
+          - alertmanager:9093
 
+# Rule files
 rule_files:
-  - '/etc/prometheus/rules/*.yml'
+  - "/etc/prometheus/rules/*.yml"
 
+# Scrape configurations
 scrape_configs:
+  # Prometheus itself
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-  
+
+  # Node exporter (system metrics)
   - job_name: 'node-exporter'
     static_configs:
       - targets: ['node-exporter:9100']
-  
-  - job_name: 'cadvisor'
-    static_configs:
-      - targets: ['cadvisor:8080']
-  
+
+  # LocalAI metrics (if available)
   - job_name: 'localai'
     static_configs:
       - targets: ['localai:8080']
-    metrics_path: '/metrics'
-  
-  - job_name: 'kong'
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # AGiXT metrics (if available)
+  - job_name: 'agixt'
     static_configs:
-      - targets: ['kong:8001']
-    metrics_path: '/metrics'
-  
-  - job_name: 'agentgateway'
+      - targets: ['agixt:7437']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Keycloak metrics (if available)
+  - job_name: 'keycloak'
     static_configs:
-      - targets: ['agentgateway:8092']
-    metrics_path: '/metrics'
-  
-  - job_name: 'lobe-chat'
+      - targets: ['keycloak:8080']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Vault metrics (if available)
+  - job_name: 'vault'
     static_configs:
-      - targets: ['lobe-chat:3210']
-    metrics_path: '/api/metrics'
+      - targets: ['vault:8200']
+    scrape_interval: 30s
+    metrics_path: /v1/sys/metrics
+    scrape_timeout: 10s
+
+  # NATS metrics (if available)
+  - job_name: 'nats'
+    static_configs:
+      - targets: ['nats:8222']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Holochain metrics (if available)
+  - job_name: 'holochain'
+    static_configs:
+      - targets: ['holochain:8888']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Docker daemon metrics (if docker socket is mounted)
+  # - job_name: 'docker'
+  #   static_configs:
+  #     - targets: ['docker-exporter:9323']
+
+  # File-based service discovery
+  # - job_name: 'file-sd'
+  #   file_sd_configs:
+  #     - files:
+  #       - '/etc/prometheus/file_sd/*.yml'
+  #       refresh_interval: 5m
+
+  # Kubernetes service discovery (if running in k8s)
+  # - job_name: 'kubernetes-pods'
+  #   kubernetes_sd_configs:
+  #     - role: pod
+  #   relabel_configs:
+  #     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+  #       action: keep
+  #       regex: true
