@@ -1,0 +1,31 @@
+{
+  "name": "devops-assistant",
+  "description": "DevOps assistant agent for CI/CD, infrastructure, and automation tasks",
+  "version": "0.1.0",
+  "author": "FlexNetOS",
+  "license": "MIT",
+  "entry": "entry.py",
+  "aios_version": ">=0.0.3",
+  "capabilities": [
+    "ci-cd",
+    "infrastructure-automation",
+    "script-generation",
+    "security-review"
+  ],
+  "tools": [
+    "llm_chat",
+    "memory_read",
+    "memory_write",
+    "storage_read",
+    "storage_write"
+  ],
+  "environment": {
+    "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+    "LOCALAI_URL": "http://localhost:8080"
+  },
+  "parameters": {
+    "default_model": "localai/ggml-gpt4all-j",
+    "temperature": 0.5,
+    "max_tokens": 2000
+  }
+}

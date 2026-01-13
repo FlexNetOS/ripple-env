@@ -1,0 +1,144 @@
+# AIOS Agent OS Docker Compose Configuration
+# Documentation: https://github.com/agiresearch/AIOS
+#
+# Resource Requirements:
+#   - RAM: 4GB minimum (AIOS + Redis + ChromaDB)
+#   - CPU: 4 cores recommended
+#   - Disk: 5GB+ for data and models
+#
+# Usage:
+#   aios-docker up      - Start AIOS stack
+#   aios-docker down    - Stop AIOS stack
+#   aios-docker logs    - Follow logs
+#
+# Integration:
+#   - Works with AGiXT (port 7437) for orchestration
+#   - Works with LocalAI (port 8080) for inference
+#   - Exposes AIOS Kernel on port 8000
+
+name: aios
+
+services:
+  # AIOS Kernel Server
+  # The main AIOS agent runtime providing scheduler, memory, and tools
+  aios-kernel:
+    image: python:3.11-slim
+    container_name: aios-kernel
+    restart: unless-stopped
+    working_dir: /aios
+    command: >
+      sh -c "
+        pip install --quiet aios-kernel uvicorn fastapi &&
+        python -m uvicorn aios.kernel:app --host 0.0.0.0 --port 8000
+      "
+    ports:
+      - "8000:8000"
+    environment:
+      # LLM Provider Configuration
+      AIOS_LLM_BACKEND: ${AIOS_LLM_BACKEND:-localai}
+      OPENAI_API_BASE: ${OPENAI_API_BASE:-http://host.docker.internal:8080/v1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-localai}
+
+      # Vector Database
+      AIOS_VECTOR_DB: ${AIOS_VECTOR_DB:-chromadb}
+      CHROMADB_HOST: chromadb
+      CHROMADB_PORT: 8001
+
+      # Redis Cache
+      REDIS_URL: redis://redis:6379/0
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./aios-data/workspace:/aios/workspace
+      - ./aios-data/agents:/aios/agents
+    depends_on:
+      redis:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    networks:
+      - aios-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # Redis for caching and message queue
+  redis:
+    image: redis:7-alpine
+    container_name: aios-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - ./aios-data/redis:/data
+    networks:
+      - aios-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+
+  # ChromaDB for vector storage
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: aios-chromadb
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      CHROMA_SERVER_AUTH_CREDENTIALS: ${CHROMADB_AUTH:-}
+      CHROMA_SERVER_AUTH_PROVIDER: ${CHROMADB_AUTH_PROVIDER:-}
+      ANONYMIZED_TELEMETRY: "false"
+    volumes:
+      - ./aios-data/chromadb:/chroma/chroma
+    networks:
+      - aios-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+
+networks:
+  aios-network:
+    driver: bridge
+
+volumes:
+  aios-workspace:
+  aios-agents:
+  redis-data:
+  chromadb-data:
