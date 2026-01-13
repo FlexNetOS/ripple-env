@@ -1,0 +1,5 @@
+# AIOS Agent Requirements
+# These are handled by pixi -e aios environment
+cerebrum>=0.0.3
+aios-agent-sdk>=0.0.3
+PyYAML>=6.0

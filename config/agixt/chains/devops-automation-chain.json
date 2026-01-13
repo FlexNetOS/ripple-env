@@ -1,0 +1,45 @@
+{
+  "chain_name": "devops-automation-chain",
+  "description": "DevOps task automation pipeline for CI/CD and infrastructure",
+  "steps": [
+    {
+      "step_number": 1,
+      "agent_name": "devops-agent",
+      "prompt_type": "Chain",
+      "prompt_name": "task-analysis",
+      "prompt_category": "default",
+      "command_name": "",
+      "step_config": {
+        "model": "ggml-gpt4all-j",
+        "temperature": 0.5,
+        "max_tokens": 1000
+      }
+    },
+    {
+      "step_number": 2,
+      "agent_name": "devops-agent",
+      "prompt_type": "Chain",
+      "prompt_name": "script-generation",
+      "prompt_category": "default",
+      "command_name": "",
+      "step_config": {
+        "model": "ggml-gpt4all-j",
+        "temperature": 0.3,
+        "max_tokens": 2000
+      }
+    },
+    {
+      "step_number": 3,
+      "agent_name": "devops-agent",
+      "prompt_type": "Chain",
+      "prompt_name": "security-review",
+      "prompt_category": "default",
+      "command_name": "",
+      "step_config": {
+        "model": "ggml-gpt4all-j",
+        "temperature": 0.1,
+        "max_tokens": 500
+      }
+    }
+  ]
+}
