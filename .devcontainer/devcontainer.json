@@ -3,22 +3,34 @@
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
 
   "features": {
+    // Core utilities
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": true,
-      "configureZshAsDefaultShell": true
+      "configureZshAsDefaultShell": false
     },
     "ghcr.io/devcontainers/features/git-lfs:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
+
+    // Nix with flakes support
     "ghcr.io/devcontainers/features/nix:1": {
       "multiUser": false,
-      "extraNixConfig": "experimental-features = nix-command flakes\naccept-flake-config = true\n"
-    }
+      "extraNixConfig": "experimental-features = nix-command flakes\naccept-flake-config = true\nwarn-dirty = false\n"
+    },
+
+    // Nushell - modern shell with structured data
+    // See: https://github.com/eitsupi/devcontainer-features
+    "ghcr.io/eitsupi/devcontainer-features/nushell:0": {},
+
+    // Cachix for faster Nix builds
+    "ghcr.io/cachix/devenv/cachix:1": {}
   },
 
   "mounts": [
+    // Persistent volumes for caches (critical for performance)
     "source=ripple-env-nix-store,target=/nix,type=volume",
     "source=ripple-env-nix-cache,target=/home/vscode/.cache/nix,type=volume",
-    "source=ripple-env-pixi-cache,target=/home/vscode/.cache/pixi,type=volume"
+    "source=ripple-env-pixi-cache,target=/home/vscode/.pixi,type=volume",
+    "source=ripple-env-pixi-global,target=/home/vscode/.local/share/pixi,type=volume"
   ],
 
   "updateRemoteUserUID": true,
@@ -26,29 +38,111 @@
   "containerEnv": {
     "TMPDIR": "/tmp",
     "TMP": "/tmp",
-    "TEMP": "/tmp"
+    "TEMP": "/tmp",
+    // Pixi configuration
+    "PIXI_HOME": "/home/vscode/.pixi",
+    // Ensure Nix paths are available
+    "PATH": "/home/vscode/.nix-profile/bin:/home/vscode/.local/bin:/home/vscode/.pixi/bin:${containerEnv:PATH}"
   },
 
-  "onCreateCommand": "sudo mkdir -p /tmp && sudo chmod 1777 /tmp",
+  "onCreateCommand": "sudo mkdir -p /tmp && sudo chmod 1777 /tmp && sudo chown -R vscode:vscode /home/vscode/.pixi /home/vscode/.local/share/pixi 2>/dev/null || true",
 
-  "postCreateCommand": "bash -lc \"set -euo pipefail; for shellrc in ~/.bashrc ~/.zshrc; do if [ -f \\\"$shellrc\\\" ]; then grep -qxF 'export TMPDIR=/tmp' \\\"$shellrc\\\" || echo 'export TMPDIR=/tmp' >> \\\"$shellrc\\\"; grep -qxF '. /nix/var/nix/profiles/default/etc/profile.d/nix.sh' \\\"$shellrc\\\" || echo '. /nix/var/nix/profiles/default/etc/profile.d/nix.sh' >> \\\"$shellrc\\\"; fi; done; export TMPDIR=/tmp; if command -v nix >/dev/null 2>&1; then nix --version; nix profile install github:nixos/nixpkgs/nixos-unstable#direnv github:nixos/nixpkgs/nixos-unstable#nix-direnv github:nixos/nixpkgs/nixos-unstable#nil github:nixos/nixpkgs/nixos-unstable#nixfmt-rfc-style github:nixos/nixpkgs/nixos-unstable#nix-output-monitor 2>/dev/null || true; fi; echo \\\"Devcontainer ready. Run: nix develop\\\"\"",
+  "postCreateCommand": ".devcontainer/setup.sh",
 
   "customizations": {
     "vscode": {
       "settings": {
-        "terminal.integrated.defaultProfile.linux": "bash",
+        // Terminal configuration - multiple shell options
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh",
+            "icon": "terminal"
+          },
+          "bash": {
+            "path": "/bin/bash",
+            "icon": "terminal-bash"
+          },
+          "nushell": {
+            "path": "nu",
+            "icon": "terminal-powershell"
+          }
+        },
         "terminal.integrated.shellIntegration.enabled": true,
+
+        // Editor settings
         "files.eol": "\n",
         "editor.formatOnSave": true,
-        "git.enableCommitSigning": false
+        "editor.tabSize": 2,
+
+        // Git settings
+        "git.enableCommitSigning": false,
+        "git.autofetch": true,
+
+        // Nix settings
+        "nix.enableLanguageServer": true,
+        "nix.serverPath": "nil",
+        "nix.serverSettings": {
+          "nil": {
+            "formatting": {
+              "command": ["nixfmt"]
+            }
+          }
+        },
+
+        // Python settings
+        "python.defaultInterpreterPath": "${workspaceFolder}/.pixi/envs/default/bin/python",
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        },
+
+        // Direnv auto-reload
+        "direnv.restart.automatic": true
       },
       "extensions": [
+        // Nix ecosystem
         "jnoortheen.nix-ide",
         "mkhl.direnv",
+
+        // Shell & scripting
         "timonwong.shellcheck",
         "ms-vscode.powershell",
-        "editorconfig.editorconfig"
+        "thenuprojectcontributors.vscode-nushell-lang",
+
+        // Python
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+
+        // Data & Config formats
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+
+        // Kubernetes
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+
+        // Git & GitHub
+        "github.vscode-pull-request-github",
+        "eamodio.gitlens",
+
+        // Editor utilities
+        "editorconfig.editorconfig",
+        "usernamehw.errorlens",
+        "christian-kohler.path-intellisense"
+      ]
+    },
+    "codespaces": {
+      "openFiles": [
+        "README.md"
       ]
     }
+  },
+
+  // Resource limits for Codespaces
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb",
+    "storage": "32gb"
   }
 }
