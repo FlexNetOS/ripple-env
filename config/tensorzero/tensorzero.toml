@@ -1,0 +1,105 @@
+# TensorZero Configuration
+# P3-003: TensorZero LLMOps gateway configuration
+
+[gateway]
+bind_address = "0.0.0.0:3000"
+
+# Logging configuration
+[logging]
+level = "info"
+format = "json"
+
+# ClickHouse configuration
+[clickhouse]
+url = "http://clickhouse:8123"
+database = "tensorzero"
+user = "default"
+password = ""
+
+# Redis configuration
+[redis]
+url = "redis://redis:6379"
+
+# Metrics configuration
+[metrics]
+enabled = true
+address = "0.0.0.0:9090"
+
+# Cache configuration
+[cache]
+ttl = 3600
+max_size = 1000
+
+# Rate limiting
+[rate_limit]
+enabled = true
+per_minute = 1000
+
+# Retry configuration
+[retry]
+max_attempts = 3
+base_delay = 100
+max_delay = 10000
+
+# Provider configurations
+[providers.openai]
+api_key = "${OPENAI_API_KEY}"
+base_url = "https://api.openai.com/v1"
+
+[providers.anthropic]
+api_key = "${ANTHROPIC_API_KEY}"
+base_url = "https://api.anthropic.com"
+
+[providers.localai]
+base_url = "http://localai:8080/v1"
+
+# Model configurations
+[models.gpt-4]
+provider = "openai"
+model = "gpt-4"
+temperature = 0.7
+max_tokens = 8192
+
+[models.gpt-3-5-turbo]
+provider = "openai"
+model = "gpt-3.5-turbo"
+temperature = 0.7
+max_tokens = 4096
+
+[models.claude-3-opus]
+provider = "anthropic"
+model = "claude-3-opus-20240229"
+temperature = 0.7
+max_tokens = 4096
+
+[models.local-llama]
+provider = "localai"
+model = "llama-3.2-3b-instruct"
+temperature = 0.7
+max_tokens = 2048
+
+# Function configurations
+[functions.generate_text]
+model = "gpt-4"
+
+[functions.analyze_sentiment]
+model = "gpt-3-5-turbo"
+
+[functions.summarize_text]
+model = "gpt-3-5-turbo"
+
+[functions.translate_text]
+model = "gpt-3-5-turbo"
+
+# A/B testing configurations
+[ab_tests.model_comparison]
+variants = [
+    { name = "gpt-4", weight = 0.5 },
+    { name = "claude-3-opus", weight = 0.5 }
+]
+
+[ab_tests.local_vs_cloud]
+variants = [
+    { name = "local-llama", weight = 0.3 },
+    { name = "gpt-3-5-turbo", weight = 0.7 }
+]

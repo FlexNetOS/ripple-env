@@ -1,0 +1,194 @@
+# Prometheus - Metrics Collection and Monitoring (BUILDKIT L14)
+# P1-004: Prometheus provides metrics collection, storage, and alerting
+#
+# Prometheus features:
+#   - Time-series metrics collection
+#   - Pull-based metrics gathering
+#   - PromQL query language
+#   - Alerting rules and notification
+#   - Service discovery
+#   - Federation for multi-site monitoring
+#
+# Components:
+#   - Prometheus Server: Metrics collection and storage
+#   - Alertmanager: Alert routing and notification
+#   - Node Exporter: System metrics
+#
+# References:
+#   - https://prometheus.io/docs
+#   - https://github.com/prometheus/prometheus
+#   - BUILDKIT_STARTER_SPEC.md L14: Security & Observability
+
+version: '3.8'
+
+services:
+  # Prometheus Server
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: prometheus
+    restart: unless-stopped
+    
+    # Command line arguments
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--web.listen-address=0.0.0.0:9090'
+      
+      # Remote write configuration (for long-term storage)
+      # - '--web.enable-remote-write-receiver'
+    
+    # Ports
+    ports:
+      - "9090:9090"  # Prometheus web UI and API
+    
+    # Volumes
+    volumes:
+      # Prometheus configuration
+      - ./config/prometheus:/etc/prometheus
+      # Data storage
+      - prometheus-data:/prometheus
+      # Rules
+      - ./config/prometheus/rules:/etc/prometheus/rules
+      # File service discovery
+      - ./config/prometheus/file_sd:/etc/prometheus/file_sd
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - prometheus-network
+    
+    # Labels for documentation and management
+    labels:
+      - "service=prometheus"
+      - "layer=L14-Security-Observability"
+      - "description=Prometheus metrics collection"
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`metrics.localhost`)"
+      - "traefik.http.routers.prometheus.entrypoints=web"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+
+  # Alertmanager for alert routing
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: alertmanager
+    restart: unless-stopped
+    
+    # Command
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+      - '--web.listen-address=0.0.0.0:9093'
+    
+    # Ports
+    ports:
+      - "9093:9093"  # Alertmanager web UI
+    
+    # Volumes
+    volumes:
+      - ./config/alertmanager:/etc/alertmanager
+      - alertmanager-data:/alertmanager
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    
+    # Network
+    networks:
+      - prometheus-network
+    
+    # Labels
+    labels:
+      - "service=alertmanager"
+      - "layer=L14-Security-Observability"
+      - "description=Prometheus Alertmanager"
+
+  # Node Exporter for system metrics
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: node-exporter
+    restart: unless-stopped
+    
+    # Command
+    command:
+      - '--path.rootfs=/host'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    
+    # Ports
+    ports:
+      - "9100:9100"  # Node exporter metrics
+    
+    # Volumes for host metrics
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+    
+    # Network
+    networks:
+      - prometheus-network
+    
+    # Labels
+    labels:
+      - "service=node-exporter"
+      - "layer=L14-Security-Observability"
+      - "description=Node exporter for system metrics"
+
+# Volumes
+volumes:
+  prometheus-data:
+    driver: local
+  alertmanager-data:
+    driver: local
+
+# Networks
+networks:
+  prometheus-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16

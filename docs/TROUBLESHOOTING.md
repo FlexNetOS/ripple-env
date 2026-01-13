@@ -1,656 +1,246 @@
 # Troubleshooting Guide
 
-This guide covers common issues and their solutions when working with the ROS2 Humble development environment.
+## Common Issues and Solutions
 
-## Table of Contents
+### Container Issues
 
-- [Nix Issues](#nix-issues)
-- [Pixi Issues](#pixi-issues)
-- [ROS2 Issues](#ros2-issues)
-- [Docker Issues](#docker-issues)
-- [WSL2 Issues](#wsl2-issues)
-- [Performance Issues](#performance-issues)
-- [GPU/CUDA Issues](#gpucuda-issues)
-
----
-
-## Nix Issues
-
-### "error: experimental Nix feature 'flakes' is disabled"
-
-**Problem**: Nix flakes are not enabled.
-
-**Solution**:
+**Problem:** Container fails to start  
+**Solution:** 
 ```bash
-# Add to ~/.config/nix/nix.conf (create if needed)
-mkdir -p ~/.config/nix
-echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+# Check container logs
+docker-compose logs <service>
 
-# Restart nix-daemon
-sudo systemctl restart nix-daemon
+# Check container status
+docker ps -a
+
+# Restart container
+docker-compose restart <service>
 ```
 
-### "error: cannot find flake 'flake.nix'"
-
-**Problem**: You're not in the repository root directory.
-
-**Solution**:
+**Problem:** Permission denied in container  
+**Solution:** 
 ```bash
-cd /path/to/ripple-env
-nix develop
+# Ensure proper user configuration
+docker-compose exec <service> id
+
+# Check file permissions
+docker-compose exec <service> ls -la
+
+# Fix permissions if needed
+docker-compose exec <service> chmod 755 /path/to/file
 ```
 
-### "error: hash mismatch in fixed-output derivation"
-
-**Problem**: Cached derivation hash doesn't match current source.
-
-**Solution**:
+**Problem:** Container using too much memory  
+**Solution:** 
 ```bash
-# Clear Nix cache and rebuild
-nix store gc
-nix develop --rebuild
+# Check resource usage
+docker stats
+
+# Add resource limits to docker-compose.yml
+deploy:
+  resources:
+    limits:
+      memory: 1G
+      cpus: '1.0'
 ```
 
-### "nix develop" takes too long
+### Security Issues
 
-**Problem**: First-time builds download many packages.
-
-**Solution**:
-- Use binary cache (already configured in flake.nix)
-- Use `nix develop` (default shell) for faster startup
-- Check your internet connection
-- Be patient on first run (10-15 minutes is normal)
-
-### "error: memory allocation of X bytes failed"
-
-**Problem**: Not enough RAM for Nix evaluation.
-
-**Solution**:
+**Problem:** Security scan failed  
+**Solution:** 
 ```bash
-# Increase swap space
-sudo fallocate -l 4G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
+# Run security fix scripts
+./scripts/fix-shell-scripts.sh
+./scripts/audit-and-fix-secrets.sh
+
+# Validate fixes
+./scripts/validate-critical-fixes.sh
 ```
 
----
-
-## Pixi Issues
-
-### "pixi: command not found"
-
-**Problem**: Pixi is not in PATH.
-
-**Solution**:
+**Problem:** Privileged container detected  
+**Solution:** 
 ```bash
-# Re-enter nix develop
-exit
-nix develop
-
-# Or source the profile
-source ~/.pixi/bin/env
+# Remove privileged mode
+docker-compose.yml:
+# Remove: privileged: true
+# Add: cap_add: [SYS_PTRACE] # Only if needed
 ```
 
-### "pixi install" fails with network error
-
-**Problem**: Network issues or conda-forge is down.
-
-**Solution**:
+**Problem:** Hardcoded secret found  
+**Solution:** 
 ```bash
-# Retry with timeout
-pixi install --timeout 300
+# Replace with environment variable
+# BEFORE: password: "secret123"
+# AFTER: password: "${DB_PASSWORD}"
 
-# Clear cache and retry
-pixi clean
-pixi install
+# Add to .env file
+DB_PASSWORD=your_secure_password
 ```
 
-### "Conflicting dependencies" error
+### Configuration Issues
 
-**Problem**: Package version conflicts.
-
-**Solution**:
+**Problem:** Service configuration error  
+**Solution:** 
 ```bash
-# Check the conflict
-pixi list
+# Validate configuration
+docker-compose config
 
-# Update lock file
-pixi update
+# Check YAML syntax
+yq eval '.' docker-compose.yml
 
-# If still failing, check pixi.toml for version constraints
+# Compare with backup
+diff docker-compose.yml docker-compose.yml.backup
 ```
 
-### Pixi environment not activating
-
-**Problem**: The Pixi environment isn't sourced.
-
-**Solution**:
+**Problem:** Environment variable not set  
+**Solution:** 
 ```bash
-# Inside nix develop, manually activate
-eval "$(pixi shell-hook)"
+# Check environment file
+cat .env
 
-# Or run commands through pixi
-pixi run python your_script.py
+# Validate environment
+docker-compose config
+
+# Set missing variable
+echo "VARIABLE=value" >> .env
 ```
 
----
+### Network Issues
 
-## ROS2 Issues
-
-### "ros2: command not found"
-
-**Problem**: ROS2 environment not sourced.
-
-**Solution**:
+**Problem:** Service can't connect to database  
+**Solution:** 
 ```bash
-# Inside nix develop
-source /opt/ros/humble/setup.bash  # If using system ROS2
+# Check network connectivity
+docker-compose exec <service> ping <database>
 
-# Or with Pixi
-pixi run ros2 --help
+# Check service discovery
+docker-compose exec <service> nslookup <database>
+
+# Verify database is running
+docker-compose ps | grep <database>
 ```
 
-### "Package 'X' not found"
-
-**Problem**: Missing ROS2 package.
-
-**Solution**:
+**Problem:** Port already in use  
+**Solution:** 
 ```bash
-# Add via Pixi
-pixi add ros-humble-<package-name>
+# Find process using port
+sudo netstat -tulpn | grep :8080
 
-# Example
-pixi add ros-humble-navigation2
+# Change port in docker-compose.yml
+ports:
+  - "8081:8080"  # Host port 8081 -> Container port 8080
 ```
 
-### "colcon build" fails with CMake errors
+### Performance Issues
 
-**Problem**: Missing build dependencies.
-
-**Solution**:
+**Problem:** High CPU usage  
+**Solution:** 
 ```bash
-# Install rosdep dependencies
-rosdep update
-rosdep install --from-paths src --ignore-src -y
+# Check CPU usage
+docker stats
 
-# Rebuild
-colcon build --symlink-install
+# Add CPU limits
+deploy:
+  resources:
+    limits:
+      cpus: '2.0'
 ```
 
-### "ROS_DISTRO is not set"
-
-**Problem**: ROS2 environment variables not configured.
-
-**Solution**:
+**Problem:** Slow response times  
+**Solution:** 
 ```bash
-# Set manually
-export ROS_DISTRO=humble
+# Check resource usage
+docker stats
 
-# Or re-enter the shell
-exit
-nix develop
+# Check logs for errors
+docker-compose logs <service>
+
+# Scale service if needed
+docker-compose up --scale <service>=3
 ```
 
-### Node not receiving messages
+### Database Issues
 
-**Problem**: ROS2 DDS discovery issues.
-
-**Solution**:
+**Problem:** Database connection refused  
+**Solution:** 
 ```bash
-# Check if nodes are visible
-ros2 node list
+# Check database is running
+docker-compose ps | grep postgres
 
-# Set explicit domain
-export ROS_DOMAIN_ID=42
+# Check database logs
+docker-compose logs postgres
 
-# Use localhost only (for single-machine development)
-export ROS_LOCALHOST_ONLY=1
+# Verify database initialization
+docker-compose exec postgres pg_isready
 ```
 
----
-
-## Docker Issues
-
-### "Cannot connect to Docker daemon"
-
-**Problem**: Docker daemon not running.
-
-**Solution**:
+**Problem:** Database corruption  
+**Solution:** 
 ```bash
-# Start Docker
-sudo systemctl start docker
+# Restore from backup
+docker-compose down -v
+docker-compose up -d postgres
 
-# Add user to docker group (requires logout/login)
-sudo usermod -aG docker $USER
+# Run database repair if needed
+docker-compose exec postgres pg_dump --help
 ```
 
-### "docker-compose: command not found"
-
-**Problem**: Docker Compose not installed or wrong version.
-
-**Solution**:
-```bash
-# Use docker compose (v2 syntax)
-docker compose -f docker/docker-compose.yml up -d
-
-# Or install standalone
-sudo apt install docker-compose-plugin
-```
-
-### Container health check failing
-
-**Problem**: Service isn't ready yet.
-
-**Solution**:
-```bash
-# Check logs
-docker logs <container-name>
-
-# Wait for health check (use the health-check.sh script)
-./scripts/health-check.sh http://localhost:8080/health 5 10 "ServiceName"
-```
-
-### "network agentic-network not found"
-
-**Problem**: Docker network doesn't exist.
-
-**Solution**:
-```bash
-# Create the network
-docker network create agentic-network
-
-# Then start services
-docker compose -f docker/docker-compose.observability.yml up -d
-```
-
-### Port already in use
-
-**Problem**: Another service is using the port.
-
-**Solution**:
-```bash
-# Find what's using the port
-sudo lsof -i :8080
-
-# Kill the process or change port in docker-compose
-docker compose -f docker/docker-compose.yml down
-# Edit the port mapping, then:
-docker compose -f docker/docker-compose.yml up -d
-```
-
----
-
-## WSL2 Issues
-
-### Bootstrap script fails on Windows
-
-**Problem**: PowerShell execution policy or missing admin rights.
-
-**Solution**:
-```powershell
-# Run as Administrator
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-.\bootstrap.ps1
-```
-
-### WSL2 Disk Space Management
-
-The WSL2 setup creates a sparse VHDX file that can grow up to 1TB by default. Understanding disk usage patterns helps prevent storage issues.
-
-#### Understanding Disk Usage
-
-**What uses space in WSL2:**
-
-| Component | Typical Size | Location |
-|-----------|-------------|----------|
-| NixOS base | 5-10 GB | `/nix/store` |
-| Nix store (after builds) | 20-50 GB | `/nix/store` |
-| Pixi environments | 5-15 GB | `~/.pixi` |
-| Docker images/containers | 10-50+ GB | `/var/lib/docker` |
-| AI models (if downloaded) | 15-60 GB | `~/models` |
-| Build artifacts | 1-10 GB | `~/ripple-env/build` |
-
-**Check current usage inside WSL:**
-```bash
-# Overall disk usage
-df -h /
-
-# Nix store size
-du -sh /nix/store
-
-# Pixi cache size
-du -sh ~/.pixi
-
-# Docker usage
-docker system df
-
-# Find large files
-du -h / 2>/dev/null | grep '[0-9]G' | sort -hr | head -20
-```
-
-**Check VHD size from Windows (PowerShell):**
-```powershell
-# Get actual VHD size on disk
-$vhdPath = "$env:USERPROFILE\WSL\NixOS-Ripple\ext4.vhdx"
-(Get-Item $vhdPath).Length / 1GB
-```
-
-#### Automatic Garbage Collection
-
-The WSL2 NixOS image includes automatic garbage collection:
-
-- **Schedule**: Weekly
-- **Policy**: Removes generations older than 7 days
-- **Store optimization**: Enabled (deduplicates files)
-
-To verify GC is running:
-```bash
-# Check systemd timer
-systemctl status nix-gc.timer
-
-# View GC logs
-journalctl -u nix-gc.service
-```
-
-#### Manual Cleanup Commands
-
-**Nix store cleanup:**
-```bash
-# Run garbage collection (removes unused packages)
-nix store gc
-
-# Remove all old generations and collect garbage
-nix-collect-garbage -d
-
-# Optimize store (deduplicate identical files)
-nix store optimise
-
-# Show what would be deleted
-nix store gc --dry-run
-```
-
-**Pixi cleanup:**
-```bash
-# Clean Pixi cache
-pixi clean
-
-# Remove unused conda packages
-pixi global clean
-```
-
-**Docker cleanup:**
-```bash
-# Remove unused containers, networks, images
-docker system prune -a
-
-# Remove all unused volumes (careful - data loss!)
-docker system prune -a --volumes
-
-# Remove specific unused images
-docker image prune -a
-```
-
-**Build artifact cleanup:**
-```bash
-# Clean colcon build artifacts
-cd ~/ripple-env
-rm -rf build/ install/ log/
-
-# Clean ccache
-ccache --clear
-```
-
-**AI model cleanup:**
-```bash
-# If using download-models.sh
-./scripts/download-models.sh --clean
-```
-
-#### "Not enough disk space" Error
-
-**Problem**: WSL2 VHD is full or near capacity.
-
-**Solution 1: Clean up space inside WSL**
-```bash
-# Quick cleanup sequence
-nix-collect-garbage -d
-nix store optimise
-docker system prune -a -f
-pixi clean
-```
-
-**Solution 2: Expand the VHD (from Windows PowerShell as Administrator)**
-```powershell
-# Shutdown WSL first
-wsl --shutdown
-Resize-VHD -Path "$env:USERPROFILE\WSL\NixOS-Ripple\ext4.vhdx" -SizeBytes 200GB
-
-# Inside WSL, resize filesystem
-wsl -d NixOS-Ripple
-sudo resize2fs /dev/sdc
-```
-
-**Solution 3: Reclaim unused space (Windows PowerShell as Administrator)**
-```powershell
-# Shutdown WSL
-wsl --shutdown
-
-# Compact the VHD (reclaims freed space)
-# Note: sparseVhd=true in .wslconfig handles this automatically
-Optimize-VHD -Path "$env:USERPROFILE\WSL\NixOS-Ripple\ext4.vhdx" -Mode Full
-```
-
-#### Configuring Disk Size at Install Time
-
-When running `bootstrap.ps1`, you can specify a smaller disk:
-```powershell
-# Install with 256GB max disk instead of 1TB
-.\bootstrap.ps1 -DiskSizeGB 256
-```
-
-#### WSL Configuration for Efficient Storage
-
-The default `.wslconfig` includes storage optimizations:
-```ini
-[wsl2]
-memory=8GB
-swap=8GB
-localhostForwarding=true
-
-[experimental]
-autoMemoryReclaim=gradual
-sparseVhd=true  # Automatically reclaims unused space
-```
-
-To edit:
-```powershell
-notepad "$env:USERPROFILE\.wslconfig"
-# Then restart WSL: wsl --shutdown
-```
-
-#### Monitoring Disk Usage
-
-**Create a disk usage report:**
-```bash
-#!/bin/bash
-echo "=== WSL2 Disk Usage Report ==="
-echo ""
-echo "Filesystem:"
-df -h / | tail -1
-echo ""
-echo "Nix Store: $(du -sh /nix/store 2>/dev/null | cut -f1)"
-echo "Pixi:      $(du -sh ~/.pixi 2>/dev/null | cut -f1)"
-echo "Docker:    $(docker system df --format 'table {{.Size}}' 2>/dev/null | tail -1)"
-echo "Home:      $(du -sh ~ 2>/dev/null | cut -f1)"
-```
-
-Save this as `~/disk-usage.sh` and run periodically.
-
-### WSL2 networking issues
-
-**Problem**: Can't access localhost services from Windows.
-
-**Solution**:
-```powershell
-# Check .wslconfig
-notepad "$env:USERPROFILE\.wslconfig"
-
-# Ensure localhostForwarding is enabled:
-# [wsl2]
-# localhostForwarding=true
-
-wsl --shutdown
-wsl
-```
-
-### "Nix daemon not running" in WSL2
-
-**Problem**: Nix daemon didn't start automatically.
-
-**Solution**:
-```bash
-# Start manually
-sudo /nix/var/nix/profiles/default/bin/nix-daemon &
-
-# Or restart WSL
-wsl --shutdown
-wsl -d NixOS-Ripple
-```
-
----
-
-## Performance Issues
-
-### Slow file operations
-
-**Problem**: Nix store or git operations are slow.
-
-**Solution**:
-```bash
-# Use overlayfs for store
-# Add to /etc/nix/nix.conf:
-# use-sqlite-wal = true
-
-# Optimize store
-nix store optimise
-```
-
-### High memory usage
-
-**Problem**: Nix evaluation or builds use too much RAM.
-
-**Solution**:
-```bash
-# Limit build jobs
-export NIX_BUILD_CORES=2
-
-# Use --max-jobs flag
-nix develop --max-jobs 2
-```
-
-### Slow colcon build
-
-**Problem**: ROS2 builds are slow.
-
-**Solution**:
-```bash
-# Use parallel builds
-colcon build --parallel-workers 4 --symlink-install
-
-# Only build changed packages
-colcon build --packages-select my_package
-
-# Use ccache
-export CCACHE_DIR=~/.ccache
-colcon build --cmake-args -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-```
-
----
-
-## GPU/CUDA Issues
-
-### "CUDA not available"
-
-**Problem**: CUDA drivers not installed or not detected.
-
-**Solution**:
-```bash
-# Check NVIDIA driver
-nvidia-smi
-
-# Use CUDA shell
-nix develop .#cuda
-
-# Verify CUDA in Python
-python -c "import torch; print(torch.cuda.is_available())"
-```
-
-### "libcuda.so not found"
-
-**Problem**: CUDA libraries not in path.
-
-**Solution**:
-```bash
-# Set library path
-export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
-
-# Or use nixGL (for non-NixOS)
-nix run github:guibou/nixGL -- python your_cuda_script.py
-```
-
-### CUDA version mismatch
-
-**Problem**: PyTorch expects different CUDA version.
-
-**Solution**:
-```bash
-# Check versions
-nvidia-smi  # Shows driver CUDA version
-nvcc --version  # Shows toolkit version
-
-# Install matching PyTorch
-pixi add pytorch-cuda=12.1
-```
-
----
-
-## Still Stuck?
-
-If your issue isn't covered here:
-
-1. **Search existing issues**: [GitHub Issues](https://github.com/FlexNetOS/ripple-env/issues)
-2. **Check ROS2 docs**: [ROS2 Troubleshooting](https://docs.ros.org/en/humble/How-To-Guides/Installation-Troubleshooting.html)
-3. **Check Nix docs**: [Nix Manual](https://nixos.org/manual/nix/stable/)
-4. **Open a new issue**: Include:
-   - Operating system and version
-   - Output of `nix --version`
-   - Complete error message
-   - Steps to reproduce
-
----
-
-## Diagnostic Commands
-
-Use these commands to gather information for bug reports:
-
-```bash
-# System info
-uname -a
-cat /etc/os-release
-
-# Nix info
-nix --version
-nix show-config
-
-# Environment
-echo $PATH
-echo $ROS_DISTRO
-
-# Docker
-docker version
-docker compose version
-
-# GPU (if applicable)
-nvidia-smi
-```
+## Emergency Procedures
+
+### System Down
+1. Check system status: `docker-compose ps`
+2. Check logs: `docker-compose logs`
+3. Restart services: `docker-compose restart`
+4. Scale up if needed: `docker-compose up --scale service=3`
+
+### Security Breach
+1. Isolate affected containers: `docker-compose stop <service>`
+2. Review logs: `docker-compose logs <service>`
+3. Change credentials: Update .env file
+4. Restart with new secrets: `docker-compose up -d`
+
+### Data Loss
+1. Check backups: `ls -la backups/`
+2. Restore from latest backup
+3. Verify data integrity
+4. Document incident
+
+## Getting Help
+
+### Documentation
+- [Security Guide](SECURITY_GUIDE.md)
+- [Production Deployment](PRODUCTION_DEPLOYMENT.md)
+- [Architecture Overview](ARCHITECTURE.md)
+
+### Support Channels
+- **Security Issues:** security@yourcompany.com
+- **Technical Support:** support@yourcompany.com
+- **Emergency:** On-call engineer +1-XXX-XXX-XXXX
+
+### Debug Information
+When reporting issues, include:
+- Docker version: `docker --version`
+- Docker Compose version: `docker-compose --version`
+- System info: `uname -a`
+- Service logs: `docker-compose logs <service>`
+- Configuration: `docker-compose config`
+
+## Prevention
+
+### Regular Maintenance
+- Update dependencies weekly
+- Run security scans daily
+- Monitor resource usage
+- Review logs regularly
+
+### Best Practices
+- Use specific image versions
+- Implement proper resource limits
+- Follow security guidelines
+- Test changes in staging first
+
+### Monitoring
+- Set up alerts for failures
+- Monitor resource usage
+- Track security events
+- Log all changes
