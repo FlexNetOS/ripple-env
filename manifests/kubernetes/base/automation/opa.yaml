@@ -51,6 +51,9 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8181"
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: opa
           image: openpolicyagent/opa:0.71.0-rootless
@@ -61,6 +64,12 @@ spec:
             - --log-level=info
             - --log-format=json
             - /policies
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           ports:
             - containerPort: 8181
               name: http

@@ -35,6 +35,10 @@ AVD-KSV-0022
 # RBAC rules that include node proxy access (required in some clusters/tooling)
 AVD-KSV-0047
 
+# Controller RBAC warnings (Argo Rollouts requires patching Services/Ingresses)
+AVD-KSV-0048
+AVD-KSV-0056
+
 # Netdata config includes placeholder token fields (replace with Secret in prod)
 AVD-KSV-01010
 

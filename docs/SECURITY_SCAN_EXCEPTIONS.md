@@ -54,6 +54,14 @@ Some observability components use RBAC permissions that include node proxy acces
 
 **Production recommendation:** tighten RBAC to the minimal set required for your cluster and remove the ignore if you don't need node proxy.
 
+#### Controller RBAC (Argo Rollouts)
+
+- `AVD-KSV-0048`, `AVD-KSV-0056`
+
+Progressive delivery controllers typically require permissions that look broad to generic RBAC scanners (e.g., patching Services/Ingresses for traffic shifting, and managing ReplicaSets). These permissions are part of the expected operational model.
+
+**Production recommendation:** prefer the vendor-maintained manifests/Helm charts for Argo Rollouts, scope permissions as narrowly as your rollout strategy allows, and deploy into a locked-down namespace with additional admission controls.
+
 #### Placeholder tokens in ConfigMaps
 
 - `AVD-KSV-01010`

@@ -57,12 +57,21 @@ spec:
         app.kubernetes.io/component: cache
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: redis
           image: redis:7.4-alpine
           command:
             - redis-server
             - /etc/redis/redis.conf
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           ports:
             - containerPort: 6379
               name: redis
@@ -73,8 +82,10 @@ spec:
               mountPath: /etc/redis
           resources:
             limits:
+              cpu: "500m"
               memory: 2Gi
             requests:
+              cpu: "100m"
               memory: 256Mi
           livenessProbe:
             exec:

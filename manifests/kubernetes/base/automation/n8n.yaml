@@ -76,12 +76,21 @@ spec:
         app.kubernetes.io/component: automation
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: n8n
           image: n8nio/n8n:1.73.1
           ports:
             - containerPort: 5678
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           envFrom:
             - configMapRef:
                 name: n8n-config

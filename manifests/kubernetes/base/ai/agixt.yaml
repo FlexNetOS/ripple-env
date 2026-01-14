@@ -15,6 +15,7 @@ stringData:
   AGIXT_API_KEY: agixt-dev-key
   DATABASE_PASSWORD: changeme
   OPENAI_API_KEY: sk-localai
+  AWS_ACCESS_KEY_ID: minioadmin
   AWS_SECRET_ACCESS_KEY: minioadmin
 ---
 apiVersion: v1
@@ -36,7 +37,6 @@ data:
   DATABASE_HOST: "postgres.flexstack.svc.cluster.local"
   DATABASE_PORT: "5432"
   USING_S3: "true"
-  AWS_ACCESS_KEY_ID: "minioadmin"
   S3_BUCKET: "agixt"
   S3_ENDPOINT_URL: "http://minio.flexstack.svc.cluster.local:9000"
   OPENAI_API_BASE: "http://localai:8080/v1"
@@ -100,12 +100,21 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "7437"
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: agixt
           image: joshxt/agixt:main
           ports:
             - containerPort: 7437
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           envFrom:
             - configMapRef:
                 name: agixt-config
@@ -187,12 +196,21 @@ spec:
         app.kubernetes.io/component: ui
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: agixt-ui
           image: joshxt/agixt-interactive:main
           ports:
             - containerPort: 3437
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           env:
             - name: AGIXT_SERVER
               value: "http://agixt:7437"
@@ -203,8 +221,10 @@ spec:
                   key: AGIXT_API_KEY
           resources:
             limits:
+              cpu: "500m"
               memory: 1Gi
             requests:
+              cpu: "100m"
               memory: 256Mi
 ---
 apiVersion: v1
