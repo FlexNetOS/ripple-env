@@ -1,0 +1,133 @@
+```mermaid
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#2563eb', 'primaryTextColor': '#fff', 'primaryBorderColor': '#1d4ed8', 'lineColor': '#64748b' } } }%%
+
+flowchart TB
+    %% External Actors
+    subgraph external["👤 External Actors"]
+        direction LR
+        user["Human User<br/>(Browser/CLI)"]
+        agent["AI Agent<br/>(AGiXT/AIOS)"]
+        service["Service<br/>(Temporal/n8n)"]
+    end
+
+    %% Identity Layer
+    subgraph identity["🔐 Identity Layer (L5)"]
+        direction TB
+
+        subgraph keycloak_realm["Keycloak - OIDC Provider"]
+            kc["Keycloak<br/>Port: 8080"]
+            kc_db["PostgreSQL<br/>(User Store)"]
+            kc --> kc_db
+        end
+
+        subgraph vault_sys["HashiCorp Vault - Secrets"]
+            vault["Vault<br/>Port: 8200"]
+            vault_store["Secrets Storage<br/>(KV v2)"]
+            vault --> vault_store
+        end
+
+        subgraph step_ca["Step-CA - PKI"]
+            ca["Step-CA<br/>Port: 9000"]
+            root["Root CA<br/>(10 years)"]
+            intermediate["Intermediate CA<br/>(5 years)"]
+            ca --> root
+            ca --> intermediate
+        end
+
+        subgraph vaultwarden["Vaultwarden - Passwords"]
+            vw["Vaultwarden<br/>Port: 8081"]
+            vw_db["SQLite<br/>(Passwords)"]
+            vw --> vw_db
+        end
+    end
+
+    %% Policy Layer
+    subgraph policy["📋 Policy Layer"]
+        direction TB
+        opa["OPA Server<br/>Port: 8181<br/>(Policy Engine)"]
+
+        subgraph policies["Policy Bundles"]
+            authz["authz.rego<br/>(RBAC Rules)"]
+            mesh["service_mesh.rego<br/>(Service-to-Service)"]
+        end
+
+        opa --> policies
+    end
+
+    %% Gateway Layer
+    subgraph gateway["🌐 API Gateway Layer"]
+        direction TB
+        kong["Kong Gateway<br/>Port: 8000/8443"]
+
+        subgraph kong_plugins["Kong Plugins"]
+            oauth2_plugin["OAuth2<br/>(Client Credentials)"]
+            rate_limit["Rate Limiting<br/>(100/min)"]
+            mtls_verify["mTLS Verification"]
+        end
+
+        kong --> kong_plugins
+    end
+
+    %% Service Mesh
+    subgraph services["🔧 Service Mesh"]
+        direction LR
+        temporal["Temporal<br/>(Workflows)"]
+        n8n["n8n<br/>(Automation)"]
+        agixt["AGiXT<br/>(AI Agents)"]
+        localai["LocalAI<br/>(Inference)"]
+    end
+
+    %% Authentication Flows
+    user -->|"1. Login Request"| kc
+    kc -->|"2. OIDC Token<br/>(JWT)"| user
+    user -->|"3. API Call + JWT"| kong
+    kong -->|"4. Token Validation"| kc
+
+    %% Agent Authentication
+    agent -->|"1. Client Credentials"| kc
+    kc -->|"2. Service Token"| agent
+    agent -->|"3. API Call + Token"| kong
+
+    %% mTLS Flow
+    service -->|"1. Request + Client Cert"| kong
+    kong -->|"2. Verify against CA"| ca
+    ca -->|"3. Valid"| kong
+    kong -->|"4. Forward Request"| services
+
+    %% Authorization Flow
+    kong -->|"5. Policy Check"| opa
+    opa -->|"6. Allow/Deny"| kong
+
+    %% Service-to-Service
+    temporal -.->|"mTLS"| n8n
+    n8n -.->|"mTLS"| agixt
+    agixt -.->|"mTLS"| localai
+
+    %% Secrets Access
+    agixt -->|"Fetch API Keys"| vault
+    temporal -->|"Fetch DB Creds"| vault
+    n8n -->|"Fetch Secrets"| vault
+
+    %% Vault-Keycloak Integration
+    vault -->|"OIDC Auth"| kc
+
+    %% Certificate Issuance
+    services -.->|"Request Cert"| ca
+    kong -.->|"Request Cert"| ca
+    vault -.->|"PKI Backend"| ca
+
+    %% Style Definitions
+    classDef identity fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef policy fill:#f59e0b,stroke:#d97706,color:#000
+    classDef gateway fill:#10b981,stroke:#059669,color:#fff
+    classDef service fill:#3b82f6,stroke:#2563eb,color:#fff
+    classDef external fill:#64748b,stroke:#475569,color:#fff
+    classDef storage fill:#ec4899,stroke:#db2777,color:#fff
+
+    class kc,vault,ca,vw identity
+    class kc_db,vault_store,vw_db,root,intermediate storage
+    class opa,authz,mesh policy
+    class kong,oauth2_plugin,rate_limit,mtls_verify gateway
+    class temporal,n8n,agixt,localai service
+    class user,agent,service external
+```

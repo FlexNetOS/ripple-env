@@ -1,30 +1,42 @@
 ```mermaid
 graph TB
-    %% Script Dependency DAG (Draft - Phase 1)
-    %% This is a preliminary DAG based on Phase 1 inventory
-    %% Full dependencies require Phase 4 analysis (read each script)
+    %% Script Dependency DAG (Verified - Phase 4 Analysis Complete)
+    %% Dependencies verified via static code analysis of source/call patterns
+    %% Last Updated: 2026-01-14
 
     subgraph "Bootstrap Layer (L1)"
-        B[bootstrap.sh<br/>bootstrap.ps1]
+        B[bootstrap.sh]
+        B_PS[bootstrap.ps1]
     end
 
-    subgraph "Initialization Layer (L2)"
+    subgraph "Environment Layer (L2)"
+        ENV_VARS[env-vars.sh]
+        STABLE_ENV[stable-env.sh]
+    end
+
+    subgraph "Network Layer (L2)"
         INIT_NET[init-docker-networks.sh]
-        INIT_JS[init-jetstream.sh]
-        INIT_CA[init-step-ca.sh]
-        INIT_DB[init-multi-db.sh]
     end
 
-    subgraph "Setup Layer (L3)"
-        SETUP_AW[setup-argo-workflows.sh]
-        SETUP_HM[setup-home-manager.sh]
+    subgraph "PKI Layer (L2)"
+        INIT_CA[init-step-ca.sh]
+        GEN_CERTS[generate-service-certs.sh]
+        ROTATE_CERTS[rotate-certs.sh]
         SETUP_CR[setup-cert-rotation-cron.sh]
     end
 
+    subgraph "Database Layer (L2)"
+        INIT_JS[init-jetstream.sh]
+        INIT_DB[init-multi-db.sh]
+        POP_DB[populate-config-db.sh]
+        QUERY_DB[query-config-db.sh]
+    end
+
     subgraph "Installation Layer (L3)"
+        INST_ALL[install-all.sh]
         INST_AC[install-argocd.sh]
         INST_AR[install-argo-rollouts.sh]
-        INST_ALL[install-all.sh]
+        SETUP_HM[setup-home-manager.sh]
     end
 
     subgraph "Deployment Layer (L4)"
@@ -32,21 +44,27 @@ graph TB
         DEPLOY_EDGE[deploy-edge.sh]
         DEPLOY_OBS[deploy-observability.sh]
         DEPLOY_AIR[deploy-airgapped.sh]
+        SETUP_AW[setup-argo-workflows.sh]
     end
 
     subgraph "Build Layer (L3)"
         BUILD_FE[build-frontend.sh]
         DOWNLOAD_MODELS[download-models.sh]
+        FETCH_MODELS[fetch-localai-models.sh]
+        PREPARE_OFFLINE[prepare-offline.sh]
     end
 
-    subgraph "Security Layer (L3)"
-        GEN_CERTS[generate-service-certs.sh]
-        ROTATE_CERTS[rotate-certs.sh]
+    subgraph "Security Layer (L4)"
         SCAN_CONT[scan-containers.sh]
         SEC_AUDIT[security-audit.sh]
     end
 
-    subgraph "Verification Layer (L5)"
+    subgraph "Sandboxing Layer (L3)"
+        SANDBOX_AGENT[sandbox-agent.sh]
+        SANDBOX_WRAP[sandbox-wrapper.sh]
+    end
+
+    subgraph "Validation Layer (L5)"
         VAL_E2E[validate-e2e.sh]
         VAL_CONF[validate-configs.sh]
         VAL_MAN[validate-manifest.py]
@@ -54,7 +72,7 @@ graph TB
         VAL_CHAN[validate-channels.py]
     end
 
-    subgraph "Component Verification Layer (L5)"
+    subgraph "Verification Layer (L5)"
         VER_AW[verify-argo-workflows.sh]
         VER_EDGE[verify-edge.sh]
         VER_JS[verify-jetstream.sh]
@@ -65,126 +83,228 @@ graph TB
         VER_QD[verify-qudag.sh]
         VER_RV[verify-ruvector.sh]
         VER_SS[verify-state-storage.sh]
-    end
-
-    subgraph "Database Layer (L3)"
-        POP_DB[populate-config-db.sh]
-        QUERY_DB[query-config-db.sh]
+        VER_P1[VERIFICATION-P1-012-P1-013.sh]
     end
 
     subgraph "Utilities Layer (L3)"
         HEALTH[health-check.sh]
-        ENV_VARS[env-vars.sh]
-        STABLE_ENV[stable-env.sh]
         FLEXSTACK[flexstack.sh]
         RUVECTOR[ruvector.sh]
+        FIX_WSL[fix-wsl-stability.sh]
+        WSL_CLEAN[wsl-cleanup.sh]
+        SESSION_SAVE[session-save.sh]
+        SESSION_REST[session-restore.sh]
+        ISO_CPU[isolate-cpu.sh]
+        BENCH[benchmark-eval.sh]
+        CHK_PY[check-python-deps.sh]
+        UPG_PY[upgrade-python-deps.sh]
     end
 
-    %% Bootstrap dependencies
+    %% ========================================
+    %% VERIFIED DEPENDENCIES (from code analysis)
+    %% ========================================
+
+    %% Environment chain (source dependencies)
+    ENV_VARS --> STABLE_ENV
+    STABLE_ENV --> FIX_WSL
+    STABLE_ENV --> SESSION_REST
+
+    %% Bootstrap is entry point
+    B --> INST_ALL
+
+    %% install-all.sh calls install-argocd.sh
+    INST_ALL --> INST_AC
+
+    %% PKI chain
+    INIT_CA --> GEN_CERTS
+    GEN_CERTS --> VER_MTLS
+    ROTATE_CERTS --> SETUP_CR
+
+    %% Sandbox chain
+    SANDBOX_AGENT --> SANDBOX_WRAP
+
+    %% Database dependencies
+    POP_DB --> QUERY_DB
+
+    %% Verification recommendations (from script output)
+    INIT_CA --> VER_MTLS
+    INIT_JS --> VER_JS
+    DEPLOY_OBS --> VER_OBS
+    DEPLOY_EDGE --> VER_EDGE
+    SETUP_AW --> VER_AW
+
+    %% flexstack calls validate-resources
+    FLEXSTACK --> VAL_RES
+
+    %% upgrade-python-deps recommends check-python-deps
+    UPG_PY --> CHK_PY
+
+    %% ========================================
+    %% LOGICAL DEPENDENCIES (runtime order)
+    %% ========================================
+
+    %% Network must exist before deployments
+    INIT_NET --> DEPLOY
+    INIT_NET --> DEPLOY_OBS
+    INIT_NET --> DEPLOY_EDGE
+
+    %% Certificate chain for mTLS
+    INIT_CA --> GEN_CERTS
+    GEN_CERTS --> DEPLOY
+
+    %% JetStream before Argo Workflows
+    INIT_JS --> SETUP_AW
+
+    %% Database init before population
+    INIT_DB --> POP_DB
+
+    %% Models before deployment (if using inference)
+    DOWNLOAD_MODELS --> DEPLOY
+    FETCH_MODELS --> DEPLOY
+
+    %% Prepare offline before airgapped deployment
+    PREPARE_OFFLINE --> DEPLOY_AIR
+
+    %% ========================================
+    %% PARALLEL EXECUTION GROUPS
+    %% ========================================
+
+    %% These can run in parallel after bootstrap:
+    %% Group 1: Network and PKI initialization
     B --> INIT_NET
     B --> INIT_CA
 
-    %% Initialization dependencies
+    %% These can run in parallel after network:
+    %% Group 2: Database and service initialization
     INIT_NET --> INIT_DB
     INIT_NET --> INIT_JS
-    INIT_CA --> GEN_CERTS
 
-    %% Setup dependencies
-    INIT_JS --> SETUP_AW
-    INIT_DB --> POP_DB
-
-    %% Installation dependencies
-    B --> INST_AC
-    B --> INST_AR
-    INST_AC --> INST_ALL
-    INST_AR --> INST_ALL
-
-    %% Deployment dependencies
-    INST_ALL --> DEPLOY
-    GEN_CERTS --> DEPLOY
-    BUILD_FE --> DEPLOY
-    DOWNLOAD_MODELS --> DEPLOY
-
-    DEPLOY --> DEPLOY_EDGE
-    DEPLOY --> DEPLOY_OBS
-
-    %% Security dependencies
-    GEN_CERTS --> ROTATE_CERTS
-    DEPLOY --> SCAN_CONT
-    DEPLOY --> SEC_AUDIT
-
-    %% Verification dependencies
-    DEPLOY --> VAL_E2E
+    %% These verification scripts can run in parallel:
+    %% Group 3: All verification scripts
     DEPLOY --> VER_AW
     DEPLOY --> VER_EDGE
     DEPLOY --> VER_JS
     DEPLOY --> VER_MDB
     DEPLOY --> VER_OBS
+    DEPLOY --> VER_OL
+    DEPLOY --> VER_QD
+    DEPLOY --> VER_RV
     DEPLOY --> VER_SS
 
-    DEPLOY_EDGE --> VER_EDGE
-    DEPLOY_OBS --> VER_OBS
+    %% Validation scripts can run anytime:
+    %% Group 4: Validation (no deployment required)
+    VAL_E2E
+    VAL_CONF
+    VAL_MAN
+    VAL_RES
+    VAL_CHAN
 
-    INIT_CA --> VER_MTLS
-    GEN_CERTS --> VER_MTLS
+    %% Health check is utility (can run anytime)
+    HEALTH
 
-    %% Unknown edges (marked for Phase 4 investigation)
-    VAL_CONF -.UNKNOWN.-> DEPLOY
-    VAL_MAN -.UNKNOWN.-> DEPLOY
-    VAL_RES -.UNKNOWN.-> DEPLOY
-    VAL_CHAN -.UNKNOWN.-> B
+    %% Security scans after deployment
+    DEPLOY --> SCAN_CONT
+    DEPLOY --> SEC_AUDIT
 
-    VER_OL -.UNKNOWN.-> DEPLOY
-    VER_QD -.UNKNOWN.-> DEPLOY
-    VER_RV -.UNKNOWN.-> DEPLOY
-
-    SETUP_HM -.UNKNOWN.-> B
-    SETUP_CR -.UNKNOWN.-> ROTATE_CERTS
-
-    HEALTH -.UNKNOWN.-> DEPLOY
-    FLEXSTACK -.UNKNOWN.-> DEPLOY
-    RUVECTOR -.UNKNOWN.-> DEPLOY
-
-    POP_DB -.UNKNOWN.-> DEPLOY
-    QUERY_DB -.UNKNOWN.-> DEPLOY
-
-    %% Styling
+    %% ========================================
+    %% STYLING
+    %% ========================================
     classDef bootstrap fill:#4051b5,color:#fff,stroke:#1a237e
-    classDef init fill:#00897b,color:#fff,stroke:#004d40
-    classDef setup fill:#43a047,color:#fff,stroke:#1b5e20
+    classDef env fill:#7b1fa2,color:#fff,stroke:#4a148c
+    classDef network fill:#00897b,color:#fff,stroke:#004d40
+    classDef pki fill:#c62828,color:#fff,stroke:#b71c1c
+    classDef db fill:#558b2f,color:#fff,stroke:#33691e
     classDef install fill:#6a1b9a,color:#fff,stroke:#4a148c
     classDef deploy fill:#d84315,color:#fff,stroke:#bf360c
     classDef build fill:#f57c00,color:#fff,stroke:#e65100
     classDef security fill:#c62828,color:#fff,stroke:#b71c1c
-    classDef verify fill:#0277bd,color:#fff,stroke:#01579b
-    classDef db fill:#558b2f,color:#fff,stroke:#33691e
+    classDef sandbox fill:#ff6f00,color:#fff,stroke:#e65100
+    classDef validate fill:#0277bd,color:#fff,stroke:#01579b
+    classDef verify fill:#0288d1,color:#fff,stroke:#01579b
     classDef util fill:#757575,color:#fff,stroke:#424242
-    classDef unknown stroke-dasharray: 5 5
 
-    class B bootstrap
-    class INIT_NET,INIT_JS,INIT_CA,INIT_DB init
-    class SETUP_AW,SETUP_HM,SETUP_CR setup
-    class INST_AC,INST_AR,INST_ALL install
-    class DEPLOY,DEPLOY_EDGE,DEPLOY_OBS,DEPLOY_AIR deploy
-    class BUILD_FE,DOWNLOAD_MODELS build
-    class GEN_CERTS,ROTATE_CERTS,SCAN_CONT,SEC_AUDIT security
-    class VAL_E2E,VAL_CONF,VAL_MAN,VAL_RES,VAL_CHAN,VER_AW,VER_EDGE,VER_JS,VER_MDB,VER_MTLS,VER_OBS,VER_OL,VER_QD,VER_RV,VER_SS verify
-    class POP_DB,QUERY_DB db
-    class HEALTH,ENV_VARS,STABLE_ENV,FLEXSTACK,RUVECTOR util
+    class B,B_PS bootstrap
+    class ENV_VARS,STABLE_ENV env
+    class INIT_NET network
+    class INIT_CA,GEN_CERTS,ROTATE_CERTS,SETUP_CR pki
+    class INIT_JS,INIT_DB,POP_DB,QUERY_DB db
+    class INST_ALL,INST_AC,INST_AR,SETUP_HM install
+    class DEPLOY,DEPLOY_EDGE,DEPLOY_OBS,DEPLOY_AIR,SETUP_AW deploy
+    class BUILD_FE,DOWNLOAD_MODELS,FETCH_MODELS,PREPARE_OFFLINE build
+    class SCAN_CONT,SEC_AUDIT security
+    class SANDBOX_AGENT,SANDBOX_WRAP sandbox
+    class VAL_E2E,VAL_CONF,VAL_MAN,VAL_RES,VAL_CHAN validate
+    class VER_AW,VER_EDGE,VER_JS,VER_MDB,VER_MTLS,VER_OBS,VER_OL,VER_QD,VER_RV,VER_SS,VER_P1 verify
+    class HEALTH,FLEXSTACK,RUVECTOR,FIX_WSL,WSL_CLEAN,SESSION_SAVE,SESSION_REST,ISO_CPU,BENCH,CHK_PY,UPG_PY util
 ```
 
-**Status:** DRAFT (Phase 1)
+---
 
-**Known Gaps:**
-- Exact dependencies require Phase 4 script analysis
-- Dashed lines (-.UNKNOWN.->) indicate suspected but unverified dependencies
-- Some scripts not yet positioned (maintenance, analysis, sandboxing categories)
-- Parallel execution possibilities not yet analyzed
-- Script argument dependencies not yet mapped
+## Dependency Analysis Summary
 
-**Next Steps:**
-- Phase 4: Read each script to extract actual dependencies
-- Verify assumed edges
-- Add missing scripts
-- Document parallel execution opportunities
-- Generate executable dependency order
+**Status:** VERIFIED (Phase 4 Complete)
+**Last Updated:** 2026-01-14
+
+### Verified Dependencies (from source code analysis)
+
+| Script | Calls/Sources | Verified |
+|--------|---------------|----------|
+| stable-env.sh | env-vars.sh | Yes |
+| fix-wsl-stability.sh | stable-env.sh | Yes |
+| session-restore.sh | stable-env.sh | Yes |
+| install-all.sh | install-argocd.sh | Yes |
+| sandbox-agent.sh | sandbox-wrapper.sh | Yes |
+| flexstack.sh | validate-resources.sh | Yes |
+| upgrade-python-deps.sh | check-python-deps.sh | Yes (recommendation) |
+
+### Logical Runtime Dependencies
+
+| Prerequisite | Required By | Reason |
+|--------------|-------------|--------|
+| init-docker-networks.sh | All deploy-*.sh | Creates Docker networks |
+| init-step-ca.sh | generate-service-certs.sh | Creates root CA |
+| generate-service-certs.sh | deploy.sh (mTLS mode) | Creates service certificates |
+| init-jetstream.sh | setup-argo-workflows.sh | Creates NATS streams |
+| init-multi-db.sh | populate-config-db.sh | Creates database |
+| download-models.sh | deploy.sh (inference) | Downloads AI models |
+| prepare-offline.sh | deploy-airgapped.sh | Caches offline resources |
+
+### Parallel Execution Groups
+
+**Group 1 (After bootstrap):**
+- init-docker-networks.sh
+- init-step-ca.sh
+
+**Group 2 (After network):**
+- init-multi-db.sh
+- init-jetstream.sh
+
+**Group 3 (Verification - can run in parallel):**
+- All verify-*.sh scripts
+
+**Group 4 (Validation - no dependencies):**
+- validate-e2e.sh
+- validate-configs.sh
+- validate-manifest.py
+- validate-resources.sh
+- validate-channels.py
+
+### Standalone Utilities (no dependencies)
+- health-check.sh
+- wsl-cleanup.sh
+- isolate-cpu.sh
+- benchmark-eval.sh
+- check-python-deps.sh
+
+### Recommended Execution Order
+
+```
+1. bootstrap.sh
+2. [parallel] init-docker-networks.sh, init-step-ca.sh
+3. [parallel] init-multi-db.sh, init-jetstream.sh
+4. generate-service-certs.sh
+5. [optional] download-models.sh
+6. install-all.sh (or individual deploy-*.sh)
+7. [parallel] All verify-*.sh scripts
+8. [parallel] scan-containers.sh, security-audit.sh
+```

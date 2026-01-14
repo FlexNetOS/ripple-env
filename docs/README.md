@@ -62,6 +62,12 @@ New to the project? Start here:
 | [OBSERVABILITY-QUICK-START.md](OBSERVABILITY-QUICK-START.md) | Prometheus, Grafana, and monitoring setup |
 | [EDGE_DEPLOYMENT.md](EDGE_DEPLOYMENT.md) | Edge device deployment guide |
 | [EDGE_QUICKSTART.md](EDGE_QUICKSTART.md) | Quick start for edge deployments |
+| [API_REFERENCE.md](API_REFERENCE.md) | Service API documentation |
+| [OPA_POLICIES.md](OPA_POLICIES.md) | OPA authorization policy documentation |
+| [HELM_CHART.md](HELM_CHART.md) | Helm chart configuration and dependencies |
+| [ARTIFACTS.md](ARTIFACTS.md) | Build artifacts and publication workflows |
+| [PROVIDER_INTEGRATIONS.md](PROVIDER_INTEGRATIONS.md) | Holochain, MindsDB, TensorZero, vCache integration |
+| [MIGRATION_GUIDES.md](MIGRATION_GUIDES.md) | Version upgrade and migration procedures |
 
 ### Security & Identity
 
@@ -142,6 +148,7 @@ New to the project? Start here:
 | Document | Description |
 |----------|-------------|
 | [ROS2_STATE_PACKAGES.md](ROS2_STATE_PACKAGES.md) | ROS2 state management packages |
+| [ROS2_DEPENDENCIES.md](ROS2_DEPENDENCIES.md) | ROS2 package dependencies via RoboStack |
 
 ### CI/CD & DevOps
 
