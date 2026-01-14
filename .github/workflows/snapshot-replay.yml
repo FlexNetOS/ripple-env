@@ -1,0 +1,117 @@
+name: Snapshot Replay (Immutable Evidence)
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/audits/immutable/index.yml'
+      - 'docs/audits/immutable/**'
+      - 'archives/**'
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/audits/immutable/index.yml'
+      - 'docs/audits/immutable/**'
+      - 'archives/**'
+  workflow_dispatch:
+
+jobs:
+  select:
+    name: Select snapshots to replay
+    runs-on: ubuntu-latest
+    outputs:
+      snapshots: ${{ steps.select.outputs.snapshots }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install -r scripts/requirements.txt
+
+      - id: select
+        name: Compute changed snapshot ids
+        run: |
+          python scripts/select-immutable-replay.py
+
+  replay-github-hosted:
+    name: Replay (GitHub-hosted)
+    runs-on: ubuntu-latest
+    needs: [select]
+    if: ${{ needs.select.outputs.snapshots != '[]' }}
+    # Backup lane initially; flip to false when we want this to gate merges.
+    continue-on-error: true
+    steps:
+      - name: Checkout (with LFS)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Ensure git-lfs is available
+        run: |
+          git --version
+          if ! git lfs version >/dev/null 2>&1; then
+            echo "git-lfs not found; installing…"
+            sudo apt-get update
+            sudo apt-get install -y git-lfs
+          fi
+          git lfs version
+          git lfs install --local
+          git lfs pull
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install -r scripts/requirements.txt
+
+      - name: Validate immutable index
+        run: python scripts/validate-immutable-index.py --strict-paths
+
+      - name: Replay snapshots (preflight)
+        run: |
+          python scripts/replay-immutable.py --ids '${{ needs.select.outputs.snapshots }}'
+
+  replay-self-hosted:
+    name: Replay (self-hosted docker lane)
+    runs-on: [self-hosted, linux, docker]
+    needs: [select]
+    if: ${{ vars.ENABLE_SELF_HOSTED_REPLAY == 'true' && needs.select.outputs.snapshots != '[]' }}
+    steps:
+      - name: Checkout (with LFS)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Preflight (disk + docker + lfs)
+        run: |
+          df -h
+          docker --version
+          docker compose version
+          git lfs version
+          git lfs pull
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install -r scripts/requirements.txt
+
+      - name: Validate immutable index
+        run: python scripts/validate-immutable-index.py --strict-paths
+
+      - name: Replay snapshots (preflight)
+        run: |
+          python scripts/replay-immutable.py --ids '${{ needs.select.outputs.snapshots }}'

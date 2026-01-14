@@ -191,6 +191,6 @@ step certificate inspect data/certs/keycloak/keycloak.crt | grep "Not After"
 ## Full Documentation
 
 For complete documentation, see:
-- [docs/MTLS_SETUP.md](../../docs/MTLS_SETUP.md) - Complete mTLS guide
+- [docs/MTLS_SETUP.md](../../docs/getting-started/MTLS_SETUP.md) - Complete mTLS guide
 - [config/step-ca/README.md](./README.md) - Configuration details
 - [P1-005-IMPLEMENTATION-SUMMARY.md](../../P1-005-IMPLEMENTATION-SUMMARY.md) - Implementation details

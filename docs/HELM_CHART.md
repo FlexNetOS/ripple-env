@@ -413,5 +413,5 @@ kubectl get storageclass
 
 - [Helm Documentation](https://helm.sh/docs/)
 - [values.yaml](../charts/flexstack/values.yaml) - Full configuration reference
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
-- [PORTS.md](PORTS.md) - Port mappings
+- [ARCHITECTURE.md](architecture/ARCHITECTURE.md) - System architecture
+- [PORTS.md](api/PORTS.md) - Port mappings

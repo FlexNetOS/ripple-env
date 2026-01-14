@@ -1,0 +1,74 @@
+# Hash ledger policy for ripple-env
+#
+# This file is intentionally small and human-editable.
+# All globs are matched against repo-relative, POSIX-style paths.
+#
+# Ledgers:
+# - full: exhaustive list of tracked files (except the ledgers themselves)
+# - configs: key "configuration surface" files only (excludes docs/** to reduce churn)
+
+version: 1
+algorithm: sha256
+
+lfs:
+  # Any Git blob stored in normal Git history at/above this size MUST be stored via
+  # Git LFS (i.e., the Git blob should be an LFS pointer instead of the full content).
+  # 25 MiB = 25 * 1024 * 1024
+  max_git_blob_bytes: 26214400
+
+# Global excludes (apply to all ledgers).
+exclude:
+  - ".git/**"
+  - ".aria/**"
+  - ".tmp/**"
+  - ".tmp2/**"
+  - "tmp/**"
+  - "dist/**"
+  - "node_modules/**"
+  - ".npm-cache/**"
+  - ".pixi/**"
+  - "**/__pycache__/**"
+  - "**/*.pyc"
+  - ".DS_Store"
+  - "Thumbs.db"
+  - ".vscode/**"
+  - ".idea/**"
+
+ledgers:
+  full:
+    description: "Exhaustive sha256 of tracked files (repo integrity)."
+    # When include is omitted or set to ['**'], the generator treats this as
+    # "all tracked files".
+    include:
+      - "**"
+    exclude:
+      - "HASHES.full.txt"
+      - "HASHES.configs.txt"
+
+  configs:
+    description: "Stable sha256 of key configuration surface (excludes docs/**)."
+    include:
+      - "flake.nix"
+      - "flake.lock"
+      - "pixi.toml"
+      - "pixi.lock"
+      - "package.json"
+      - "package-lock.json"
+      - "Makefile"
+      - ".gitattributes"
+      - ".gitignore"
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+      - "docker-compose*.yml"
+      - "docker-compose*.yaml"
+      - "docker/**/*.yml"
+      - "docker/**/*.yaml"
+      - "config/**"
+      - "scripts/**"
+      - "manifests/**"
+      - "charts/**"
+      - "k8s/**"
+    exclude:
+      - "docs/**"
+      - "HASHES.full.txt"
+      - "HASHES.configs.txt"

@@ -354,7 +354,7 @@ ros2 --help
 
 **Related Documentation:**
 - [Golden Path: Bootstrap](../modules/bootstrap.md)
-- [WSL Stability Guide](../../WSL_STABILITY_GUIDE.md)
+- [WSL Stability Guide](../wsl/WSL_STABILITY_GUIDE.md)
 - [Troubleshooting](../TROUBLESHOOTING.md)
 
 ---

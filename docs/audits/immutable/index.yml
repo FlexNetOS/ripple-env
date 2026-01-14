@@ -1,0 +1,13 @@
+# Immutable evidence index (authoritative)
+#
+# This file is intentionally human-editable and diff-friendly.
+# It is meant to power:
+# - MkDocs pages listing snapshots and locations
+# - CI snapshot-replay selection logic (changed-only)
+# - Rollup consolidation bookkeeping
+
+version: 1
+
+# Each entry should describe either an expanded snapshot or a rollup member.
+# Schema is intentionally minimal for now; expand as we wire replay tooling.
+entries: []

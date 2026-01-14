@@ -258,7 +258,7 @@ verify-inputs
 
 ## Related Documentation
 
-- [Getting Started](GETTING_STARTED.md) - Initial setup
+- [Getting Started](getting-started/GETTING_STARTED.md) - Initial setup
 - [Troubleshooting](TROUBLESHOOTING.md) - Common issues
 - [NIX_FLAKE_MODULARIZATION.md](NIX_FLAKE_MODULARIZATION.md) - Flake structure
 

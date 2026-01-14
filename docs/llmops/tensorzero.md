@@ -263,4 +263,4 @@ curl http://localhost:8123 -d "SHOW TABLES FROM tensorzero"
 
 - [TensorZero Official Docs](https://tensorzero.com/docs)
 - [ClickHouse Documentation](https://clickhouse.com/docs)
-- [Inference Setup](../INFERENCE_SETUP.md)
+- [Inference Setup](../getting-started/INFERENCE_SETUP.md)

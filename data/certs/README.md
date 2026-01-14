@@ -168,7 +168,7 @@ gpg --decrypt certs-backup-YYYYMMDD.tar.gz.gpg | tar xz
 
 ## References
 
-- [ARIA mTLS Setup Guide](../../docs/MTLS_SETUP.md)
+- [ARIA mTLS Setup Guide](../../docs/getting-started/MTLS_SETUP.md)
 - [Step-CA Certificate Management](https://smallstep.com/docs/step-ca)
 - [Certificate Rotation Script](../../scripts/rotate-certs.sh)
 - [Certificate Generation Script](../../scripts/generate-service-certs.sh)

@@ -306,7 +306,7 @@ chmod +x bootstrap.sh
 **Related Documentation:**
 - [Golden Path: Bootstrap](../modules/bootstrap.md)
 - [Troubleshooting](../TROUBLESHOOTING.md)
-- [Getting Started](../GETTING_STARTED.md)
+- [Getting Started](../getting-started/GETTING_STARTED.md)
 
 ---
 

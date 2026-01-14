@@ -136,11 +136,11 @@ nix develop  # (or: nom develop for nicer output)
 - ✅ Clear Configs and Schema - Documented options with types and defaults
 
 ### Documentation
-- ✅ [Getting Started](docs/GETTING_STARTED.md) - Quick setup guide
-- ✅ [Onboarding Tutorial](docs/ONBOARDING_TUTORIAL.md) - Interactive step-by-step tutorial
-- ✅ [Progressive Examples](docs/PROGRESSIVE_EXAMPLES.md) - Beginner to advanced examples
+- ✅ [Getting Started](docs/getting-started/GETTING_STARTED.md) - Quick setup guide
+- ✅ [Onboarding Tutorial](docs/getting-started/ONBOARDING_TUTORIAL.md) - Interactive step-by-step tutorial
+- ✅ [Progressive Examples](docs/getting-started/PROGRESSIVE_EXAMPLES.md) - Beginner to advanced examples
 - ✅ [Common Pitfalls](docs/COMMON_PITFALLS.md) - Avoid common mistakes
-- ✅ [Video Walkthroughs](docs/VIDEO_WALKTHROUGHS.md) - Visual learning resources
+- ✅ [Video Walkthroughs](docs/getting-started/VIDEO_WALKTHROUGHS.md) - Visual learning resources
 - ✅ [Troubleshooting](docs/TROUBLESHOOTING.md) - Solutions to common issues
 
 ### Agent Documentation

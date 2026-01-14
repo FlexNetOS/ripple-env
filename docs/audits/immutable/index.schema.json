@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flexnetos.github.io/ripple-env/schemas/immutable-index.schema.json",
+  "title": "Immutable evidence index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "entries"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "posixPath": {
+      "type": "string",
+      "pattern": "^[^\\\\]*$"
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "date", "ref", "storage"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "ref": { "type": "string", "minLength": 1 },
+        "storage": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["type", "path"],
+          "properties": {
+            "type": { "type": "string", "enum": ["expanded", "rollup"] },
+            "path": { "$ref": "#/$defs/posixPath" },
+            "archive_path": { "$ref": "#/$defs/posixPath" },
+            "member_prefix": { "$ref": "#/$defs/posixPath" }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": { "type": { "const": "rollup" } },
+                "required": ["type"]
+              },
+              "then": {
+                "required": ["archive_path", "member_prefix"]
+              }
+            }
+          ]
+        },
+        "integrity": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "hashes_full_sha256": { "$ref": "#/$defs/sha256" },
+            "hashes_configs_sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "commit": { "type": "string" },
+            "tag": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

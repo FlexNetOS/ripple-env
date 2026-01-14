@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1768322056730,
+      "tag": "0000_concerned_hercules",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1768322194446,
+      "tag": "0001_outgoing_bullseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1768330050169,
+      "tag": "0002_acoustic_logan",
+      "breakpoints": true
+    }
+  ]
+}

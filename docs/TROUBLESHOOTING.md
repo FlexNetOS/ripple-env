@@ -208,9 +208,9 @@ docker-compose exec postgres pg_dump --help
 ## Getting Help
 
 ### Documentation
-- [Security Guide](SECURITY_GUIDE.md)
-- [Production Deployment](PRODUCTION_DEPLOYMENT.md)
-- [Architecture Overview](ARCHITECTURE.md)
+- [Security Guide](security/SECURITY_GUIDE.md)
+- [Production Deployment](getting-started/deployment/PRODUCTION_DEPLOYMENT.md)
+- [Architecture Overview](architecture/ARCHITECTURE.md)
 
 ### Support Channels
 - **Security Issues:** security@yourcompany.com

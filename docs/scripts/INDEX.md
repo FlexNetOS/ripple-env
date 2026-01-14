@@ -126,10 +126,11 @@ This index catalogs all 60 script entrypoints discovered in Phase 1. Each script
 
 ---
 
-## Maintenance Scripts (5)
+## Maintenance Scripts (6)
 
 | Script | Purpose | Contract Doc | Category |
 |--------|---------|--------------|----------|
+| `backup.sh` | Automated backup with cloud storage | [backup.sh.md](./backup.sh.md) ✅ | maintenance |
 | `upgrade-python-deps.sh` | Upgrade Python dependencies | [upgrade-python-deps.sh.md](./upgrade-python-deps.sh.md) ⏳ | maintenance |
 | `check-python-deps.sh` | Check Python dependency versions | [check-python-deps.sh.md](./check-python-deps.sh.md) ⏳ | maintenance |
 | `Cleanup-WSL.ps1` | Clean up WSL artifacts | [Cleanup-WSL.ps1.md](./Cleanup-WSL.ps1.md) ⏳ | maintenance |
@@ -138,10 +139,11 @@ This index catalogs all 60 script entrypoints discovered in Phase 1. Each script
 
 ---
 
-## Performance Scripts (2)
+## Performance Scripts (3)
 
 | Script | Purpose | Contract Doc | Category |
 |--------|---------|--------------|----------|
+| `benchmark.sh` | Performance benchmarking and baseline metrics | [benchmark.sh.md](./benchmark.sh.md) ✅ | performance |
 | `isolate-cpu.sh` | Isolate CPU for performance | [isolate-cpu.sh.md](./isolate-cpu.sh.md) ⏳ | performance |
 | `benchmark-eval.sh` | Run benchmarks | [benchmark-eval.sh.md](./benchmark-eval.sh.md) ⏳ | performance |
 
