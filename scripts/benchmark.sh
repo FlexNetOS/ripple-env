@@ -403,7 +403,7 @@ output_text() {
     echo "========================================="
     echo ""
     echo "Profile: $PROFILE"
-    echo "Timestamp: $(date --iso-8601=seconds)"
+    echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%S%z)"
     echo ""
 
     echo "Build Performance:"
