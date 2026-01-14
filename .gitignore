@@ -199,13 +199,12 @@ docs/_build/
 /coverage.xml
 /.pytest_cache/
 
-# === LocalAI model binaries (DO NOT COMMIT) ===
-# These are large runtime artifacts that will break GitHub pushes and bloat repo history.
-docker/data/localai/models/**/*.gguf
+# === LocalAI model artifacts ===
+# We keep model binaries out of normal Git history. When they must be shared, they are tracked
+# via Git LFS (see .gitattributes) and/or fetched via scripts into a cache.
+#
+# Never commit partial/incomplete downloads.
 docker/data/localai/models/**/*.gguf.partial
-docker/data/localai/models/**/*.bin
-docker/data/localai/models/**/*.tar.gz
-docker/data/localai/models/stablediffusion_assets/**
 
 # === TypeScript ===
 *.tsbuildinfo
@@ -227,6 +226,9 @@ docker/data/localai/models/stablediffusion_assets/**
 *.swp
 *.swo
 *~
+
+# Copilot/agent workspace artifacts
+tmpclaude-*
 .DS_Store
 Thumbs.db
 
