@@ -28,6 +28,7 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | [QUALITY.md](QUALITY.md) | Documentation quality standards | Phase 8 Complete |
 | [COMPATIBILITY_MATRIX.md](COMPATIBILITY_MATRIX.md) | Version compatibility reference | Phase 8 Complete |
 | [PRODUCTION_SCALE.md](PRODUCTION_SCALE.md) | Production resource requirements | Phase 8 Complete |
+| [ON_CALL.md](ON_CALL.md) | Escalation procedures and contacts template | Template (UN-003 Resolved) |
 | [scripts/INDEX.md](scripts/INDEX.md) | Script catalog and contracts | Complete |
 | [modules/bootstrap.md](modules/bootstrap.md) | Golden path documentation | Complete |
 | [graphs/bootstrap_flow.mmd](graphs/bootstrap_flow.mmd) | Bootstrap flow diagram | Complete |
