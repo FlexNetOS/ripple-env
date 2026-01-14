@@ -1,0 +1,205 @@
+# AIOS - AI Agent Operating System (BUILDKIT L7)
+# P1-003: AIOS provides agent runtime kernel and Cerebrum SDK
+#
+# AIOS features:
+#   - Agent scheduler and lifecycle management
+#   - Memory management (short-term, long-term, semantic)
+#   - Tool execution and sandboxing
+#   - LLM provider abstraction
+#   - Agent communication and coordination
+#
+# Components:
+#   - AIOS Kernel: Core runtime server
+#   - Redis: Caching and message queue
+#   - ChromaDB: Vector storage for semantic memory
+#
+# Integration:
+#   - Works with LocalAI (port 8080) for inference
+#   - Works with AGiXT (port 7437) for orchestration
+#
+# References:
+#   - https://github.com/agiresearch/AIOS
+#   - https://github.com/agiresearch/Cerebrum
+#   - BUILDKIT_STARTER_SPEC.md L7: Agent Runtime
+
+services:
+  # AIOS Kernel Server
+  aios:
+    image: python:3.11-slim
+    container_name: aios
+    restart: unless-stopped
+    working_dir: /aios
+
+    # Start command
+    command: >
+      sh -c "
+        pip install --quiet aios-kernel uvicorn fastapi redis chromadb &&
+        python -m uvicorn aios.kernel:app --host 0.0.0.0 --port 8000
+      "
+
+    # Environment variables
+    environment:
+      # LLM Provider Configuration
+      AIOS_LLM_BACKEND: ${AIOS_LLM_BACKEND:-localai}
+      OPENAI_API_BASE: ${OPENAI_API_BASE:-http://host.docker.internal:8080/v1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-localai}
+
+      # Vector Database
+      AIOS_VECTOR_DB: ${AIOS_VECTOR_DB:-chromadb}
+      CHROMADB_HOST: chromadb
+      CHROMADB_PORT: 8000
+
+      # Redis Cache
+      REDIS_URL: redis://redis:6379/0
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+    # Ports
+    ports:
+      - "8000:8000"  # AIOS Kernel API
+
+    # Volumes
+    volumes:
+      - ./data/aios/workspace:/aios/workspace
+      - ./data/aios/agents:/aios/agents
+
+    # Dependencies
+    depends_on:
+      redis:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+
+    # Network
+    networks:
+      - aios-network
+
+    # Host access for LocalAI
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+    # Labels
+    labels:
+      - "service=aios"
+      - "layer=L7-Agent-Runtime"
+      - "description=AIOS agent operating system kernel"
+
+  # Redis for caching and message queue
+  redis:
+    image: redis:7-alpine
+    container_name: aios-redis
+    restart: unless-stopped
+
+    # Redis configuration
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+
+    # Volumes
+    volumes:
+      - redis-data:/data
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+
+    # Network
+    networks:
+      - aios-network
+
+    # Labels
+    labels:
+      - "service=redis"
+      - "layer=L10-State-Storage"
+      - "description=Redis cache for AIOS"
+
+  # ChromaDB for vector storage
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: aios-chromadb
+    restart: unless-stopped
+
+    # Environment
+    environment:
+      ANONYMIZED_TELEMETRY: "false"
+
+    # Ports (internal only, accessed via network)
+    expose:
+      - "8000"
+
+    # Volumes
+    volumes:
+      - chromadb-data:/chroma/chroma
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 512M
+
+    # Network
+    networks:
+      - aios-network
+
+    # Labels
+    labels:
+      - "service=chromadb"
+      - "layer=L10-State-Storage"
+      - "description=ChromaDB vector database for AIOS"
+
+# Volumes
+volumes:
+  redis-data:
+    driver: local
+  chromadb-data:
+    driver: local
+
+# Networks
+networks:
+  aios-network:
+    driver: bridge

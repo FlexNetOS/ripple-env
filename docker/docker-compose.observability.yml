@@ -214,7 +214,7 @@ services:
     # Required capabilities for cAdvisor monitoring
     cap_add:
       - SYS_PTRACE    # For process monitoring
-      - SYS_ADMIN     # For filesystem operations  
+      - SYS_ADMIN     # For filesystem operations
       - SYS_CHROOT    # For container inspection
       - SYS_MODULE    # For kernel module info
       - DAC_READ_SEARCH  # For reading proc files

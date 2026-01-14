@@ -591,15 +591,17 @@ install_nix() {
     fi
 
     log_info "Running Nix installer..."
+    # Make the installer executable and run it directly
+    chmod +x "$installer_script"
     if [ "$CI_MODE" = true ]; then
         # CI mode: use non-interactive installation
-        if ! sh "$installer_script" -- install --no-confirm; then
+        if ! "$installer_script" install --no-confirm; then
             log_error "Nix installation failed"
             log_error "Check the installer output above for details"
             return 1
         fi
     else
-        if ! sh "$installer_script" -- install; then
+        if ! "$installer_script" install; then
             log_error "Nix installation failed"
             log_error "Check the installer output above for details"
             return 1

@@ -1,0 +1,32 @@
+{
+  "chain_name": "ros2-command-chain",
+  "description": "Parse natural language commands for ROS2 robot control",
+  "steps": [
+    {
+      "step_number": 1,
+      "agent_name": "ros2-agent",
+      "prompt_type": "Chain",
+      "prompt_name": "ros2-command-parser",
+      "prompt_category": "default",
+      "command_name": "",
+      "step_config": {
+        "model": "ggml-gpt4all-j",
+        "temperature": 0.3,
+        "max_tokens": 500
+      }
+    },
+    {
+      "step_number": 2,
+      "agent_name": "ros2-agent",
+      "prompt_type": "Chain",
+      "prompt_name": "ros2-safety-check",
+      "prompt_category": "default",
+      "command_name": "",
+      "step_config": {
+        "model": "ggml-gpt4all-j",
+        "temperature": 0.1,
+        "max_tokens": 200
+      }
+    }
+  ]
+}

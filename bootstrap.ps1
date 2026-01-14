@@ -75,9 +75,10 @@ param(
     [ValidateRange(64, 4096)]
     [int]$DiskSizeGB = 1024,
     [ValidateRange(2, 256)]
-    [int]$MemorySizeGB = 8,
+    [ValidateRange(2, 256)]
+    [int]$MemorySizeGB = 6,
     [ValidateRange(1, 64)]
-    [int]$SwapSizeGB = 8,
+    [int]$SwapSizeGB = 4,
     [ValidatePattern('^https?://')]
     [string]$RepoURL = "https://github.com/FlexNetOS/ripple-env.git",
     [string]$RepoFetchRef = "",
@@ -468,19 +469,30 @@ function Set-WSLConfig {
 
     $wslConfigPath = "$env:USERPROFILE\.wslconfig"
 
+    # Updated with realistic memory settings based on actual WSL stability issues
     $wslConfig = @"
 [wsl2]
 memory=${MemorySizeGB}GB
 swap=${SwapSizeGB}GB
 localhostForwarding=true
+processors=4
 
 [experimental]
 autoMemoryReclaim=gradual
 sparseVhd=true
+
+# Memory pressure settings for stability
+vmIdleTimeout=300000
 "@
 
     Write-ColorOutput "Writing WSL configuration to $wslConfigPath" "Info"
     Set-Content -Path $wslConfigPath -Value $wslConfig -Force
+
+    # Create WSL stability management script
+    Create-WSLStabilityScript
+
+    # Create immediate action guide with Windows shortcuts
+    Create-ImmediateActionGuide
 
     Write-ColorOutput "WSL configuration complete" "Success"
     Save-State "ConfigureWSL"
@@ -615,6 +627,13 @@ echo "Bootstrap complete!"
 
     Write-ColorOutput "ROS2 development environment installed successfully" "Success"
     Save-State "InstallROS2Environment"
+
+    # Create immediate action guide for Windows reference
+    Create-ImmediateActionGuide
+
+    # Create WSL stability management script
+    Create-WSLStabilityScript
+
     return $true
 }
 
@@ -635,34 +654,61 @@ function Show-Summary {
 
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Green
-    Write-Host "  ROS2 Humble Environment Ready!       " -ForegroundColor Green
+    Write-Host "  Ripple-Env Environment Ready!        " -ForegroundColor Green
     Write-Host "========================================" -ForegroundColor Green
     Write-Host ""
     Write-Host "Distribution: $DistroName"
     Write-Host "Location: $InstallPath"
     Write-Host "Disk Size: ${DiskSizeGB}GB"
-    Write-Host "WSL Memory: ${MemorySizeGB}GB"
-    Write-Host "Swap Size: ${SwapSizeGB}GB"
+    Write-Host "WSL Memory: ${MemorySizeGB}GB (Optimized for stability)"
+    Write-Host "Swap Size: ${SwapSizeGB}GB (Reduced for better memory management)"
+    Write-Host ""
+    Write-Host "🚨 IMPORTANT: WSL has known stability issues with heavy operations" -ForegroundColor Yellow
+    Write-Host "📋 Use the provided stability tools to manage timeouts and reloads" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Windows Resources Created:" -ForegroundColor Cyan
+    Write-Host "  • Desktop shortcut: 'Ripple-Env Immediate Guide'"
+    Write-Host "  • Desktop shortcut: 'WSL Stability Fix'"
+    Write-Host "  • Guide location: $env:USERPROFILE\WSL\REALISTIC IMMEDIATE ACTION GUIDE.md"
     Write-Host ""
     Write-Host "To enter the environment:" -ForegroundColor Cyan
     Write-Host "  wsl -d $DistroName"
     Write-Host "  cd ~/ripple-env"
-    Write-Host "  direnv allow  # or: nom develop"
+    Write-Host "  source scripts/stable-env.sh    # ESSENTIAL - load stability tools"
     Write-Host ""
-    Write-Host "Quick commands inside WSL:" -ForegroundColor Cyan
-    Write-Host "  cb   - colcon build --symlink-install"
-    Write-Host "  ct   - colcon test"
-    Write-Host "  ros2 - ROS2 CLI"
+    Write-Host "IMMEDIATE ACTIONS (do these first):" -ForegroundColor Green
+    Write-Host "  1. scripts/session-save.sh      # Save current state"
+    Write-Host "  2. pixi info                    # Check available environments"
+    Write-Host "  3. home-manager --version       # Verify home-manager working"
     Write-Host ""
-    Write-Host "For different shells:" -ForegroundColor Cyan
-    Write-Host "  nom develop -c env 'SHELL=/bin/nu' /bin/nu    # Nushell"
-    Write-Host "  nom develop -c env 'SHELL=/bin/zsh' /bin/zsh  # Zsh"
+    Write-Host "SAFE COMMANDS (with timeout protection):" -ForegroundColor Cyan
+    Write-Host "  • pixi-safe install --skip vectordb-ruvector"
+    Write-Host "  • nix-safe develop"
+    Write-Host "  • docker-safe system prune -f"
+    Write-Host ""
+    Write-Host "AVOID THESE (cause hangs/timeout):" -ForegroundColor Red
+    Write-Host "  ✗ pixi install                    # Times out on dependency resolution"
+    Write-Host "  ✗ nix develop                     # No timeout protection"
+    Write-Host "  ✗ Multiple heavy ops at once      # Memory pressure"
+    Write-Host ""
+    Write-Host "After WSL reload:" -ForegroundColor Cyan
+    Write-Host "  scripts/session-restore.sh      # Restore your session"
+    Write-Host ""
+    Write-Host "If WSL hangs:" -ForegroundColor Yellow
+    Write-Host "  1. Run 'WSL Stability Fix' desktop shortcut (as Admin)"
+    Write-Host "  2. Wait 30 seconds"
+    Write-Host "  3. Run 'wsl' and restore session"
     Write-Host ""
     if (-not [string]::IsNullOrEmpty($script:LogFile) -and (Test-Path $script:LogFile)) {
         Write-Host "Log file: $script:LogFile" -ForegroundColor Gray
     }
     Write-Host "State file: $script:StateFile" -ForegroundColor Gray
     Write-Host "To clean state and start fresh: .\bootstrap.ps1 -Clean" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "🎯 NEXT STEPS:" -ForegroundColor Green
+    Write-Host "  1. Read the 'REALISTIC IMMEDIATE ACTION GUIDE.md' on your desktop"
+    Write-Host "  2. Test the stability tools in a safe session"
+    Write-Host "  3. Fix pixi lockfile when you have time (see guide)"
     Write-Host ""
 }
 

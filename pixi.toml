@@ -11,8 +11,13 @@ description = "Development environment for RoboStack ROS packages"
 # For CUDA environments, features add: pytorch > nvidia > conda-forge
 # This ensures CUDA-linked PyTorch builds are resolved correctly.
 # =============================================================================
-channels = ["robostack-humble", "conda-forge"]
-platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[system-requirements]
+# WSL exposes the NVIDIA driver from Windows. `nvidia-smi` reports CUDA Version 13.1 on this machine.
+# Declaring this lets Pixi satisfy conda virtual packages like `__cuda` needed for GPU builds.
+cuda = "13.1"
 
 [dependencies]
 python = ">=3.11,<3.13"
@@ -43,11 +48,7 @@ curl = ">=8.0"
 nodejs = ">=22.0,<23"    # LTS "Jod" - active until Apr 2027
 pnpm = ">=9.0"
 
-# ROS specific tools
-rosdep = ">=0.26.0,<0.27"
-colcon-common-extensions = ">=0.3.0,<0.4"
-ros-humble-desktop = ">=0.10.0,<0.11"
-catkin_tools = ">=0.8.2,<0.10"
+# ROS specific tools are in the ros feature (see [feature.ros])
 
 # Python modernization tools (upgrade old Python syntax to modern versions)
 ruff = ">=0.8.0"
@@ -93,7 +94,6 @@ temporalio = ">=1.7"        # Temporal Python SDK for durable workflows
 # =============================================================================
 # P2-001: agno-agi/agno - Multi-agent framework, runtime, and control plane
 # Available on PyPI: https://pypi.org/project/agno/
-agno = ">=0.1"              # Latest: 2.3.24, Requires Python >=3.7,<4
 
 # P2-002: ruvnet/agentic-flow - CANNOT BE INSTALLED VIA PIXI
 # This is a Node.js/TypeScript package, not a Python package
@@ -106,6 +106,7 @@ agno = ">=0.1"              # Latest: 2.3.24, Requires Python >=3.7,<4
 # Install via npm: npm install -g claude-flow@alpha
 
 [pypi-dependencies]
+agno = ">=0.1"
 # P2-004: ruvnet/Synaptic-Mesh - CANNOT BE INSTALLED VIA PIP
 # This is a Rust/TypeScript/WASM project, not a Python package
 # Repository: https://github.com/ruvnet/Synaptic-Mesh
@@ -123,7 +124,6 @@ agno = ">=0.1"              # Latest: 2.3.24, Requires Python >=3.7,<4
 # =============================================================================
 
 # Build tools (JavaScript/TypeScript)
-esbuild = ">=0.24,<1"
 
 # Data processing
 datafusion = ">=44.0"
@@ -142,33 +142,40 @@ polars = ">=1.18"
 #
 # To upgrade: ./scripts/upgrade-python-deps.sh pytorch <version>
 # To verify: ./scripts/check-python-deps.sh
-pytorch = ">=2.5,<2.6"
-torchvision = ">=0.20,<0.21"
-torchaudio = ">=2.5,<2.6"
+
+# =============================================================================
+# ROS / RoboStack Feature
+# =============================================================================
+
+[feature.ros]
+platforms = ["linux-64"]
+channels = ["robostack-humble", "conda-forge"]
+
+[feature.ros.dependencies]
+rosdep = ">=0.26.0,<0.27"
+colcon-common-extensions = ">=0.3.0,<0.4"
+ros-humble-desktop = ">=0.10.0,<0.11"
+catkin_tools = ">=0.8.2,<0.10"
 
 [feature.cuda]
 # CUDA-enabled PyTorch (requires NVIDIA GPU)
 # Activate with: pixi run -e cuda <command>
 #
-# Channel Priority (see docs/CHANNEL-STRATEGY.md):
-# - pytorch: Official CUDA-linked PyTorch builds (highest priority)
-# - nvidia: CUDA runtime and cuDNN libraries
-# - conda-forge: Supporting packages (lowest priority)
+# Channel Strategy (see docs/CHANNEL-STRATEGY.md):
+# - conda-forge: CUDA-enabled PyTorch builds new enough for RTX 5090 (sm_120)
 #
 # WARNING: Do not combine with robostack-humble in the same solve-group
 # as they have incompatible Python/CUDA expectations.
 platforms = ["linux-64"]
-channels = ["pytorch", "nvidia", "conda-forge"]
+channels = ["conda-forge"]
 
 [feature.cuda.dependencies]
-# PyTorch with CUDA from pytorch channel
-# IMPORTANT: Keep versions synchronized with base [pypi-dependencies]!
-# Version coupling: PyTorch 2.5.x requires torchvision 0.20.x, torchaudio 2.5.x
-# See docs/CONFLICTS.md for CUDA version compatibility
-pytorch-cuda = { version = "12.4.*", channel = "pytorch" }
-pytorch = { version = ">=2.5,<2.6", channel = "pytorch", build = "*cuda*" }
-torchvision = { version = ">=0.20,<0.21", channel = "pytorch", build = "*cuda*" }
-torchaudio = { version = ">=2.5,<2.6", channel = "pytorch", build = "*cuda*" }
+# CUDA-enabled PyTorch from conda-forge.
+# Rationale: the official `pytorch` conda channel currently tops out at PyTorch 2.5.x / CUDA 12.4
+# and does not include kernels for RTX 5090 (sm_120). conda-forge provides newer CUDA builds.
+
+# Use the explicit GPU metapackage to prevent the solver from selecting CPU-only PyTorch builds.
+pytorch-gpu = ">=2.7,<3"
 
 # =============================================================================
 # AIOS Agent OS Feature
@@ -194,8 +201,9 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
 
 [feature.aios.dependencies]
 # Core AIOS dependencies with strict pins for compatibility
+python = ">=3.11,<3.12"
 pydantic = "==2.7.0"
-numpy = "==1.24.3"
+numpy = ">=1.26.4,<3"
 
 # LLM & Embedding dependencies
 litellm = ">=1.0"
@@ -234,7 +242,7 @@ pyautogen = ">=0.2"         # AutoGen for multi-agent orchestration
 [feature.aios.pypi-dependencies]
 # Cerebrum SDK - AIOS Agent Development Kit (not in conda-forge)
 # P0: Required per BUILDKIT_STARTER_SPEC.md Layer 7
-aios-agent-sdk = ">=0.1"
+aios-agent-sdk = "==0.0.3"
 
 # =============================================================================
 # AIOS + CUDA Feature
@@ -247,8 +255,9 @@ platforms = ["linux-64"]
 
 [feature.aios-cuda.dependencies]
 # Includes all AIOS dependencies plus vLLM
+python = ">=3.11,<3.12"
 pydantic = "==2.7.0"
-numpy = "==1.24.3"
+numpy = ">=1.26.4,<3"
 litellm = ">=1.0"
 transformers = ">=4.30"
 accelerate = ">=0.20"
@@ -279,7 +288,6 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "linux-aarch64"]
 [feature.llmops.dependencies]
 # TruLens - Runtime LLM evaluation
 # See: https://github.com/truera/trulens
-trulens-eval = ">=0.30"
 
 # MLflow - Experiment tracking & model registry
 # See: https://github.com/mlflow/mlflow
@@ -411,7 +419,6 @@ sentence-transformers = ">=2.0"
 httpx = ">=0.24"
 
 # Async support
-asyncio = ">=3.4"
 
 # =============================================================================
 # Vector Database Feature - RuVector Support (P1-001 Primary)
@@ -454,7 +461,6 @@ protobuf = ">=4.0"
 sentence-transformers = ">=2.0"
 
 # Async support
-asyncio = ">=3.4"
 
 # NumPy for vector operations
 numpy = ">=1.24,<3"
@@ -501,7 +507,6 @@ httpx = ">=0.24"
 cryptography = ">=41.0"
 
 # Async support
-asyncio = ">=3.4"
 
 # JSON handling for MCP protocol
 orjson = ">=3.9"
@@ -539,7 +544,6 @@ mkdocs-material = ">=9.5"
 mkdocs-material-extensions = ">=1.3"
 
 # Plugins
-mkdocs-minify-plugin = ">=0.8"
 
 # PyMdown extensions
 pymdown-extensions = ">=10.7"
@@ -548,6 +552,8 @@ pymdown-extensions = ">=10.7"
 pillow = ">=10.0"
 cairosvg = ">=2.7"
 
+[feature.docs.pypi-dependencies]
+mkdocs-minify-plugin = ">=0.8"
 [feature.docs.tasks]
 # Serve documentation locally
 docs-serve = "mkdocs serve"
@@ -555,7 +561,7 @@ docs-serve = "mkdocs serve"
 docs-build = "mkdocs build --strict"
 
 [environments]
-default = { features = [], solve-group = "default" }
+default = { features = ["ros"], solve-group = "default" }
 cuda = { features = ["cuda"], solve-group = "cuda" }
 aios = { features = ["aios"], solve-group = "aios" }
 aios-cuda = { features = ["aios", "aios-cuda", "cuda"], solve-group = "aios-cuda" }
@@ -569,3 +575,6 @@ vectordb-chromadb = { features = ["vectordb-chromadb"], solve-group = "vectordb-
 vectordb-ruvector = { features = ["vectordb-ruvector"], solve-group = "vectordb-ruvector" }
 # QuDAG quantum-resistant distributed communication
 qudag = { features = ["qudag"], solve-group = "qudag" }
+
+[feature.llmops.pypi-dependencies]
+trulens-eval = ">=0.30"
