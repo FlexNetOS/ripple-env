@@ -106,7 +106,7 @@
         {"name": "generate-service-certs.sh", "path": "./scripts/generate-service-certs.sh", "purpose": "Generate service certificates"},
         {"name": "rotate-certs.sh", "path": "./scripts/rotate-certs.sh", "purpose": "Rotate certificates"},
         {"name": "setup-cert-rotation-cron.sh", "path": "./scripts/setup-cert-rotation-cron.sh", "purpose": "Setup certificate rotation cron"}
-      },
+      ],
 
       "database": [
         {"name": "populate-config-db.sh", "path": "./scripts/populate-config-db.sh", "purpose": "Populate configuration database"},
@@ -247,15 +247,15 @@
 
     "os_support": {
       "linux": {"platforms": ["linux-64", "linux-aarch64"], "bootstrap": "bootstrap.sh"},
-      {"macos": {"platforms": ["osx-64", "osx-arm64"], "bootstrap": "bootstrap.sh"},
+      "macos": {"platforms": ["osx-64", "osx-arm64"], "bootstrap": "bootstrap.sh"},
       "windows": {"platforms": ["win-64"], "bootstrap": "bootstrap.ps1", "requires_wsl": true}
     }
   },
 
   "providers": {
     "ai_inference": [
-      {"name": "OpenAI", "config_path": "UNKNOWN", "auth": "API key via env"},
-      {"name": "Anthropic", "config_path": "UNKNOWN", "auth": "API key via env"},
+      {"name": "OpenAI", "config_path": "N/A (external)", "auth": "API key via OPENAI_API_KEY env"},
+      {"name": "Anthropic", "config_path": "N/A (external)", "auth": "API key via ANTHROPIC_API_KEY env"},
       {"name": "LocalAI", "config_path": "./config/localai/", "auth": "local"},
       {"name": "AGiXT", "config_path": "./config/agixt/", "auth": "local"}
     ],
@@ -273,7 +273,7 @@
     "observability": [
       {"name": "Prometheus", "config_path": "./config/prometheus/", "auth": "local"},
       {"name": "Grafana", "config_path": "./config/grafana/", "auth": "credentials"},
-      {"name": "Jaeger", "config_path": "UNKNOWN", "auth": "local"}
+      {"name": "Tempo (Jaeger-compatible)", "config_path": "./config/tempo/tempo.yaml", "auth": "local", "note": "Tempo provides Jaeger-compatible endpoints on ports 14250/14268"}
     ],
 
     "storage": [
@@ -295,9 +295,9 @@
     ],
 
     "nixos_images": [
-      {"name": "wsl-ripple", "path": "UNKNOWN", "format": "WSL tarball", "purpose": "NixOS WSL distribution"},
-      {"name": "iso-ros2", "path": "UNKNOWN", "format": "ISO", "purpose": "Bootable ISO installer"},
-      {"name": "vm-ros2", "path": "UNKNOWN", "format": "QCOW2", "purpose": "VM image"}
+      {"name": "wsl-ripple", "build": "nix build .#nixosConfigurations.wsl-ripple.config.system.build.tarballBuilder", "output": "result/nixos-wsl.tar.gz", "format": "WSL tarball", "purpose": "NixOS WSL distribution"},
+      {"name": "iso-ros2", "build": "nix build .#nixosConfigurations.iso-ros2.config.system.build.isoImage", "output": "result/iso/nixos-ros2-*.iso", "format": "ISO", "purpose": "Bootable ISO installer"},
+      {"name": "vm-ros2", "build": "nix build .#nixosConfigurations.vm-ros2.config.system.build.vm", "output": "result/bin/run-nixos-ros2-vm", "format": "QEMU VM", "purpose": "VM image"}
     ],
 
     "helm_charts": [

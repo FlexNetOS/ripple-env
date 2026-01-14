@@ -1,6 +1,7 @@
 # Script Index
 
-**Status:** Phase 1 Complete (Inventory) | Phase 4 Pending (Contract Docs)
+**Status:** Phase 1 Complete (Inventory) | Phase 4 In Progress (Contract Docs)
+**Last Updated:** 2026-01-14
 
 This index catalogs all 60 script entrypoints discovered in Phase 1. Each script will receive a detailed contract document in Phase 4.
 
@@ -10,8 +11,8 @@ This index catalogs all 60 script entrypoints discovered in Phase 1. Each script
 
 | Script | Platform | Purpose | Contract Doc | Evidence |
 |--------|----------|---------|--------------|----------|
-| `bootstrap.sh` | Linux/macOS | Complete environment setup (Nix, direnv, pixi, shells) | [bootstrap.sh.md](./bootstrap.sh.md) ⏳ | 1160 lines, 13 stages, retry logic, state persistence |
-| `bootstrap.ps1` | Windows (Admin) | WSL2 + NixOS + full stack setup | [bootstrap.ps1.md](./bootstrap.ps1.md) ⏳ | 806 lines, 8 stages, retry logic, state persistence |
+| `bootstrap.sh` | Linux/macOS | Complete environment setup (Nix, direnv, pixi, shells) | [bootstrap.sh.md](./bootstrap.sh.md) ✅ | 1160 lines, 13 stages, retry logic, state persistence |
+| `bootstrap.ps1` | Windows (Admin) | WSL2 + NixOS + full stack setup | [bootstrap.ps1.md](./bootstrap.ps1.md) ✅ | 806 lines, 8 stages, retry logic, state persistence |
 
 ---
 

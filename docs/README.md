@@ -13,6 +13,24 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | [Contributing](../CONTRIBUTING.md) | How to contribute |
 | [Project README](../README.md) | Project overview |
 
+## Master Reference Documents
+
+| Document | Purpose | Status |
+|----------|---------|--------|
+| [CATALOG.json](CATALOG.json) | Machine-readable entrypoint catalog | Complete |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Environment layers and architecture diagrams | Complete |
+| [GLOSSARY.md](GLOSSARY.md) | Terminology reference | Complete |
+| [PROVIDERS.md](PROVIDERS.md) | Provider auth and configuration | Complete |
+| [ENV_VAR_REGISTRY.md](ENV_VAR_REGISTRY.md) | Environment variable reference | Complete |
+| [PORTS.md](PORTS.md) | Port mappings registry | Complete |
+| [RUNBOOKS.md](RUNBOOKS.md) | Operational procedures and cookbooks | Complete |
+| [UNKNOWN_REPORT.md](UNKNOWN_REPORT.md) | Documentation gaps and unknowns | Complete |
+| [scripts/INDEX.md](scripts/INDEX.md) | Script catalog and contracts | Complete |
+| [modules/bootstrap.md](modules/bootstrap.md) | Golden path documentation | Complete |
+| [graphs/bootstrap_flow.mmd](graphs/bootstrap_flow.mmd) | Bootstrap flow diagram | Complete |
+| [graphs/script_dag.mmd](graphs/script_dag.mmd) | Script dependency graph | Draft |
+| [graphs/ci_flow.mmd](graphs/ci_flow.mmd) | CI/CD flow diagram | Complete |
+
 ---
 
 ## Documentation Categories

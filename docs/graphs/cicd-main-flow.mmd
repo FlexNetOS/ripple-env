@@ -1,0 +1,139 @@
+```mermaid
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#2563eb', 'primaryTextColor': '#fff', 'primaryBorderColor': '#1d4ed8', 'lineColor': '#64748b', 'secondaryColor': '#10b981', 'tertiaryColor': '#f59e0b' } } }%%
+
+flowchart TB
+    %% Trigger Events
+    subgraph triggers["🎯 Trigger Events"]
+        push["Push to main/master"]
+        pr["Pull Request"]
+        sched["Weekly Schedule<br/>(Monday 3 AM)"]
+        manual["Manual Dispatch"]
+    end
+
+    %% Main CI Pipeline
+    subgraph ci["🏗️ Main CI Pipeline<br/>(ci.yml)"]
+        direction TB
+        flake["Nix Flake Check<br/>• nix flake check<br/>• nix flake show"]
+        ros2["ROS2 Build & Test<br/>• pixi install<br/>• colcon build<br/>• colcon test"]
+        macos["macOS Build<br/>• nix develop<br/>• pixi install"]
+        sec_ci["Security Scan<br/>• Trivy filesystem<br/>• SARIF upload"]
+        precom["Pre-commit Hooks<br/>• Code style<br/>• Linting"]
+        summary["CI Summary<br/>• Aggregate results<br/>• Generate report"]
+    end
+
+    %% E2E Validation Pipeline
+    subgraph e2e["🔄 E2E Validation<br/>(e2e-validation.yml)"]
+        direction TB
+        val_conf["Phase 1: Config<br/>• YAML/TOML validation<br/>• Docker Compose"]
+        val_nix["Phase 2: Nix<br/>• Flake validation<br/>• Metadata check"]
+        val_pixi["Phase 3: Pixi<br/>• Environment check<br/>• Package verification"]
+        val_dock["Phase 4: Docker<br/>• Observability<br/>• Messaging<br/>• Automation<br/>• Edge<br/>• LocalAI<br/>• AGiXT"]
+        val_int["Phase 5: Integration<br/>• Python tests<br/>• ROS2 environment"]
+        val_rep["Phase 6: Report<br/>• Generate summary<br/>• Upload artifacts"]
+    end
+
+    %% Component Verification
+    subgraph comp["🔍 Component Verification<br/>(component-verification.yml)"]
+        direction TB
+        man_val["Manifest Validation<br/>• ARIA_MANIFEST.yaml<br/>• JSON schema"]
+        nix_comp["Nix Components<br/>• Infrastructure tools<br/>• Dev tools<br/>• Holochain"]
+        pixi_comp["Pixi Components<br/>• Python packages<br/>• ROS2 tools<br/>• ML packages"]
+        conf_cons["Config Consistency<br/>• Required files<br/>• YAML/TOML validation"]
+        comp_sum["Verification Summary<br/>• Status report"]
+    end
+
+    %% Security Pipeline
+    subgraph security["🔒 Security Scanning<br/>(security.yml)"]
+        direction TB
+        codeql["CodeQL Analysis<br/>• Python code<br/>• Security queries"]
+        trivy_fs["Trivy Filesystem<br/>• Vulnerability scan<br/>• CRITICAL/HIGH"]
+        trivy_conf["Trivy Config<br/>• Misconfigurations<br/>• Best practices"]
+        grype["Grype SBOM<br/>• Syft generation<br/>• Vulnerability scan"]
+    end
+
+    %% Release Pipeline
+    subgraph release["📦 Release<br/>(release.yml)"]
+        direction TB
+        check_rel["Check Release<br/>• Conventional commits<br/>• Version bump"]
+        gen_change["Generate Changelog<br/>• Git log parsing<br/>• Markdown format"]
+        create_rel["Create Release<br/>• Git tag<br/>• GitHub release"]
+        pub_art["Publish Artifacts<br/>• Nix flake<br/>• Docker images"]
+    end
+
+    %% Specialized Workflows
+    subgraph special["⚡ Specialized Workflows"]
+        direction LR
+        bench["Benchmarks<br/>(benchmarks.yml)"]
+        boot["Bootstrap Test<br/>(bootstrap-test.yml)"]
+        shell["Shellcheck<br/>(shellcheck.yml)"]
+        wsl["WSL2 Build<br/>(wsl2-build.yml)"]
+        k8s["K8s Validation<br/>(k8s-validation.yml)"]
+        opa["OPA Policy Gate<br/>(opa-policy-gate.yml)"]
+    end
+
+    %% Flow Connections - Triggers
+    push --> ci
+    push --> security
+    push --> release
+    pr --> ci
+    pr --> e2e
+    pr --> comp
+    sched --> security
+    manual --> e2e
+    manual --> comp
+    manual --> release
+
+    %% CI Internal Flow
+    flake --> ros2
+    flake --> macos
+    ros2 --> summary
+    macos --> summary
+    sec_ci --> summary
+    precom --> summary
+
+    %% E2E Internal Flow
+    val_conf --> val_nix
+    val_conf --> val_pixi
+    val_nix --> val_int
+    val_pixi --> val_int
+    val_conf --> val_dock
+    val_dock --> val_rep
+    val_int --> val_rep
+
+    %% Component Verification Flow
+    man_val --> nix_comp
+    man_val --> pixi_comp
+    man_val --> conf_cons
+    nix_comp --> comp_sum
+    pixi_comp --> comp_sum
+    conf_cons --> comp_sum
+
+    %% Security Flow (Parallel)
+    codeql
+    trivy_fs
+    trivy_conf
+    grype
+
+    %% Release Flow
+    check_rel -->|should_release=true| gen_change
+    gen_change --> create_rel
+    create_rel --> pub_art
+
+    %% Cross-Workflow Dependencies
+    ci -.->|Pass required| release
+    security -.->|Security gate| release
+    e2e -.->|Integration check| release
+
+    %% Style Definitions
+    classDef trigger fill:#f59e0b,stroke:#d97706,color:#000
+    classDef validation fill:#10b981,stroke:#059669,color:#fff
+    classDef security fill:#ef4444,stroke:#dc2626,color:#fff
+    classDef release fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef special fill:#06b6d4,stroke:#0891b2,color:#fff
+
+    class push,pr,sched,manual trigger
+    class flake,ros2,macos,val_conf,val_nix,val_pixi,man_val,nix_comp,pixi_comp validation
+    class sec_ci,codeql,trivy_fs,trivy_conf,grype security
+    class check_rel,gen_change,create_rel,pub_art release
+    class bench,boot,shell,wsl,k8s,opa special
+```

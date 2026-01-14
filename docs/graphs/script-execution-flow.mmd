@@ -1,0 +1,175 @@
+```mermaid
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#2563eb', 'primaryTextColor': '#fff', 'primaryBorderColor': '#1d4ed8', 'lineColor': '#64748b' } } }%%
+
+flowchart TD
+    %% Bootstrap Phase
+    subgraph bootstrap["🚀 Bootstrap Phase"]
+        direction TB
+        boot_sh["bootstrap.sh<br/>(Linux/macOS)"]
+        boot_ps["bootstrap.ps1<br/>(Windows)"]
+        fix_wsl["fix-wsl-stability.sh<br/>(WSL2 Memory)"]
+        stable["stable-env.sh<br/>(WSL2 Env)"]
+    end
+
+    %% Validation Phase
+    subgraph validation["✅ Validation Phase"]
+        direction TB
+        val_conf["validate-configs.sh<br/>• Docker Compose<br/>• YAML/TOML<br/>• Nix flake"]
+        val_e2e["validate-e2e.sh<br/>• 6-phase validation<br/>• Health checks"]
+        val_res["validate-resources.sh<br/>• AI requirements<br/>• Memory check"]
+    end
+
+    %% Initialization Phase
+    subgraph init["🔧 Initialization Phase"]
+        direction TB
+        init_net["init-docker-networks.sh<br/>• agentic-network<br/>• external networks"]
+        init_db["init-multi-db.sh<br/>• PostgreSQL<br/>• Redis<br/>• Neo4j"]
+        init_js["init-jetstream.sh<br/>• NATS streams<br/>• Consumers"]
+        init_ca["init-step-ca.sh<br/>• Root CA<br/>• Intermediate CA"]
+    end
+
+    %% Certificate Management
+    subgraph certs["🔐 Certificate Management"]
+        direction TB
+        gen_certs["generate-service-certs.sh<br/>• mTLS certs<br/>• Service identity"]
+        rotate["rotate-certs.sh<br/>• Cert renewal<br/>• Backup old"]
+        cert_cron["setup-cert-rotation-cron.sh<br/>• Automated rotation"]
+    end
+
+    %% Deployment Phase
+    subgraph deploy["📦 Deployment Phase"]
+        direction TB
+        install_all["install-all.sh<br/>• 7-phase install<br/>• All services"]
+        deploy_main["deploy.sh<br/>• Main stack<br/>• Health checks"]
+        deploy_obs["deploy-observability.sh<br/>• Prometheus<br/>• Grafana<br/>• Loki"]
+        deploy_edge["deploy-edge.sh<br/>• Kong<br/>• Nginx<br/>• Edge services"]
+        deploy_air["deploy-airgapped.sh<br/>• Offline deploy<br/>• Local cache"]
+    end
+
+    %% Component Setup
+    subgraph setup["⚙️ Component Setup"]
+        direction TB
+        setup_argo["setup-argo-workflows.sh<br/>• Argo server<br/>• RBAC config"]
+        setup_home["setup-home-manager.sh<br/>• User config<br/>• Dotfiles"]
+        populate_db["populate-config-db.sh<br/>• Parse IaC<br/>• SQLite DB"]
+    end
+
+    %% Verification Phase
+    subgraph verify["🔍 Verification Phase"]
+        direction TB
+        verify_mtls["verify-mtls-setup.sh<br/>• CA chain<br/>• Cert validity"]
+        verify_obs["verify-observability.sh<br/>• Prometheus<br/>• Grafana<br/>• Loki"]
+        verify_edge["verify-edge.sh<br/>• Kong<br/>• Routes"]
+        verify_js["verify-jetstream.sh<br/>• Streams<br/>• Consumers"]
+        verify_argo["verify-argo-workflows.sh<br/>• Server<br/>• Workflows"]
+        verify_state["verify-state-storage.sh<br/>• Postgres<br/>• Redis<br/>• Temporal"]
+        verify_mind["verify-mindsdb.sh<br/>• API<br/>• ML predictions"]
+        verify_open["verify-open-lovable.sh<br/>• UI<br/>• API"]
+        verify_qudag["verify-qudag.sh<br/>• P2P<br/>• Consensus"]
+        verify_ru["verify-ruvector.sh<br/>• Server<br/>• Embeddings"]
+    end
+
+    %% Security & Operations
+    subgraph security["🔒 Security & Operations"]
+        direction TB
+        scan_cont["scan-containers.sh<br/>• Trivy scan<br/>• Vulnerabilities"]
+        sec_audit["security-audit.sh<br/>• Trivy + Gitleaks<br/>• SARIF reports"]
+        health["health-check.sh<br/>• HTTP endpoints<br/>• Retry logic"]
+    end
+
+    %% Utility Scripts
+    subgraph utils["🛠️ Utilities"]
+        direction TB
+        query_db["query-config-db.sh<br/>• SQL queries<br/>• Config data"]
+        download["download-models.sh<br/>• LocalAI models<br/>• GGUF files"]
+        sandbox_ag["sandbox-agent.sh<br/>• AI code exec<br/>• Risk profiles"]
+        flexstack["flexstack.sh<br/>• Profile manager<br/>• Service groups"]
+    end
+
+    %% Flow Connections - Bootstrap to Validation
+    boot_sh --> val_conf
+    boot_ps --> val_conf
+    fix_wsl --> stable
+    stable --> val_conf
+
+    %% Validation to Initialization
+    val_conf --> init_net
+    val_conf --> init_db
+    val_res --> deploy_main
+
+    %% Initialization Flows
+    init_net --> init_db
+    init_db --> init_js
+    init_js --> init_ca
+
+    %% Certificate Flow
+    init_ca --> gen_certs
+    gen_certs --> deploy_main
+    gen_certs --> cert_cron
+    cert_cron --> rotate
+
+    %% Deployment Flows
+    install_all --> deploy_main
+    install_all --> deploy_obs
+    install_all --> deploy_edge
+    deploy_main --> setup_argo
+    deploy_obs --> verify_obs
+    deploy_edge --> verify_edge
+    deploy_air -.->|Offline mode| deploy_main
+
+    %% Setup to Verification
+    setup_argo --> verify_argo
+    setup_home --> populate_db
+    populate_db --> query_db
+
+    %% Verification Flows (Parallel)
+    verify_mtls
+    verify_obs
+    verify_edge
+    verify_js
+    verify_argo
+    verify_state
+    verify_mind
+    verify_open
+    verify_qudag
+    verify_ru
+
+    %% Verification Dependencies
+    deploy_main --> verify_mtls
+    deploy_main --> verify_state
+    init_js --> verify_js
+
+    %% Security Integration
+    deploy_main --> scan_cont
+    sec_audit --> scan_cont
+    health -.->|Used by| verify_obs
+    health -.->|Used by| verify_edge
+    health -.->|Used by| val_e2e
+
+    %% Utilities Integration
+    deploy_main --> download
+    sandbox_ag -.->|AGiXT exec| verify_argo
+    flexstack -.->|Profile mgmt| deploy_main
+
+    %% E2E Validation Gate
+    val_e2e --> verify_mtls
+    val_e2e --> verify_obs
+    val_e2e --> verify_state
+
+    %% Style Definitions
+    classDef bootstrap fill:#f59e0b,stroke:#d97706,color:#000
+    classDef validation fill:#10b981,stroke:#059669,color:#fff
+    classDef init fill:#3b82f6,stroke:#2563eb,color:#fff
+    classDef deploy fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef verify fill:#06b6d4,stroke:#0891b2,color:#fff
+    classDef security fill:#ef4444,stroke:#dc2626,color:#fff
+    classDef utils fill:#64748b,stroke:#475569,color:#fff
+
+    class boot_sh,boot_ps,fix_wsl,stable bootstrap
+    class val_conf,val_e2e,val_res validation
+    class init_net,init_db,init_js,init_ca,gen_certs,rotate,cert_cron init
+    class install_all,deploy_main,deploy_obs,deploy_edge,deploy_air,setup_argo,setup_home,populate_db deploy
+    class verify_mtls,verify_obs,verify_edge,verify_js,verify_argo,verify_state,verify_mind,verify_open,verify_qudag,verify_ru verify
+    class scan_cont,sec_audit,health security
+    class query_db,download,sandbox_ag,flexstack utils
+```
