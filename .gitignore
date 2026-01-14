@@ -114,10 +114,12 @@ Thumbs.db
 
 # === Backup Files ===
 *.backup
-*.bak
 *.orig
 *.rej
 *.tmp
+# pixi.toml.bak* files are intentionally tracked for configuration history
+# Only ignore files with trailing dots (invalid on Windows)
+*.
 
 # === Package Manager Files ===
 .pixi/

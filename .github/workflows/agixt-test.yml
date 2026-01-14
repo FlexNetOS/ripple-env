@@ -4,14 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docker-compose.agixt.yml'
+      - 'docker/agixt.yml'
       - 'config/agixt/**'
       - 'scripts/health-check.sh'
       - '.github/workflows/agixt-test.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'docker-compose.agixt.yml'
+      - 'docker/agixt.yml'
       - 'config/agixt/**'
       - 'scripts/health-check.sh'
       - '.github/workflows/agixt-test.yml'
@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -39,39 +39,61 @@ jobs:
         run: chmod +x scripts/health-check.sh
 
       - name: Start AGiXT dependencies
+        id: deps
         run: |
-          # Start PostgreSQL for AGiXT if needed
-          docker-compose -f docker-compose.agixt.yml up -d postgres minio || true
+          echo "Starting PostgreSQL and Redis..."
+          docker compose -f docker/agixt.yml up -d postgres redis
           sleep 10
+          echo "deps_status=started" >> $GITHUB_OUTPUT
 
       - name: Start AGiXT
+        id: agixt
         run: |
-          docker-compose -f docker-compose.agixt.yml up -d
+          docker compose -f docker/agixt.yml up -d
           echo "AGiXT containers started, waiting for initialization..."
+          echo "agixt_status=started" >> $GITHUB_OUTPUT
 
       - name: Wait for AGiXT API readiness
+        id: health
         run: |
-          # AGiXT needs time to initialize database and start API
-          ./scripts/health-check.sh http://localhost:7437/api/health 10 15 "AGiXT API" || {
+          if ./scripts/health-check.sh http://localhost:7437/api/health 10 15 "AGiXT API"; then
+            echo "health_status=healthy" >> $GITHUB_OUTPUT
+          else
             echo "AGiXT health endpoint not responding, checking alternative endpoints..."
-            ./scripts/health-check.sh http://localhost:7437/api/v1/providers 5 10 "AGiXT Providers API" || true
-          }
+            if ./scripts/health-check.sh http://localhost:7437/api/v1/providers 5 10 "AGiXT Providers API"; then
+              echo "health_status=degraded" >> $GITHUB_OUTPUT
+            else
+              echo "health_status=unhealthy" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       - name: Test AGiXT API endpoints
+        id: endpoints
         run: |
-          echo "Testing AGiXT API endpoints..."
+          results=""
 
           # Test providers endpoint
-          echo "Testing /api/v1/providers..."
-          ./scripts/health-check.sh http://localhost:7437/api/v1/providers 3 5 "AGiXT Providers" || echo "Providers endpoint not available"
+          if ./scripts/health-check.sh http://localhost:7437/api/v1/providers 3 5 "AGiXT Providers" 2>/dev/null; then
+            results="${results}providers:pass,"
+          else
+            results="${results}providers:fail,"
+          fi
 
           # Test extensions endpoint
-          echo "Testing /api/v1/extensions..."
-          ./scripts/health-check.sh http://localhost:7437/api/v1/extensions 3 5 "AGiXT Extensions" || echo "Extensions endpoint not available"
+          if ./scripts/health-check.sh http://localhost:7437/api/v1/extensions 3 5 "AGiXT Extensions" 2>/dev/null; then
+            results="${results}extensions:pass,"
+          else
+            results="${results}extensions:fail,"
+          fi
 
           # Test chains endpoint
-          echo "Testing /api/v1/chains..."
-          ./scripts/health-check.sh http://localhost:7437/api/v1/chains 3 5 "AGiXT Chains" || echo "Chains endpoint not available"
+          if ./scripts/health-check.sh http://localhost:7437/api/v1/chains 3 5 "AGiXT Chains" 2>/dev/null; then
+            results="${results}chains:pass"
+          else
+            results="${results}chains:fail"
+          fi
+
+          echo "endpoint_results=${results}" >> $GITHUB_OUTPUT
 
       - name: List available providers
         run: |
@@ -79,8 +101,8 @@ jobs:
           curl -sf http://localhost:7437/api/v1/providers 2>/dev/null | jq '.' || echo "Could not fetch providers"
 
       - name: Test agent creation (dry run)
+        id: agent
         run: |
-          # Create a test agent (will fail if no provider configured, which is expected)
           response=$(curl -sf -X POST http://localhost:7437/api/v1/agent \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $AGIXT_API_KEY" \
@@ -88,17 +110,57 @@ jobs:
               "agent_name": "test-agent",
               "provider": "gpt4free",
               "settings": {}
-            }' 2>&1) || echo "Agent creation skipped (no provider configured)"
+            }' 2>&1) && echo "agent_status=created" >> $GITHUB_OUTPUT || echo "agent_status=skipped" >> $GITHUB_OUTPUT
 
-          if [ -n "$response" ]; then
-            echo "Agent creation response:"
-            echo "$response" | jq '.' || echo "$response"
+      - name: Generate Job Summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## 🤖 AGiXT Service Test Results
+
+          ### Service Status
+          | Service | Status |
+          |---------|--------|
+          | Dependencies (PostgreSQL, Redis) | ${{ steps.deps.outputs.deps_status == 'started' && '✅ Started' || '❌ Failed' }} |
+          | AGiXT API | ${{ steps.agixt.outputs.agixt_status == 'started' && '✅ Started' || '❌ Failed' }} |
+          | Health Check | ${{ steps.health.outputs.health_status == 'healthy' && '✅ Healthy' || (steps.health.outputs.health_status == 'degraded' && '⚠️ Degraded' || '❌ Unhealthy') }} |
+
+          ### API Endpoint Tests
+          EOF
+
+          # Parse endpoint results
+          results="${{ steps.endpoints.outputs.endpoint_results }}"
+          echo "| Endpoint | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$results" == *"providers:pass"* ]]; then
+            echo "| /api/v1/providers | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| /api/v1/providers | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Test AGiXT UI
-        run: |
-          # Test AGiXT UI if running
-          ./scripts/health-check.sh http://localhost:3437 3 5 "AGiXT UI" || echo "AGiXT UI not available (optional)"
+          if [[ "$results" == *"extensions:pass"* ]]; then
+            echo "| /api/v1/extensions | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| /api/v1/extensions | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "$results" == *"chains:pass"* ]]; then
+            echo "| /api/v1/chains | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| /api/v1/chains | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+
+          ### Agent Creation Test
+          EOF
+
+          if [[ "${{ steps.agent.outputs.agent_status }}" == "created" ]]; then
+            echo "✅ Agent created successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Agent creation skipped (no provider configured - expected in CI)" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Collect AGiXT logs
         if: always()
@@ -106,16 +168,16 @@ jobs:
           echo "=== AGiXT API Logs ==="
           docker logs agixt 2>&1 | tail -100 || true
           echo ""
-          echo "=== AGiXT UI Logs ==="
-          docker logs agixt-ui 2>&1 | tail -50 || true
-          echo ""
           echo "=== PostgreSQL Logs ==="
           docker logs agixt-postgres 2>&1 | tail -50 || true
+          echo ""
+          echo "=== Redis Logs ==="
+          docker logs agixt-redis 2>&1 | tail -50 || true
 
       - name: Cleanup
         if: always()
         run: |
-          docker-compose -f docker-compose.agixt.yml down -v || true
+          docker compose -f docker/agixt.yml down -v || true
           docker network rm agentic-network || true
 
   test-agixt-config:
@@ -123,30 +185,87 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Validate AGiXT docker-compose
+        id: compose
         run: |
-          docker-compose -f docker-compose.agixt.yml config > /dev/null
-          echo "✅ docker-compose.agixt.yml is valid"
+          if docker compose -f docker/agixt.yml config > /dev/null 2>&1; then
+            echo "compose_valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "compose_valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
 
       - name: Check AGiXT configuration files
+        id: configs
         run: |
+          valid_count=0
+          invalid_count=0
+          invalid_files=""
+
           if [ -d "config/agixt" ]; then
-            echo "AGiXT configuration files:"
-            find config/agixt -type f \( -name "*.yaml" -o -name "*.yml" -o -name "*.json" \) | while read f; do
-              echo "  Validating $f..."
+            while IFS= read -r f; do
               if [[ "$f" == *.json ]]; then
-                python3 -c "import json; json.load(open('$f'))" && echo "  ✅ $f is valid"
+                if python3 -c "import json; json.load(open('$f'))" 2>/dev/null; then
+                  ((valid_count++))
+                else
+                  ((invalid_count++))
+                  invalid_files="${invalid_files}${f},"
+                fi
               else
-                python3 -c "import yaml; yaml.safe_load(open('$f'))" && echo "  ✅ $f is valid"
+                if python3 -c "import yaml; yaml.safe_load(open('$f'))" 2>/dev/null; then
+                  ((valid_count++))
+                else
+                  ((invalid_count++))
+                  invalid_files="${invalid_files}${f},"
+                fi
               fi
-            done
-          else
-            echo "No AGiXT configuration directory found (config/agixt)"
+            done < <(find config/agixt -type f \( -name "*.yaml" -o -name "*.yml" -o -name "*.json" \))
+          fi
+
+          echo "valid_count=${valid_count}" >> $GITHUB_OUTPUT
+          echo "invalid_count=${invalid_count}" >> $GITHUB_OUTPUT
+          echo "invalid_files=${invalid_files}" >> $GITHUB_OUTPUT
+
+          if [ "$invalid_count" -gt 0 ]; then
+            exit 1
           fi
 
       - name: Check environment variables
         run: |
-          echo "Checking required environment variables in docker-compose.agixt.yml..."
-          grep -E "^\s+\w+:" docker-compose.agixt.yml | grep -E "(POSTGRES|AGIXT|OPENAI|API)" | head -20 || true
+          echo "Checking required environment variables in docker/agixt.yml..."
+          grep -E "^\s+\w+:" docker/agixt.yml | grep -E "(POSTGRES|AGIXT|OPENAI|API)" | head -20 || true
+
+      - name: Generate Job Summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## 📋 AGiXT Configuration Test Results
+
+          ### Docker Compose Validation
+          EOF
+
+          if [[ "${{ steps.compose.outputs.compose_valid }}" == "true" ]]; then
+            echo "✅ \`docker/agixt.yml\` is valid" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ \`docker/agixt.yml\` has syntax errors" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+
+          ### Configuration Files
+          | Metric | Count |
+          |--------|-------|
+          EOF
+
+          echo "| Valid configs | ${{ steps.configs.outputs.valid_count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Invalid configs | ${{ steps.configs.outputs.invalid_count }} |" >> $GITHUB_STEP_SUMMARY
+
+          if [[ -n "${{ steps.configs.outputs.invalid_files }}" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Invalid files:**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "${{ steps.configs.outputs.invalid_files }}" | tr ',' '\n' >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
