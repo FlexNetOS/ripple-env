@@ -244,3 +244,188 @@ When reporting issues, include:
 - Monitor resource usage
 - Track security events
 - Log all changes
+
+---
+
+## Service-Specific Troubleshooting
+
+### LocalAI
+
+**Problem:** Model fails to load
+```bash
+# Check available disk space for models
+df -h /var/lib/docker/volumes/
+
+# View LocalAI logs
+docker-compose logs localai | grep -i error
+
+# Verify model configuration
+cat config/localai/*.yaml
+
+# Check model download status
+docker-compose exec localai ls -la /models/
+```
+
+**Problem:** Slow inference
+```bash
+# Check CPU usage
+docker stats flexstack-localai
+
+# Increase threads in config
+# Edit config/localai/text-small.yaml: threads: 8
+
+# Restart with new config
+docker-compose restart localai
+```
+
+**Problem:** Out of memory
+```bash
+# Reduce context size: LOCALAI_CONTEXT_SIZE=1024
+# Use smaller model: LOCALAI_MODELS=/aio/cpu/embeddings.yaml
+docker-compose up -d localai
+```
+
+### AGiXT
+
+**Problem:** Agent not responding
+```bash
+# Check AGiXT health
+curl http://localhost:7437/health
+
+# View agent logs
+docker-compose logs agixt
+
+# Restart AGiXT
+docker-compose restart agixt
+```
+
+**Problem:** Tool execution fails
+```bash
+# Check tool permissions
+docker-compose exec agixt ls -la /agixt/WORKSPACE
+
+# Verify MinIO connection
+docker-compose exec agixt curl http://minio:9000/minio/health/live
+```
+
+### NATS JetStream
+
+**Problem:** Messages not delivered
+```bash
+# Check NATS health
+curl http://localhost:8222/healthz
+
+# View JetStream info
+curl http://localhost:8222/jsz
+
+# Check stream status
+nats stream info <stream-name>
+```
+
+### Temporal
+
+**Problem:** Workflow stuck
+```bash
+# Check workflow via UI: http://localhost:8088
+# Query workflow status
+temporal workflow show -w <workflow-id>
+
+# Check worker logs
+docker-compose logs temporal | grep worker
+```
+
+### Keycloak
+
+**Problem:** Login fails
+```bash
+# Check Keycloak logs
+docker-compose logs keycloak
+
+# Access admin console: http://localhost:8082/admin
+# Default: admin/changeme
+```
+
+### Neo4j
+
+**Problem:** Connection refused
+```bash
+# Check Neo4j is running
+docker-compose ps neo4j
+
+# Test connection
+docker-compose exec neo4j cypher-shell -u neo4j -p changeme "RETURN 1"
+```
+
+### Kong Gateway
+
+**Problem:** Route not found (404)
+```bash
+# List routes
+curl http://localhost:8001/routes
+
+# Check services
+curl http://localhost:8001/services
+```
+
+### OPA
+
+**Problem:** Policy not taking effect
+```bash
+# Check OPA health
+curl http://localhost:8181/health
+
+# List policies
+curl http://localhost:8181/v1/policies
+
+# Test policy
+curl -X POST http://localhost:8181/v1/data/ros2/authz/allow \
+  -d '{"input": {"user": {"role": "admin"}}}'
+```
+
+---
+
+## Log Locations
+
+| Service | Log Access |
+|---------|------------|
+| All services | `docker-compose logs <service>` |
+| LocalAI | stdout (Docker) |
+| AGiXT | `/agixt/logs/` |
+| Neo4j | `/logs/` volume |
+| Kong | `/usr/local/kong/logs/` |
+| Grafana | `/var/log/grafana/` |
+
+### Copy Logs Locally
+```bash
+docker cp flexstack-neo4j:/logs ./neo4j-logs
+```
+
+---
+
+## Metrics Endpoints
+
+| Service | URL |
+|---------|-----|
+| Prometheus | http://localhost:9090/metrics |
+| NATS | http://localhost:8222/varz |
+| Kong | http://localhost:8001/metrics |
+| Node Exporter | http://localhost:9100/metrics |
+
+---
+
+## Quick Diagnostic
+
+```bash
+# Overall health
+docker-compose ps
+docker stats --no-stream
+
+# Network check
+docker network inspect flexstack-network
+
+# Volume usage
+docker system df -v
+
+# Full diagnostic
+docker-compose config && docker-compose logs --tail=50
+```

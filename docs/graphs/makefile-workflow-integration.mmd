@@ -1,0 +1,121 @@
+```mermaid
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#2563eb', 'primaryTextColor': '#fff', 'primaryBorderColor': '#1d4ed8', 'lineColor': '#64748b' } } }%%
+
+flowchart LR
+    %% Makefile Targets
+    subgraph makefile["📋 Makefile Targets"]
+        direction TB
+        m_help["make help<br/>Show targets"]
+        m_doctor["make doctor<br/>Show toolchain"]
+        m_install["make install<br/>npm install"]
+        m_build["make build<br/>swc build"]
+        m_test["make test<br/>Local checks"]
+        m_e2e["make test-e2e<br/>Full validation"]
+        m_deploy["make deploy<br/>Deploy stack"]
+        m_security["make security<br/>Security audit"]
+        m_monitor["make monitor<br/>Observability"]
+        m_dev["make dev<br/>Dev stack"]
+        m_clean["make clean<br/>Clean artifacts"]
+    end
+
+    %% Script Layer
+    subgraph scripts["🔧 Script Execution Layer"]
+        direction TB
+        s_validate["validate-configs.sh<br/>• Docker Compose<br/>• YAML/TOML<br/>• Nix flake"]
+        s_e2e["validate-e2e.sh<br/>• 6 phases<br/>• All services"]
+        s_deploy["deploy.sh<br/>• Stack deployment<br/>• Health checks"]
+        s_security["security-audit.sh<br/>• Trivy<br/>• Gitleaks"]
+        s_obs["deploy-observability.sh<br/>• Prometheus<br/>• Grafana<br/>• Loki"]
+    end
+
+    %% GitHub Actions Layer
+    subgraph actions["⚙️ GitHub Actions Workflows"]
+        direction TB
+        a_ci["ci.yml<br/>• Flake check<br/>• ROS2 build<br/>• macOS build<br/>• Security<br/>• Pre-commit"]
+        a_e2e["e2e-validation.yml<br/>• Config validation<br/>• Nix/Pixi<br/>• Docker services<br/>• Integration tests"]
+        a_comp["component-verification.yml<br/>• Manifest validation<br/>• Nix components<br/>• Pixi components<br/>• Config consistency"]
+        a_sec["security.yml<br/>• CodeQL<br/>• Trivy (fs/config)<br/>• Grype SBOM"]
+        a_rel["release.yml<br/>• Conventional commits<br/>• Changelog<br/>• Artifact publish"]
+    end
+
+    %% CI/CD Integration Points
+    subgraph integration["🔗 Integration Points"]
+        direction TB
+        int1["Git Commit<br/>(pre-commit hooks)"]
+        int2["Git Push<br/>(triggers CI)"]
+        int3["Pull Request<br/>(triggers validation)"]
+        int4["Tag Push<br/>(triggers release)"]
+        int5["Weekly Schedule<br/>(security scan)"]
+    end
+
+    %% Tool Ecosystem
+    subgraph tools["🛠️ Tool Ecosystem"]
+        direction TB
+        nix["Nix<br/>• Flake<br/>• DevShells"]
+        pixi["Pixi<br/>• Environments<br/>• Dependencies"]
+        docker["Docker<br/>• Compose v2<br/>• Services"]
+        npm["npm/pnpm<br/>• JS packages<br/>• Build"]
+    end
+
+    %% Makefile to Scripts
+    m_test --> s_validate
+    m_e2e --> s_e2e
+    m_deploy --> s_deploy
+    m_security --> s_security
+    m_monitor --> s_obs
+
+    %% Scripts to Tools
+    s_validate --> docker
+    s_validate --> nix
+    s_e2e --> docker
+    s_e2e --> pixi
+    s_deploy --> docker
+    s_security --> docker
+
+    %% Makefile to Tools
+    m_install --> npm
+    m_build --> npm
+    m_dev --> docker
+
+    %% Integration to Actions
+    int1 -.->|Validates| m_test
+    int2 --> a_ci
+    int3 --> a_e2e
+    int3 --> a_comp
+    int4 --> a_rel
+    int5 --> a_sec
+
+    %% Actions to Scripts (Reuse)
+    a_ci -.->|Calls| s_validate
+    a_e2e -.->|Calls| s_e2e
+    a_sec -.->|Calls| s_security
+
+    %% Actions to Tools
+    a_ci --> nix
+    a_ci --> pixi
+    a_e2e --> docker
+    a_comp --> nix
+    a_comp --> pixi
+
+    %% Tool Dependencies
+    nix -.->|Provides| pixi
+    nix -.->|Provides| docker
+
+    %% Feedback Loops
+    a_ci -.->|Failed| int1
+    a_e2e -.->|Failed| int3
+    a_sec -.->|Security issues| int2
+
+    %% Style Definitions
+    classDef makefile fill:#f59e0b,stroke:#d97706,color:#000
+    classDef scripts fill:#10b981,stroke:#059669,color:#fff
+    classDef actions fill:#3b82f6,stroke:#2563eb,color:#fff
+    classDef integration fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef tools fill:#64748b,stroke:#475569,color:#fff
+
+    class m_help,m_doctor,m_install,m_build,m_test,m_e2e,m_deploy,m_security,m_monitor,m_dev,m_clean makefile
+    class s_validate,s_e2e,s_deploy,s_security,s_obs scripts
+    class a_ci,a_e2e,a_comp,a_sec,a_rel actions
+    class int1,int2,int3,int4,int5 integration
+    class nix,pixi,docker,npm tools
+```

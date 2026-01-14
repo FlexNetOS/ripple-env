@@ -153,11 +153,24 @@
               # AGiXT management via Docker Compose
               # Usage: agixt [up|down|logs|status|shell]
               AGIXT_DIR="''${AGIXT_DIR:-$PWD}"
-              COMPOSE_FILE="$AGIXT_DIR/docker-compose.agixt.yml"
 
-              if [ ! -f "$COMPOSE_FILE" ]; then
-                echo "Error: docker-compose.agixt.yml not found in $AGIXT_DIR"
-                echo "Create it first or set AGIXT_DIR to the correct location"
+              # Compose file resolution (supports both canonical + legacy layouts)
+              if [ -f "$AGIXT_DIR/docker/agixt.yml" ]; then
+                COMPOSE_FILE="$AGIXT_DIR/docker/agixt.yml"
+              elif [ -f "$AGIXT_DIR/agixt.yml" ]; then
+                COMPOSE_FILE="$AGIXT_DIR/agixt.yml"
+              elif [ -f "$AGIXT_DIR/docker-compose.agixt.yml" ]; then
+                COMPOSE_FILE="$AGIXT_DIR/docker-compose.agixt.yml"
+              elif [ -f "$AGIXT_DIR/docker/docker-compose.agixt.yml" ]; then
+                COMPOSE_FILE="$AGIXT_DIR/docker/docker-compose.agixt.yml"
+              else
+                echo "Error: AGiXT compose file not found under $AGIXT_DIR"
+                echo "Tried:"
+                echo "  - $AGIXT_DIR/docker/agixt.yml"
+                echo "  - $AGIXT_DIR/agixt.yml"
+                echo "  - $AGIXT_DIR/docker-compose.agixt.yml"
+                echo "  - $AGIXT_DIR/docker/docker-compose.agixt.yml"
+                echo "Set AGIXT_DIR to the ripple-env repo root (recommended) or the docker/ directory."
                 exit 1
               fi
 

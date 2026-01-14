@@ -1,0 +1,136 @@
+```mermaid
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#2563eb', 'primaryTextColor': '#fff', 'primaryBorderColor': '#1d4ed8', 'lineColor': '#64748b' } } }%%
+
+flowchart TB
+    %% Starting Point
+    start(["👤 Developer"])
+
+    %% Path Selection
+    subgraph paths["🎯 Choose Your Path"]
+        direction LR
+        path1["Path 1:<br/>Fresh Install"]
+        path2["Path 2:<br/>Development"]
+        path3["Path 3:<br/>Deploy Services"]
+        path4["Path 4:<br/>Troubleshooting"]
+        path5["Path 5:<br/>Security Audit"]
+    end
+
+    %% Path 1: Fresh Install
+    subgraph install["🚀 Path 1: Fresh Install"]
+        direction TB
+        i1["1. Run Bootstrap<br/>bootstrap.sh (Linux/macOS)<br/>bootstrap.ps1 (Windows)"]
+        i2["2. Validate Setup<br/>validate-configs.sh"]
+        i3["3. Install Dependencies<br/>install-all.sh --minimal"]
+        i4["4. Verify Installation<br/>validate-e2e.sh"]
+        i5["5. Start Development<br/>nix develop"]
+
+        i1 --> i2 --> i3 --> i4 --> i5
+    end
+
+    %% Path 2: Development
+    subgraph dev["💻 Path 2: Development Workflow"]
+        direction TB
+        d1["1. Enter Shell<br/>nix develop"]
+        d2["2. Start Services<br/>flexstack.sh up dev"]
+        d3["3. Make Changes<br/>(Edit code)"]
+        d4["4. Run Tests<br/>make test"]
+        d5["5. Commit Changes<br/>git commit (pre-commit hooks)"]
+        d6["6. Push & CI<br/>git push (triggers CI)"]
+
+        d1 --> d2 --> d3 --> d4 --> d5 --> d6
+    end
+
+    %% Path 3: Deploy Services
+    subgraph deploy["📦 Path 3: Service Deployment"]
+        direction TB
+        s1["1. Validate Resources<br/>validate-resources.sh"]
+        s2["2. Initialize Networks<br/>init-docker-networks.sh"]
+        s3["3. Setup Certificates<br/>init-step-ca.sh<br/>generate-service-certs.sh"]
+        s4["4. Deploy Stack<br/>Choose profile:<br/>• flexstack.sh up minimal<br/>• flexstack.sh up ai<br/>• flexstack.sh up full"]
+        s5["5. Verify Deployment<br/>verify-mtls-setup.sh<br/>verify-observability.sh<br/>verify-state-storage.sh"]
+        s6["6. Monitor Services<br/>Grafana: localhost:3000<br/>Prometheus: localhost:9090"]
+
+        s1 --> s2 --> s3 --> s4 --> s5 --> s6
+    end
+
+    %% Path 4: Troubleshooting
+    subgraph trouble["🔧 Path 4: Troubleshooting"]
+        direction TB
+        t1["1. Check Service Status<br/>flexstack.sh status<br/>flexstack.sh health"]
+        t2["2. View Logs<br/>flexstack.sh logs [service]<br/>docker compose logs -f"]
+        t3["3. Run Health Checks<br/>health-check.sh [endpoint]"]
+        t4["4. Validate Config<br/>validate-configs.sh"]
+        t5["5. Clean & Rebuild<br/>WSL: wsl-cleanup.sh<br/>Windows: Cleanup-WSL.ps1"]
+
+        t1 --> t2
+        t2 --> t3
+        t3 --> t4
+        t4 --> t5
+    end
+
+    %% Path 5: Security Audit
+    subgraph security["🔒 Path 5: Security Audit"]
+        direction TB
+        sec1["1. Scan Containers<br/>scan-containers.sh"]
+        sec2["2. Run Full Audit<br/>security-audit.sh"]
+        sec3["3. Check Certificates<br/>verify-mtls-setup.sh"]
+        sec4["4. Rotate Certs (if needed)<br/>rotate-certs.sh"]
+        sec5["5. Review Reports<br/>reports/*.{html,json,sarif}"]
+
+        sec1 --> sec2 --> sec3 --> sec4 --> sec5
+    end
+
+    %% Common Operations (Bottom Layer)
+    subgraph common["🛠️ Common Operations"]
+        direction LR
+        op1["Download Models<br/>download-models.sh"]
+        op2["Query Config<br/>query-config-db.sh"]
+        op3["Benchmark Eval<br/>benchmark-eval.sh"]
+        op4["Python Deps<br/>check-python-deps.sh<br/>upgrade-python-deps.sh"]
+    end
+
+    %% Entry Connections
+    start --> paths
+    paths --> path1
+    paths --> path2
+    paths --> path3
+    paths --> path4
+    paths --> path5
+
+    path1 --> install
+    path2 --> dev
+    path3 --> deploy
+    path4 --> trouble
+    path5 --> security
+
+    %% Common Operations Access
+    install -.->|Can use| common
+    dev -.->|Can use| common
+    deploy -.->|Can use| common
+    trouble -.->|Can use| common
+
+    %% Cross-Path References
+    i5 -.->|Next: Development| dev
+    d6 -.->|Triggers CI| deploy
+    deploy -.->|If issues| trouble
+    security -.->|Periodic| deploy
+
+    %% Style Definitions
+    classDef entry fill:#f59e0b,stroke:#d97706,color:#000
+    classDef path fill:#10b981,stroke:#059669,color:#fff
+    classDef install fill:#3b82f6,stroke:#2563eb,color:#fff
+    classDef dev fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef deploy fill:#ec4899,stroke:#db2777,color:#fff
+    classDef trouble fill:#f97316,stroke:#ea580c,color:#fff
+    classDef security fill:#ef4444,stroke:#dc2626,color:#fff
+    classDef common fill:#64748b,stroke:#475569,color:#fff
+
+    class start entry
+    class path1,path2,path3,path4,path5 path
+    class i1,i2,i3,i4,i5 install
+    class d1,d2,d3,d4,d5,d6 dev
+    class s1,s2,s3,s4,s5,s6 deploy
+    class t1,t2,t3,t4,t5 trouble
+    class sec1,sec2,sec3,sec4,sec5 security
+    class op1,op2,op3,op4 common
+```

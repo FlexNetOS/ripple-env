@@ -1,0 +1,180 @@
+```mermaid
+graph TB
+    %% ==================================================================
+    %% CI/CD Flow Diagram
+    %% ==================================================================
+    %% Evidence: .github/workflows/*.yml
+    %% Status: Phase 5 Complete
+    %% ==================================================================
+
+    TRIGGER[Push/PR to main/master] --> CONCURRENCY{Concurrent run<br/>on same branch?}
+
+    CONCURRENCY -->|Yes| CANCEL[Cancel previous run]
+    CONCURRENCY -->|No| START
+
+    CANCEL --> START[CI Pipeline Start]
+
+    START --> PARALLEL_1
+
+    subgraph "Parallel Stage 1: Validation"
+        PARALLEL_1[Parallel Jobs]
+
+        PARALLEL_1 --> FLAKE[flake-check<br/>nix flake check --all-systems]
+        PARALLEL_1 --> PRECOMMIT[pre-commit<br/>Run all hooks]
+        PARALLEL_1 --> SHELLCHECK[shellcheck<br/>Lint shell scripts]
+        PARALLEL_1 --> EDITORCONFIG[editorconfig<br/>Check formatting]
+    end
+
+    subgraph "Parallel Stage 2: Build"
+        FLAKE --> ROS2[ros2-build<br/>Linux: nix develop + pixi]
+        FLAKE --> MACOS[macos-build<br/>macOS: nix develop + pixi]
+    end
+
+    subgraph "Parallel Stage 3: Security"
+        PARALLEL_1 --> SECURITY[security<br/>Trivy filesystem scan]
+        PARALLEL_1 --> CONTAINER_SEC[container-security<br/>Trivy container scan]
+        PARALLEL_1 --> SBOM[sbom<br/>Syft + Grype]
+    end
+
+    subgraph "Stage 4: Integration Tests"
+        ROS2 --> CONFIG_VAL[config-validation<br/>YAML/TOML/Nix]
+        ROS2 --> COMPONENT[component-verification<br/>Per-service checks]
+        ROS2 --> E2E[e2e-validation<br/>validate-e2e.sh]
+    end
+
+    subgraph "Stage 5: Optional Workflows"
+        E2E --> AI_TOOLS[verify-ai-tools<br/>Optional]
+        E2E --> AGIXT_TEST[agixt-test<br/>Optional]
+        E2E --> LOCALAI_TEST[localai-test<br/>Optional]
+        E2E --> K8S_VAL[k8s-validation<br/>Optional]
+    end
+
+    subgraph "Stage 6: Performance"
+        E2E --> BENCHMARKS[benchmarks<br/>Optional]
+        E2E --> REALTIME[realtime-latency<br/>Optional]
+        E2E --> PERFORMANCE[performance<br/>Optional]
+    end
+
+    subgraph "Stage 7: Artifacts"
+        COMPONENT --> NIXOS_IMAGES[nixos-images<br/>WSL/ISO/VM]
+        COMPONENT --> ATTESTATION[attestation<br/>Build provenance]
+    end
+
+    subgraph "Final: Summary"
+        FLAKE --> SUMMARY
+        ROS2 --> SUMMARY
+        MACOS --> SUMMARY
+        SECURITY --> SUMMARY
+        PRECOMMIT --> SUMMARY
+
+        SUMMARY[CI Summary<br/>Generate report]
+    end
+
+    SUMMARY --> CHECK{Required checks<br/>passed?}
+
+    CHECK -->|Yes| PASS[✅ CI Pass]
+    CHECK -->|No| FAIL[❌ CI Fail]
+
+    PASS --> MERGE_READY[Ready to Merge]
+    FAIL --> BLOCK[Block Merge]
+
+    %% Release Flow
+    PASS --> TAG{Tagged Release?}
+    TAG -->|Yes| RELEASE[release<br/>Create GitHub Release]
+    RELEASE --> FLAKEHUB[flakehub-publish<br/>Publish to FlakeHub]
+    TAG -->|No| DONE[Done]
+
+    %% Styling
+    classDef trigger fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef validation fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef build fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef security fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef integration fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef optional fill:#fafafa,stroke:#757575,stroke-width:1px,stroke-dasharray: 5 5
+    classDef artifacts fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
+    classDef summary fill:#fffde7,stroke:#f57f17,stroke-width:2px
+    classDef pass fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
+    classDef fail fill:#ffcdd2,stroke:#c62828,stroke-width:3px
+
+    class TRIGGER,START trigger
+    class FLAKE,PRECOMMIT,SHELLCHECK,EDITORCONFIG validation
+    class ROS2,MACOS build
+    class SECURITY,CONTAINER_SEC,SBOM security
+    class CONFIG_VAL,COMPONENT,E2E integration
+    class AI_TOOLS,AGIXT_TEST,LOCALAI_TEST,K8S_VAL,BENCHMARKS,REALTIME,PERFORMANCE optional
+    class NIXOS_IMAGES,ATTESTATION artifacts
+    class SUMMARY summary
+    class PASS,MERGE_READY,RELEASE,FLAKEHUB pass
+    class FAIL,BLOCK fail
+```
+
+## Workflow Details
+
+### Trigger Conditions
+
+| Workflow | Trigger | Branches |
+|----------|---------|----------|
+| ci.yml | push, pull_request | main, master |
+| security.yml | push, pull_request, schedule | main |
+| sbom.yml | push | main |
+| release.yml | push (tags) | v* |
+
+### Required Checks for Merge
+
+| Check | Workflow | Required |
+|-------|----------|----------|
+| Nix Flake Check | ci.yml | ✅ Yes |
+| ROS2 Build | ci.yml | ✅ Yes |
+| Security Scan | ci.yml | ✅ Yes |
+| Pre-commit | ci.yml | ⚠️ Warning only |
+
+### Job Dependencies
+
+```mermaid
+graph LR
+    subgraph "ci.yml"
+        A[flake-check] --> B[ros2-build]
+        A --> C[macos-build]
+        B --> D[summary]
+        C --> D
+        E[security] --> D
+        F[pre-commit] --> D
+    end
+
+    subgraph "e2e-validation.yml"
+        G[validate-configs] --> H[validate-nix]
+        H --> I[component-verification]
+        I --> J[e2e-validation]
+    end
+
+    subgraph "component-verification.yml"
+        K[verify-services] --> L[verify-report]
+    end
+```
+
+### Concurrency Control
+
+All workflows use concurrency groups to ensure:
+- Only one run per branch/PR at a time
+- Previous runs are cancelled when new commits are pushed
+
+```yaml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+```
+
+### Evidence
+
+- `ci.yml` — Main CI pipeline
+- `security.yml` — Security scanning
+- `sbom.yml` — SBOM generation
+- `e2e-validation.yml` — End-to-end tests
+- `component-verification.yml` — Component checks
+- `config-validation.yml` — Config validation
+- `nixos-images.yml` — Image generation
+- `release.yml` — Release automation
+- `flakehub-publish-tagged.yml` — FlakeHub publishing
+
+**Status:** Phase 5 Complete
+**Last Updated:** 2026-01-14
