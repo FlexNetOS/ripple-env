@@ -120,10 +120,15 @@ export function IconNavigation() {
     setActiveSection, 
     activeWorkspace, 
     setActiveWorkspace,
+    iconCollapsed,
+    setIconCollapsed,
     detailCollapsed,
     setDetailCollapsed,
+    toggleDoubleMinimize,
+    isFullyCollapsed,
     setShowNotifications,
     setShowFavorites,
+    setShowWebBrowser,
   } = useSidebar();
   
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
@@ -214,20 +219,48 @@ export function IconNavigation() {
         )}
       </div>
 
-      {/* Collapse/Expand Toggle */}
+      {/* Collapse/Expand Toggle - Detail Sidebar */}
       <button
         onClick={() => setDetailCollapsed(!detailCollapsed)}
         className={cn(
-          "w-10 h-10 rounded-[10px] flex items-center justify-center mb-2 transition-all duration-200",
+          "w-10 h-10 rounded-[10px] flex items-center justify-center mb-1 transition-all duration-200",
           "hover:bg-[rgba(255,255,255,0.05)]"
         )}
-        title={detailCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        title={detailCollapsed ? "Expand detail panel" : "Collapse detail panel"}
       >
         {detailCollapsed ? (
           <LucideIcons.PanelLeftOpen size={18} color={COLORS.muted} />
         ) : (
           <LucideIcons.PanelLeftClose size={18} color={COLORS.muted} />
         )}
+      </button>
+
+      {/* Double Minimize Toggle - Both panels */}
+      <button
+        onClick={toggleDoubleMinimize}
+        className={cn(
+          "w-10 h-10 rounded-[10px] flex items-center justify-center mb-2 transition-all duration-200",
+          isFullyCollapsed ? "bg-[rgba(0,212,255,0.15)]" : "hover:bg-[rgba(255,255,255,0.05)]"
+        )}
+        title={isFullyCollapsed ? "Expand sidebar" : "Minimize sidebar completely"}
+      >
+        {isFullyCollapsed ? (
+          <LucideIcons.Maximize2 size={16} color={COLORS.primary} />
+        ) : (
+          <LucideIcons.Minimize2 size={16} color={COLORS.muted} />
+        )}
+      </button>
+
+      {/* Web Browser Button */}
+      <button
+        onClick={() => setShowWebBrowser(true)}
+        className={cn(
+          "w-10 h-10 rounded-[10px] flex items-center justify-center mb-2 transition-all duration-200",
+          "hover:bg-[rgba(255,255,255,0.05)]"
+        )}
+        title="Open web browser"
+      >
+        <LucideIcons.Globe size={18} color={COLORS.muted} />
       </button>
 
       {/* Navigation Icons - Scrollable */}

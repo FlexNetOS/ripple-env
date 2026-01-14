@@ -22,6 +22,162 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 export const appRouter = router({
   system: systemRouter,
 
+  // ==================== AI ROUTER ====================
+  ai: router({
+    // Health check for AI services
+    health: publicProcedure.query(async () => {
+      const checkService = async (url: string, timeout = 5000): Promise<boolean> => {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeout);
+          const response = await fetch(url, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          return response.ok;
+        } catch {
+          return false;
+        }
+      };
+
+      const [localai, agixt] = await Promise.all([
+        checkService('http://localhost:8080/v1/models'),
+        checkService('http://localhost:7437/api/status'),
+      ]);
+
+      return { localai, agixt };
+    }),
+
+    // Get available LocalAI models
+    getModels: protectedProcedure.query(async () => {
+      try {
+        const response = await fetch('http://localhost:8080/v1/models');
+        if (!response.ok) return [];
+        const data = await response.json();
+        return data.data?.map((m: { id: string }) => m.id) || [];
+      } catch {
+        return [];
+      }
+    }),
+
+    // Get available AGiXT agents
+    getAgents: protectedProcedure.query(async () => {
+      try {
+        const response = await fetch('http://localhost:7437/api/agent');
+        if (!response.ok) return [];
+        const data = await response.json();
+        return data.agents || [];
+      } catch {
+        return [];
+      }
+    }),
+
+    // LocalAI chat completion
+    localaiChat: protectedProcedure
+      .input(z.object({
+        messages: z.array(z.object({
+          role: z.enum(['system', 'user', 'assistant']),
+          content: z.string(),
+        })),
+        model: z.string().optional(),
+        temperature: z.number().min(0).max(2).optional(),
+        maxTokens: z.number().min(1).max(8192).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const response = await fetch('http://localhost:8080/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: input.model || 'llama-3.2-3b-instruct',
+            messages: input.messages,
+            temperature: input.temperature ?? 0.7,
+            max_tokens: input.maxTokens ?? 2048,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'LocalAI request failed'
+          });
+        }
+
+        const data = await response.json();
+        return {
+          content: data.choices?.[0]?.message?.content || '',
+          model: data.model,
+          usage: data.usage,
+        };
+      }),
+
+    // AGiXT chat
+    agixtChat: protectedProcedure
+      .input(z.object({
+        message: z.string().min(1),
+        agentName: z.string().optional(),
+        conversationId: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const agentName = input.agentName || 'ripple-assistant';
+        const response = await fetch(
+          `http://localhost:7437/api/agent/${agentName}/chat`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_input: input.message,
+              conversation_id: input.conversationId || 'default',
+              injected_memories: 1,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'AGiXT request failed'
+          });
+        }
+
+        const data = await response.json();
+        return {
+          response: data.response || '',
+          conversationId: data.conversation_id,
+          commands: data.commands,
+        };
+      }),
+
+    // AGiXT sandbox execution
+    executeSandbox: protectedProcedure
+      .input(z.object({
+        code: z.string().min(1),
+        language: z.enum(['python', 'node', 'bash', 'rust', 'go']),
+        timeout: z.number().min(1).max(300).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const response = await fetch('http://localhost:7437/api/sandbox/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: input.code,
+            language: input.language,
+            timeout: input.timeout || 60,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Sandbox execution failed'
+          });
+        }
+
+        const data = await response.json();
+        return {
+          output: data.output || '',
+          exitCode: data.exit_code ?? -1,
+        };
+      }),
+  }),
+
   // ==================== AUTH ROUTER ====================
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
