@@ -189,7 +189,7 @@ curl -H "Authorization: Bearer $NEW_API_KEY" <endpoint>
 
 ## Related docs
 
-- [Secrets Management](../SECRETS.md) - Full agenix/detect-secrets documentation
-- [mTLS Setup](../MTLS_SETUP.md) - Certificate infrastructure details
-- [Providers](../PROVIDERS.md) - Complete provider authentication matrix
-- [Observability](../OBSERVABILITY-QUICK-START.md) - Logging for rotation audits
+- [Secrets Management](../secrets/SECRETS.md) - Full agenix/detect-secrets documentation
+- [mTLS Setup](../getting-started/MTLS_SETUP.md) - Certificate infrastructure details
+- [Providers](../providers/PROVIDERS.md) - Complete provider authentication matrix
+- [Observability](../getting-started/quick-start/OBSERVABILITY-QUICK-START.md) - Logging for rotation audits

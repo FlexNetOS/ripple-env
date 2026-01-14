@@ -272,6 +272,6 @@ After each backup:
 ## Related docs
 
 - [Emergency Procedures](EMERGENCY_PROCEDURES.md) - Incident response for data loss
-- [Secrets Management](../SECRETS.md) - Agenix encrypted secrets
-- [Runbooks](../RUNBOOKS.md) - Bootstrap and restore procedures
-- [Docker Profiles](../DOCKER_PROFILES.md) - Volume management
+- [Secrets Management](../secrets/SECRETS.md) - Agenix encrypted secrets
+- [Runbooks](./RUNBOOKS.md) - Bootstrap and restore procedures
+- [Docker Profiles](../containers/DOCKER_PROFILES.md) - Volume management

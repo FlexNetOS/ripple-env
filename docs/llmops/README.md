@@ -73,5 +73,5 @@ TensorZero acts as the LLMOps gateway for the inference plane:
 
 ## Related Documentation
 
-- [Inference Setup](../INFERENCE_SETUP.md)
+- [Inference Setup](../getting-started/INFERENCE_SETUP.md)
 - [BUILDKIT_STARTER_SPEC.md](../../BUILDKIT_STARTER_SPEC.md)

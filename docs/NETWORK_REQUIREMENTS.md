@@ -359,8 +359,8 @@ docker pull hello-world
 
 ## See Also
 
-- [Getting Started Guide](GETTING_STARTED.md)
+- [Getting Started Guide](getting-started/GETTING_STARTED.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
-- [Supply Chain Security](SUPPLY_CHAIN_SECURITY.md)
+- [Supply Chain Security](security/SUPPLY_CHAIN_SECURITY.md)
 - [config/offline.yaml](../config/offline.yaml) - Offline configuration
 - [config/mirrors.yaml](../config/mirrors.yaml) - Mirror configuration

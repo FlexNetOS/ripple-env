@@ -554,7 +554,7 @@ Some documents may deviate from standards for valid reasons:
 
 ## Related Docs
 
-- [Unknown Report](UNKNOWN_REPORT.md) - Tracked unknowns and resolution status
+- [Unknown Report](audits/UNKNOWN_REPORT.md) - Tracked unknowns and resolution status
 - [Compatibility Matrix](COMPATIBILITY_MATRIX.md) - Version compatibility tables
 - [Changelog (Docs)](CHANGELOG_DOCS.md) - Documentation change history
 - [Scripts Index](scripts/INDEX.md) - Script contract catalog

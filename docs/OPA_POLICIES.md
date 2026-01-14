@@ -409,5 +409,5 @@ docker-compose logs opa | grep decision
 
 - [OPA Documentation](https://www.openpolicyagent.org/docs/)
 - [Rego Language Reference](https://www.openpolicyagent.org/docs/latest/policy-language/)
-- [PROVIDERS.md](PROVIDERS.md) - Provider authentication
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
+- [PROVIDERS.md](providers/PROVIDERS.md) - Provider authentication
+- [ARCHITECTURE.md](architecture/ARCHITECTURE.md) - System architecture

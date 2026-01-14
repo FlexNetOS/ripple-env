@@ -368,10 +368,10 @@ This document provides a template for on-call procedures. **You must customize i
 ## Related Documentation
 
 - [Emergency Procedures](cookbooks/EMERGENCY_PROCEDURES.md) - Immediate incident response
-- [Runbooks](RUNBOOKS.md) - Operational procedures
+- [Runbooks](cookbooks/RUNBOOKS.md) - Operational procedures
 - [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
-- [Security Guide](SECURITY_GUIDE.md) - Security incident response
-- [Observability](OBSERVABILITY-QUICK-START.md) - Monitoring and alerting
+- [Security Guide](security/SECURITY_GUIDE.md) - Security incident response
+- [Observability](getting-started/quick-start/OBSERVABILITY-QUICK-START.md) - Monitoring and alerting
 - [Backup & Restore](cookbooks/BACKUP_RESTORE.md) - Disaster recovery
 
 ---

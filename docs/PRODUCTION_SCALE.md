@@ -389,7 +389,7 @@ wsl
 
 - [Performance Tuning](cookbooks/PERFORMANCE_TUNING.md) - Optimization procedures
 - [Resource Validation](scripts/validate-resources.sh) - Automated resource checks
-- [AI Resource Requirements](AI_RESOURCE_REQUIREMENTS.md) - AI service requirements
-- [Observability Setup](OBSERVABILITY-QUICK-START.md) - Monitoring configuration
-- [WSL Build Pipeline](WSL2_BUILD_PIPELINE.md) - WSL-specific optimizations
+- [AI Resource Requirements](ai-ml/AI_RESOURCE_REQUIREMENTS.md) - AI service requirements
+- [Observability Setup](getting-started/quick-start/OBSERVABILITY-QUICK-START.md) - Monitoring configuration
+- [WSL Build Pipeline](wsl/WSL2_BUILD_PIPELINE.md) - WSL-specific optimizations
 - [Helm Chart](HELM_CHART.md) - Kubernetes scaling path

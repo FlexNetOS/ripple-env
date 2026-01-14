@@ -274,5 +274,5 @@ Regular maintenance to prevent emergencies:
 - [Secret Rotation](SECRET_ROTATION.md) - Credential rotation procedures
 - [Backup & Restore](BACKUP_RESTORE.md) - Disaster recovery procedures
 - [Troubleshooting](../TROUBLESHOOTING.md) - Common issues and solutions
-- [Runbooks](../RUNBOOKS.md) - Operational procedures
-- [Observability](../OBSERVABILITY-QUICK-START.md) - Monitoring and alerting
+- [Runbooks](./RUNBOOKS.md) - Operational procedures
+- [Observability](../getting-started/quick-start/OBSERVABILITY-QUICK-START.md) - Monitoring and alerting

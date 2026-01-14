@@ -275,8 +275,8 @@ docker compose down && docker compose up -d
 
 ## Related docs
 
-- [Providers Matrix](../PROVIDERS.md) - Current provider authentication patterns
-- [Port Registry](../PORTS.md) - Port assignment tracking
-- [Container Security](../CONTAINER_SECURITY.md) - Network segmentation rules
-- [API Reference](../API_REFERENCE.md) - Service API documentation
+- [Providers Matrix](../providers/PROVIDERS.md) - Current provider authentication patterns
+- [Port Registry](../api/PORTS.md) - Port assignment tracking
+- [Container Security](../security/CONTAINER_SECURITY.md) - Network segmentation rules
+- [API Reference](../api/API_REFERENCE.md) - Service API documentation
 - [Helm Chart](../HELM_CHART.md) - Kubernetes deployment (if migrating to K8s)

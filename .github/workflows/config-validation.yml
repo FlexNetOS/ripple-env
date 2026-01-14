@@ -6,16 +6,67 @@ on:
     paths:
       - 'flake.nix'
       - 'pixi.toml'
+      - '.gitattributes'
+      - 'hashes.yml'
+      - 'HASHES*.txt'
       - 'docker-compose*.yml'
       - 'docker/docker-compose*.yml'
       - 'docker/**'
       - 'config/**/*.yml'
+      - 'scripts/generate-hashes.py'
+      - 'scripts/validate-lfs*.sh'
       - '.github/workflows/config-validation.yml'
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:
 
 jobs:
+  validate-lfs-policy:
+    name: Validate Git LFS Policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Ensure git-lfs is available
+        run: |
+          git --version
+          if ! git lfs version >/dev/null 2>&1; then
+            echo "git-lfs not found; installing…"
+            sudo apt-get update
+            sudo apt-get install -y git-lfs
+          fi
+          git lfs version
+          git lfs install --local
+          # Ensure LFS objects for the checked-out ref are present when possible.
+          git lfs pull
+
+      - name: Enforce LFS size policy (no large blobs in Git)
+        run: bash scripts/validate-lfs-policy.sh
+
+      - name: Validate LFS availability / object presence
+        run: bash scripts/validate-lfs.sh
+
+  validate-hash-ledgers:
+    name: Validate Hash Ledgers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install hash generation dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Ensure HASHES ledgers are up to date
+        run: python scripts/generate-hashes.py --all --check
+
   validate-docker-compose:
     name: Validate Docker Compose Files
     runs-on: ubuntu-latest

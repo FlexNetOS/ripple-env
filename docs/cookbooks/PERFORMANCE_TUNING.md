@@ -377,7 +377,7 @@ source scripts/stable-env.sh
 
 ## Related docs
 
-- [Resource Requirements](../AI_RESOURCE_REQUIREMENTS.md) - Service-specific requirements
+- [Resource Requirements](../ai-ml/AI_RESOURCE_REQUIREMENTS.md) - Service-specific requirements
 - [Production Scale](../PRODUCTION_SCALE.md) - Scaling guidelines
-- [WSL Build Pipeline](../WSL2_BUILD_PIPELINE.md) - WSL-specific optimizations
-- [Observability](../OBSERVABILITY-QUICK-START.md) - Performance monitoring
+- [WSL Build Pipeline](../wsl/WSL2_BUILD_PIPELINE.md) - WSL-specific optimizations
+- [Observability](../getting-started/quick-start/OBSERVABILITY-QUICK-START.md) - Performance monitoring

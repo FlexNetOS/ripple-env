@@ -568,5 +568,5 @@ Before asking for help, verify:
 ## See Also
 
 - [Troubleshooting](TROUBLESHOOTING.md) - Detailed solutions
-- [Onboarding Tutorial](ONBOARDING_TUTORIAL.md) - Step-by-step setup
-- [Getting Started](GETTING_STARTED.md) - Quick reference
+- [Onboarding Tutorial](getting-started/ONBOARDING_TUTORIAL.md) - Step-by-step setup
+- [Getting Started](getting-started/GETTING_STARTED.md) - Quick reference
