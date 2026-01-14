@@ -1,0 +1,190 @@
+```mermaid
+graph TB
+    %% Script Dependency DAG (Draft - Phase 1)
+    %% This is a preliminary DAG based on Phase 1 inventory
+    %% Full dependencies require Phase 4 analysis (read each script)
+
+    subgraph "Bootstrap Layer (L1)"
+        B[bootstrap.sh<br/>bootstrap.ps1]
+    end
+
+    subgraph "Initialization Layer (L2)"
+        INIT_NET[init-docker-networks.sh]
+        INIT_JS[init-jetstream.sh]
+        INIT_CA[init-step-ca.sh]
+        INIT_DB[init-multi-db.sh]
+    end
+
+    subgraph "Setup Layer (L3)"
+        SETUP_AW[setup-argo-workflows.sh]
+        SETUP_HM[setup-home-manager.sh]
+        SETUP_CR[setup-cert-rotation-cron.sh]
+    end
+
+    subgraph "Installation Layer (L3)"
+        INST_AC[install-argocd.sh]
+        INST_AR[install-argo-rollouts.sh]
+        INST_ALL[install-all.sh]
+    end
+
+    subgraph "Deployment Layer (L4)"
+        DEPLOY[deploy.sh]
+        DEPLOY_EDGE[deploy-edge.sh]
+        DEPLOY_OBS[deploy-observability.sh]
+        DEPLOY_AIR[deploy-airgapped.sh]
+    end
+
+    subgraph "Build Layer (L3)"
+        BUILD_FE[build-frontend.sh]
+        DOWNLOAD_MODELS[download-models.sh]
+    end
+
+    subgraph "Security Layer (L3)"
+        GEN_CERTS[generate-service-certs.sh]
+        ROTATE_CERTS[rotate-certs.sh]
+        SCAN_CONT[scan-containers.sh]
+        SEC_AUDIT[security-audit.sh]
+    end
+
+    subgraph "Verification Layer (L5)"
+        VAL_E2E[validate-e2e.sh]
+        VAL_CONF[validate-configs.sh]
+        VAL_MAN[validate-manifest.py]
+        VAL_RES[validate-resources.sh]
+        VAL_CHAN[validate-channels.py]
+    end
+
+    subgraph "Component Verification Layer (L5)"
+        VER_AW[verify-argo-workflows.sh]
+        VER_EDGE[verify-edge.sh]
+        VER_JS[verify-jetstream.sh]
+        VER_MDB[verify-mindsdb.sh]
+        VER_MTLS[verify-mtls-setup.sh]
+        VER_OBS[verify-observability.sh]
+        VER_OL[verify-open-lovable.sh]
+        VER_QD[verify-qudag.sh]
+        VER_RV[verify-ruvector.sh]
+        VER_SS[verify-state-storage.sh]
+    end
+
+    subgraph "Database Layer (L3)"
+        POP_DB[populate-config-db.sh]
+        QUERY_DB[query-config-db.sh]
+    end
+
+    subgraph "Utilities Layer (L3)"
+        HEALTH[health-check.sh]
+        ENV_VARS[env-vars.sh]
+        STABLE_ENV[stable-env.sh]
+        FLEXSTACK[flexstack.sh]
+        RUVECTOR[ruvector.sh]
+    end
+
+    %% Bootstrap dependencies
+    B --> INIT_NET
+    B --> INIT_CA
+
+    %% Initialization dependencies
+    INIT_NET --> INIT_DB
+    INIT_NET --> INIT_JS
+    INIT_CA --> GEN_CERTS
+
+    %% Setup dependencies
+    INIT_JS --> SETUP_AW
+    INIT_DB --> POP_DB
+
+    %% Installation dependencies
+    B --> INST_AC
+    B --> INST_AR
+    INST_AC --> INST_ALL
+    INST_AR --> INST_ALL
+
+    %% Deployment dependencies
+    INST_ALL --> DEPLOY
+    GEN_CERTS --> DEPLOY
+    BUILD_FE --> DEPLOY
+    DOWNLOAD_MODELS --> DEPLOY
+
+    DEPLOY --> DEPLOY_EDGE
+    DEPLOY --> DEPLOY_OBS
+
+    %% Security dependencies
+    GEN_CERTS --> ROTATE_CERTS
+    DEPLOY --> SCAN_CONT
+    DEPLOY --> SEC_AUDIT
+
+    %% Verification dependencies
+    DEPLOY --> VAL_E2E
+    DEPLOY --> VER_AW
+    DEPLOY --> VER_EDGE
+    DEPLOY --> VER_JS
+    DEPLOY --> VER_MDB
+    DEPLOY --> VER_OBS
+    DEPLOY --> VER_SS
+
+    DEPLOY_EDGE --> VER_EDGE
+    DEPLOY_OBS --> VER_OBS
+
+    INIT_CA --> VER_MTLS
+    GEN_CERTS --> VER_MTLS
+
+    %% Unknown edges (marked for Phase 4 investigation)
+    VAL_CONF -.UNKNOWN.-> DEPLOY
+    VAL_MAN -.UNKNOWN.-> DEPLOY
+    VAL_RES -.UNKNOWN.-> DEPLOY
+    VAL_CHAN -.UNKNOWN.-> B
+
+    VER_OL -.UNKNOWN.-> DEPLOY
+    VER_QD -.UNKNOWN.-> DEPLOY
+    VER_RV -.UNKNOWN.-> DEPLOY
+
+    SETUP_HM -.UNKNOWN.-> B
+    SETUP_CR -.UNKNOWN.-> ROTATE_CERTS
+
+    HEALTH -.UNKNOWN.-> DEPLOY
+    FLEXSTACK -.UNKNOWN.-> DEPLOY
+    RUVECTOR -.UNKNOWN.-> DEPLOY
+
+    POP_DB -.UNKNOWN.-> DEPLOY
+    QUERY_DB -.UNKNOWN.-> DEPLOY
+
+    %% Styling
+    classDef bootstrap fill:#4051b5,color:#fff,stroke:#1a237e
+    classDef init fill:#00897b,color:#fff,stroke:#004d40
+    classDef setup fill:#43a047,color:#fff,stroke:#1b5e20
+    classDef install fill:#6a1b9a,color:#fff,stroke:#4a148c
+    classDef deploy fill:#d84315,color:#fff,stroke:#bf360c
+    classDef build fill:#f57c00,color:#fff,stroke:#e65100
+    classDef security fill:#c62828,color:#fff,stroke:#b71c1c
+    classDef verify fill:#0277bd,color:#fff,stroke:#01579b
+    classDef db fill:#558b2f,color:#fff,stroke:#33691e
+    classDef util fill:#757575,color:#fff,stroke:#424242
+    classDef unknown stroke-dasharray: 5 5
+
+    class B bootstrap
+    class INIT_NET,INIT_JS,INIT_CA,INIT_DB init
+    class SETUP_AW,SETUP_HM,SETUP_CR setup
+    class INST_AC,INST_AR,INST_ALL install
+    class DEPLOY,DEPLOY_EDGE,DEPLOY_OBS,DEPLOY_AIR deploy
+    class BUILD_FE,DOWNLOAD_MODELS build
+    class GEN_CERTS,ROTATE_CERTS,SCAN_CONT,SEC_AUDIT security
+    class VAL_E2E,VAL_CONF,VAL_MAN,VAL_RES,VAL_CHAN,VER_AW,VER_EDGE,VER_JS,VER_MDB,VER_MTLS,VER_OBS,VER_OL,VER_QD,VER_RV,VER_SS verify
+    class POP_DB,QUERY_DB db
+    class HEALTH,ENV_VARS,STABLE_ENV,FLEXSTACK,RUVECTOR util
+```
+
+**Status:** DRAFT (Phase 1)
+
+**Known Gaps:**
+- Exact dependencies require Phase 4 script analysis
+- Dashed lines (-.UNKNOWN.->) indicate suspected but unverified dependencies
+- Some scripts not yet positioned (maintenance, analysis, sandboxing categories)
+- Parallel execution possibilities not yet analyzed
+- Script argument dependencies not yet mapped
+
+**Next Steps:**
+- Phase 4: Read each script to extract actual dependencies
+- Verify assumed edges
+- Add missing scripts
+- Document parallel execution opportunities
+- Generate executable dependency order

@@ -1,0 +1,317 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-01-13",
+  "repository": "FlexNetOS/ripple-env",
+  "description": "Machine-readable catalog of scripts, workflows, environments, and artifacts",
+
+  "entrypoints": {
+    "bootstrap": [
+      {
+        "name": "bootstrap.sh",
+        "path": "./bootstrap.sh",
+        "type": "bash_script",
+        "purpose": "Complete end-to-end installation for Linux/macOS (Nix, direnv, pixi, shells)",
+        "platform": ["linux", "macos"],
+        "required": true,
+        "idempotent": true,
+        "safety": "safe",
+        "arguments": ["--ci", "--skip-shells", "--verify", "--profile", "--resume", "--clean", "--log-file"]
+      },
+      {
+        "name": "bootstrap.ps1",
+        "path": "./bootstrap.ps1",
+        "type": "powershell_script",
+        "purpose": "Complete end-to-end installation for Windows (WSL2, NixOS, full stack)",
+        "platform": ["windows"],
+        "required": true,
+        "idempotent": true,
+        "safety": "caution",
+        "requires_admin": true,
+        "arguments": ["-DistroName", "-InstallPath", "-DiskSizeGB", "-MemorySizeGB", "-SwapSizeGB", "-RepoURL", "-Resume", "-Clean"]
+      }
+    ],
+
+    "task_runners": [
+      {
+        "name": "Makefile",
+        "path": "./Makefile",
+        "type": "make",
+        "purpose": "Convenience targets for common validation/build tasks",
+        "targets": ["help", "doctor", "install", "build", "test", "test-e2e", "deploy", "security", "monitor", "dev", "clean"],
+        "portable": true
+      },
+      {
+        "name": "pixi.toml",
+        "path": "./pixi.toml",
+        "type": "pixi",
+        "purpose": "Package management and environment definitions",
+        "environments": ["default", "cuda", "aios", "aios-cuda", "llmops", "finetuning", "finetuning-cuda", "caching", "docs", "vectordb-chromadb", "vectordb-ruvector", "qudag"],
+        "channels": ["robostack-humble", "conda-forge", "pytorch", "nvidia"]
+      },
+      {
+        "name": "flake.nix",
+        "path": "./flake.nix",
+        "type": "nix_flake",
+        "purpose": "Nix flake configuration for reproducible environments, home-manager modules, NixOS images",
+        "exports": ["devShells", "packages", "homeManagerModules", "nixosModules", "darwinModules", "lib"],
+        "flakes_required": true
+      }
+    ],
+
+    "scripts": {
+      "deployment": [
+        {"name": "deploy.sh", "path": "./scripts/deploy.sh", "purpose": "Main deployment orchestrator"},
+        {"name": "deploy-edge.sh", "path": "./scripts/deploy-edge.sh", "purpose": "Deploy edge services"},
+        {"name": "deploy-observability.sh", "path": "./scripts/deploy-observability.sh", "purpose": "Deploy observability stack"},
+        {"name": "deploy-airgapped.sh", "path": "./scripts/deploy-airgapped.sh", "purpose": "Airgapped deployment preparation"},
+        {"name": "install-all.sh", "path": "./scripts/install-all.sh", "purpose": "Install all services"}
+      ],
+
+      "verification": [
+        {"name": "validate-e2e.sh", "path": "./scripts/validate-e2e.sh", "purpose": "End-to-end validation"},
+        {"name": "validate-configs.sh", "path": "./scripts/validate-configs.sh", "purpose": "Configuration validation"},
+        {"name": "validate-manifest.py", "path": "./scripts/validate-manifest.py", "purpose": "ARIA manifest validation"},
+        {"name": "validate-resources.sh", "path": "./scripts/validate-resources.sh", "purpose": "Resource validation"},
+        {"name": "validate-channels.py", "path": "./scripts/validate-channels.py", "purpose": "Pixi channel validation"}
+      ],
+
+      "component_verification": [
+        {"name": "verify-argo-workflows.sh", "path": "./scripts/verify-argo-workflows.sh", "purpose": "Verify Argo Workflows"},
+        {"name": "verify-edge.sh", "path": "./scripts/verify-edge.sh", "purpose": "Verify edge services"},
+        {"name": "verify-jetstream.sh", "path": "./scripts/verify-jetstream.sh", "purpose": "Verify NATS JetStream"},
+        {"name": "verify-mindsdb.sh", "path": "./scripts/verify-mindsdb.sh", "purpose": "Verify MindsDB"},
+        {"name": "verify-mtls-setup.sh", "path": "./scripts/verify-mtls-setup.sh", "purpose": "Verify mTLS setup"},
+        {"name": "verify-observability.sh", "path": "./scripts/verify-observability.sh", "purpose": "Verify observability stack"},
+        {"name": "verify-open-lovable.sh", "path": "./scripts/verify-open-lovable.sh", "purpose": "Verify Open Lovable"},
+        {"name": "verify-qudag.sh", "path": "./scripts/verify-qudag.sh", "purpose": "Verify QuDAG"},
+        {"name": "verify-ruvector.sh", "path": "./scripts/verify-ruvector.sh", "purpose": "Verify RuVector"},
+        {"name": "verify-state-storage.sh", "path": "./scripts/verify-state-storage.sh", "purpose": "Verify state storage"}
+      ],
+
+      "initialization": [
+        {"name": "init-docker-networks.sh", "path": "./scripts/init-docker-networks.sh", "purpose": "Initialize Docker networks"},
+        {"name": "init-jetstream.sh", "path": "./scripts/init-jetstream.sh", "purpose": "Initialize NATS JetStream"},
+        {"name": "init-step-ca.sh", "path": "./scripts/init-step-ca.sh", "purpose": "Initialize Step CA"},
+        {"name": "init-multi-db.sh", "path": "./scripts/init-multi-db.sh", "purpose": "Initialize multi-database"}
+      ],
+
+      "installation": [
+        {"name": "install-argocd.sh", "path": "./scripts/install-argocd.sh", "purpose": "Install ArgoCD"},
+        {"name": "install-argo-rollouts.sh", "path": "./scripts/install-argo-rollouts.sh", "purpose": "Install Argo Rollouts"}
+      ],
+
+      "security": [
+        {"name": "security-audit.sh", "path": "./scripts/security-audit.sh", "purpose": "Run security audits"},
+        {"name": "scan-containers.sh", "path": "./scripts/scan-containers.sh", "purpose": "Scan containers with Trivy"},
+        {"name": "generate-service-certs.sh", "path": "./scripts/generate-service-certs.sh", "purpose": "Generate service certificates"},
+        {"name": "rotate-certs.sh", "path": "./scripts/rotate-certs.sh", "purpose": "Rotate certificates"},
+        {"name": "setup-cert-rotation-cron.sh", "path": "./scripts/setup-cert-rotation-cron.sh", "purpose": "Setup certificate rotation cron"}
+      },
+
+      "database": [
+        {"name": "populate-config-db.sh", "path": "./scripts/populate-config-db.sh", "purpose": "Populate configuration database"},
+        {"name": "populate-config-db.py", "path": "./scripts/populate-config-db.py", "purpose": "Populate configuration database (Python)"},
+        {"name": "query-config-db.sh", "path": "./scripts/query-config-db.sh", "purpose": "Query configuration database"},
+        {"name": "query-config-db.py", "path": "./scripts/query-config-db.py", "purpose": "Query configuration database (Python)"}
+      ],
+
+      "setup": [
+        {"name": "setup-argo-workflows.sh", "path": "./scripts/setup-argo-workflows.sh", "purpose": "Setup Argo Workflows"},
+        {"name": "setup-home-manager.sh", "path": "./scripts/setup-home-manager.sh", "purpose": "Setup Home Manager"},
+        {"name": "setup-cert-rotation-cron.sh", "path": "./scripts/setup-cert-rotation-cron.sh", "purpose": "Setup certificate rotation"}
+      ],
+
+      "build": [
+        {"name": "build-frontend.sh", "path": "./scripts/build-frontend.sh", "purpose": "Build frontend assets"},
+        {"name": "download-models.sh", "path": "./scripts/download-models.sh", "purpose": "Download AI models"}
+      ],
+
+      "maintenance": [
+        {"name": "upgrade-python-deps.sh", "path": "./scripts/upgrade-python-deps.sh", "purpose": "Upgrade Python dependencies"},
+        {"name": "check-python-deps.sh", "path": "./scripts/check-python-deps.sh", "purpose": "Check Python dependency versions"},
+        {"name": "Cleanup-WSL.ps1", "path": "./scripts/Cleanup-WSL.ps1", "purpose": "Clean up WSL artifacts"},
+        {"name": "wsl-cleanup.sh", "path": "./scripts/wsl-cleanup.sh", "purpose": "Clean up WSL (bash)"},
+        {"name": "fix-wsl-stability.sh", "path": "./scripts/fix-wsl-stability.sh", "purpose": "Fix WSL stability issues"}
+      ],
+
+      "performance": [
+        {"name": "isolate-cpu.sh", "path": "./scripts/isolate-cpu.sh", "purpose": "Isolate CPU for performance"},
+        {"name": "benchmark-eval.sh", "path": "./scripts/benchmark-eval.sh", "purpose": "Run benchmarks"}
+      ],
+
+      "utilities": [
+        {"name": "health-check.sh", "path": "./scripts/health-check.sh", "purpose": "Health check services"},
+        {"name": "env-vars.sh", "path": "./scripts/env-vars.sh", "purpose": "Environment variable helpers"},
+        {"name": "stable-env.sh", "path": "./scripts/stable-env.sh", "purpose": "Stable environment configuration"},
+        {"name": "ruvector.sh", "path": "./scripts/ruvector.sh", "purpose": "RuVector CLI wrapper"},
+        {"name": "ruvector.ps1", "path": "./scripts/ruvector.ps1", "purpose": "RuVector CLI wrapper (PowerShell)"},
+        {"name": "cleanup-ruvector.ps1", "path": "./scripts/cleanup-ruvector.ps1", "purpose": "Cleanup RuVector artifacts"},
+        {"name": "flexstack.sh", "path": "./scripts/flexstack.sh", "purpose": "FlexStack orchestrator"}
+      ],
+
+      "sandboxing": [
+        {"name": "sandbox-agent.sh", "path": "./scripts/sandbox-agent.sh", "purpose": "Sandbox agent execution"},
+        {"name": "sandbox-wrapper.sh", "path": "./scripts/sandbox-wrapper.sh", "purpose": "Sandbox wrapper"}
+      ],
+
+      "analysis": [
+        {"name": "analyze-dependencies.py", "path": "./scripts/analyze-dependencies.py", "purpose": "Analyze dependencies"},
+        {"name": "analyze-workflows.py", "path": "./scripts/analyze-workflows.py", "purpose": "Analyze workflows"},
+        {"name": "agent-config.py", "path": "./scripts/agent-config.py", "purpose": "Agent configuration management"}
+      ],
+
+      "generation": [
+        {"name": "generate-verification.py", "path": "./scripts/generate-verification.py", "purpose": "Generate verification scripts from ARIA manifest"}
+      ],
+
+      "ml_ops": [
+        {"name": "finetune-example.py", "path": "./scripts/finetune-example.py", "purpose": "LLM finetuning example"}
+      ],
+
+      "offline": [
+        {"name": "prepare-offline.sh", "path": "./scripts/prepare-offline.sh", "purpose": "Prepare for offline/airgapped deployment"}
+      ]
+    }
+  },
+
+  "ci_workflows": [
+    {"name": "ci.yml", "path": "./.github/workflows/ci.yml", "purpose": "Main CI pipeline"},
+    {"name": "security.yml", "path": "./.github/workflows/security.yml", "purpose": "Security scanning"},
+    {"name": "attestation.yml", "path": "./.github/workflows/attestation.yml", "purpose": "Build attestation"},
+    {"name": "sbom.yml", "path": "./.github/workflows/sbom.yml", "purpose": "Software Bill of Materials"},
+    {"name": "component-verification.yml", "path": "./.github/workflows/component-verification.yml", "purpose": "Component verification"},
+    {"name": "e2e-validation.yml", "path": "./.github/workflows/e2e-validation.yml", "purpose": "End-to-end validation"},
+    {"name": "k8s-validation.yml", "path": "./.github/workflows/k8s-validation.yml", "purpose": "Kubernetes validation"},
+    {"name": "container-security.yml", "path": "./.github/workflows/container-security.yml", "purpose": "Container security scanning"},
+    {"name": "config-validation.yml", "path": "./.github/workflows/config-validation.yml", "purpose": "Configuration validation"},
+    {"name": "shellcheck.yml", "path": "./.github/workflows/shellcheck.yml", "purpose": "Shell script linting"},
+    {"name": "editorconfig.yml", "path": "./.github/workflows/editorconfig.yml", "purpose": "EditorConfig validation"},
+    {"name": "python-matrix.yml", "path": "./.github/workflows/python-matrix.yml", "purpose": "Python version matrix testing"},
+    {"name": "benchmarks.yml", "path": "./.github/workflows/benchmarks.yml", "purpose": "Performance benchmarks"},
+    {"name": "realtime-latency.yml", "path": "./.github/workflows/realtime-latency.yml", "purpose": "Real-time latency benchmarks"},
+    {"name": "performance.yml", "path": "./.github/workflows/performance.yml", "purpose": "Performance testing"},
+    {"name": "bootstrap-test.yml", "path": "./.github/workflows/bootstrap-test.yml", "purpose": "Bootstrap script testing"},
+    {"name": "test-bootstrap.yml", "path": "./.github/workflows/test-bootstrap.yml", "purpose": "Test bootstrap flow"},
+    {"name": "agixt-test.yml", "path": "./.github/workflows/agixt-test.yml", "purpose": "AGiXT integration test"},
+    {"name": "localai-test.yml", "path": "./.github/workflows/localai-test.yml", "purpose": "LocalAI integration test"},
+    {"name": "verify-ai-tools.yml", "path": "./.github/workflows/verify-ai-tools.yml", "purpose": "AI tools verification"},
+    {"name": "opa-policy-gate.yml", "path": "./.github/workflows/opa-policy-gate.yml", "purpose": "OPA policy enforcement"},
+    {"name": "eval-gate.yml", "path": "./.github/workflows/eval-gate.yml", "purpose": "Evaluation gate"},
+    {"name": "wsl2-build.yml", "path": "./.github/workflows/wsl2-build.yml", "purpose": "WSL2 build testing"},
+    {"name": "nixos-images.yml", "path": "./.github/workflows/nixos-images.yml", "purpose": "NixOS image generation"},
+    {"name": "flakehub-publish-tagged.yml", "path": "./.github/workflows/flakehub-publish-tagged.yml", "purpose": "FlakeHub publish on tag"},
+    {"name": "release.yml", "path": "./.github/workflows/release.yml", "purpose": "Release automation"},
+    {"name": "docs.yml", "path": "./.github/workflows/docs.yml", "purpose": "Documentation generation"}
+  ],
+
+  "docker_compose_stacks": [
+    {"name": "docker-compose.yml", "path": "./docker/docker-compose.yml", "purpose": "Main docker compose stack"},
+    {"name": "docker-compose.agixt.yml", "path": "./docker/docker-compose.agixt.yml", "purpose": "AGiXT services"},
+    {"name": "docker-compose.argo.yml", "path": "./docker/docker-compose.argo.yml", "purpose": "Argo workflows"},
+    {"name": "docker-compose.automation.yml", "path": "./docker/docker-compose.automation.yml", "purpose": "Automation services"},
+    {"name": "docker-compose.bytebase.yml", "path": "./docker/docker-compose.bytebase.yml", "purpose": "Bytebase database management"},
+    {"name": "docker-compose.caching.yml", "path": "./docker/docker-compose.caching.yml", "purpose": "Caching layer"},
+    {"name": "docker-compose.data.yml", "path": "./docker/docker-compose.data.yml", "purpose": "Data services"},
+    {"name": "docker-compose.edge.yml", "path": "./docker/docker-compose.edge.yml", "purpose": "Edge services"},
+    {"name": "docker-compose.holochain.yml", "path": "./docker/docker-compose.holochain.yml", "purpose": "Holochain services"},
+    {"name": "docker-compose.identity.yml", "path": "./docker/docker-compose.identity.yml", "purpose": "Identity/auth services"},
+    {"name": "docker-compose.inference.yml", "path": "./docker/docker-compose.inference.yml", "purpose": "AI inference services"},
+    {"name": "docker-compose.lightweight.yml", "path": "./docker/docker-compose.lightweight.yml", "purpose": "Lightweight stack"},
+    {"name": "docker-compose.llmops.yml", "path": "./docker/docker-compose.llmops.yml", "purpose": "LLMOps services"},
+    {"name": "docker-compose.localai.yml", "path": "./docker/docker-compose.localai.yml", "purpose": "LocalAI inference"},
+    {"name": "docker-compose.messaging.yml", "path": "./docker/docker-compose.messaging.yml", "purpose": "Messaging (NATS, Temporal)"},
+    {"name": "docker-compose.observability.yml", "path": "./docker/docker-compose.observability.yml", "purpose": "Observability stack"},
+    {"name": "docker-compose.refact.yml", "path": "./docker/docker-compose.refact.yml", "purpose": "Refact services"},
+    {"name": "docker-compose.ruvector.yml", "path": "./docker-compose.ruvector.yml", "purpose": "RuVector vector database"},
+    {"name": "docker-compose.qudag.yml", "path": "./docker-compose.qudag.yml", "purpose": "QuDAG quantum-resistant"},
+    {"name": "docker-compose.state.yml", "path": "./docker/docker-compose.state.yml", "purpose": "State storage"},
+    {"name": "docker-compose.temporal.yml", "path": "./docker/docker-compose.temporal.yml", "purpose": "Temporal workflows"},
+    {"name": "docker-compose.ui.yml", "path": "./docker/docker-compose.ui.yml", "purpose": "UI services"}
+  ],
+
+  "environments": {
+    "pixi": [
+      {"name": "default", "solve_group": "default", "features": [], "purpose": "Base ROS2 environment"},
+      {"name": "cuda", "solve_group": "cuda", "features": ["cuda"], "purpose": "CUDA-enabled PyTorch"},
+      {"name": "aios", "solve_group": "aios", "features": ["aios"], "purpose": "AIOS Agent OS"},
+      {"name": "aios-cuda", "solve_group": "aios-cuda", "features": ["aios", "aios-cuda", "cuda"], "purpose": "AIOS with GPU"},
+      {"name": "llmops", "solve_group": "llmops", "features": ["llmops"], "purpose": "LLMOps evaluation"},
+      {"name": "finetuning", "solve_group": "finetuning", "features": ["finetuning"], "purpose": "LLM finetuning"},
+      {"name": "finetuning-cuda", "solve_group": "finetuning-cuda", "features": ["finetuning", "cuda"], "purpose": "LLM finetuning with GPU"},
+      {"name": "caching", "solve_group": "caching", "features": ["caching"], "purpose": "LLM caching"},
+      {"name": "docs", "solve_group": "docs", "features": ["docs"], "purpose": "Documentation generation"},
+      {"name": "vectordb-chromadb", "solve_group": "vectordb-chromadb", "features": ["vectordb-chromadb"], "purpose": "ChromaDB vector database"},
+      {"name": "vectordb-ruvector", "solve_group": "vectordb-ruvector", "features": ["vectordb-ruvector"], "purpose": "RuVector vector database"},
+      {"name": "qudag", "solve_group": "qudag", "features": ["qudag"], "purpose": "QuDAG quantum-resistant"}
+    ],
+
+    "os_support": {
+      "linux": {"platforms": ["linux-64", "linux-aarch64"], "bootstrap": "bootstrap.sh"},
+      {"macos": {"platforms": ["osx-64", "osx-arm64"], "bootstrap": "bootstrap.sh"},
+      "windows": {"platforms": ["win-64"], "bootstrap": "bootstrap.ps1", "requires_wsl": true}
+    }
+  },
+
+  "providers": {
+    "ai_inference": [
+      {"name": "OpenAI", "config_path": "UNKNOWN", "auth": "API key via env"},
+      {"name": "Anthropic", "config_path": "UNKNOWN", "auth": "API key via env"},
+      {"name": "LocalAI", "config_path": "./config/localai/", "auth": "local"},
+      {"name": "AGiXT", "config_path": "./config/agixt/", "auth": "local"}
+    ],
+
+    "messaging": [
+      {"name": "NATS", "config_path": "./docker/docker-compose.messaging.yml", "auth": "credentials file"},
+      {"name": "Temporal", "config_path": "./docker/docker-compose.temporal.yml", "auth": "local"}
+    ],
+
+    "identity": [
+      {"name": "Keycloak", "config_path": "./config/keycloak/", "auth": "admin credentials"},
+      {"name": "Step CA", "config_path": "./config/step-ca/", "auth": "certificates"}
+    ],
+
+    "observability": [
+      {"name": "Prometheus", "config_path": "./config/prometheus/", "auth": "local"},
+      {"name": "Grafana", "config_path": "./config/grafana/", "auth": "credentials"},
+      {"name": "Jaeger", "config_path": "UNKNOWN", "auth": "local"}
+    ],
+
+    "storage": [
+      {"name": "MinIO", "config_path": "./config/minio/", "auth": "access key/secret"},
+      {"name": "PostgreSQL", "config_path": "./docker/docker-compose.data.yml", "auth": "credentials"},
+      {"name": "Redis", "config_path": "./docker/docker-compose.caching.yml", "auth": "password"}
+    ],
+
+    "kubernetes": [
+      {"name": "ArgoCD", "config_path": "./manifests/argocd/", "auth": "kubeconfig"},
+      {"name": "Argo Workflows", "config_path": "./manifests/argo-workflows/", "auth": "kubeconfig"},
+      {"name": "Argo Rollouts", "config_path": "./manifests/argo-rollouts/", "auth": "kubeconfig"}
+    ]
+  },
+
+  "artifacts": {
+    "docker_images": [
+      {"name": "open-lovable", "dockerfile": "./config/dockerfiles/Dockerfile.open-lovable", "purpose": "Open Lovable UI"}
+    ],
+
+    "nixos_images": [
+      {"name": "wsl-ripple", "path": "UNKNOWN", "format": "WSL tarball", "purpose": "NixOS WSL distribution"},
+      {"name": "iso-ros2", "path": "UNKNOWN", "format": "ISO", "purpose": "Bootable ISO installer"},
+      {"name": "vm-ros2", "path": "UNKNOWN", "format": "QCOW2", "purpose": "VM image"}
+    ],
+
+    "helm_charts": [
+      {"name": "flexstack", "path": "./charts/flexstack/", "purpose": "FlexStack Helm chart"}
+    ]
+  },
+
+  "unknowns": [
+    "Exact provider auth configuration paths (mostly in docker-compose files)",
+    "Complete list of generated artifacts and their output locations",
+    "Port mappings per service (needs extraction from docker-compose files)",
+    "Environment variable registry (needs generation)",
+    "Complete script dependency graph (needs analysis)",
+    "Golden path proof (needs tracing through scripts and CI)",
+    "Secrets management strategy (needs investigation)"
+  ]
+}

@@ -72,6 +72,13 @@ New to the project? Start here:
 | [MINDSDB_QUICKSTART.md](MINDSDB_QUICKSTART.md) | MindsDB ML platform setup |
 | [GENAI_TOOLBOX_INSTALL.md](GENAI_TOOLBOX_INSTALL.md) | GenAI toolbox installation |
 
+### Cookbooks
+
+| Document | Description |
+|----------|-------------|
+| [cookbooks/INDEX.md](cookbooks/INDEX.md) | Task-oriented recipes |
+| [cookbooks/LOCALAI-MODELS-CACHE.md](cookbooks/LOCALAI-MODELS-CACHE.md) | Fetch + cache LocalAI models (Git LFS) |
+
 ### Distributed Systems
 
 | Document | Description |
