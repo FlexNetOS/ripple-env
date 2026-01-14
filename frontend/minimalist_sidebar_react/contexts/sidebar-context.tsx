@@ -35,6 +35,15 @@ export interface SidebarContextProps {
   toggleSidebar: () => void;
   expandedItems: Set<string>;
   toggleExpanded: (itemKey: string) => void;
+  // Double minimize support - synced with web
+  iconCollapsed: boolean;
+  setIconCollapsed: (collapsed: boolean) => void;
+  // Detail sidebar collapsed state
+  detailCollapsed: boolean;
+  setDetailCollapsed: (collapsed: boolean) => void;
+  // Double minimize toggle
+  toggleDoubleMinimize: () => void;
+  isFullyCollapsed: boolean;
   // Notifications panel
   showNotifications: boolean;
   setShowNotifications: (show: boolean) => void;
@@ -44,12 +53,14 @@ export interface SidebarContextProps {
   // Quick switcher
   showQuickSwitcher: boolean;
   setShowQuickSwitcher: (show: boolean) => void;
+  // Web browser panel - synced with web
+  showWebBrowser: boolean;
+  setShowWebBrowser: (show: boolean) => void;
+  browserUrl: string;
+  setBrowserUrl: (url: string) => void;
   // Navigation callback
   onNavigate?: (route: string) => void;
   setOnNavigate: (callback: ((route: string) => void) | undefined) => void;
-  // Detail sidebar collapsed state
-  detailCollapsed: boolean;
-  setDetailCollapsed: (collapsed: boolean) => void;
   // Persistence loaded flag
   isPersistenceLoaded: boolean;
 }
@@ -74,9 +85,12 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
   const [activeSection, setActiveSectionState] = useState('ai');
   const [activeWorkspace, setActiveWorkspaceState] = useState<WorkspaceType>('all');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [iconCollapsed, setIconCollapsedState] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showQuickSwitcher, setShowQuickSwitcher] = useState(false);
+  const [showWebBrowser, setShowWebBrowserState] = useState(false);
+  const [browserUrl, setBrowserUrlState] = useState('https://google.com');
   const [onNavigate, setOnNavigate] = useState<((route: string) => void) | undefined>(undefined);
   const [detailCollapsed, setDetailCollapsedState] = useState(false);
   const [isPersistenceLoaded, setIsPersistenceLoaded] = useState(false);
@@ -90,6 +104,8 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
         setActiveWorkspaceState(state.activeWorkspace);
         setExpandedItems(new Set(state.expandedItems));
         setDetailCollapsedState(state.detailCollapsed);
+        setIconCollapsedState(state.iconCollapsed || false);
+        setBrowserUrlState(state.browserUrl || 'https://google.com');
         setIsPersistenceLoaded(true);
       } catch (error) {
         console.error('Failed to load persisted sidebar state:', error);
@@ -97,6 +113,45 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
       }
     };
     loadPersistedState();
+  }, []);
+
+  // Icon collapsed setter with persistence
+  const setIconCollapsed = useCallback((collapsed: boolean) => {
+    setIconCollapsedState(collapsed);
+    sidebarPersistence.saveIconCollapsed(collapsed);
+  }, []);
+
+  // Double minimize toggle
+  const toggleDoubleMinimize = useCallback(() => {
+    const isCurrentlyFullyCollapsed = iconCollapsed && detailCollapsed;
+    if (isCurrentlyFullyCollapsed) {
+      setIconCollapsedState(false);
+      setDetailCollapsedState(false);
+      sidebarPersistence.saveIconCollapsed(false);
+      sidebarPersistence.saveDetailCollapsed(false);
+    } else {
+      setIconCollapsedState(true);
+      setDetailCollapsedState(true);
+      sidebarPersistence.saveIconCollapsed(true);
+      sidebarPersistence.saveDetailCollapsed(true);
+    }
+  }, [iconCollapsed, detailCollapsed]);
+
+  const isFullyCollapsed = iconCollapsed && detailCollapsed;
+
+  // Web browser controls
+  const setShowWebBrowser = useCallback((show: boolean) => {
+    setShowWebBrowserState(show);
+    if (show) {
+      setShowNotifications(false);
+      setShowFavorites(false);
+      setShowQuickSwitcher(false);
+    }
+  }, []);
+
+  const setBrowserUrl = useCallback((url: string) => {
+    setBrowserUrlState(url);
+    sidebarPersistence.saveBrowserUrl(url);
   }, []);
 
   const toggleSidebar = useCallback(() => {
@@ -154,16 +209,24 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
     toggleSidebar,
     expandedItems,
     toggleExpanded,
+    iconCollapsed,
+    setIconCollapsed,
+    detailCollapsed,
+    setDetailCollapsed,
+    toggleDoubleMinimize,
+    isFullyCollapsed,
     showNotifications,
     setShowNotifications,
     showFavorites,
     setShowFavorites,
     showQuickSwitcher,
     setShowQuickSwitcher,
+    showWebBrowser,
+    setShowWebBrowser,
+    browserUrl,
+    setBrowserUrl,
     onNavigate,
     setOnNavigate,
-    detailCollapsed,
-    setDetailCollapsed,
     isPersistenceLoaded,
   }), [
     state, 
@@ -175,12 +238,20 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
     toggleSidebar, 
     expandedItems, 
     toggleExpanded,
+    iconCollapsed,
+    setIconCollapsed,
+    detailCollapsed,
+    setDetailCollapsed,
+    toggleDoubleMinimize,
+    isFullyCollapsed,
     showNotifications,
     showFavorites,
     showQuickSwitcher,
+    showWebBrowser,
+    setShowWebBrowser,
+    browserUrl,
+    setBrowserUrl,
     onNavigate,
-    detailCollapsed,
-    setDetailCollapsed,
     isPersistenceLoaded,
   ]);
 

@@ -1,0 +1,52 @@
+{
+  "name": "FlexNetOS",
+  "version": "1.0.0",
+  "description": "Enterprise-grade agentic operating system with BUILDKIT compliance",
+  "buildTime": "2026-01-13T00:00:00Z",
+  "nixosVersion": "24.05",
+  "wslVersion": 2,
+  "architecture": "x86_64",
+  "services": [
+    "holochain",
+    "nats", 
+    "vault",
+    "kong",
+    "agixt",
+    "localai",
+    "prometheus",
+    "grafana",
+    "keycloak",
+    "minio",
+    "ipfs",
+    "tensorzero",
+    "lobe-chat"
+  ],
+  "features": [
+    "Native NixOS (not Ubuntu+Nix)",
+    "Systemd init system",
+    "Docker containerization",
+    "Prometheus monitoring",
+    "Grafana dashboards",
+    "Vault secrets management",
+    "Enterprise security",
+    "Automated health checks",
+    "WSL2 optimized"
+  ],
+  "requirements": {
+    "os": "Windows 10/11 with WSL2",
+    "ram": "8GB recommended",
+    "disk": "20GB free space",
+    "cpu": "4 cores recommended"
+  },
+  "networking": {
+    "ports": [
+      "3000: Grafana",
+      "9090: Prometheus", 
+      "8080: AgentGateway",
+      "8200: Vault",
+      "8000: Kong Gateway",
+      "8081: AGiXT",
+      "8080: LocalAI"
+    ]
+  }
+}

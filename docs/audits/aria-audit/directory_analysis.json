@@ -1,0 +1,92 @@
+{
+  ".claude": {
+    "description": "Agent system",
+    "file_count": 66,
+    "directory_count": 29,
+    "exists": true
+  },
+  "docs": {
+    "description": "Documentation",
+    "file_count": 158,
+    "directory_count": 19,
+    "exists": true
+  },
+  "docker": {
+    "description": "Docker configurations",
+    "file_count": 27,
+    "directory_count": 1,
+    "exists": true
+  },
+  "config": {
+    "description": "Application configs",
+    "file_count": 43,
+    "directory_count": 27,
+    "exists": true
+  },
+  "modules": {
+    "description": "Nix modules",
+    "file_count": 30,
+    "directory_count": 7,
+    "exists": true
+  },
+  "manifests": {
+    "description": "Kubernetes manifests",
+    "file_count": 88,
+    "directory_count": 49,
+    "exists": true
+  },
+  "rust": {
+    "description": "Rust code",
+    "file_count": 9,
+    "directory_count": 3,
+    "exists": true
+  },
+  "scripts": {
+    "description": "Utility scripts",
+    "file_count": 98,
+    "directory_count": 0,
+    "exists": true
+  },
+  "test": {
+    "description": "Test suites",
+    "file_count": 10,
+    "directory_count": 7,
+    "exists": true
+  },
+  "agents": {
+    "description": "Agent definitions",
+    "file_count": 1,
+    "directory_count": 0,
+    "exists": true
+  },
+  "infrastructure": {
+    "description": "Infrastructure code",
+    "file_count": 3,
+    "directory_count": 2,
+    "exists": true
+  },
+  "lib": {
+    "description": "Library code",
+    "file_count": 2,
+    "directory_count": 0,
+    "exists": true
+  },
+  "nix": {
+    "description": "Nix configurations",
+    "file_count": 45,
+    "directory_count": 11,
+    "exists": true
+  },
+  "secrets": {
+    "description": "Secret management",
+    "file_count": 1,
+    "directory_count": 0,
+    "exists": true
+  },
+  "data": {
+    "description": "Data directory",
+    "file_count": 4,
+    "directory_count": 1,
+    "exists": true
+  }
+}

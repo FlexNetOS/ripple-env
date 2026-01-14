@@ -1,0 +1,201 @@
+{
+  "installation_mapping": {
+    "nushell/nushell": {
+      "method": "nix_package",
+      "location": "flake.nix",
+      "package": "nushell"
+    },
+    "prefix-dev/pixi": {
+      "method": "already_included",
+      "location": "pixi.toml",
+      "note": "Already configured"
+    },
+    "kata-containers/kata-containers": {
+      "method": "nix_package",
+      "location": "flake.nix",
+      "package": "kata-runtime"
+    },
+    "firecracker-microvm/firecracker": {
+      "method": "nix_package",
+      "location": "flake.nix",
+      "package": "firecracker"
+    },
+    "anthropic-experimental/sandbox-runtime": {
+      "method": "binary_download",
+      "location": "flake.nix",
+      "note": "GitHub release fetch"
+    },
+    "argoproj/argo-cd": {
+      "method": "docker_service",
+      "location": "docker/argo-cd.yml"
+    },
+    "argoproj/argo-rollouts": {
+      "method": "docker_service",
+      "location": "docker/argo-rollouts.yml"
+    },
+    "argoproj/argo-workflows": {
+      "method": "docker_service",
+      "location": "docker/argo-workflows.yml"
+    },
+    "kong/kong": {
+      "method": "docker_service",
+      "location": "docker/kong.yml"
+    },
+    "agentgateway/agentgateway": {
+      "method": "rust_crate",
+      "location": "rust/Cargo.toml"
+    },
+    "keycloak/keycloak": {
+      "method": "docker_service",
+      "location": "docker/keycloak.yml"
+    },
+    "hashicorp/vault": {
+      "method": "docker_service",
+      "location": "docker/vault.yml"
+    },
+    "open-policy-agent/opa": {
+      "method": "binary_download",
+      "location": "flake.nix"
+    },
+    "nats-io/nats-server": {
+      "method": "nix_package",
+      "location": "flake.nix",
+      "package": "nats-server"
+    },
+    "temporalio/temporal": {
+      "method": "docker_service",
+      "location": "docker/temporal.yml"
+    },
+    "agiresearch/aios": {
+      "method": "pixi_package",
+      "location": "pixi.toml [feature.aios]"
+    },
+    "josh-xt/agixt": {
+      "method": "docker_service",
+      "location": "docker/agixt.yml"
+    },
+    "agno-agi/agno": {
+      "method": "pixi_package",
+      "location": "pixi.toml"
+    },
+    "mudler/localai": {
+      "method": "docker_service",
+      "location": "docker/localai.yml"
+    },
+    "postgres/postgres": {
+      "method": "docker_service",
+      "location": "docker/postgres.yml"
+    },
+    "redis/redis": {
+      "method": "nix_package",
+      "location": "flake.nix",
+      "package": "redis"
+    },
+    "minio/minio": {
+      "method": "docker_service",
+      "location": "docker/minio.yml"
+    },
+    "ipfs/kubo": {
+      "method": "nix_package",
+      "location": "flake.nix",
+      "package": "kubo"
+    },
+    "holochain/holochain": {
+      "method": "nix_overlay",
+      "location": "flake.nix",
+      "note": "Via holochain overlay"
+    },
+    "holochain/lair": {
+      "method": "nix_overlay",
+      "location": "flake.nix",
+      "note": "Via holochain overlay"
+    },
+    "promptfoo/promptfoo": {
+      "method": "npm_wrapper",
+      "location": "flake.nix",
+      "command": "npx promptfoo@latest"
+    },
+    "truera/trulens": {
+      "method": "pixi_package",
+      "location": "pixi.toml"
+    },
+    "tensorzero/tensorzero": {
+      "method": "docker_service",
+      "location": "docker/tensorzero.yml"
+    },
+    "lobehub/lobe-chat": {
+      "method": "docker_service",
+      "location": "docker/lobe-chat.yml"
+    },
+    "jupyterlab/jupyterlab": {
+      "method": "pixi_package",
+      "location": "pixi.toml"
+    },
+    "prometheus/prometheus": {
+      "method": "nix_package",
+      "location": "flake.nix",
+      "package": "prometheus"
+    },
+    "grafana/grafana": {
+      "method": "docker_service",
+      "location": "docker/grafana.yml"
+    },
+    "aquasecurity/trivy": {
+      "method": "nix_package",
+      "location": "flake.nix",
+      "package": "trivy"
+    }
+  },
+  "method_counts": {
+    "nix_package": 8,
+    "already_included": 1,
+    "binary_download": 2,
+    "docker_service": 14,
+    "rust_crate": 1,
+    "pixi_package": 4,
+    "nix_overlay": 2,
+    "npm_wrapper": 1
+  },
+  "feature_flags": [
+    {
+      "name": "inference_backend",
+      "options": {
+        "A": "localai",
+        "B": "vllm"
+      },
+      "default": "A",
+      "config_location": "pixi.toml [feature.inference-localai] / [feature.inference-vllm]",
+      "description": "LocalAI vs vLLM for inference serving"
+    },
+    {
+      "name": "vector_store",
+      "options": {
+        "A": "ruvector",
+        "B": "chromadb"
+      },
+      "default": "A",
+      "config_location": "pixi.toml [feature.vectordb-ruvector] / [feature.vectordb-chromadb]",
+      "description": "ruvector vs ChromaDB for vector storage"
+    },
+    {
+      "name": "orchestration_platform",
+      "options": {
+        "A": "agixt",
+        "B": "temporal_only"
+      },
+      "default": "A",
+      "config_location": "docker-compose.agixt.yml vs docker-compose.temporal.yml",
+      "description": "AGiXT full platform vs Temporal-only workflows"
+    },
+    {
+      "name": "container_runtime",
+      "options": {
+        "A": "kata",
+        "B": "firecracker"
+      },
+      "default": "A",
+      "config_location": "nix modules",
+      "description": "Kata Containers vs Firecracker for isolation"
+    }
+  ]
+}

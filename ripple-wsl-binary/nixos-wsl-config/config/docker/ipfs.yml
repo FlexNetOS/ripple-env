@@ -1,0 +1,212 @@
+# IPFS - InterPlanetary File System (BUILDKIT L10)
+# P3-002: IPFS provides content-addressed distributed storage
+#
+# IPFS features:
+#   - Content-addressed storage
+#   - Distributed hash table (DHT)
+#   - Immutable data linking
+#   - Versioning and deduplication
+#   - P2P networking
+#   - Gateway HTTP interface
+#
+# Components:
+#   - IPFS Daemon: Main node process
+#   - IPFS Cluster: Optional clustering for high availability
+#
+# References:
+#   - https://docs.ipfs.io
+#   - https://github.com/ipfs/kubo
+#   - BUILDKIT_STARTER_SPEC.md L10: State & Storage
+
+version: '3.8'
+
+services:
+  # IPFS Node
+  ipfs:
+    image: ipfs/kubo:v0.26.0
+    container_name: ipfs
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      # IPFS configuration
+      IPFS_PROFILE: server
+      
+      # API configuration
+      IPFS_API: /ip4/0.0.0.0/tcp/5001
+      IPFS_GATEWAY: /ip4/0.0.0.0/tcp/8080
+      
+      # Swarm configuration
+      IPFS_SWARM_TCP: /ip4/0.0.0.0/tcp/4001
+      IPFS_SWARM_WS: /ip4/0.0.0.0/tcp/8081
+      
+      # Datastore
+      IPFS_DATASTORE: flatfs
+      IPFS_DATASTORE_SYNC: "true"
+      
+      # Routing
+      IPFS_ROUTING: dht
+      
+      # Reprovider
+      IPFS_REPROVIDER_STRATEGY: all
+      
+      # Gateway
+      IPFS_GATEWAY_WRITABLE: "false"
+      IPFS_GATEWAY_PATH_PREFIXES: /ipfs,/ipns
+      
+      # API
+      IPFS_API_CORS_ORIGINS: "*"
+      IPFS_API_CORS_METHODS: GET,POST,PUT,DELETE,OPTIONS
+      IPFS_API_CORS_HEADERS: "*"
+      
+      # Logging
+      IPFS_LOGGING: info
+      
+      # Metrics
+      IPFS_METRICS: "true"
+      IPFS_METRICS_PROMETHEUS: "true"
+      
+      # Experimental features
+      IPFS_EXPERIMENTAL_LIBP2P_STREAM_MOUNTING: "false"
+      IPFS_EXPERIMENTAL_P2P_HTTP_PROXY: "false"
+      
+      # Accelerated DHT client
+      IPFS_EXPERIMENTAL_ACCELERATED_DHT_CLIENT: "true"
+      
+      # Strategic providing
+      IPFS_EXPERIMENTAL_STRATEGIC_PROVIDING: "true"
+      
+      # Graphsync
+      IPFS_EXPERIMENTAL_GRAPH_SYNC: "true"
+      
+      # QUIC
+      IPFS_SWARM_ENABLE_RELAY_HOP: "false"
+      IPFS_SWARM_ENABLE_AUTO_RELAY: "true"
+      IPFS_SWARM_ENABLE_AUTO_NAT: "true"
+      
+      # Connection manager
+      IPFS_SWARM_CONN_MGR_LOW_WATER: 600
+      IPFS_SWARM_CONN_MGR_HIGH_WATER: 900
+      IPFS_SWARM_CONN_MGR_GRACE_PERIOD: 20s
+      
+      # Resource manager
+      IPFS_SWARM_RESOURCE_MGR_ENABLED: "true"
+      
+      # PubSub
+      IPFS_PUBSUB_ROUTER: gossipsub
+      
+      # Namesys
+      IPFS_NAMESYS_CACHE_SIZE: 128
+      
+      # Gateway
+      IPFS_GATEWAY_ROOT_REDIRECT: 
+      IPFS_GATEWAY_FAST_DIR_INDEX_THRESHOLD: 100
+      
+      # Datastore
+      IPFS_DATASTORE_STORAGE_MAX: 10GB
+      IPFS_DATASTORE_GC_PERIOD: 1h
+      IPFS_DATASTORE_GC_WATERMARK: 90
+      IPFS_DATASTORE_GC_WORKERS: 8
+      
+      # Seeding
+      IPFS_SEEDING: "true"
+      
+      # AutoNAT
+      IPFS_SWARM_ENABLE_AUTO_NAT_SERVICE: "true"
+      
+      # Hole punching
+      IPFS_SWARM_ENABLE_HOLE_PUNCHING: "true"
+    
+    # Ports
+    ports:
+      - "4001:4001"  # IPFS swarm TCP
+      - "4001:4001/udp"  # IPFS swarm UDP
+      - "5001:5001"  # IPFS API
+      - "8080:8080"  # IPFS Gateway
+      - "8081:8081"  # IPFS WebSocket
+      - "127.0.0.1:5001:5001"  # Local API only
+    
+    # Volumes
+    volumes:
+      # IPFS data directory
+      - ipfs-data:/data/ipfs
+      # Configuration
+      - ./config/ipfs:/data/ipfs/config
+      # Export directory
+      - ./data/ipfs/export:/export
+      # Mount directory
+      - ./data/ipfs/mount:/ipfs
+      - ./data/ipfs/mount:/ipns
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - ipfs-network
+    
+    # Labels for documentation and management
+    labels:
+      - "service=ipfs"
+      - "layer=L10-State-Storage"
+      - "description=IPFS distributed storage node"
+      - "traefik.enable=true"
+      - "traefik.http.routers.ipfs.rule=Host(`ipfs.localhost`)"
+      - "traefik.http.routers.ipfs.entrypoints=web"
+      - "traefik.http.services.ipfs.loadbalancer.server.port=8080"
+
+  # Optional: IPFS Cluster (for high availability)
+  # ipfs-cluster:
+  #   image: ipfs/ipfs-cluster:latest
+  #   container_name: ipfs-cluster
+  #   restart: unless-stopped
+  #   
+  #   Environment variables:
+  #     CLUSTER_SECRET: cluster-secret-change-in-production
+  #     CLUSTER_LEAVEONSHUTDOWN: "false"
+  #     CLUSTER_BOOTSTRAP: "true"
+  #   
+  #   Ports:
+  #     - "9094:9094"  # Cluster API
+  #     - "9095:9095"  # Cluster proxy
+  #     - "9096:9096"  # Cluster IPFS proxy
+  #   
+  #   Volumes:
+  #     - ipfs-cluster-data:/data/ipfs-cluster
+  #   
+  #   Depends on:
+  #     - ipfs
+  #   
+  #   Network:
+  #     - ipfs-network
+  #   
+  #   Labels:
+  #     - "service=ipfs-cluster"
+  #     - "layer=L10-State-Storage"
+  #     - "description=IPFS cluster for high availability"
+
+# Volumes
+volumes:
+  ipfs-data:
+    driver: local
+  # ipfs-cluster-data:
+  #   driver: local
+
+# Networks
+networks:
+  ipfs-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.0.0/16

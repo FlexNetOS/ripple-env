@@ -1,0 +1,786 @@
+---
+# P0 CRITICAL TASK SPECIFICATIONS
+# FlexNetOS ripple-env Repository
+# Generated: 2026-01-10
+# ARIA Audit Findings - Multi-Agent Analysis
+#
+# These specifications define critical gaps that block production deployment.
+# All tasks are required before system goes live.
+#
+# Total Effort: 7 hours
+# Dependencies: P0-001 → P0-002 → P0-003
+#
+
+tasks:
+
+  # =============================================================================
+  # P0-001: Add HashiCorp Vault to docker-compose.identity.yml
+  # =============================================================================
+  # DOMAIN: Layer 5 - Identity & Access Management (BUILDKIT_STARTER_SPEC.md)
+  # PRIORITY: P0 (Critical - blocks secrets management)
+  # EFFORT: 1 hour
+  # STATUS: Pending
+  #
+  - id: "P0-001"
+    title: "Add HashiCorp Vault container to Identity & Access Management stack"
+    domain: "5 - Identity & Policy Management"
+    section: "secrets-management"
+    priority: "P0"
+    severity: "Critical"
+    status: "pending"
+
+    issue: |
+      HashiCorp Vault is missing from the Identity stack despite being:
+      1. Listed in BUILDKIT_STARTER_SPEC.md as a core Layer 5 component
+      2. Already present in flake.nix (vault + vault-dev wrapper)
+      3. Required for secure secrets management per SEC-004 audit finding
+      4. Needed for service-to-service credential distribution
+
+      Current state: Vault is installed in Nix (nix develop → vault available)
+      but NOT deployed as a Docker service in docker-compose.identity.yml.
+
+      This gap prevents:
+      - Centralized secrets management across all services
+      - Dynamic credential generation for databases/services
+      - Audit trail of secret access
+      - Rotation of service credentials
+
+    location: "/home/user/ripple-env/docker/docker-compose.identity.yml"
+
+    impact: |
+      **System Impact:**
+      - All services must manually manage credentials
+      - No audit trail of secret access
+      - Cannot rotate credentials safely
+      - Secrets distributed in environment variables (security risk)
+
+      **Service Dependencies:**
+      - Keycloak: Can use Vault for credentials
+      - PostgreSQL (keycloak-db): DB credentials stored in Vault
+      - NATS: Client credentials from Vault (P0-002 dependency)
+      - Temporal: Database credentials from Vault
+      - All microservices: Auth tokens from Vault
+
+      **Compliance Impact:**
+      - Fails SEC-004 (secrets management audit)
+      - Cannot pass production readiness review
+
+    acceptance_criteria:
+      - "Vault service runs on ports 8200 (HTTP) and 8201 (cluster)"
+      - "Vault initializes with dev mode or sealed/unsealed flow documented"
+      - "Vault depends_on other services (step-ca for mTLS)"
+      - "Health check endpoint responds at /v1/sys/health"
+      - "Vault volume persists secrets to docker volume (vault-storage)"
+      - "Service is labeled with aria.priority=P0-001"
+      - "Integration guide documents accessing secrets from other services"
+      - "Docker service starts without errors: docker-compose -f docker-compose.identity.yml up -d"
+      - "Can authenticate to Vault and store/retrieve test secrets"
+      - "Keycloak and vaultwarden services depend_on vault service"
+
+    files_to_modify:
+      - "/home/user/ripple-env/docker/docker-compose.identity.yml"
+
+    files_to_create:
+      - "/home/user/ripple-env/config/vault/config.hcl (vault configuration)"
+      - "/home/user/ripple-env/scripts/init-vault.sh (initialization script)"
+      - "/home/user/ripple-env/docs/VAULT_SETUP.md (integration guide)"
+
+    technical_spec: |
+      ## Docker Compose Service Definition
+
+      ### Service: vault
+      - **Image**: hashicorp/vault:1.17.3
+      - **Container Name**: vault-server
+      - **Ports**:
+        - 8200:8200 (HTTP API)
+        - 8201:8201 (cluster communication)
+
+      ### Environment Variables
+      - VAULT_ADDR=http://localhost:8200
+      - VAULT_API_ADDR=http://vault:8200
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+      - VAULT_DEV_ROOT_TOKEN_ID=root (dev only; use real token in prod)
+      - VAULT_LOG_LEVEL=info
+
+      ### Volumes
+      - vault-storage:/vault/data (persistent secret storage)
+      - ./config/vault/config.hcl:/vault/config/config.hcl:ro
+
+      ### Health Check
+      ```bash
+      test: ["CMD", "curl", "-f", "http://localhost:8200/v1/sys/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+      ```
+
+      ### Network
+      - identity-network (shared with keycloak, vaultwarden, step-ca)
+
+      ### Dependencies
+      - step-ca (for mTLS certificates)
+
+      ### Labels
+      ```yaml
+      com.aria.component: identity
+      com.aria.service: vault-server
+      com.aria.priority: P0-001
+      com.aria.type: secrets-management
+      ```
+
+    complexity: "Small"
+    effort_hours: 1
+    time_breakdown:
+      setup_and_research: 0.15
+      compose_definition: 0.30
+      configuration_files: 0.15
+      documentation: 0.20
+      testing_and_validation: 0.20
+
+    dependencies:
+      - "step-ca must be configured (already done)"
+      - "identity-network must exist"
+      - "No direct blocking dependencies"
+
+    blockers: []
+
+    verification_command: |
+      # 1. Check service starts
+      docker-compose -f docker-compose.identity.yml up -d vault
+      sleep 5
+
+      # 2. Verify health
+      curl http://localhost:8200/v1/sys/health
+
+      # 3. Test authentication
+      curl -X POST http://localhost:8200/v1/auth/userpass/login/root \
+        -d '{"password": "root"}'
+
+      # 4. Test secret storage (replace TOKEN)
+      TOKEN="<token_from_previous_step>"
+      curl -X POST http://localhost:8200/v1/secret/data/test \
+        -H "X-Vault-Token: $TOKEN" \
+        -d '{"data": {"username": "test", "password": "secret123"}}'
+
+      # 5. Retrieve secret
+      curl http://localhost:8200/v1/secret/data/test \
+        -H "X-Vault-Token: $TOKEN"
+
+      # 6. Check logs
+      docker logs vault-server
+
+      # 7. Verify volume
+      docker volume ls | grep vault-storage
+
+    related_tasks:
+      - "P0-002: Enable NATS authentication (requires Vault for creds)"
+      - "P1-004: Vault-Keycloak OIDC integration"
+      - "P1-005: Load OPA policies from Vault"
+
+    references:
+      - "BUILDKIT_STARTER_SPEC.md: Layer 5 (lines 150-200)"
+      - "docs/MTLS_SETUP.md: mTLS integration"
+      - "docker-compose.identity.yml: Current identity stack"
+      - "https://developer.hashicorp.com/vault/docs/internals/architecture"
+      - "https://www.vaultproject.io/docs/commands/operator/init"
+
+    implementation_notes: |
+      **Key Decisions:**
+      1. Use dev mode for initial development (docker-compose.identity.yml)
+      2. Production will require sealed/unsealed flow with raft storage
+      3. Keycloak must be able to read Vault secrets
+      4. All service credentials should go through Vault
+
+      **Integration Points:**
+      - Keycloak: Read database credentials from Vault
+      - NATS: Authenticate clients via Vault (P0-002)
+      - Temporal: Database credentials via Vault
+      - All microservices: JWT tokens from Vault
+
+      **Security Considerations:**
+      - Dev mode unsuitable for production (use real init)
+      - All mTLS certs from step-ca
+      - Enable audit logging
+      - Implement credential rotation policy
+      - Use AppRole for service-to-service auth
+
+
+  # =============================================================================
+  # P0-002: Enable NATS authentication
+  # =============================================================================
+  # DOMAIN: Layer 6 - Messaging & Orchestration (BUILDKIT_STARTER_SPEC.md)
+  # PRIORITY: P0 (Critical - blocks inter-service communication security)
+  # EFFORT: 2 hours
+  # STATUS: Pending
+  # BLOCKEDBY: P0-001 (requires Vault for credential management)
+  #
+  - id: "P0-002"
+    title: "Enable NATS authentication and authorization"
+    domain: "6 - Messaging & Orchestration"
+    section: "nats-security"
+    priority: "P0"
+    severity: "Critical"
+    status: "pending"
+
+    issue: |
+      NATS server runs with authentication completely disabled:
+      1. docker-compose.messaging.yml has no auth configuration
+      2. Clients can connect without credentials (anonymous access)
+      3. No authorization rules for topic access
+      4. No audit trail of NATS client connections
+      5. Violates SEC-005 (authentication enforcement)
+
+      Current NATS command line:
+      ```
+      --name nats-main
+      --http_port 8222
+      --jetstream
+      --store_dir /data
+      ```
+
+      Missing:
+      - `--auth` flag with credentials
+      - Configuration file for advanced auth (users, permissions)
+      - JWT-based authentication for service-to-service
+      - Vault integration for credential rotation
+
+    location: "/home/user/ripple-env/docker/docker-compose.messaging.yml"
+
+    impact: |
+      **System Impact:**
+      - Any client can connect to NATS without credentials
+      - All topics accessible to all clients
+      - No client isolation between services
+      - Cannot audit who published/subscribed to what
+      - Event bus becomes single point of failure with no access control
+
+      **Affected Services:**
+      - Agent Runtime: No auth for agent inter-communication
+      - Temporal Workflows: No credentials for event sourcing
+      - n8n Automation: Any automation can access any topic
+      - Custom microservices: Cannot enforce role-based access
+
+      **Security Breach Scenarios:**
+      - Rogue service reads all published events
+      - Attacker injects malicious messages
+      - Cross-service data leakage (agents steal each other's data)
+      - Compliance violation (SEC-005)
+
+    acceptance_criteria:
+      - "NATS server configured with authentication enabled"
+      - "At least 3 user accounts created with different permissions (admin, agent, temporal)"
+      - "Credentials stored in Vault (integrates with P0-001)"
+      - "JWT-based authentication working for service-to-service"
+      - "Subject-based authorization enforced (agents cannot access temporal.* topics)"
+      - "NATS client connections require password or JWT token"
+      - "docker-compose.messaging.yml includes environment variables for auth"
+      - "NATS healthcheck still passes after auth enabled"
+      - "Temporal service can connect with correct credentials"
+      - "All clients receive 'Authorization Violation' when using wrong credentials"
+      - "docs/NATS_AUTH_SETUP.md documents all auth configurations"
+      - "Integration script shows how to add new authenticated clients"
+
+    files_to_modify:
+      - "/home/user/ripple-env/docker/docker-compose.messaging.yml"
+
+    files_to_create:
+      - "/home/user/ripple-env/config/nats/nats.conf (NATS configuration with auth)"
+      - "/home/user/ripple-env/scripts/setup-nats-auth.sh (credential setup)"
+      - "/home/user/ripple-env/docs/NATS_AUTH_SETUP.md (integration guide)"
+
+    technical_spec: |
+      ## NATS Authentication Architecture
+
+      ### Authentication Methods (in priority order)
+      1. **JWT-based (Recommended for services)**
+         - Each service gets a JWT signed by operator key
+         - No password exchange, token-based
+         - Automatic expiration and rotation
+
+      2. **Username/Password (for human clients)**
+         - Username and password in NATS config
+         - Stored in Vault for rotation
+         - Used for testing and monitoring
+
+      ### Configuration Structure
+      ```
+      # nats.conf
+      port: 4222
+
+      # Enable authentication
+      authorization {
+        # User definitions
+        users = [
+          { user: "admin", password: "$ADMIN_PASS", permissions: { publish: ">", subscribe: ">" } }
+          { user: "agent-svc", password: "$AGENT_PASS", permissions: {
+              publish: "agent.>",
+              subscribe: ["agent.>", "broadcast"]
+            }
+          }
+          { user: "temporal-svc", password: "$TEMPORAL_PASS", permissions: {
+              publish: "temporal.>",
+              subscribe: "temporal.>"
+            }
+          }
+        ]
+      }
+
+      jetstream {
+        store_dir: /data
+        max_memory_store: 1GB
+      }
+      ```
+
+      ### Environment Variables (from Vault)
+      - NATS_ADMIN_USER=admin
+      - NATS_ADMIN_PASS=<generated from Vault>
+      - NATS_AGENT_USER=agent-svc
+      - NATS_AGENT_PASS=<generated from Vault>
+      - NATS_TEMPORAL_USER=temporal-svc
+      - NATS_TEMPORAL_PASS=<generated from Vault>
+
+      ### Docker Compose Changes
+      ```yaml
+      nats:
+        image: nats:2.10.24-alpine
+        command: >
+          -c /etc/nats/nats.conf
+          --name nats-main
+          --http_port 8222
+          --jetstream
+          --store_dir /data
+        environment:
+          - NATS_ADMIN_USER=admin
+          - NATS_ADMIN_PASS=${NATS_ADMIN_PASS}
+          - NATS_AGENT_USER=agent-svc
+          - NATS_AGENT_PASS=${NATS_AGENT_PASS}
+          - NATS_TEMPORAL_USER=temporal-svc
+          - NATS_TEMPORAL_PASS=${NATS_TEMPORAL_PASS}
+        volumes:
+          - ./config/nats/nats.conf:/etc/nats/nats.conf:ro
+        depends_on:
+          vault:
+            condition: service_healthy
+      ```
+
+    complexity: "Medium"
+    effort_hours: 2
+    time_breakdown:
+      understand_nats_auth: 0.30
+      create_config_file: 0.30
+      set_up_credentials: 0.30
+      update_compose: 0.30
+      test_authentication: 0.30
+      documentation: 0.20
+
+    dependencies:
+      - "P0-001 (Vault must be operational to store credentials)"
+      - "docker-compose.messaging.yml must be valid"
+      - "NATS version 2.10.24 compatible with auth"
+
+    blockers:
+      - "Cannot complete until Vault is running (P0-001)"
+      - "Temporal service credentials must be provisioned"
+
+    verification_command: |
+      # 1. Start NATS with auth
+      docker-compose -f docker-compose.messaging.yml up -d nats
+      sleep 5
+
+      # 2. Test failed auth (no credentials)
+      nats sub ">" > /dev/null &
+      sleep 1
+      kill %1  # Should fail with "authorization violation"
+
+      # 3. Test successful auth (admin)
+      nats sub ">" --user admin --password $NATS_ADMIN_PASS > /dev/null &
+      sleep 1
+      kill %1  # Should succeed
+
+      # 4. Test topic isolation (agent user cannot access temporal.>)
+      nats sub "temporal.>" --user agent-svc --password $NATS_AGENT_PASS
+      # Should fail: authorization violation
+
+      # 5. Test agent can only access agent.> topics
+      nats sub "agent.test" --user agent-svc --password $NATS_AGENT_PASS
+      # Should succeed
+
+      # 6. Test temporal service credentials
+      docker-compose -f docker-compose.messaging.yml logs temporal | grep -i "nats"
+
+      # 7. Check NATS monitoring endpoint
+      curl http://localhost:8222/varz | jq '.auth'
+
+      # 8. Verify config loaded
+      nats account info --user admin --password $NATS_ADMIN_PASS
+
+    related_tasks:
+      - "P0-001: Add Vault (required for credential storage)"
+      - "P0-003: Configure service mesh routing"
+      - "P1-009: Set up NATS JetStream persistence"
+
+    references:
+      - "BUILDKIT_STARTER_SPEC.md: Layer 6 (lines 250-300)"
+      - "https://docs.nats.io/running-a-nats-service/configuration/securing_nats"
+      - "https://docs.nats.io/running-a-nats-service/configuration/auth_intro"
+      - "docker-compose.messaging.yml: Current config"
+      - "docker-compose.identity.yml: Vault integration pattern"
+
+    implementation_notes: |
+      **Authentication Strategy:**
+      1. Use password-based for initial setup (simpler, easier to debug)
+      2. Plan migration to JWT tokens for production
+      3. Store all passwords in Vault (never in compose file)
+
+      **Authorization Strategy:**
+      1. Topic-based: Each service publishes to service.* topics only
+      2. Subscription: Services subscribe to broadcast and their topics
+      3. Admin: Can access everything (ops/monitoring)
+
+      **Credential Rotation:**
+      - Vault credentials changed monthly
+      - NATS config reloaded without service restart
+      - Client libraries must reconnect on credential change
+
+      **Monitoring:**
+      - Monitor NATS /varz endpoint for auth failures
+      - Log all connection attempts
+      - Alert on multiple failed auth attempts
+
+
+  # =============================================================================
+  # P0-003: Configure inter-service event routing (service mesh)
+  # =============================================================================
+  # DOMAIN: Layer 6 - Messaging & Orchestration (BUILDKIT_STARTER_SPEC.md)
+  # PRIORITY: P0 (Critical - blocks agentic workflow execution)
+  # EFFORT: 4 hours
+  # STATUS: Pending
+  # BLOCKEDBY: P0-002 (requires authenticated NATS)
+  #
+  - id: "P0-003"
+    title: "Configure inter-service event routing and workflow mesh"
+    domain: "6 - Messaging & Orchestration"
+    section: "service-mesh-routing"
+    priority: "P0"
+    severity: "Critical"
+    status: "pending"
+
+    issue: |
+      NATS, Temporal, and n8n are deployed but not connected for event routing:
+      1. No event topics defined for service communication
+      2. No workflow triggers from NATS events
+      3. n8n cannot subscribe to NATS topics
+      4. Temporal workflows isolated from agent events
+      5. No service-to-service event coordination
+
+      Current state:
+      - NATS: Event bus with no topic structure
+      - Temporal: Workflow engine with no trigger subscriptions
+      - n8n: Automation platform with no NATS integration
+
+      Missing:
+      - Topic hierarchy and naming convention
+      - NATS JetStream stream definitions
+      - Temporal event processing workflow
+      - n8n NATS consumer nodes
+      - Event schema definitions
+
+    location: |
+      - /home/user/ripple-env/docker/docker-compose.messaging.yml (NATS config)
+      - /home/user/ripple-env/docker/docker-compose.temporal.yml (Temporal config)
+      - /home/user/ripple-env/docker/docker-compose.automation.yml (n8n config)
+
+    impact: |
+      **System Impact:**
+      - Agents cannot trigger workflows
+      - Workflows cannot publish events back to agents
+      - No event-driven architecture
+      - Services work in isolation (not integrated)
+      - No coordination between layers
+
+      **Service Interactions Blocked:**
+      Agent Layer → Event Bus (NATS):
+        - Agents publish task.complete, task.failed events
+        - No topics defined, events are lost
+
+      Event Bus (NATS) → Workflow Engine (Temporal):
+        - Temporal cannot react to agent events
+        - No automatic workflow triggers
+
+      Workflow Engine (Temporal) → Automation (n8n):
+        - n8n cannot start workflows based on Temporal events
+        - No end-to-end automation possible
+
+      **Use Cases Enabled by This Task:**
+      1. Agent completes task → publishes to agent.task.complete → Temporal triggers cleanup workflow
+      2. Temporal workflow completes → publishes temporal.workflow.complete → n8n sends notifications
+      3. n8n automation finishes → publishes automation.done → Agents react accordingly
+
+    acceptance_criteria:
+      - "NATS JetStream stream defined: events (retention: 7 days)"
+      - "Topic hierarchy implemented: agent.*, temporal.*, automation.*, broadcast.*"
+      - "At least 3 consumer groups created with persistence"
+      - "Temporal workflow deployed that subscribes to agent.task.complete events"
+      - "n8n NATS nodes configured to publish and subscribe to topics"
+      - "Service mesh documentation shows full event flow (ASCII diagram)"
+      - "Example: Agent publish → Temporal consume → n8n action → all documented"
+      - "Health checks for event flow: can publish event and observe consumption"
+      - "Metrics show event counts per topic"
+      - "All docker-compose files updated with stream/consumer config"
+      - "Integration test script validates end-to-end event flow"
+      - "Deployment guide documents adding new subscribers"
+
+    files_to_modify:
+      - "/home/user/ripple-env/docker/docker-compose.messaging.yml"
+      - "/home/user/ripple-env/docker/docker-compose.temporal.yml"
+      - "/home/user/ripple-env/docker/docker-compose.automation.yml"
+
+    files_to_create:
+      - "/home/user/ripple-env/config/nats/streams.conf (JetStream definitions)"
+      - "/home/user/ripple-env/config/nats/consumers.conf (Consumer groups)"
+      - "/home/user/ripple-env/config/temporal/workflows/event-processor.ts (Event workflow)"
+      - "/home/user/ripple-env/scripts/setup-nats-mesh.sh (Stream/consumer setup)"
+      - "/home/user/ripple-env/docs/SERVICE_MESH_GUIDE.md (complete routing guide)"
+
+    technical_spec: |
+      ## Service Mesh Event Architecture
+
+      ### Topic Hierarchy
+      ```
+      Root Topics:
+      ├── agent.>              # Agent lifecycle events
+      │   ├── agent.task.create
+      │   ├── agent.task.update
+      │   ├── agent.task.complete
+      │   ├── agent.task.failed
+      │   └── agent.heartbeat
+      │
+      ├── temporal.>           # Temporal workflow events
+      │   ├── temporal.workflow.started
+      │   ├── temporal.workflow.completed
+      │   ├── temporal.workflow.failed
+      │   └── temporal.activity.result
+      │
+      ├── automation.>         # n8n automation events
+      │   ├── automation.triggered
+      │   ├── automation.completed
+      │   └── automation.failed
+      │
+      └── broadcast.>          # System-wide broadcasts
+          ├── broadcast.shutdown
+          ├── broadcast.config-update
+          └── broadcast.health-check
+      ```
+
+      ### JetStream Stream Definition
+      ```
+      streams:
+        - name: events
+          subjects: [">"]
+          max_age: 604800  # 7 days
+          max_msgs: 1000000
+          storage: file
+          discard: old
+      ```
+
+      ### Consumer Groups
+      ```
+      consumers:
+        - stream: events
+          name: temporal-consumer
+          subject: agent.>
+          deliver_to: temporal.in
+          durable_name: temporal-events
+          max_deliver: 5
+
+        - stream: events
+          name: automation-consumer
+          subject: temporal.>
+          deliver_to: n8n.in
+          durable_name: automation-events
+          max_deliver: 5
+      ```
+
+      ### Event Schema (JSON)
+      ```json
+      {
+        "id": "evt_123456",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "source": "agent-service",
+        "type": "agent.task.complete",
+        "data": {
+          "agent_id": "agent-001",
+          "task_id": "task-abc123",
+          "result": {...},
+          "duration_ms": 5000
+        }
+      }
+      ```
+
+      ### Service Configuration
+
+      **Temporal Workflow Event Processor:**
+      ```
+      type: temporal.WorkflowOptions
+      configuration:
+        nats:
+          servers: ["nats://nats:4222"]
+          credentials: # from Vault (P0-002)
+          subscribe_to: ["agent.task.complete", "agent.task.failed"]
+
+      workflow: EventProcessorWorkflow
+      activity: PublishResultActivity
+      ```
+
+      **n8n NATS Integration:**
+      - Install: nats-io/nats.js package
+      - Node Type: NATS Consumer
+      - Subscriptions:
+        - temporal.workflow.completed → Send email notification
+        - agent.task.failed → Retry task via n8n
+        - temporal.workflow.completed → Log to analytics
+
+    complexity: "Large"
+    effort_hours: 4
+    time_breakdown:
+      design_topic_hierarchy: 0.50
+      implement_jetstream_config: 0.50
+      create_temporal_workflow: 1.00
+      configure_n8n_integration: 0.75
+      testing_event_flow: 0.75
+      documentation: 0.50
+
+    dependencies:
+      - "P0-001 (Vault for credentials)"
+      - "P0-002 (NATS authentication enabled)"
+      - "docker-compose.messaging.yml with NATS running"
+      - "docker-compose.temporal.yml deployed"
+      - "docker-compose.automation.yml (n8n) deployed"
+
+    blockers:
+      - "Cannot start until NATS auth enabled (P0-002)"
+      - "Temporal must be healthy before workflow deployment"
+      - "n8n must have NATS package installed"
+
+    verification_command: |
+      # 1. Verify JetStream streams created
+      nats stream ls --user admin --password $NATS_ADMIN_PASS
+      # Should show: events stream with agent.>, temporal.>, automation.>, broadcast.>
+
+      # 2. Verify consumers created
+      nats consumer ls events --user admin --password $NATS_ADMIN_PASS
+      # Should show: temporal-consumer, automation-consumer, etc.
+
+      # 3. Publish test agent event
+      nats pub agent.task.complete \
+        '{"id":"evt_test","agent_id":"test","task_id":"t1"}' \
+        --user admin --password $NATS_ADMIN_PASS
+
+      # 4. Verify temporal received event
+      docker logs temporal 2>&1 | grep -i "agent.task.complete" | head -5
+
+      # 5. Trigger Temporal workflow via event
+      temporal workflow start \
+        --type EventProcessorWorkflow \
+        --task-queue default \
+        --namespace default
+
+      # 6. Verify n8n can connect to NATS
+      curl http://localhost:5678/api/v1/nodes \
+        --header "X-N8N-AUTH-SKIP: true" | jq '.[] | select(.name == "NATS")'
+
+      # 7. Test end-to-end flow
+      # - Publish agent.task.complete event
+      # - Wait 2 seconds
+      # - Verify Temporal workflow executed
+      # - Verify n8n received notification
+
+      # 8. Monitor metrics
+      curl http://localhost:8222/varz | jq '.jetstream'
+      # Should show: msgs_in_> > 0, msgs_out_> > 0
+
+    related_tasks:
+      - "P0-001: Add Vault (credential storage)"
+      - "P0-002: Enable NATS auth (required for secure mesh)"
+      - "P1-001: promptfoo configuration (testing workflow outputs)"
+      - "P2-002: NATS JetStream advanced config"
+
+    references:
+      - "BUILDKIT_STARTER_SPEC.md: Layer 6 (lines 250-300)"
+      - "https://docs.nats.io/nats-concepts/jetstream"
+      - "https://docs.nats.io/nats-concepts/jetstream/consumers"
+      - "https://docs.temporal.io/concepts/what-is-temporal-cloud"
+      - "https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.nats/"
+
+    implementation_notes: |
+      **Event Flow Architecture:**
+
+      ```
+      Agent Layer (ROS2/Agents)
+           ↓ publishes
+      NATS Broker (with JetStream)
+           ↓ routes
+      ┌─────────────────┐
+      │  Temporal Subs  │ → Temporal Workflow Engine
+      │  n8n Subs       │ → n8n Automation
+      │  Logging Subs   │ → Prometheus/Loki
+      └─────────────────┘
+      ```
+
+      **Implementation Phases:**
+
+      **Phase 1 (this task):**
+      - Define topic hierarchy
+      - Create JetStream streams/consumers
+      - Deploy basic event processor in Temporal
+      - Test agent.task.* event flow
+
+      **Phase 2 (P2-002):**
+      - Advanced JetStream config (sharding, replicas)
+      - Event filtering and transformation
+      - Dead-letter queues for failed events
+      - Metrics and monitoring
+
+      **Key Design Decisions:**
+      1. Topic per service (agent.>, temporal.>, automation.>) for isolation
+      2. Broadcast topics (broadcast.*) for system-wide events
+      3. Consumer durability: events persisted until consumed
+      4. Max age: 7 days (balance between storage and history)
+      5. Push vs Pull: Consumer groups use push delivery to subscribers
+
+      **Testing Strategy:**
+      1. Unit tests: Individual topic publish/subscribe
+      2. Integration tests: Multi-service event flow
+      3. Load test: 1000 events/sec throughput
+      4. Failure scenarios: Service restarts, network partitions
+
+
+---
+
+# SUMMARY
+#
+# P0 Task Matrix:
+# ┌─────────────┬──────────────────────┬─────────┬──────────┐
+# │ ID    │ Title                    │ Domain │ Effort │
+# ├─────────────┼──────────────────────┼─────────┼──────────┤
+# │ P0-001 │ Add Vault              │ Layer 5 │ 1 hour  │
+# │ P0-002 │ Enable NATS Auth       │ Layer 6 │ 2 hours │
+# │ P0-003 │ Configure Event Mesh   │ Layer 6 │ 4 hours │
+# ├─────────────┼──────────────────────┼─────────┼──────────┤
+# │ TOTAL        │                      │         │ 7 hours │
+# └─────────────┴──────────────────────┴─────────┴──────────┘
+#
+# Dependency Chain: P0-001 → P0-002 → P0-003
+# All tasks must be completed for production-ready event-driven architecture.
+#
+# Status Update Commands:
+#   mark-status() {
+#     yq eval ".tasks[] | select(.id == \"$1\") | .status = \"$2\"" \
+#       -i /home/user/ripple-env/docs/P0-TASK-SPECIFICATIONS.yaml
+#   }
+#
+# Example:
+#   mark-status P0-001 in_progress
+#   mark-status P0-002 completed
+#

@@ -1,0 +1,207 @@
+# MinIO - S3-Compatible Object Storage (BUILDKIT L10)
+# P2-004: MinIO provides S3-compatible object storage for the agentic OS
+#
+# MinIO features:
+#   - S3-compatible API
+#   - Erasure coding for data protection
+#   - Encryption at rest and in transit
+#   - Bucket versioning and lifecycle management
+#   - Multi-tenancy
+#   - Prometheus metrics
+#   - Console UI
+#
+# Components:
+#   - MinIO Server: Main storage service
+#   - MinIO Console: Web-based management UI
+#
+# References:
+#   - https://docs.min.io
+#   - https://github.com/minio/minio
+#   - BUILDKIT_STARTER_SPEC.md L10: State & Storage
+
+version: '3.8'
+
+services:
+  # MinIO Server
+  minio:
+    image: minio/minio:RELEASE.2024-01-13T07-53-03Z
+    container_name: minio
+    restart: unless-stopped
+    
+    # Command
+    command: >
+      server
+      /data
+      --console-address=":9001"
+      --address=":9000"
+    
+    # Environment variables
+    environment:
+      # Root credentials (change in production!)
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      
+      # Domain configuration
+      MINIO_DOMAIN: localhost
+      MINIO_SERVER_URL: http://localhost:9000
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+      
+      # Logging
+      MINIO_LOG_LEVEL: info
+      
+      # Anonymous metrics
+      MINIO_ANONYMOUS: "off"
+      
+      # Encryption
+      MINIO_KMS_SECRET_KEY: my-secret-key-change-in-production
+      
+      # Compression
+      MINIO_COMPRESSION_ENABLE: "on"
+      MINIO_COMPRESSION_EXTENSIONS: ".txt,.log,.csv,.json,.tar,.xml,.bin"
+      MINIO_COMPRESSION_MIME_TYPES: "text/*,application/json,application/xml"
+      
+      # Lifecycle
+      MINIO_LIFECYCLE_EXPIRY_WORKERS: 4
+      
+      # Scanner
+      MINIO_SCANNER_SPEED: default
+      
+      # Disk cache
+      MINIO_DISK_CACHE_DRIVES: "/tmp"
+      MINIO_DISK_CACHE_EXPIRY: 90
+      MINIO_DISK_CACHE_MAXUSE: 80
+      
+      # Healing
+      MINIO_HEAL_WORKERS: 4
+      
+      # Decommission
+      MINIO_DECOMMISSION_WORKERS: 4
+      
+      # Replication
+      MINIO_REPLICATION_WORKERS: 500
+      
+      # Batch replication
+      MINIO_BATCH_REPLICATION_WORKERS: 4
+      
+      # Prometheus metrics
+      MINIO_PROMETHEUS_AUTH_TYPE: public
+      
+      # Browser
+      MINIO_BROWSER: "on"
+      
+      # API
+      MINIO_API_REQUESTS_MAX: 0
+      MINIO_API_REQUESTS_DEADLINE: 10s
+      
+      # Erasure coding
+      MINIO_STORAGE_CLASS_STANDARD: EC:4
+      MINIO_STORAGE_CLASS_RRS: EC:2
+      
+      # KMS
+      MINIO_KMS_VAULT_ENDPOINT: 
+      MINIO_KMS_VAULT_KEY_NAME: 
+      MINIO_KMS_VAULT_AUTH_TYPE: 
+      
+      # Audit
+      MINIO_AUDIT_WEBHOOK_ENABLE: "off"
+      
+      # Logger webhook
+      MINIO_LOGGER_WEBHOOK_ENABLE: "off"
+      
+      # Callhome
+      MINIO_CALLHOME_ENABLE: "off"
+      
+      # Subnet
+      MINIO_SUBNET_LICENSE: 
+      MINIO_SUBNET_API_KEY: 
+    
+    # Ports
+    ports:
+      - "9000:9000"  # MinIO API
+      - "9001:9001"  # MinIO Console
+    
+    # Volumes
+    volumes:
+      # Data storage
+      - minio-data:/data
+      # Configuration
+      - ./config/minio:/root/.minio
+      # Certs
+      - ./config/minio/certs:/root/.minio/certs
+      # CA certs
+      - ./config/minio/certs/CAs:/root/.minio/certs/CAs
+      # Cache
+      - ./data/minio/cache:/tmp
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - minio-network
+    
+    # Labels for documentation and management
+    labels:
+      - "service=minio"
+      - "layer=L10-State-Storage"
+      - "description=MinIO object storage"
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio.rule=Host(`storage.localhost`)"
+      - "traefik.http.routers.minio.entrypoints=web"
+      - "traefik.http.services.minio.loadbalancer.server.port=9001"
+
+  # Optional: MinIO Client (for setup and management)
+  mc:
+    image: minio/mc:RELEASE.2024-01-13T23-44-14Z
+    container_name: minio-mc
+    restart: "no"
+    
+    # Entrypoint for setup
+    entrypoint: >
+      /bin/sh -c "
+        /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+        /usr/bin/mc mb myminio/agent-data --ignore-existing;
+        /usr/bin/mc mb myminio/model-cache --ignore-existing;
+        /usr/bin/mc mb myminio/artifacts --ignore-existing;
+        /usr/bin/mc anonymous set public myminio/artifacts;
+        tail -f /dev/null
+      "
+    
+    # Dependencies
+    depends_on:
+      minio:
+        condition: service_healthy
+    
+    # Network
+    networks:
+      - minio-network
+    
+    # Labels
+    labels:
+      - "service=mc"
+      - "layer=L10-State-Storage"
+      - "description=MinIO client for setup"
+
+# Volumes
+volumes:
+  minio-data:
+    driver: local
+
+# Networks
+networks:
+  minio-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16

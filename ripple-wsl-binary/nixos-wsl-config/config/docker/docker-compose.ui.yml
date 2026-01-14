@@ -1,0 +1,177 @@
+
+services:
+  # Lobe Chat - Primary operator UI
+  lobe-chat:
+    image: lobehub/lobe-chat:v1.40.5
+    container_name: lobe-chat
+    ports:
+      - "3210:3210"
+    environment:
+      # OpenAI-compatible API configuration (pointing to LocalAI)
+      - OPENAI_API_KEY=sk-dummy-key-for-localai
+      - API_KEY_SELECT_MODE=manual
+      - OPENAI_PROXY_URL=http://localai:8080/v1
+      
+      # Database configuration (optional, for persistence)
+      - DATABASE_URL=postgresql://${LOBE_DB_USER:-lobe}:${LOBE_DB_PASSWORD:-changeme}@lobe-db:5432/${LOBE_DB_NAME:-lobe}
+      - DATABASE_DRIVER=node
+      
+      # S3 storage for file uploads (optional)
+      # - S3_ENDPOINT=http://minio:9000
+      # - S3_BUCKET=lobe-chat
+      # - S3_ACCESS_KEY_ID=${LOBE_MINIO_ROOT_USER:-changeme}
+      # - S3_SECRET_ACCESS_KEY=${LOBE_MINIO_ROOT_PASSWORD:-changeme}
+
+      # Authentication (optional)
+      # - NEXT_AUTH_SECRET=${LOBE_NEXT_AUTH_SECRET:-changeme}
+      # - NEXTAUTH_URL=http://localhost:3210
+      
+      # Feature flags
+      - FEATURE_FLAGS=enableWebRTC,enableImageGeneration
+      
+      # Telemetry
+      - TELEMETRY_ENABLED=false
+    volumes:
+      - lobe-chat-data:/app/.next/cache
+    depends_on:
+      - lobe-db
+    networks:
+      - agentic-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3210/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL database for Lobe Chat persistence
+  lobe-db:
+    image: postgres:17.2-alpine
+    container_name: lobe-db
+    environment:
+      POSTGRES_USER: ${LOBE_DB_USER:-lobe}
+      POSTGRES_PASSWORD: ${LOBE_DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${LOBE_DB_NAME:-lobe}
+    volumes:
+      - lobe-db-data:/var/lib/postgresql/data
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${LOBE_DB_USER:-lobe}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # MinIO - S3-compatible storage for file uploads (optional)
+  minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    container_name: lobe-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Web Console
+    environment:
+      MINIO_ROOT_USER: ${LOBE_MINIO_ROOT_USER:-changeme}
+      MINIO_ROOT_PASSWORD: ${LOBE_MINIO_ROOT_PASSWORD:-changeme}
+    volumes:
+      - minio-data:/data
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Open-Lovable - AI-powered web app builder
+  # ---------------------------------------------------------------------------
+  # https://github.com/firecrawl/open-lovable
+  # BUILDKIT_STARTER_SPEC.md Layer 1.20: UI/codegen tool (gated by eval + PR checks)
+  # Note: Built from source - no official Docker image available yet (see issue #74)
+  open-lovable:
+    build:
+      context: ./config/dockerfiles
+      dockerfile: Dockerfile.open-lovable
+      args:
+        OPEN_LOVABLE_VERSION: ${OPEN_LOVABLE_VERSION:-main}
+    image: aria/open-lovable:latest
+    container_name: open-lovable
+    ports:
+      - "3211:3000"
+    environment:
+      # Node.js environment
+      NODE_ENV: production
+      PORT: 3000
+
+      # OpenAI-compatible API configuration (pointing to LocalAI)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-dummy-key-for-localai}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-http://localai:8080/v1}
+
+      # Firecrawl API configuration (optional, for web scraping)
+      FIRECRAWL_API_KEY: ${FIRECRAWL_API_KEY:-}
+      FIRECRAWL_API_URL: ${FIRECRAWL_API_URL:-https://api.firecrawl.dev}
+
+      # Application settings
+      NEXT_PUBLIC_APP_URL: ${OPEN_LOVABLE_APP_URL:-http://localhost:3211}
+
+      # Telemetry
+      TELEMETRY_DISABLED: ${OPEN_LOVABLE_TELEMETRY_DISABLED:-true}
+    volumes:
+      - open-lovable-data:/app/.next/cache
+      - open-lovable-projects:/app/projects
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    depends_on:
+      - localai
+
+volumes:
+  lobe-chat-data:
+  lobe-db-data:
+  minio-data:
+  open-lovable-data:
+  open-lovable-projects:
+
+networks:
+  agentic-network:
+    external: true
+    name: agentic-network
+
+# Usage:
+# 1. Ensure network exists: docker network create agentic-network
+# 2. Ensure LocalAI is running: docker-compose -f docker-compose.localai.yml up -d
+# 3. Build and start UI services: docker-compose -f docker-compose.ui.yml up -d --build
+# 4. Access Lobe Chat: http://localhost:3210
+# 5. Access Open-Lovable: http://localhost:3211
+# 6. Access MinIO Console: http://localhost:9001 (use LOBE_MINIO_ROOT_USER/PASSWORD env vars)
+#
+# Configuration:
+# - Lobe Chat will use LocalAI as the backend LLM provider
+# - Open-Lovable will use LocalAI for AI-powered web app generation
+# - All conversations are stored in PostgreSQL
+# - File uploads are stored in MinIO (S3-compatible)
+# - No external API keys required (fully local)
+#
+# Lobe Chat First-time setup:
+# 1. Open http://localhost:3210
+# 2. Go to Settings → Language Model
+# 3. Select "Custom OpenAI" provider
+# 4. Base URL: http://localai:8080/v1
+# 5. API Key: sk-dummy-key-for-localai (any value works)
+# 6. Select your model from the dropdown
+#
+# Open-Lovable Usage:
+# 1. Open http://localhost:3211
+# 2. Enter a website URL or describe the web app you want to create
+# 3. The AI will generate a modern React application
+# 4. Projects are saved in the open-lovable-projects volume

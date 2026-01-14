@@ -1,0 +1,614 @@
+.
+├── ARIA_MANIFEST.yaml
+├── BUILDKIT_STARTER_SPEC.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── Makefile
+├── README.md
+├── SECURITY.md
+├── agents
+│   └── index.js
+├── bootstrap.ps1
+├── bootstrap.sh
+├── bootstrap.sh.backup.1768247688
+├── config
+│   ├── agentgateway
+│   │   ├── README.md
+│   │   └── config.yaml
+│   ├── agixt
+│   │   └── sandbox-config.yaml
+│   ├── alertmanager
+│   │   └── config.yml
+│   ├── bytebase
+│   │   └── project.yaml
+│   ├── dds
+│   │   └── realtime-qos.xml
+│   ├── dockerfiles
+│   │   └── Dockerfile.open-lovable
+│   ├── grafana
+│   │   └── provisioning
+│   │       ├── dashboards
+│   │       └── datasources
+│   ├── keycloak
+│   │   ├── kong-client.json
+│   │   └── vault-client.json
+│   ├── kong
+│   │   └── oauth2-plugin.yaml
+│   ├── mesh
+│   │   └── service-routes.yaml
+│   ├── mirrors.yaml
+│   ├── nats
+│   │   ├── README.md
+│   │   ├── jetstream.conf
+│   │   └── nats.conf
+│   ├── offline.yaml
+│   ├── opa
+│   │   └── policies
+│   │       ├── authz.rego
+│   │       └── service_mesh.rego
+│   ├── prometheus
+│   │   └── prometheus.yml
+│   ├── sandbox
+│   │   └── profiles
+│   │       ├── high-risk.yaml
+│   │       ├── low-risk.yaml
+│   │       └── medium-risk.yaml
+│   ├── schemas
+│   │   └── aria-manifest.schema.json
+│   ├── step-ca
+│   │   ├── QUICKSTART.md
+│   │   ├── README.md
+│   │   ├── ca-config.json
+│   │   ├── ca.json
+│   │   ├── defaults.json
+│   │   └── templates
+│   │       ├── README.md
+│   │       └── x509
+│   ├── tempo
+│   │   └── tempo.yaml
+│   ├── temporal
+│   │   └── development.yaml
+│   ├── vault
+│   │   ├── README.md
+│   │   ├── auth-oidc.hcl
+│   │   ├── policy-agent.hcl
+│   │   ├── policy-secrets.hcl
+│   │   └── vault.hcl
+│   └── vcache
+│       └── config.yaml
+├── data
+│   ├── README.md
+│   ├── certs
+│   │   └── README.md
+│   └── schema.sql
+├── docker
+│   ├── docker-compose.agixt.yml
+│   ├── docker-compose.agixt.yml.tmp
+│   ├── docker-compose.argo.yml
+│   ├── docker-compose.argo.yml.backup.1768247524
+│   ├── docker-compose.automation.yml
+│   ├── docker-compose.bytebase.yml
+│   ├── docker-compose.caching.yml
+│   ├── docker-compose.data.yml
+│   ├── docker-compose.edge.yml
+│   ├── docker-compose.holochain.yml
+│   ├── docker-compose.identity.yml
+│   ├── docker-compose.inference.yml
+│   ├── docker-compose.lightweight.yml
+│   ├── docker-compose.llmops.yml
+│   ├── docker-compose.localai.yml
+│   ├── docker-compose.messaging.yml
+│   ├── docker-compose.observability.yml
+│   ├── docker-compose.observability.yml.backup.1768247523
+│   ├── docker-compose.refact.yml
+│   ├── docker-compose.state.yml
+│   ├── docker-compose.temporal.yml
+│   ├── docker-compose.ui.yml
+│   ├── docker-compose.yml
+│   ├── docker-compose.yml.backup.1768247523
+│   ├── docker-compose.yml.backup.1768248104
+│   └── scripts
+│       ├── init-multi-db.sh
+│       └── init-multi-db.sh.backup.1768247688
+├── docs
+│   ├── 1. __Pixi (prefix-dev_pixi)__ – __Primary___ Pixi (Nix-like package manager). __Last Update___ Activ.pdf
+│   ├── AGENT_CONFIGURATION.md
+│   ├── AGiXT – Latest Configurations and Projects (Sep 2025–Present).pdf
+│   ├── AI_RESOURCE_REQUIREMENTS.md
+│   ├── Advanced Neovim Configurations Based on LazyVim (2025–2026).pdf
+│   ├── Advanced NixOS & Pixi Configuration Repositories (Late 2025 – Present).pdf
+│   ├── BRANCH-PROTECTION.md
+│   ├── BYTEBASE-SETUP.md
+│   ├── CHANNEL-STRATEGY.md
+│   ├── COMMON_PITFALLS.md
+│   ├── CONFLICTS.md
+│   ├── CONTAINER_SECURITY.md
+│   ├── DISTRIBUTED-TRACING.md
+│   ├── DOCKER_PROFILES.md
+│   ├── EDGE_DEPLOYMENT.md
+│   ├── EDGE_QUICKSTART.md
+│   ├── GENAI_TOOLBOX_INSTALL.md
+│   ├── GETTING_STARTED.md
+│   ├── GITHUB-RESOURCES.md
+│   ├── HASHES.txt
+│   ├── HOLOCHAIN-DEPLOYMENT.md
+│   ├── HOLOCHAIN-DNA.html
+│   ├── HOLOCHAIN-ZOMES.md
+│   ├── INFERENCE_SETUP.md
+│   ├── KATA_CONTAINERS_INSTALL.md
+│   ├── LOCALAI-MODELS.md
+│   ├── Latest Holochain Projects and Configurations (Sept 2025 – Jan 2026).pdf
+│   ├── MANUS_ARIA_ORCHESTRATOR.md
+│   ├── MINDSDB_QUICKSTART.md
+│   ├── MTLS-IMPLEMENTATION-CHECKLIST.md
+│   ├── MTLS_SETUP.md
+│   ├── NETWORK_REQUIREMENTS.md
+│   ├── NIXOS_IMAGES.md
+│   ├── NIX_EVALUATION_OPTIMIZATION.md
+│   ├── NIX_FLAKE_MODULARIZATION.md
+│   ├── NODEJS-AGENTS.md
+│   ├── OBSERVABILITY-QUICK-START.md
+│   ├── ONBOARDING_TUTORIAL.md
+│   ├── P0-TASK-SPECIFICATIONS.yaml
+│   ├── P1-008-009-IMPLEMENTATION.md
+│   ├── P2-001-SANDBOX-INTEGRATION.md
+│   ├── P2-012-OPEN-LOVABLE-INTEGRATION.md
+│   ├── P3-003-NEO4J-IMPLEMENTATION.md
+│   ├── PHASE3-LAZYVIM-DEPS.md
+│   ├── PRODUCTION_DEPLOYMENT.md
+│   ├── PROGRESSIVE_EXAMPLES.md
+│   ├── PYTHON-ENVIRONMENTS.md
+│   ├── QUANTUM_AGENTICS_RD.md
+│   ├── QUICK-START-OPEN-LOVABLE.md
+│   ├── README.md
+│   ├── ROS2_STATE_PACKAGES.md
+│   ├── RuVector and QuDAG_ Advanced Configurations and Project Overview.pdf
+│   ├── SANDBOX_RUNTIME_INSTALL.md
+│   ├── SECRETS.md
+│   ├── SECURITY_GUIDE.md
+│   ├── SUPPLY_CHAIN_SECURITY.md
+│   ├── TASK_GRAPH_EXECUTION_PLAN.md
+│   ├── TOOLING-ANALYSIS.md
+│   ├── TROUBLESHOOTING.md
+│   ├── VCACHE-SETUP.md
+│   ├── VIDEO_WALKTHROUGHS.md
+│   ├── WSL2_BUILD_PIPELINE.md
+│   ├── adr
+│   │   ├── README.md
+│   │   ├── adr-001-editor-strategy.md
+│   │   ├── adr-002-ai-coding-assistants.md
+│   │   ├── adr-003-version-management.md
+│   │   ├── adr-004-devpod-integration.md
+│   │   ├── adr-005-xdg-compliance.md
+│   │   └── adr-006-agixt-integration.md
+│   ├── ai-ml
+│   │   ├── genai-toolbox.md
+│   │   ├── index.md
+│   │   ├── inference.md
+│   │   ├── llmops.md
+│   │   ├── localai.md
+│   │   └── mindsdb.md
+│   ├── architecture
+│   │   ├── aria.md
+│   │   ├── index.md
+│   │   ├── nix-flake.md
+│   │   └── overview.md
+│   ├── arm64-deployment.md
+│   ├── audits
+│   │   ├── ARIA-AUDIT-2026-01-10-v2.md
+│   │   ├── ARIA-AUDIT-2026-01-10.md
+│   │   └── ARIA-TASK-BACKLOG-2026-01-10.md
+│   ├── contributing
+│   │   ├── code-of-conduct.md
+│   │   ├── development.md
+│   │   └── index.md
+│   ├── decisions
+│   │   └── index.md
+│   ├── deployment
+│   │   ├── edge.md
+│   │   ├── index.md
+│   │   ├── kata.md
+│   │   ├── nixos-images.md
+│   │   └── wsl2.md
+│   ├── development
+│   │   ├── index.md
+│   │   ├── python-environments.md
+│   │   ├── ros2.md
+│   │   ├── shell-commands.md
+│   │   └── testing.md
+│   ├── docker-compose.md
+│   ├── getting-started
+│   │   ├── arm64.md
+│   │   ├── first-steps.md
+│   │   ├── index.md
+│   │   ├── installation.md
+│   │   └── troubleshooting.md
+│   ├── implementation
+│   │   ├── CONFIGURATION_DOMAIN_IMPLEMENTATION_SUMMARY.md
+│   │   ├── IMPLEMENTATION-COMPLETE.txt
+│   │   ├── L10_STATE_STORAGE_IMPLEMENTATION.md
+│   │   ├── P0-007-IMPLEMENTATION-SUMMARY.md
+│   │   ├── P0_EXECUTION_SUMMARY.txt
+│   │   ├── P1-005-CODE-CHANGES.md
+│   │   ├── P1-005-IMPLEMENTATION-SUMMARY.md
+│   │   ├── P1-008-009-COMPLETION-SUMMARY.md
+│   │   ├── P1-011-IMPLEMENTATION-SUMMARY.md
+│   │   ├── P1-012-P1-013-IMPLEMENTATION.md
+│   │   ├── P2-011-IMPLEMENTATION-SUMMARY.md
+│   │   ├── P2-011-MINDSDB-IMPLEMENTATION.md
+│   │   ├── P2-012-IMPLEMENTATION-SUMMARY.md
+│   │   ├── P3-005-IMPLEMENTATION-SUMMARY.md
+│   │   └── P3-012-MCP-IMPLEMENTATION-SUMMARY.md
+│   ├── includes
+│   │   └── abbreviations.md
+│   ├── index.md
+│   ├── infrastructure
+│   │   ├── docker.md
+│   │   ├── index.md
+│   │   ├── observability.md
+│   │   ├── realtime.md
+│   │   └── tracing.md
+│   ├── javascripts
+│   │   └── extra.js
+│   ├── llmops
+│   │   ├── README.md
+│   │   └── tensorzero.md
+│   ├── neo4j-quick-reference.md
+│   ├── neo4j-verification.md
+│   ├── quick-reference.md
+│   ├── realtime-setup.md
+│   ├── ref-sources
+│   │   ├── Integrating Holochain DNA with ROS2 Humble for Distributed Robotics and XR.pdf
+│   │   ├── Latest Trends in SQL Database Configurations (Sept 2025 – Jan 2026).pdf
+│   │   ├── Modern Open-Source Database Query Tools (Late 2025 – Present).pdf
+│   │   ├── README.md
+│   │   ├── Ref_NixOS_ Pixi_Configs.md
+│   │   └── Visual Studio Code Settings (2025).pdf
+│   ├── reference
+│   │   ├── ai-resources.md
+│   │   ├── channel-strategy.md
+│   │   ├── conflicts.md
+│   │   ├── index.md
+│   │   └── network.md
+│   ├── reports
+│   │   ├── ARIA_AUDIT_REPORT.md
+│   │   ├── CONFIG_VALIDATION_TEST_REPORT.md
+│   │   ├── DEPENDENCY_VALIDATION_REPORT.yaml
+│   │   ├── DOMAIN_ANALYSIS_COMPLETE.json
+│   │   ├── FINAL_REPORT.md
+│   │   ├── FINAL_VERIFICATION_REPORT.md
+│   │   ├── P0_TASKS_VERIFICATION_REPORT.md
+│   │   ├── SECURITY-AUDIT-REPORT.md
+│   │   └── WORKFLOW_VALIDATION_REPORT.md
+│   ├── security
+│   │   ├── index.md
+│   │   ├── mtls.md
+│   │   ├── secrets.md
+│   │   └── supply-chain.md
+│   ├── stylesheets
+│   │   └── extra.css
+│   └── tags.md
+├── flake.nix
+├── infrastructure
+│   ├── README.md
+│   ├── packer
+│   │   └── windows-wsl2-runner.pkr.hcl
+│   └── terraform
+│       └── main.tf
+├── lib
+│   ├── default.nix
+│   └── system.nix
+├── manifests
+│   ├── README.md
+│   ├── argo-workflows
+│   │   ├── README.md
+│   │   ├── config
+│   │   │   ├── argo-server-service.yaml
+│   │   │   ├── rbac.yaml
+│   │   │   └── workflow-controller-configmap.yaml
+│   │   └── templates
+│   │       ├── ci-pipeline.yaml
+│   │       ├── conditional-workflow.yaml
+│   │       ├── cron-workflow.yaml
+│   │       ├── hello-world.yaml
+│   │       ├── ml-pipeline.yaml
+│   │       └── parallel-processing.yaml
+│   ├── argocd
+│   │   └── applications.yaml
+│   ├── build_phases.json
+│   ├── capability-registry
+│   │   ├── README.md
+│   │   └── api-registry.json
+│   ├── cloud
+│   │   ├── builder_image.json
+│   │   ├── ci_pipeline.yaml
+│   │   └── mcp_tools.json
+│   ├── distributed
+│   │   ├── compute_policy.yaml
+│   │   ├── inference_policy.yaml
+│   │   ├── memory_policy.yaml
+│   │   └── storage_policy.yaml
+│   ├── feature_flags.yaml
+│   ├── holochain
+│   │   ├── HOLOCHAIN.md
+│   │   ├── IMPLEMENTATION_SUMMARY.md
+│   │   ├── VERIFICATION.md
+│   │   ├── conductor.yaml
+│   │   ├── dnas
+│   │   │   ├── agent_registry
+│   │   │   ├── aria
+│   │   │   ├── artifact_index
+│   │   │   ├── index.json
+│   │   │   ├── memory_shards
+│   │   │   ├── policy_store
+│   │   │   └── resource_mesh
+│   │   ├── networks.json
+│   │   └── versions.json
+│   ├── llmops
+│   │   └── tensorzero.toml
+│   ├── mcp
+│   │   ├── README.md
+│   │   ├── docs
+│   │   │   ├── P3-007-memory-augmentation-candidates.md
+│   │   │   └── P3-008-prompt-dsl-candidates.md
+│   │   └── schemas
+│   │       ├── INDEX.md
+│   │       ├── agent-capability-mapper.schema.json
+│   │       ├── configuration-manager.schema.json
+│   │       ├── dependency-resolver.schema.json
+│   │       ├── domain-orchestration.schema.json
+│   │       ├── feature-flag-manager.schema.json
+│   │       ├── repository-analysis.schema.json
+│   │       └── workflow-verifier.schema.json
+│   ├── observability
+│   │   ├── alertmanager.yml
+│   │   ├── grafana
+│   │   │   ├── dashboards
+│   │   │   └── provisioning
+│   │   ├── loki.yml
+│   │   ├── otel-collector.yaml
+│   │   ├── prometheus.yml
+│   │   └── promtail.yml
+│   ├── stack.yaml
+│   ├── temporal
+│   │   └── dynamicconfig
+│   │       └── development.yaml
+│   └── wsl2
+│       ├── assets.json
+│       └── distro.json
+├── mkdocs.yml
+├── modules
+│   ├── common
+│   │   ├── ai
+│   │   │   ├── agentgateway.nix
+│   │   │   ├── aichat.nix
+│   │   │   ├── aider.nix
+│   │   │   ├── default.nix
+│   │   │   └── genai-toolbox.nix
+│   │   ├── default.nix
+│   │   ├── direnv.nix
+│   │   ├── editor
+│   │   │   ├── default.nix
+│   │   │   └── neovim.nix
+│   │   ├── git.nix
+│   │   ├── nix
+│   │   │   └── default.nix
+│   │   ├── packages.nix
+│   │   ├── shell
+│   │   │   ├── bash.nix
+│   │   │   ├── default.nix
+│   │   │   ├── nushell.nix
+│   │   │   ├── starship.nix
+│   │   │   ├── zoxide.nix
+│   │   │   └── zsh.nix
+│   │   └── xdg.nix
+│   ├── linux
+│   │   ├── default.nix
+│   │   ├── docker.nix
+│   │   ├── packages.nix
+│   │   ├── systemd.nix
+│   │   ├── udev.nix
+│   │   └── users.nix
+│   └── macos
+│       ├── default.nix
+│       ├── homebrew.nix
+│       ├── packages.nix
+│       ├── shell.nix
+│       └── system.nix
+├── nix
+│   ├── commands
+│   │   ├── ai.nix
+│   │   ├── core.nix
+│   │   ├── default.nix
+│   │   ├── dev.nix
+│   │   ├── infra.nix
+│   │   ├── ros2.nix
+│   │   ├── security.nix
+│   │   ├── workflow
+│   │   │   ├── README.md
+│   │   │   ├── default.nix
+│   │   │   ├── github.nix
+│   │   │   ├── n8n.nix
+│   │   │   ├── sbom.nix
+│   │   │   ├── status.nix
+│   │   │   └── temporal.nix
+│   │   └── workflow.nix
+│   ├── images
+│   │   ├── default.nix
+│   │   ├── iso.nix
+│   │   ├── security-hardening.nix
+│   │   ├── vm.nix
+│   │   └── wsl.nix
+│   ├── lib
+│   │   └── lazy.nix
+│   ├── modules
+│   │   └── offline.nix
+│   ├── os
+│   │   └── realtime-kernel.nix
+│   ├── overlays
+│   │   ├── realtime.nix
+│   │   └── ros2-hardware.nix
+│   ├── packages
+│   │   ├── base.nix
+│   │   ├── default.nix
+│   │   ├── dev-tools.nix
+│   │   ├── hardware.nix
+│   │   ├── holochain.nix
+│   │   ├── minimal.nix
+│   │   ├── platform.nix
+│   │   └── simulation.nix
+│   ├── shells
+│   │   ├── common.nix
+│   │   ├── default.nix
+│   │   ├── multi-distro
+│   │   │   ├── default.nix
+│   │   │   ├── humble.nix
+│   │   │   ├── iron.nix
+│   │   │   └── rolling.nix
+│   │   └── multi-distro.nix
+│   └── tests
+│       ├── default.nix
+│       ├── image-tests.nix
+│       ├── lib.nix
+│       ├── modules.nix
+│       └── shells.nix
+├── package-lock.json
+├── package.json
+├── pixi.toml
+├── promptfooconfig.yaml
+├── renovate.json
+├── requirements-docs.txt
+├── rust
+│   ├── Cargo.toml
+│   └── agixt-bridge
+│       ├── Cargo.toml
+│       ├── examples
+│       │   ├── basic_chat.rs
+│       │   └── robot_commands.rs
+│       └── src
+│           ├── client.rs
+│           ├── commands.rs
+│           ├── config.rs
+│           ├── lib.rs
+│           └── main.rs
+├── scripts
+│   ├── Cleanup-WSL.ps1
+│   ├── README-EDGE.md
+│   ├── VERIFICATION-P1-012-P1-013.sh
+│   ├── VERIFICATION-P1-012-P1-013.sh.backup.1768247682
+│   ├── achieve-100-percent.sh
+│   ├── add-docker-users.sh
+│   ├── add-resource-limits.sh
+│   ├── agent-config.py
+│   ├── analyze-dependencies.py
+│   ├── analyze-workflows.py
+│   ├── audit-and-fix-secrets.sh
+│   ├── benchmark-eval.sh
+│   ├── benchmark-eval.sh.backup.1768247684
+│   ├── build-frontend.sh
+│   ├── build-frontend.sh.backup.1768247677
+│   ├── check-python-deps.sh
+│   ├── check-python-deps.sh.backup.1768247674
+│   ├── deploy-airgapped.sh
+│   ├── deploy-airgapped.sh.backup.1768247673
+│   ├── deploy-edge.sh
+│   ├── deploy-edge.sh.backup.1768247684
+│   ├── deploy-observability.sh
+│   ├── deploy-observability.sh.backup.1768247676
+│   ├── download-models.sh
+│   ├── download-models.sh.backup.1768247682
+│   ├── final-security-validation.sh
+│   ├── fix-shell-scripts.sh
+│   ├── fix-shell-scripts.sh.backup.1768247677
+│   ├── flexstack.sh
+│   ├── flexstack.sh.backup.1768247672
+│   ├── generate-service-certs.sh
+│   ├── generate-service-certs.sh.backup.1768247685
+│   ├── generate-verification.py
+│   ├── health-check.sh
+│   ├── health-check.sh.backup.1768247672
+│   ├── init-docker-networks.sh
+│   ├── init-docker-networks.sh.backup.1768247681
+│   ├── init-jetstream.sh
+│   ├── init-jetstream.sh.backup.1768247673
+│   ├── init-multi-db.sh
+│   ├── init-multi-db.sh.backup.1768247675
+│   ├── init-step-ca.sh
+│   ├── init-step-ca.sh.backup.1768247681
+│   ├── install-all.sh
+│   ├── install-all.sh.backup.1768247676
+│   ├── install-argocd.sh
+│   ├── install-argocd.sh.backup.1768247678
+│   ├── isolate-cpu.sh
+│   ├── isolate-cpu.sh.backup.1768247678
+│   ├── populate-config-db.py
+│   ├── populate-config-db.sh
+│   ├── populate-config-db.sh.backup.1768247676
+│   ├── prepare-offline.sh
+│   ├── prepare-offline.sh.backup.1768247674
+│   ├── query-config-db.py
+│   ├── query-config-db.sh
+│   ├── query-config-db.sh.backup.1768247685
+│   ├── requirements.txt
+│   ├── ros2-version
+│   ├── rotate-certs.sh
+│   ├── rotate-certs.sh.backup.1768247680
+│   ├── sandbox-agent.sh
+│   ├── sandbox-agent.sh.backup.1768247679
+│   ├── sandbox-wrapper.sh
+│   ├── sandbox-wrapper.sh.backup.1768247685
+│   ├── scan-containers.sh
+│   ├── scan-containers.sh.backup.1768247687
+│   ├── setup-argo-workflows.sh
+│   ├── setup-argo-workflows.sh.backup.1768247671
+│   ├── setup-cert-rotation-cron.sh
+│   ├── setup-cert-rotation-cron.sh.backup.1768247686
+│   ├── upgrade-python-deps.sh
+│   ├── upgrade-python-deps.sh.backup.1768247679
+│   ├── validate-channels.py
+│   ├── validate-critical-fixes.sh
+│   ├── validate-e2e.sh
+│   ├── validate-e2e.sh.backup.1768247675
+│   ├── validate-manifest.py
+│   ├── validate-resources.sh
+│   ├── validate-resources.sh.backup.1768247683
+│   ├── verify-argo-workflows.sh
+│   ├── verify-argo-workflows.sh.backup.1768247672
+│   ├── verify-edge.sh
+│   ├── verify-edge.sh.backup.1768247674
+│   ├── verify-jetstream.sh
+│   ├── verify-jetstream.sh.backup.1768247681
+│   ├── verify-mindsdb.sh
+│   ├── verify-mindsdb.sh.backup.1768247683
+│   ├── verify-mtls-setup.sh
+│   ├── verify-mtls-setup.sh.backup.1768247677
+│   ├── verify-observability.sh
+│   ├── verify-observability.sh.backup.1768247686
+│   ├── verify-open-lovable.sh
+│   ├── verify-open-lovable.sh.backup.1768247683
+│   ├── verify-state-storage.sh
+│   ├── verify-state-storage.sh.backup.1768247679
+│   ├── wsl-cleanup.sh
+│   └── wsl-cleanup.sh.backup.1768247680
+├── secrets
+│   └── secrets.nix
+└── test
+    ├── benchmarks
+    │   ├── message_throughput.py
+    │   └── ros2_node_latency.py
+    ├── integration
+    │   ├── pixi
+    │   │   └── test_ros2_packages.py
+    │   ├── ros2
+    │   │   ├── test_node_lifecycle.py
+    │   │   └── test_topic_pubsub.py
+    │   ├── test_cross_service.py
+    │   └── wsl-setup.tests.ps1
+    ├── performance
+    │   └── ai_load_test.py
+    └── unit
+        ├── bash
+        │   └── bootstrap_error_injection.bats
+        └── bootstrap.tests.ps1
+
+119 directories, 493 files

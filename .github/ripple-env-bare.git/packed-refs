@@ -1,0 +1,6 @@
+# pack-refs with: peeled fully-peeled sorted 
+928e5b7aa1a1550a6377dd49d295949007b1891b refs/heads/claude/audit-ruvector-qudag-config-NhB60
+492531dd1ed141dfcf2d630e9eb102455f28a0c0 refs/heads/claude/kubernetes-helm-setup-8dm0W
+cc969c05fbb056dc5d25b54bd0f43122bd488f20 refs/heads/claude/kubernetes-helm-setup-GRZEL
+08245156443ada9696bf84b715c2a3ba72068886 refs/heads/claude/wsl-nixos-setup-plan-7jpLz
+e1e9d10a59e1b7c71c67a82528c7b9e2ec4bdc0a refs/heads/main

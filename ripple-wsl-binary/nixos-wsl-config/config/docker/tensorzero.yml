@@ -1,0 +1,278 @@
+# TensorZero - LLMOps Gateway (BUILDKIT L12)
+# P3-003: TensorZero provides LLMOps gateway for model management
+#
+# TensorZero features:
+#   - Model routing and load balancing
+#   - Request/response logging
+#   - Cost tracking and optimization
+#   - Performance monitoring
+#   - A/B testing for models
+#   - Fallback and retry logic
+#   - Rate limiting
+#
+# Components:
+   - TensorZero Gateway: Main proxy server
+#   - ClickHouse: Analytics database
+#   - Redis: Caching and coordination
+#   - Prometheus: Metrics collection
+#
+# References:
+#   - https://www.tensorzero.com
+#   - https://github.com/tensorzero/tensorzero
+#   - BUILDKIT_STARTER_SPEC.md L12: LLMOps & Evaluation
+
+version: '3.8'
+
+services:
+  # TensorZero Gateway
+  tensorzero:
+    image: tensorzero/tensorzero:latest
+    container_name: tensorzero
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      # Gateway configuration
+      TENSORZERO_GATEWAY_CONFIG_PATH: /config/tensorzero.toml
+      TENSORZERO_GATEWAY_BIND_ADDRESS: 0.0.0.0:3000
+      
+      # Logging
+      TENSORZERO_LOG_LEVEL: info
+      TENSORZERO_LOG_FORMAT: json
+      
+      # Database
+      TENSORZERO_CLICKHOUSE_URL: http://clickhouse:8123
+      TENSORZERO_CLICKHOUSE_DATABASE: tensorzero
+      TENSORZERO_CLICKHOUSE_USER: default
+      TENSORZERO_CLICKHOUSE_PASSWORD: ""
+      
+      # Redis
+      TENSORZERO_REDIS_URL: redis://redis:6379
+      
+      # Metrics
+      TENSORZERO_METRICS_ADDRESS: 0.0.0.0:9090
+      TENSORZERO_METRICS_ENABLED: "true"
+      
+      # Cache
+      TENSORZERO_CACHE_TTL: 3600
+      TENSORZERO_CACHE_MAX_SIZE: 1000
+      
+      # Rate limiting
+      TENSORZERO_RATE_LIMIT_ENABLED: "true"
+      TENSORZERO_RATE_LIMIT_PER_MINUTE: 1000
+      
+      # Retry configuration
+      TENSORZERO_RETRY_MAX_ATTEMPTS: 3
+      TENSORZERO_RETRY_BASE_DELAY: 100ms
+      TENSORZERO_RETRY_MAX_DELAY: 10s
+      
+      # Timeout
+      TENSORZERO_TIMEOUT: 60s
+      
+      # Fallback
+      TENSORZERO_FALLBACK_ENABLED: "true"
+      
+      # A/B testing
+      TENSORZERO_AB_TESTING_ENABLED: "true"
+      
+      # Cost tracking
+      TENSORZERO_COST_TRACKING_ENABLED: "true"
+      
+      # Analytics
+      TENSORZERO_ANALYTICS_ENABLED: "true"
+    
+    # Ports
+    ports:
+      - "3000:3000"  # TensorZero Gateway API
+      - "9090:9090"  # Metrics
+    
+    # Volumes
+    volumes:
+      # Configuration
+      - ./config/tensorzero:/config
+      # Cache
+      - ./data/tensorzero/cache:/cache
+      # Logs
+      - ./logs/tensorzero:/logs
+    
+    # Dependencies
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - tensorzero-network
+    
+    # Labels for documentation and management
+    labels:
+      - "service=tensorzero"
+      - "layer=L12-LLMOps-Evaluation"
+      - "description=TensorZero LLMOps gateway"
+      - "traefik.enable=true"
+      - "traefik.http.routers.tensorzero.rule=Host(`llmops.localhost`)"
+      - "traefik.http.routers.tensorzero.entrypoints=web"
+      - "traefik.http.services.tensorzero.loadbalancer.server.port=3000"
+
+  # ClickHouse Database
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    container_name: clickhouse
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      # ClickHouse configuration
+      CLICKHOUSE_DB: tensorzero
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      
+      # Logging
+      CLICKHOUSE_LOG_LEVEL: information
+      
+      # Performance
+      CLICKHOUSE_MAX_MEMORY_USAGE: 10000000000  # 10GB
+      CLICKHOUSE_MAX_MEMORY_USAGE_FOR_USER: 10000000000  # 10GB
+      
+      # Storage
+      CLICKHOUSE_STORAGE_POLICY: default
+      
+      # Replication (single node for now)
+      CLICKHOUSE_DEFAULT_REPLICA_NAME: replica1
+    
+    # Ports
+    ports:
+      - "8123:8123"  # HTTP interface
+      - "9000:9000"  # Native client interface
+    
+    # Volumes
+    volumes:
+      # Data
+      - clickhouse-data:/var/lib/clickhouse
+      # Logs
+      - clickhouse-logs:/var/log/clickhouse-server
+      # Configuration
+      - ./config/clickhouse:/etc/clickhouse-server/config.d
+      # Users
+      - ./config/clickhouse/users.d:/etc/clickhouse-server/users.d
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network
+    networks:
+      - tensorzero-network
+    
+    # Labels
+    labels:
+      - "service=clickhouse"
+      - "layer=L10-State-Storage"
+      - "description=ClickHouse analytics database"
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: tensorzero-redis
+    restart: unless-stopped
+    
+    # Redis configuration
+    command: >
+      redis-server 
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+      --tcp-keepalive 60
+      --timeout 300
+    
+    # Volumes
+    volumes:
+      - redis-data:/data
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    
+    # Network
+    networks:
+      - tensorzero-network
+    
+    # Labels
+    labels:
+      - "service=redis"
+      - "layer=L10-State-Storage"
+      - "description=Redis cache for TensorZero"
+
+# Volumes
+volumes:
+  clickhouse-data:
+    driver: local
+  clickhouse-logs:
+    driver: local
+  redis-data:
+    driver: local
+
+# Networks
+networks:
+  tensorzero-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.32.0.0/16

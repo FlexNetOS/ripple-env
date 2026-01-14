@@ -11,7 +11,9 @@ const STORAGE_KEYS = {
   EXPANDED_ITEMS: '@ripple/expanded_items',
   ACTIVE_SECTION: '@ripple/active_section',
   ACTIVE_WORKSPACE: '@ripple/active_workspace',
+  ICON_COLLAPSED: '@ripple/icon_collapsed',
   DETAIL_COLLAPSED: '@ripple/detail_collapsed',
+  BROWSER_URL: '@ripple/browser_url',
 };
 
 export interface SidebarPersistenceState {
@@ -19,7 +21,9 @@ export interface SidebarPersistenceState {
   activeSection: string;
   activeWorkspace: WorkspaceType;
   expandedItems: string[];
+  iconCollapsed: boolean;
   detailCollapsed: boolean;
+  browserUrl: string;
 }
 
 const DEFAULT_STATE: SidebarPersistenceState = {
@@ -27,7 +31,9 @@ const DEFAULT_STATE: SidebarPersistenceState = {
   activeSection: 'ai',
   activeWorkspace: 'all',
   expandedItems: [],
+  iconCollapsed: false,
   detailCollapsed: false,
+  browserUrl: 'https://google.com',
 };
 
 class SidebarPersistenceService {
@@ -158,6 +164,35 @@ class SidebarPersistenceService {
   }
 
   /**
+   * Save icon rail collapsed state
+   */
+  async saveIconCollapsed(collapsed: boolean): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.ICON_COLLAPSED, JSON.stringify(collapsed));
+      if (this.cache) {
+        this.cache.iconCollapsed = collapsed;
+      }
+    } catch (error) {
+      console.error('Failed to save icon collapsed state:', error);
+    }
+  }
+
+  /**
+   * Load icon rail collapsed state
+   */
+  async loadIconCollapsed(): Promise<boolean> {
+    try {
+      const stored = await AsyncStorage.getItem(STORAGE_KEYS.ICON_COLLAPSED);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Failed to load icon collapsed state:', error);
+    }
+    return false;
+  }
+
+  /**
    * Save detail sidebar collapsed state
    */
   async saveDetailCollapsed(collapsed: boolean): Promise<void> {
@@ -184,6 +219,35 @@ class SidebarPersistenceService {
       console.error('Failed to load detail collapsed state:', error);
     }
     return false;
+  }
+
+  /**
+   * Save browser URL
+   */
+  async saveBrowserUrl(url: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.BROWSER_URL, url);
+      if (this.cache) {
+        this.cache.browserUrl = url;
+      }
+    } catch (error) {
+      console.error('Failed to save browser URL:', error);
+    }
+  }
+
+  /**
+   * Load browser URL
+   */
+  async loadBrowserUrl(): Promise<string> {
+    try {
+      const stored = await AsyncStorage.getItem(STORAGE_KEYS.BROWSER_URL);
+      if (stored) {
+        return stored;
+      }
+    } catch (error) {
+      console.error('Failed to load browser URL:', error);
+    }
+    return 'https://google.com';
   }
 
   /**

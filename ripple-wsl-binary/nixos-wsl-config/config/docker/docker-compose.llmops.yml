@@ -1,0 +1,147 @@
+# LLMOps Stack - TensorZero, MLflow
+# BUILDKIT_STARTER_SPEC.md Layer 1.16: LLMOps & Evaluation
+#
+# Usage:
+#   docker network create agentic-network 2>/dev/null || true
+#   docker compose -f docker-compose.llmops.yml up -d
+#
+# Endpoints:
+#   TensorZero Gateway: http://localhost:3030
+#   TensorZero UI:      http://localhost:3031
+#   MLflow:             http://localhost:5000
+
+services:
+  # ---------------------------------------------------------------------------
+  # TensorZero - LLMOps Gateway
+  # ---------------------------------------------------------------------------
+  # https://github.com/tensorzero/tensorzero
+  # Primary LLMOps gateway for evals/experiments/telemetry control
+  tensorzero:
+    image: tensorzero/tensorzero:latest
+    container_name: tensorzero
+    ports:
+      - "3030:3000"
+    environment:
+      # ClickHouse connection for observability data
+      CLICKHOUSE_URL: http://tensorzero-clickhouse:8123
+      # Configuration file path
+      TENSORZERO_CONFIG: /etc/tensorzero/tensorzero.toml
+    volumes:
+      - ./manifests/llmops/tensorzero.toml:/etc/tensorzero/tensorzero.toml:ro
+    depends_on:
+      tensorzero-clickhouse:
+        condition: service_healthy
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # TensorZero UI - Dashboard for observability
+  tensorzero-ui:
+    image: tensorzero/tensorzero-ui:latest
+    container_name: tensorzero-ui
+    ports:
+      - "3031:3000"
+    environment:
+      TENSORZERO_GATEWAY_URL: http://tensorzero:3000
+      CLICKHOUSE_URL: http://tensorzero-clickhouse:8123
+    depends_on:
+      - tensorzero
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ClickHouse - Analytics database for TensorZero
+  tensorzero-clickhouse:
+    image: clickhouse/clickhouse-server:24.11-alpine
+    container_name: tensorzero-clickhouse
+    ports:
+      - "8123:8123"  # HTTP interface
+      - "9000:9000"  # Native interface
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-tensorzero}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-tensorzero}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-changeme}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - tensorzero-clickhouse-data:/var/lib/clickhouse
+      - tensorzero-clickhouse-logs:/var/log/clickhouse-server
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # MLflow - Experiment tracking and model registry
+  # ---------------------------------------------------------------------------
+  # https://github.com/mlflow/mlflow
+  # Already in pixi.toml, this provides the tracking server
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.19.0
+    container_name: mlflow
+    ports:
+      - "5000:5000"
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://${MLFLOW_DB_USER:-mlflow}:${MLFLOW_DB_PASSWORD:-changeme}@mlflow-db:5432/${MLFLOW_DB_NAME:-mlflow}
+      MLFLOW_ARTIFACTS_DESTINATION: /mlflow/artifacts
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://${MLFLOW_DB_USER:-mlflow}:${MLFLOW_DB_PASSWORD:-changeme}@mlflow-db:5432/${MLFLOW_DB_NAME:-mlflow}
+      --default-artifact-root /mlflow/artifacts
+    volumes:
+      - mlflow-artifacts:/mlflow/artifacts
+    depends_on:
+      mlflow-db:
+        condition: service_healthy
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  mlflow-db:
+    image: postgres:17.2-alpine
+    container_name: mlflow-db
+    environment:
+      POSTGRES_DB: ${MLFLOW_DB_NAME:-mlflow}
+      POSTGRES_USER: ${MLFLOW_DB_USER:-mlflow}
+      POSTGRES_PASSWORD: ${MLFLOW_DB_PASSWORD:-changeme}
+    volumes:
+      - mlflow-db-data:/var/lib/postgresql/data
+    networks:
+      - agentic-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MLFLOW_DB_USER:-mlflow} -d ${MLFLOW_DB_NAME:-mlflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  tensorzero-clickhouse-data:
+  tensorzero-clickhouse-logs:
+  mlflow-artifacts:
+  mlflow-db-data:
+
+networks:
+  agentic-network:
+    external: true
+    name: agentic-network

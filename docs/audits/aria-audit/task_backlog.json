@@ -1,0 +1,211 @@
+{
+  "tasks": {
+    "P0": [
+      {
+        "title": "Add Holochain coordination layer to flake.nix",
+        "domain": "L11: Coordination (Holochain)",
+        "repository": "holochain/holochain",
+        "issue": "Holochain is the backbone of the agentic OS but missing from flake.nix",
+        "location": "flake.nix",
+        "installation_method": "nix_overlay",
+        "verification": "nix develop --command holochain --version",
+        "complexity": "Large",
+        "dependencies": []
+      },
+      {
+        "title": "Add NATS event bus to flake.nix",
+        "domain": "L6: Messaging & Orchestration",
+        "repository": "nats-io/nats-server",
+        "issue": "NATS server is required for event bus but not configured",
+        "location": "flake.nix",
+        "installation_method": "nix_package",
+        "verification": "nix develop --command nats-server --version",
+        "complexity": "Small",
+        "dependencies": []
+      },
+      {
+        "title": "Add Vault secrets management",
+        "domain": "L5: Identity & Policy",
+        "repository": "hashicorp/vault",
+        "issue": "Vault is required for secrets management but missing",
+        "location": "docker/vault.yml",
+        "installation_method": "docker_service",
+        "verification": "docker compose -f docker/vault.yml config",
+        "complexity": "Medium",
+        "dependencies": []
+      }
+    ],
+    "P1": [
+      {
+        "title": "Add LocalAI inference service",
+        "domain": "L9: Inference Plane",
+        "repository": "mudler/LocalAI",
+        "issue": "LocalAI is the primary inference plane but not configured",
+        "location": "docker/localai.yml",
+        "installation_method": "docker_service",
+        "verification": "curl localhost:8080/readyz",
+        "complexity": "Medium",
+        "dependencies": [
+          "P0-Holochain"
+        ]
+      },
+      {
+        "title": "Add AGiXT orchestration platform",
+        "domain": "L7: Agent Runtime",
+        "repository": "Josh-XT/AGiXT",
+        "issue": "AGiXT is the primary orchestration platform missing",
+        "location": "docker/agixt.yml",
+        "installation_method": "docker_service",
+        "verification": "docker compose -f docker/agixt.yml up -d",
+        "complexity": "Large",
+        "dependencies": [
+          "P0-NATS",
+          "P0-Vault"
+        ]
+      },
+      {
+        "title": "Add Keycloak identity provider",
+        "domain": "L5: Identity & Policy",
+        "repository": "keycloak/keycloak",
+        "issue": "Keycloak is required for OIDC identity management",
+        "location": "docker/keycloak.yml",
+        "installation_method": "docker_service",
+        "verification": "docker compose -f docker/keycloak.yml config",
+        "complexity": "Medium",
+        "dependencies": []
+      },
+      {
+        "title": "Add Prometheus metrics collection",
+        "domain": "L14: Security & Observability",
+        "repository": "prometheus/prometheus",
+        "issue": "Prometheus is required for metrics collection",
+        "location": "flake.nix",
+        "installation_method": "nix_package",
+        "verification": "nix develop --command prometheus --version",
+        "complexity": "Small",
+        "dependencies": []
+      },
+      {
+        "title": "Add ArgoCD GitOps deployment",
+        "domain": "L3: Cluster & Delivery",
+        "repository": "argoproj/argo-cd",
+        "issue": "ArgoCD is required for GitOps deployments",
+        "location": "docker/argocd.yml",
+        "installation_method": "docker_service",
+        "verification": "docker compose -f docker/argocd.yml config",
+        "complexity": "Medium",
+        "dependencies": []
+      }
+    ],
+    "P2": [
+      {
+        "title": "Add Grafana dashboards",
+        "domain": "L14: Security & Observability",
+        "repository": "grafana/grafana",
+        "issue": "Grafana is needed for visualization of metrics",
+        "location": "docker/grafana.yml",
+        "installation_method": "docker_service",
+        "verification": "docker compose -f docker/grafana.yml config",
+        "complexity": "Small",
+        "dependencies": [
+          "P1-Prometheus"
+        ]
+      },
+      {
+        "title": "Add Kong API gateway",
+        "domain": "L4: Edge & Agent Traffic",
+        "repository": "Kong/kong",
+        "issue": "Kong is the North-South edge gateway",
+        "location": "docker/kong.yml",
+        "installation_method": "docker_service",
+        "verification": "docker compose -f docker/kong.yml config",
+        "complexity": "Medium",
+        "dependencies": []
+      },
+      {
+        "title": "Add Lobe Chat UI",
+        "domain": "L13: UI & Developer Tools",
+        "repository": "lobehub/lobe-chat",
+        "issue": "Lobe Chat is the primary operator UI",
+        "location": "docker/lobe-chat.yml",
+        "installation_method": "docker_service",
+        "verification": "docker compose -f docker/lobe-chat.yml config",
+        "complexity": "Small",
+        "dependencies": []
+      },
+      {
+        "title": "Add MinIO object storage",
+        "domain": "L10: State & Storage",
+        "repository": "minio/minio",
+        "issue": "MinIO is needed for S3-compatible object storage",
+        "location": "docker/minio.yml",
+        "installation_method": "docker_service",
+        "verification": "docker compose -f docker/minio.yml config",
+        "complexity": "Small",
+        "dependencies": []
+      },
+      {
+        "title": "Add Trivy vulnerability scanner",
+        "domain": "L14: Security & Observability",
+        "repository": "aquasecurity/trivy",
+        "issue": "Trivy is required for vulnerability scanning",
+        "location": "flake.nix",
+        "installation_method": "nix_package",
+        "verification": "nix develop --command trivy --version",
+        "complexity": "Small",
+        "dependencies": []
+      }
+    ],
+    "P3": [
+      {
+        "title": "Add AgentGateway MCP routing",
+        "domain": "L4: Edge & Agent Traffic",
+        "repository": "agentgateway/agentgateway",
+        "issue": "AgentGateway for agent/tool MCP routing",
+        "location": "rust/Cargo.toml",
+        "installation_method": "rust_crate",
+        "verification": "cargo check",
+        "complexity": "Large",
+        "dependencies": []
+      },
+      {
+        "title": "Add IPFS distributed storage",
+        "domain": "L10: State & Storage",
+        "repository": "ipfs/kubo",
+        "issue": "IPFS for content-addressed storage",
+        "location": "flake.nix",
+        "installation_method": "nix_package",
+        "verification": "nix develop --command ipfs --version",
+        "complexity": "Medium",
+        "dependencies": []
+      },
+      {
+        "title": "Add TensorZero LLMOps gateway",
+        "domain": "L12: LLMOps & Evaluation",
+        "repository": "tensorzero/tensorzero",
+        "issue": "TensorZero for LLMOps gateway",
+        "location": "docker/tensorzero.yml",
+        "installation_method": "docker_service",
+        "verification": "docker compose -f docker/tensorzero.yml config",
+        "complexity": "Medium",
+        "dependencies": []
+      }
+    ]
+  },
+  "summary": {
+    "total_tasks": 16,
+    "total_effort": 64,
+    "by_priority": {
+      "P0": 3,
+      "P1": 5,
+      "P2": 5,
+      "P3": 3
+    },
+    "effort_by_priority": {
+      "P0": 14,
+      "P1": 22,
+      "P2": 12,
+      "P3": 16
+    }
+  }
+}
