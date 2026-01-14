@@ -98,16 +98,18 @@ def detect_base_ref(root: Path) -> str:
             mb = run_git(["merge-base", "HEAD", base], cwd=root).strip()
             if mb:
                 return mb
-        except Exception:
-            pass
+        except Exception as exc:
+            # Best-effort: if we cannot determine merge-base, fall back to other strategies.
+            print(f"select-immutable-replay: failed to detect merge-base with {base!r}: {exc}", file=sys.stderr)
 
     # Push: compare against previous commit
     try:
         prev = run_git(["rev-parse", "HEAD~1"], cwd=root).strip()
         if prev:
             return prev
-    except Exception:
-        pass
+    except Exception as exc:
+        # Best-effort: if previous commit cannot be resolved, fall back to HEAD.
+        print("select-immutable-replay: failed to resolve previous commit (HEAD~1):", exc, file=sys.stderr)
 
     # Fallback: compare against HEAD (yields empty selection)
     return "HEAD"
