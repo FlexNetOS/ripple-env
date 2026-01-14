@@ -15,6 +15,10 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # Keep the default AIO model set minimal so first boot doesn't spend ~GBs downloading.
+      # Override via LOCALAI_MODELS if you want the full AIO suite (image-gen, STT, etc.).
+      - PROFILE=${LOCALAI_PROFILE:-cpu}
+      - MODELS=${LOCALAI_MODELS:-/localai-config/text-small.yaml,/aio/cpu/embeddings.yaml}
       # CPU threads for inference (adjust based on available cores)
       - THREADS=${LOCALAI_THREADS:-4}
       # Context window size (tokens) - higher uses more RAM
@@ -32,6 +36,7 @@ services:
       # OpenAI-compatible API endpoint
       - OPENAI_API_BASE=http://localhost:8080/v1
     volumes:
+      - ./config/localai:/localai-config:ro
       - ./data/localai/models:/models:cached
       - ./data/localai/images:/tmp/generated/images:cached
     restart: unless-stopped
@@ -39,8 +44,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 10
+      start_period: 10m
     # Resource limits for standard profile
     deploy:
       resources:

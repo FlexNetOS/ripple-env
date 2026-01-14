@@ -199,6 +199,14 @@ docs/_build/
 /coverage.xml
 /.pytest_cache/
 
+# === LocalAI model binaries (DO NOT COMMIT) ===
+# These are large runtime artifacts that will break GitHub pushes and bloat repo history.
+docker/data/localai/models/**/*.gguf
+docker/data/localai/models/**/*.gguf.partial
+docker/data/localai/models/**/*.bin
+docker/data/localai/models/**/*.tar.gz
+docker/data/localai/models/stablediffusion_assets/**
+
 # === TypeScript ===
 *.tsbuildinfo
 

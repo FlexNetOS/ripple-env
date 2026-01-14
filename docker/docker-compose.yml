@@ -118,7 +118,7 @@ services:
   # MinIO - S3-compatible Object Storage
   # ---------------------------------------------------------------------------
   minio:
-    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: flexstack-minio
     profiles: ["core", "dev", "full"]
     command: server /data --console-address ":9001"
@@ -155,7 +155,7 @@ services:
   # MinIO Initialization - Creates required buckets
   # ---------------------------------------------------------------------------
   minio-init:
-    image: minio/mc:RELEASE.2024-12-18T15-11-58Z
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     container_name: flexstack-minio-init
     profiles: ["core", "dev", "full"]
     depends_on:
@@ -438,6 +438,10 @@ services:
     container_name: flexstack-localai
     profiles: ["ai", "dev", "full"]
     environment:
+      # AIO entrypoint downloads/preloads the configured model YAMLs on first run.
+      # Keep the default set minimal so the stack becomes healthy quickly.
+      - PROFILE=${LOCALAI_PROFILE:-cpu}
+      - MODELS=${LOCALAI_MODELS:-/localai-config/text-small.yaml,/aio/cpu/embeddings.yaml}
       - THREADS=${LOCALAI_THREADS:-4}
       - CONTEXT_SIZE=${LOCALAI_CONTEXT_SIZE:-2048}
       - PARALLEL=${LOCALAI_PARALLEL:-2}
@@ -448,16 +452,17 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./data/localai/models:/models:cached
-      - ./data/localai/images:/tmp/generated/images:cached
+      - ./config/localai:/localai-config:ro
+      - localai_models:/models
+      - localai_images:/tmp/generated/images
     networks:
       - flexstack-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 10
+      start_period: 10m
     restart: unless-stopped
     deploy:
       resources:
@@ -1143,6 +1148,10 @@ volumes:
     driver: local
 
   # AI/ML
+  localai_models:
+    driver: local
+  localai_images:
+    driver: local
   agixt_models:
     driver: local
   agixt_workspace:

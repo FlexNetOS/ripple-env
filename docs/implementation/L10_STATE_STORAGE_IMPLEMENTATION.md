@@ -29,7 +29,7 @@ Note: RuVector is currently best used as an embedded/local vector DB via the npm
   - Persistence: RDB snapshots + AOF append-only file
 
 - **minio** (Ports 9000, 9001)
-  - Image: `minio/minio:RELEASE.2024-12-18T13-15-44Z`
+  - Image: `minio/minio:RELEASE.2025-09-07T16-13-09Z`
   - Features: S3-compatible API, web console, Prometheus metrics
   - Health check: `/minio/health/live`
   - Default credentials: minioadmin / minioadmin
