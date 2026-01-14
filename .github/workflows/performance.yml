@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v21
@@ -132,7 +132,7 @@ jobs:
           EOF
 
       - name: Upload metrics
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: nix-performance-metrics
           path: metrics/
@@ -148,7 +148,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Create test network
         run: docker network create agentic-network || true
@@ -234,7 +234,7 @@ jobs:
           EOF
 
       - name: Upload Docker metrics
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: docker-performance-metrics
           path: metrics/
@@ -257,10 +257,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -307,7 +307,7 @@ jobs:
           fi
 
       - name: Upload load test results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: load-test-results
           path: load-test-results.txt
@@ -331,10 +331,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Download current metrics
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           pattern: '*-metrics'
           path: ./current-metrics

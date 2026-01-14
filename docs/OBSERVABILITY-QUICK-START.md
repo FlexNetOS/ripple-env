@@ -32,7 +32,7 @@ echo "UMAMI_DB_PASSWORD=${UMAMI_DB_PASSWORD}" >> .env
 docker network create agentic-network 2>/dev/null || true
 
 # 4. Start all services
-docker compose -f docker-compose.observability.yml up -d
+docker compose -f docker/docker-compose.observability.yml up -d
 
 # 5. Verify
 ./scripts/verify-observability.sh
@@ -68,7 +68,7 @@ docker compose -f docker-compose.observability.yml up -d
 
 ```
 ripple-env/
-├── docker-compose.observability.yml       # Main service definitions
+├── docker/docker-compose.observability.yml       # Main service definitions
 ├── .env.example                           # Environment template
 ├── .env                                   # Your secrets (create from .example)
 ├── manifests/observability/
@@ -121,38 +121,38 @@ pwgen -s 32 1
 
 ```bash
 # Start all
-docker compose -f docker-compose.observability.yml up -d
+docker compose -f docker/docker-compose.observability.yml up -d
 
 # Start specific service
-docker compose -f docker-compose.observability.yml up -d netdata
-docker compose -f docker-compose.observability.yml up -d umami
+docker compose -f docker/docker-compose.observability.yml up -d netdata
+docker compose -f docker/docker-compose.observability.yml up -d umami
 
 # Stop all
-docker compose -f docker-compose.observability.yml down
+docker compose -f docker/docker-compose.observability.yml down
 
 # Stop with volume removal (CAUTION: deletes data!)
-docker compose -f docker-compose.observability.yml down -v
+docker compose -f docker/docker-compose.observability.yml down -v
 ```
 
 ### Logs
 
 ```bash
 # All services
-docker compose -f docker-compose.observability.yml logs -f
+docker compose -f docker/docker-compose.observability.yml logs -f
 
 # Specific service
-docker compose -f docker-compose.observability.yml logs -f netdata
-docker compose -f docker-compose.observability.yml logs -f umami
+docker compose -f docker/docker-compose.observability.yml logs -f netdata
+docker compose -f docker/docker-compose.observability.yml logs -f umami
 
 # Last 100 lines
-docker compose -f docker-compose.observability.yml logs --tail=100
+docker compose -f docker/docker-compose.observability.yml logs --tail=100
 ```
 
 ### Status
 
 ```bash
 # All services status
-docker compose -f docker-compose.observability.yml ps
+docker compose -f docker/docker-compose.observability.yml ps
 
 # Health checks
 docker ps --filter "name=netdata" --format "{{.Names}}: {{.Status}}"
@@ -163,11 +163,11 @@ docker ps --filter "name=umami" --format "{{.Names}}: {{.Status}}"
 
 ```bash
 # Restart specific service
-docker compose -f docker-compose.observability.yml restart netdata
-docker compose -f docker-compose.observability.yml restart umami
+docker compose -f docker/docker-compose.observability.yml restart netdata
+docker compose -f docker/docker-compose.observability.yml restart umami
 
 # Restart all
-docker compose -f docker-compose.observability.yml restart
+docker compose -f docker/docker-compose.observability.yml restart
 ```
 
 ## Netdata Setup (P1-008)
@@ -194,7 +194,7 @@ docker compose -f docker-compose.observability.yml restart
    ```
 5. Restart:
    ```bash
-   docker compose -f docker-compose.observability.yml restart netdata
+   docker compose -f docker/docker-compose.observability.yml restart netdata
    ```
 
 ### Use in Grafana
@@ -282,7 +282,7 @@ Create alerts in Alertmanager for:
 
 ```bash
 # Check logs
-docker compose -f docker-compose.observability.yml logs netdata
+docker compose -f docker/docker-compose.observability.yml logs netdata
 
 # Common issue: Insufficient privileges
 # Solution: Verify capabilities in docker-compose.yml
@@ -293,13 +293,13 @@ docker compose -f docker-compose.observability.yml logs netdata
 
 ```bash
 # Check database health
-docker compose -f docker-compose.observability.yml ps umami-db
+docker compose -f docker/docker-compose.observability.yml ps umami-db
 
 # Restart database
-docker compose -f docker-compose.observability.yml restart umami-db
+docker compose -f docker/docker-compose.observability.yml restart umami-db
 
 # Wait for health check, then restart Umami
-docker compose -f docker-compose.observability.yml restart umami
+docker compose -f docker/docker-compose.observability.yml restart umami
 ```
 
 ### Grafana Can't Connect to Netdata
@@ -312,7 +312,7 @@ curl http://localhost:19999/api/v1/allmetrics?format=prometheus
 docker exec grafana cat /etc/grafana/provisioning/datasources/datasources.yml
 
 # Restart Grafana
-docker compose -f docker-compose.observability.yml restart grafana
+docker compose -f docker/docker-compose.observability.yml restart grafana
 ```
 
 ### Service Won't Start
@@ -325,7 +325,7 @@ docker stats
 docker network inspect agentic-network
 
 # Recreate service
-docker compose -f docker-compose.observability.yml up -d --force-recreate <service>
+docker compose -f docker/docker-compose.observability.yml up -d --force-recreate <service>
 ```
 
 ## Security Best Practices
@@ -375,17 +375,17 @@ docker exec umami-db pg_dump -U umami umami > umami-backup-$(date +%Y%m%d).sql
 
 ```bash
 # Pull latest images
-docker compose -f docker-compose.observability.yml pull
+docker compose -f docker/docker-compose.observability.yml pull
 
 # Recreate containers
-docker compose -f docker-compose.observability.yml up -d --force-recreate
+docker compose -f docker/docker-compose.observability.yml up -d --force-recreate
 ```
 
 ### Cleanup
 
 ```bash
 # Remove stopped containers
-docker compose -f docker-compose.observability.yml rm
+docker compose -f docker/docker-compose.observability.yml rm
 
 # Remove unused volumes (CAUTION!)
 docker volume prune
@@ -406,7 +406,7 @@ docker image prune -a
 ## Support
 
 For issues or questions:
-1. Check logs: `docker compose -f docker-compose.observability.yml logs`
+1. Check logs: `docker compose -f docker/docker-compose.observability.yml logs`
 2. Run verification: `./scripts/verify-observability.sh`
 3. Consult documentation: `/docs/P1-008-009-IMPLEMENTATION.md`
 4. Review audit report: `ARIA_AUDIT_REPORT.md`

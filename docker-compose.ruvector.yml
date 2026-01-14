@@ -1,6 +1,15 @@
 # =============================================================================
 # RuVector Distributed Vector Database - Docker Compose Configuration
 # =============================================================================
+#
+# DEPRECATED / NOT RECOMMENDED:
+# RuVector is currently best used via the npm CLI in embedded/local mode
+# (see scripts/ruvector.sh and scripts/ruvector.ps1). The upstream CLI's
+# standalone HTTP/gRPC server mode is reported as "Coming Soon", and the
+# Docker images/namespaces historically referenced here have been unreliable
+# and may not provide the expected HTTP service.
+#
+# Keep this file only as an experimental placeholder for future server images.
 # BUILDKIT_STARTER_SPEC.md Layer 10: State & Storage (P1-001)
 #
 # RuVector Features:
@@ -17,10 +26,10 @@
 #   docker compose -f docker-compose.ruvector.yml logs -f
 #
 # Endpoints:
-#   - HTTP API: http://localhost:8000
-#   - gRPC API: localhost:8001
-#   - Metrics: http://localhost:8002/metrics
-#   - Health: http://localhost:8000/health
+#   - HTTP API: http://localhost:18000
+#   - gRPC API: localhost:18001
+#   - Metrics: http://localhost:18002/metrics
+#   - Health: http://localhost:18000/health
 #
 # See: https://github.com/ruvnet/ruvector
 # =============================================================================
@@ -41,6 +50,12 @@ volumes:
   ruvector-logs:
     driver: local
 
+  # Additional volumes for replica (only used when the `ha` profile is enabled)
+  ruvector-replica-data:
+    driver: local
+  ruvector-replica-index:
+    driver: local
+
 services:
   # ===========================================================================
   # RuVector Primary Node
@@ -50,7 +65,7 @@ services:
     # TODO: URGENT - Pin to specific version/digest when available, or build from source
     # Get digest: docker pull ruvector/ruvector:latest && docker inspect --format='{{.RepoDigests}}' ruvector/ruvector:latest
     # Alternative: Build from source - see docs/CONTAINER_SECURITY.md
-    image: ruvector/ruvector:latest
+    image: ruvnet/ruvector:latest
     container_name: ruvector-primary
     hostname: ruvector-primary
     restart: unless-stopped
@@ -59,13 +74,13 @@ services:
       - ruvector-internal
     ports:
       # HTTP API (REST)
-      - "8000:8000"
+      - "18000:8000"
       # gRPC API
-      - "8001:8001"
+      - "18001:8001"
       # Prometheus metrics
-      - "8002:8002"
+      - "18002:8002"
       # Raft consensus (internal cluster communication)
-      - "8003:8003"
+      - "18003:8003"
     environment:
       # Server configuration
       RUVECTOR_NODE_ID: "node-1"
@@ -134,7 +149,7 @@ services:
     # SECURITY RISK: Using :latest tag exposes system to supply chain attacks
     # TODO: URGENT - Pin to specific version/digest when available, or build from source
     # Get digest: docker pull ruvector/ruvector:latest && docker inspect --format='{{.RepoDigests}}' ruvector/ruvector:latest
-    image: ruvector/ruvector:latest
+    image: ruvnet/ruvector:latest
     container_name: ruvector-replica
     hostname: ruvector-replica
     restart: unless-stopped
@@ -239,12 +254,3 @@ services:
       resources:
         limits:
           memory: 2G
-
-# ===========================================================================
-# Additional volumes for replica (only created when HA profile is used)
-# ===========================================================================
-volumes:
-  ruvector-replica-data:
-    driver: local
-  ruvector-replica-index:
-    driver: local

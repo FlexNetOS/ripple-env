@@ -79,6 +79,9 @@ spec:
         app.kubernetes.io/component: alerting
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: alertmanager
           image: prom/alertmanager:v0.27.0
@@ -88,6 +91,12 @@ spec:
           ports:
             - containerPort: 9093
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           volumeMounts:
             - name: alertmanager-config
               mountPath: /etc/alertmanager
@@ -95,8 +104,10 @@ spec:
               mountPath: /alertmanager
           resources:
             limits:
+              cpu: "200m"
               memory: 256Mi
             requests:
+              cpu: "50m"
               memory: 64Mi
           livenessProbe:
             httpGet:

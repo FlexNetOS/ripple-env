@@ -19,8 +19,6 @@
 #   - https://github.com/minio/minio
 #   - BUILDKIT_STARTER_SPEC.md L10: State & Storage
 
-version: '3.8'
-
 services:
   # MinIO Server
   minio:

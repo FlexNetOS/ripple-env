@@ -69,9 +69,17 @@ spec:
         app.kubernetes.io/name: postgres-umami
         app.kubernetes.io/component: observability
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: postgres:15-alpine
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
           env:
             - name: POSTGRES_DB
               value: umami
@@ -135,9 +143,27 @@ spec:
         app.kubernetes.io/name: umami
         app.kubernetes.io/component: observability
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         - name: wait-for-postgres
           image: busybox:1.36
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+          resources:
+            limits:
+              memory: 64Mi
+              cpu: "100m"
+            requests:
+              memory: 16Mi
+              cpu: "10m"
           command:
             - sh
             - -c
@@ -149,6 +175,11 @@ spec:
       containers:
         - name: umami
           image: ghcr.io/umami-software/umami:postgresql-v2.15.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
           ports:
             - containerPort: 3000
               name: http

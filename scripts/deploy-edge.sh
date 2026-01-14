@@ -16,7 +16,11 @@ NC='\033[0m' # No Color
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-COMPOSE_FILE="$PROJECT_ROOT/docker-compose.edge.yml"
+COMPOSE_FILE="$PROJECT_ROOT/docker/docker-compose.edge.yml"
+if [ ! -f "$COMPOSE_FILE" ] && [ -f "$PROJECT_ROOT/docker-compose.edge.yml" ]; then
+    # Back-compat for older layouts.
+    COMPOSE_FILE="$PROJECT_ROOT/docker-compose.edge.yml"
+fi
 
 # Helper functions
 print_header() {
@@ -59,12 +63,12 @@ check_prerequisites() {
     fi
     print_success "Docker Compose is available: $(docker compose version)"
 
-    # Check if docker-compose.edge.yml exists
+    # Check if the compose file exists
     if [ ! -f "$COMPOSE_FILE" ]; then
-        print_failure "docker-compose.edge.yml not found at $COMPOSE_FILE"
+        print_failure "Edge compose file not found at $COMPOSE_FILE"
         exit 1
     fi
-    print_success "docker-compose.edge.yml found"
+    print_success "Edge compose file found"
 }
 
 # Create network
@@ -97,16 +101,16 @@ create_config() {
 deploy_services() {
     print_header "Deploying Edge Services"
 
-    print_info "Starting services with docker-compose..."
+    print_info "Starting services with Docker Compose..."
     cd "$PROJECT_ROOT"
 
     # Pull images first
     print_info "Pulling images..."
-    docker compose -f docker-compose.edge.yml pull
+    docker compose -f "$COMPOSE_FILE" pull
 
     # Start services
     print_info "Starting services..."
-    docker compose -f docker-compose.edge.yml up -d
+    docker compose -f "$COMPOSE_FILE" up -d
 
     print_success "Services started"
 }
@@ -173,7 +177,7 @@ show_status() {
     print_header "Service Status"
 
     cd "$PROJECT_ROOT"
-    docker compose -f docker-compose.edge.yml ps
+    docker compose -f "$COMPOSE_FILE" ps
 }
 
 # Show access information
@@ -230,8 +234,8 @@ main() {
     echo "  3. Set up AgentGateway routing rules"
     echo "  4. Access Konga UI at http://localhost:1337 to manage Kong"
     echo ""
-    print_info "To stop services: docker-compose -f docker-compose.edge.yml down"
-    print_info "To view logs: docker-compose -f docker-compose.edge.yml logs -f"
+    print_info "To stop services: docker compose -f docker/docker-compose.edge.yml down"
+    print_info "To view logs: docker compose -f docker/docker-compose.edge.yml logs -f"
 }
 
 # Run main function

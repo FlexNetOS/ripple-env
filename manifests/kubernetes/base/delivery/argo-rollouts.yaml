@@ -217,6 +217,8 @@ spec:
             runAsNonRoot: true
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
 ---
 apiVersion: v1
 kind: Service

@@ -1,0 +1,177 @@
+```mermaid
+graph TB
+    %% ==================================================================
+    %% Bootstrap Flow: Fresh Machine → Deploy → Smoke
+    %% ==================================================================
+    %% Evidence: bootstrap.sh, bootstrap.ps1, README.md, GETTING_STARTED.md
+    %% Status: Phase 2 Verified
+    %% ==================================================================
+
+    START[Fresh Machine<br/>Linux/macOS/Windows] --> PLATFORM{Platform?}
+
+    %% Linux/macOS Path
+    PLATFORM -->|Linux/macOS| L1[Download bootstrap.sh]
+    L1 --> L2[chmod +x bootstrap.sh]
+    L2 --> L3[./bootstrap.sh]
+
+    L3 --> L_S1[Stage 1: detect_system<br/>OS/arch validation]
+    L_S1 --> L_S2[Stage 2: install_nix<br/>Determinate Systems installer]
+    L_S2 --> L_S3[Stage 3: enable_flakes<br/>nix.conf configuration]
+    L_S3 --> L_S4[Stage 4: install_direnv<br/>Auto-activation tool]
+    L_S4 --> L_S5[Stage 5: install_nom<br/>nix-output-monitor]
+    L_S5 --> L_S6[Stage 6: install_git]
+    L_S6 --> L_S7[Stage 7: install_gh<br/>GitHub CLI]
+    L_S7 --> L_S8[Stage 8: install_zsh<br/>optional shell]
+    L_S8 --> L_S9[Stage 9: install_nushell<br/>optional shell]
+    L_S9 --> L_S10[Stage 10: setup_direnv_hooks<br/>.bashrc/.zshrc]
+    L_S10 --> L_S11[Stage 11: verify_environment<br/>nix flake check]
+    L_S11 --> L_S12[Stage 12: verify_pixi<br/>pixi install]
+    L_S12 --> L_S13[Stage 13: verify_manifest<br/>ARIA validation]
+
+    L_S13 --> COMMON_ENV[Development Environment Ready]
+
+    %% Windows Path
+    PLATFORM -->|Windows| W1[Open PowerShell<br/>as Administrator]
+    W1 --> W2[Download bootstrap.ps1]
+    W2 --> W3[.\bootstrap.ps1]
+
+    W3 --> W_S1[Stage 1: CheckWindowsVersion<br/>Build ≥ 19041]
+    W_S1 --> W_S2[Stage 2: InstallWSL<br/>WSL2 + VM Platform]
+    W_S2 --> W_S3[Stage 3: ConfigureWSL<br/>.wslconfig memory/swap]
+    W_S3 --> W_S4[Stage 4: CreateNixOSDistro<br/>Download NixOS-WSL tarball]
+    W_S4 --> W_S5[Stage 5: ConfigureVirtualDisk<br/>Resize ext4.vhdx to 1TB]
+    W_S5 --> W_S6[Stage 6: InitializeNixOS<br/>Enable flakes in WSL]
+    W_S6 --> W_S7[Stage 7: InstallROS2Environment<br/>Clone repo + run bootstrap.sh --ci]
+    W_S7 --> W_S8[Stage 8: SetDefaultDistro<br/>wsl --set-default]
+
+    W_S8 --> W_ENTER[wsl -d NixOS-Ripple]
+    W_ENTER --> W_CD[cd ~/ripple-env]
+    W_CD --> COMMON_ENV
+
+    %% Common Flow After Bootstrap
+    COMMON_ENV --> ACT1[nix develop<br/>or: nom develop<br/>or: direnv allow]
+    ACT1 --> ACT2[pixi install<br/>Install ROS2 packages]
+    ACT2 --> ENV_READY[ROS2 Environment Active]
+
+    %% Golden Path 2: Update Toolchain
+    ENV_READY --> GP2{Need Update?}
+    GP2 -->|Yes| UP1[git pull origin main]
+    UP1 --> UP2[nix flake update]
+    UP2 --> UP3[pixi update]
+    UP3 --> UP4[nix develop --rebuild]
+    UP4 --> UP5[nix flake check]
+    UP5 --> ENV_READY
+
+    GP2 -->|No| GP3{Build Packages?}
+
+    %% Golden Path 3: Build & Verify
+    GP3 -->|Yes| BUILD1[mkdir -p ~/ros2_ws/src]
+    BUILD1 --> BUILD2[cd ~/ros2_ws]
+    BUILD2 --> BUILD3[colcon build --symlink-install<br/>alias: cb]
+    BUILD3 --> BUILD4[source install/setup.bash]
+    BUILD4 --> BUILD5[colcon test<br/>alias: ct]
+    BUILD5 --> BUILD6[colcon test-result --verbose<br/>alias: ctr]
+    BUILD6 --> BUILD_PASS{Tests Pass?}
+    BUILD_PASS -->|Yes| BUILD_DONE[Build Complete]
+    BUILD_PASS -->|No| BUILD_FIX[Fix Issues]
+    BUILD_FIX --> BUILD3
+
+    BUILD_DONE --> GP4{Deploy Services?}
+    GP3 -->|No| GP4
+
+    %% Golden Path 4: Deploy & Smoke Test
+    GP4 -->|Yes| DEPLOY_INIT[Initialize Infrastructure]
+
+    DEPLOY_INIT --> INIT1[./scripts/init-docker-networks.sh]
+    DEPLOY_INIT --> INIT2[./scripts/init-jetstream.sh]
+    DEPLOY_INIT --> INIT3[./scripts/init-step-ca.sh]
+
+    INIT1 --> DEPLOY1
+    INIT2 --> DEPLOY1
+    INIT3 --> DEPLOY1
+
+    DEPLOY1[./scripts/deploy.sh<br/>Main deployment]
+    DEPLOY1 --> DEPLOY2[./scripts/deploy-observability.sh<br/>Prometheus + Grafana + Jaeger]
+    DEPLOY1 --> DEPLOY3[./scripts/deploy-edge.sh<br/>Edge services]
+
+    DEPLOY2 --> VERIFY_START[Verification Phase]
+    DEPLOY3 --> VERIFY_START
+
+    VERIFY_START --> VERIFY1[./scripts/validate-e2e.sh<br/>End-to-end validation]
+    VERIFY1 --> VERIFY2[Component Verification:<br/>verify-argo-workflows.sh<br/>verify-observability.sh<br/>verify-jetstream.sh<br/>verify-mindsdb.sh<br/>... 6 more]
+
+    VERIFY2 --> VERIFY3[./scripts/health-check.sh]
+    VERIFY3 --> VERIFY4[./scripts/security-audit.sh]
+
+    VERIFY4 --> SMOKE_PASS{All Checks Pass?}
+
+    SMOKE_PASS -->|Yes| SUCCESS[✅ Full Stack Operational<br/>Smoke Tests Passed]
+    SMOKE_PASS -->|No| SMOKE_FAIL[Check Logs:<br/>docker compose logs<br/>kubectl logs]
+
+    SMOKE_FAIL --> FIX[Fix Issues]
+    FIX --> DEPLOY1
+
+    GP4 -->|No| DEV[Development Mode<br/>Ready for coding]
+
+    SUCCESS --> DEV
+
+    %% CI/CD Integration
+    DEV --> CI_TRIGGER{Push/PR?}
+    CI_TRIGGER -->|Yes| CI_START[CI Pipeline Triggered]
+    CI_START --> CI1[flake-check:<br/>nix flake check --all-systems]
+    CI1 --> CI2[ros2-build:<br/>nix develop + pixi install]
+    CI2 --> CI3[validate-configs:<br/>YAML/TOML/Docker Compose]
+    CI3 --> CI4[validate-nix:<br/>Flake validation]
+    CI4 --> CI5[component-verification:<br/>Per-service checks]
+    CI5 --> CI6[e2e-validation:<br/>Full integration test]
+
+    CI6 --> CI_PASS{CI Pass?}
+    CI_PASS -->|Yes| CI_SUCCESS[✅ Merge OK]
+    CI_PASS -->|No| CI_FAIL[❌ Block Merge]
+
+    CI_TRIGGER -->|No| DEV
+
+    %% Styling
+    classDef platform fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef linux fill:#4caf50,color:#fff,stroke:#2e7d32
+    classDef windows fill:#2196f3,color:#fff,stroke:#0d47a1
+    classDef stage fill:#ff9800,color:#fff,stroke:#e65100
+    classDef ready fill:#9c27b0,color:#fff,stroke:#6a1b9a
+    classDef deploy fill:#f44336,color:#fff,stroke:#c62828
+    classDef verify fill:#00bcd4,color:#fff,stroke:#006064
+    classDef success fill:#4caf50,color:#fff,stroke:#2e7d32
+    classDef fail fill:#f44336,color:#fff,stroke:#c62828
+    classDef dev fill:#9e9e9e,color:#fff,stroke:#424242
+
+    class START,PLATFORM platform
+    class L1,L2,L3,L_S1,L_S2,L_S3,L_S4,L_S5,L_S6,L_S7,L_S8,L_S9,L_S10,L_S11,L_S12,L_S13 linux
+    class W1,W2,W3,W_S1,W_S2,W_S3,W_S4,W_S5,W_S6,W_S7,W_S8,W_ENTER,W_CD windows
+    class COMMON_ENV,ACT1,ACT2,ENV_READY ready
+    class UP1,UP2,UP3,UP4,UP5 stage
+    class BUILD1,BUILD2,BUILD3,BUILD4,BUILD5,BUILD6,BUILD_DONE deploy
+    class DEPLOY_INIT,INIT1,INIT2,INIT3,DEPLOY1,DEPLOY2,DEPLOY3 deploy
+    class VERIFY_START,VERIFY1,VERIFY2,VERIFY3,VERIFY4 verify
+    class SUCCESS,CI_SUCCESS success
+    class SMOKE_FAIL,BUILD_FIX,FIX,CI_FAIL fail
+    class DEV,CI_START,CI1,CI2,CI3,CI4,CI5,CI6 dev
+```
+
+**Evidence:**
+- `bootstrap.sh` (1160 lines, 13 stages)
+- `bootstrap.ps1` (806 lines, 8 stages)
+- `README.md` (Quick Start section)
+- `docs/GETTING_STARTED.md` (Full setup guide)
+- `.github/workflows/ci.yml` (CI pipeline)
+- `.github/workflows/e2e-validation.yml` (E2E tests)
+- `scripts/deploy*.sh` (Deployment scripts)
+- `scripts/verify-*.sh` (10 verification scripts)
+- `scripts/validate-e2e.sh` (End-to-end validation)
+
+**Golden Paths:**
+1. **GP-1:** Fresh Machine → Full Stack (blue/green path)
+2. **GP-2:** Update Toolchain (orange loop)
+3. **GP-3:** Build & Verify (orange→purple path)
+4. **GP-4:** Deploy & Smoke Test (red→cyan→green path)
+
+**Status:** Phase 2 Complete
+**Last Updated:** 2026-01-13

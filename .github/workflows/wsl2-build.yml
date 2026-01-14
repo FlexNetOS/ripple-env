@@ -73,7 +73,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -240,7 +240,7 @@ jobs:
       # Upload Artifacts
       # ===========================================
       - name: Upload binary artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}-${{ steps.build_config.outputs.profile }}
           path: dist/${{ matrix.artifact_name }}
@@ -260,7 +260,7 @@ jobs:
           fi
 
       - name: Upload portable package
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}-portable-${{ steps.build_config.outputs.profile }}
           path: dist/${{ matrix.artifact_name }}.zip
@@ -278,7 +278,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install WiX Toolset
         run: |
@@ -292,7 +292,7 @@ jobs:
         run: cargo install cargo-wix
 
       - name: Download MSVC binary
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           name: agixt-bridge-windows-msvc-release
           path: installer-staging
@@ -368,7 +368,7 @@ jobs:
           & 'C:\Program Files (x86)\WiX Toolset v3.11\bin\light.exe' -ext WixUIExtension aria.wixobj -o aria-installer.msi
 
       - name: Upload installer
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: aria-windows-installer
           path: installer-staging/aria-installer.msi
@@ -385,10 +385,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Download all binary artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
@@ -410,6 +410,9 @@ jobs:
 
           # Copy docker-compose files
           cp docker-compose*.yml bundle/ || true
+          mkdir -p bundle/docker || true
+          cp docker/docker-compose*.yml bundle/docker/ || true
+          cp docker/*.yml bundle/docker/ || true
 
           # Copy documentation
           cp README.md bundle/
@@ -435,7 +438,11 @@ jobs:
               "2" {
                   Write-Host "Starting Docker-only setup..." -ForegroundColor Green
                   if (Get-Command docker -ErrorAction SilentlyContinue) {
-                      docker-compose up -d
+                    if (Get-Command docker-compose -ErrorAction SilentlyContinue) {
+                      docker-compose -f docker\docker-compose.yml up -d
+                    } else {
+                      docker compose -f docker\docker-compose.yml up -d
+                    }
                   } else {
                       Write-Host "Docker is not installed. Please install Docker Desktop." -ForegroundColor Red
                   }
@@ -475,7 +482,11 @@ jobs:
               2)
                   echo "Starting Docker-only setup..."
                   if command -v docker &> /dev/null; then
-                      docker-compose up -d
+                    if docker compose version >/dev/null 2>&1; then
+                      docker compose -f docker/docker-compose.yml up -d
+                    else
+                      docker-compose -f docker/docker-compose.yml up -d
+                    fi
                   else
                       echo "Docker is not installed. Please install Docker."
                   fi
@@ -502,14 +513,14 @@ jobs:
           tar czf ../aria-bootstrap-bundle.tar.gz .
 
       - name: Upload bootstrap bundle (zip)
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: aria-bootstrap-bundle-zip
           path: aria-bootstrap-bundle.zip
           retention-days: 30
 
       - name: Upload bootstrap bundle (tar.gz)
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: aria-bootstrap-bundle-tar
           path: aria-bootstrap-bundle.tar.gz
@@ -526,7 +537,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup WSL2
         run: |
@@ -538,7 +549,7 @@ jobs:
           wsl --install -d Ubuntu-22.04
 
       - name: Download Windows binary
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           name: agixt-bridge-windows-msvc-release
           path: wsl-test
@@ -567,12 +578,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           path: release-artifacts
 

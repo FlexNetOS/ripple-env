@@ -162,7 +162,7 @@ function Invoke-WithRetry {
 
     while ($attempt -le $MaxAttempts) {
         try {
-            Write-ColorOutput "Attempt $attempt/$MaxAttempts: $Description" "Info"
+            Write-ColorOutput "Attempt $attempt/$($MaxAttempts): $Description" "Info"
             $result = & $ScriptBlock
             return $result
         }

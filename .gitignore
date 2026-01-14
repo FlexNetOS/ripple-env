@@ -50,8 +50,13 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
 *.tgz
 *.tar.gz
+
+# Repo-local npm/npx state (see .npmrc)
+.npm-cache/
+.npm-prefix/
 
 # === Python & Backend ===
 __pycache__/
@@ -197,6 +202,13 @@ docs/_build/
 /coverage.xml
 /.pytest_cache/
 
+# === LocalAI model artifacts ===
+# We keep model binaries out of normal Git history. When they must be shared, they are tracked
+# via Git LFS (see .gitattributes) and/or fetched via scripts into a cache.
+#
+# Never commit partial/incomplete downloads.
+docker/data/localai/models/**/*.gguf.partial
+
 # === TypeScript ===
 *.tsbuildinfo
 
@@ -217,6 +229,11 @@ docs/_build/
 *.swp
 *.swo
 *~
+
+# Copilot/agent workspace artifacts
+tmpclaude-*
+*claude-*-cwd
+cUsers*Tempclaude-*-cwd
 .DS_Store
 Thumbs.db
 

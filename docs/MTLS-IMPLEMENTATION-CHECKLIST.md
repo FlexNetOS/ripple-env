@@ -5,7 +5,8 @@ This checklist guides you through enabling mutual TLS (mTLS) on all ARIA service
 ## Prerequisites
 
 - [ ] Step-CA initialized (`./scripts/init-step-ca.sh`)
-- [ ] Docker and docker-compose installed
+- [ ] Docker installed (Docker Desktop or Engine)
+- [ ] Docker Compose v2 available (`docker compose`)
 - [ ] Step-CLI available in nix development environment
 - [ ] All services defined in docker-compose files
 
@@ -33,10 +34,10 @@ This checklist guides you through enabling mutual TLS (mTLS) on all ARIA service
 
 ```bash
 # Start the certificate authority
-docker-compose -f docker/docker-compose.identity.yml up -d step-ca
+docker compose -f docker/docker-compose.identity.yml up -d step-ca
 
 # Wait for healthy status
-docker-compose -f docker/docker-compose.identity.yml ps step-ca
+docker compose -f docker/docker-compose.identity.yml ps step-ca
 
 # Test CA health
 step ca health \
@@ -394,7 +395,7 @@ gpg --symmetric certs-backup-$(date +%Y%m%d).tar.gz
 ./scripts/verify-mtls-setup.sh
 
 # Check all service logs
-docker-compose -f docker/docker-compose.identity.yml logs | grep -i "tls\|cert\|ssl"
+docker compose -f docker/docker-compose.identity.yml logs | grep -i "tls\|cert\|ssl"
 
 # Test service-to-service mTLS
 # (Implementation specific to your architecture)

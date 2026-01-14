@@ -39,26 +39,26 @@ curl http://localhost:8001/status
 curl http://localhost:8090/health
 
 # View logs
-docker compose -f docker-compose.edge.yml logs -f
+docker compose -f docker/docker-compose.edge.yml logs -f
 ```
 
 ## Common Commands
 
 ```bash
 # Start services
-docker compose -f docker-compose.edge.yml up -d
+docker compose -f docker/docker-compose.edge.yml up -d
 
 # Stop services
-docker compose -f docker-compose.edge.yml down
+docker compose -f docker/docker-compose.edge.yml down
 
 # Restart services
-docker compose -f docker-compose.edge.yml restart
+docker compose -f docker/docker-compose.edge.yml restart
 
 # View status
-docker compose -f docker-compose.edge.yml ps
+docker compose -f docker/docker-compose.edge.yml ps
 
 # View logs
-docker compose -f docker-compose.edge.yml logs -f <service>
+docker compose -f docker/docker-compose.edge.yml logs -f <service>
 ```
 
 ## Feature Flags

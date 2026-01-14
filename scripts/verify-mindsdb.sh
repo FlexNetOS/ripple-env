@@ -28,6 +28,10 @@ MINDSDB_API_PORT="${MINDSDB_API_PORT:-47334}"
 MINDSDB_MYSQL_PORT="${MINDSDB_MYSQL_PORT:-47335}"
 MINDSDB_MONGODB_PORT="${MINDSDB_MONGODB_PORT:-47336}"
 
+# When 0 (default), the verifier will *skip* live checks if the stack isn't running.
+# Set to 1 to require a running MindsDB stack and fail otherwise.
+MINDSDB_REQUIRE_RUNNING="${MINDSDB_REQUIRE_RUNNING:-0}"
+
 # =============================================================================
 # Helper Functions
 # =============================================================================
@@ -52,6 +56,10 @@ print_warning() {
 
 print_info() {
     echo -e "${BLUE}ℹ $1${NC}"
+}
+
+jq_is_runnable() {
+    command -v jq >/dev/null 2>&1 && jq --version >/dev/null 2>&1
 }
 
 check_command() {
@@ -83,10 +91,16 @@ verify_dependencies() {
         all_ok=false
     fi
 
-    if check_command jq; then
+    if command -v nc &> /dev/null; then
+        print_success "nc is installed"
+    else
+        print_warning "nc not installed; port checks will be skipped"
+    fi
+
+    if jq_is_runnable; then
         print_success "jq is installed"
     else
-        print_warning "jq not installed (optional, for JSON parsing)"
+        print_warning "jq not available/runnable (optional, for JSON parsing)"
     fi
 
     if [ "$all_ok" = false ]; then
@@ -129,8 +143,12 @@ verify_containers() {
     done
 
     if [ "$all_running" = false ]; then
-        print_info "Start services with: docker compose -f docker-compose.data.yml up -d"
-        exit 1
+        local data_compose_file="docker-compose.data.yml"
+        if [ -f "docker/docker-compose.data.yml" ]; then
+            data_compose_file="docker/docker-compose.data.yml"
+        fi
+        print_info "Start services with: docker compose -f $data_compose_file up -d"
+        return 1
     fi
 
     echo ""
@@ -146,11 +164,15 @@ verify_ports() {
         local port="${port_info%%:*}"
         local name="${port_info#*:}"
 
-        if nc -z "$MINDSDB_HOST" "$port" 2>/dev/null; then
+        if command -v nc >/dev/null 2>&1 && nc -z "$MINDSDB_HOST" "$port" 2>/dev/null; then
             print_success "Port $port ($name) is accessible"
         else
-            print_error "Port $port ($name) is not accessible"
-            all_ok=false
+            if command -v nc >/dev/null 2>&1; then
+                print_error "Port $port ($name) is not accessible"
+                all_ok=false
+            else
+                print_warning "Skipping port check for $port ($name): nc not available"
+            fi
         fi
     done
 
@@ -171,7 +193,7 @@ verify_api() {
     if response=$(curl -s -f "${api_url}/api/status" 2>/dev/null); then
         print_success "MindsDB API is responding"
 
-        if command -v jq &> /dev/null; then
+        if jq_is_runnable; then
             echo "$response" | jq '.' 2>/dev/null || echo "$response"
         else
             echo "$response"
@@ -321,6 +343,11 @@ EOF
 print_summary() {
     print_header "Summary"
 
+    local data_compose_file="docker-compose.data.yml"
+    if [ -f "docker/docker-compose.data.yml" ]; then
+        data_compose_file="docker/docker-compose.data.yml"
+    fi
+
     cat <<EOF
 MindsDB is now running and ready to use!
 
@@ -331,10 +358,10 @@ Service URLs:
   - MongoDB:     mongodb://${MINDSDB_HOST}:${MINDSDB_MONGODB_PORT}
 
 Container Management:
-  - Start:   docker compose -f docker-compose.data.yml up -d
-  - Stop:    docker compose -f docker-compose.data.yml down
-  - Logs:    docker compose -f docker-compose.data.yml logs -f mindsdb
-  - Restart: docker compose -f docker-compose.data.yml restart mindsdb
+    - Start:   docker compose -f ${data_compose_file} up -d
+    - Stop:    docker compose -f ${data_compose_file} down
+    - Logs:    docker compose -f ${data_compose_file} logs -f mindsdb
+    - Restart: docker compose -f ${data_compose_file} restart mindsdb
 
 MySQL Client Access:
   docker exec -it mindsdb mysql -h localhost -P 47335 -u mindsdb
@@ -363,7 +390,14 @@ main() {
     echo ""
 
     verify_dependencies
-    verify_containers
+    if ! verify_containers; then
+        if [ "$MINDSDB_REQUIRE_RUNNING" = "1" ]; then
+            print_error "MindsDB stack is not running"
+            exit 1
+        fi
+        print_warning "MindsDB stack not running; skipping live checks. Set MINDSDB_REQUIRE_RUNNING=1 to enforce."
+        exit 0
+    fi
     verify_ports
     verify_api || print_warning "API check failed - MindsDB may still be starting"
     verify_database

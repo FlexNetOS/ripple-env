@@ -59,6 +59,9 @@ spec:
         prometheus.io/port: "8080"
         prometheus.io/path: "/metrics"
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: keycloak
           image: quay.io/keycloak/keycloak:26.0
@@ -69,6 +72,12 @@ spec:
               name: http
             - containerPort: 8443
               name: https
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           envFrom:
             - configMapRef:
                 name: keycloak-config

@@ -10,6 +10,23 @@
 
 set -e
 
+OBSERVABILITY_REQUIRE_RUNNING="${OBSERVABILITY_REQUIRE_RUNNING:-0}"
+
+# Prefer v2 plugin (`docker compose`), fallback to legacy `docker-compose`.
+COMPOSE=()
+if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    COMPOSE=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE=(docker-compose)
+fi
+
+OBS_COMPOSE_FILE="docker-compose.observability.yml"
+if [ -f "docker/docker-compose.observability.yml" ]; then
+    OBS_COMPOSE_FILE="docker/docker-compose.observability.yml"
+fi
+
+ERRORS=0
+
 # Colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -60,28 +77,54 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
+# If none of the stack containers are running, skip runtime checks by default.
+if ! docker ps --format '{{.Names}}' | grep -Eq '^(netdata|umami|umami-db|grafana)$' 2>/dev/null; then
+    if [ "$OBSERVABILITY_REQUIRE_RUNNING" = "1" ]; then
+        echo -e "${RED}✗ Observability stack is not running${NC}"
+        echo "Start it with: ${COMPOSE[*]:-docker compose} -f $OBS_COMPOSE_FILE up -d"
+        exit 1
+    fi
+
+    echo -e "${YELLOW}⚠ Observability stack is not running (skipping live checks).${NC}"
+    echo "To run live checks: ${COMPOSE[*]:-docker compose} -f $OBS_COMPOSE_FILE up -d"
+    echo "To enforce running services: set OBSERVABILITY_REQUIRE_RUNNING=1"
+    exit 0
+fi
+
 echo "=== Docker Services ==="
 echo ""
 
 # Check Netdata (P1-008)
-check_service "Netdata" "netdata"
+if ! check_service "Netdata" "netdata"; then
+    ERRORS=$((ERRORS + 1))
+fi
 
 # Check Umami (P1-009)
-check_service "Umami" "umami"
-check_service "Umami Database" "umami-db"
+if ! check_service "Umami" "umami"; then
+    ERRORS=$((ERRORS + 1))
+fi
+if ! check_service "Umami Database" "umami-db"; then
+    ERRORS=$((ERRORS + 1))
+fi
 
 echo ""
 echo "=== Service Endpoints ==="
 echo ""
 
 # Check Netdata endpoint
-check_endpoint "Netdata Dashboard" "http://localhost:19999"
+if ! check_endpoint "Netdata Dashboard" "http://localhost:19999"; then
+    ERRORS=$((ERRORS + 1))
+fi
 
 # Check Umami endpoint
-check_endpoint "Umami Dashboard" "http://localhost:3001/api/heartbeat"
+if ! check_endpoint "Umami Dashboard" "http://localhost:3001/api/heartbeat"; then
+    ERRORS=$((ERRORS + 1))
+fi
 
 # Check Grafana (should include Netdata datasource)
-check_endpoint "Grafana" "http://localhost:3000/api/health"
+if ! check_endpoint "Grafana" "http://localhost:3000/api/health"; then
+    ERRORS=$((ERRORS + 1))
+fi
 
 echo ""
 echo "=== Environment Variables ==="
@@ -159,7 +202,7 @@ echo ""
 echo "3. Configure Netdata Cloud (optional):"
 echo "   - Get claim token from https://app.netdata.cloud"
 echo "   - Add to .env: NETDATA_CLAIM_TOKEN=<your-token>"
-echo "   - Restart: docker compose -f docker-compose.observability.yml restart netdata"
+echo "   - Restart: docker compose -f $OBS_COMPOSE_FILE restart netdata"
 echo ""
 echo "4. View metrics in Grafana:"
 echo "   http://localhost:3000"
@@ -169,3 +212,11 @@ echo ""
 echo "========================================================================="
 echo "  Verification Complete"
 echo "========================================================================="
+
+if [ "$ERRORS" -gt 0 ]; then
+    echo -e "${YELLOW}⚠ Completed with $ERRORS failing check(s).${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ All checks passed.${NC}"
+

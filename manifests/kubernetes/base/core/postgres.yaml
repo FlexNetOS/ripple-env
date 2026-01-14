@@ -78,12 +78,21 @@ spec:
         app.kubernetes.io/component: database
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: postgres:17.2-alpine
           ports:
             - containerPort: 5432
               name: postgres
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           envFrom:
             - secretRef:
                 name: postgres-credentials

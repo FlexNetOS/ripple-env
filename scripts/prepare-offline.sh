@@ -205,7 +205,7 @@ DOCKER_IMAGES_FULL=(
     "localai/localai:v2.24.2-aio-cpu"
     "temporalio/auto-setup:1.26.2"
     "temporalio/ui:2.34.0"
-    "minio/minio:RELEASE.2024-12-18T13-15-44Z"
+    "minio/minio:RELEASE.2025-09-07T16-13-09Z"
     "grafana/grafana:11.4.0"
     "prom/prometheus:v2.48.0"
     "hashicorp/vault:1.18"

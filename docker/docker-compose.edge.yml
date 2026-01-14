@@ -161,7 +161,7 @@ services:
       # Feature flags
       AGENTGATEWAY_ENABLED: ${AGENTGATEWAY_ENABLED:-true}
     volumes:
-      - ./config/agentgateway:/config:ro
+      - ../config/agentgateway:/config:ro
       - agentgateway-cache:/cache
       - agentgateway-logs:/logs
     depends_on:
@@ -259,7 +259,7 @@ networks:
 # Usage:
 # 1. Create network: docker network create agentic-network
 # 2. Create config directory: mkdir -p config/agentgateway
-# 3. Start services: docker-compose -f docker-compose.edge.yml up -d
+# 3. Start services: docker compose -f docker/docker-compose.edge.yml up -d
 # 4. Verify Kong: curl http://localhost:8001/status
 # 5. Verify AgentGateway: curl http://localhost:8090/health
 # 6. Access Kong Manager: http://localhost:8002

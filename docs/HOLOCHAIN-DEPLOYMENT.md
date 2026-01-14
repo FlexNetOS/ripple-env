@@ -54,10 +54,10 @@ docker network create agentic-network
 cd /home/user/ripple-env
 
 # Deploy Holochain services
-docker-compose -f docker/docker-compose.holochain.yml up -d
+docker compose -f docker/docker-compose.holochain.yml up -d
 
 # Check status
-docker-compose -f docker/docker-compose.holochain.yml ps
+docker compose -f docker/docker-compose.holochain.yml ps
 ```
 
 ### 2. Verify Services Are Running
@@ -70,8 +70,8 @@ curl http://localhost:8888/health
 curl http://localhost:8889/health
 
 # View container logs
-docker-compose -f docker/docker-compose.holochain.yml logs -f holochain-bootstrap
-docker-compose -f docker/docker-compose.holochain.yml logs -f holochain-conductor
+docker compose -f docker/docker-compose.holochain.yml logs -f holochain-bootstrap
+docker compose -f docker/docker-compose.holochain.yml logs -f holochain-conductor
 ```
 
 ## Configuration
@@ -389,20 +389,20 @@ services:
 ### Stop Services
 
 ```bash
-docker-compose -f docker/docker-compose.holochain.yml down
+docker compose -f docker/docker-compose.holochain.yml down
 ```
 
 ### Remove Volumes (WARNING: Data Loss)
 
 ```bash
-docker-compose -f docker/docker-compose.holochain.yml down -v
+docker compose -f docker/docker-compose.holochain.yml down -v
 ```
 
 ### Complete Cleanup
 
 ```bash
 # Stop and remove services
-docker-compose -f docker/docker-compose.holochain.yml down -v
+docker compose -f docker/docker-compose.holochain.yml down -v
 
 # Remove images (if no longer needed)
 docker rmi holochain/bootstrap-server:latest

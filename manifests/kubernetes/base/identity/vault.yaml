@@ -52,6 +52,9 @@ spec:
         app.kubernetes.io/component: secrets
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: vault
           image: hashicorp/vault:1.18
@@ -64,6 +67,8 @@ spec:
                 secretKeyRef:
                   name: vault-credentials
                   key: VAULT_DEV_ROOT_TOKEN_ID
+            - name: VAULT_DISABLE_MLOCK
+              value: "true"
             - name: VAULT_DEV_LISTEN_ADDRESS
               value: "0.0.0.0:8200"
             - name: VAULT_ADDR
@@ -81,9 +86,11 @@ spec:
               memory: 256Mi
               cpu: "250m"
           securityContext:
+            allowPrivilegeEscalation: false
             capabilities:
-              add:
-                - IPC_LOCK
+              drop:
+                - ALL
+            runAsNonRoot: true
           livenessProbe:
             exec:
               command:

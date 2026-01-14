@@ -276,7 +276,8 @@ curl -f http://localhost:19999/api/v1/allmetrics?format=prometheus | head -20
 curl -f http://localhost:3001/api/heartbeat
 
 # Test Grafana (should show Netdata datasource)
-curl -u admin:admin http://localhost:3000/api/datasources | jq '.[] | select(.name=="Netdata")'
+# Note: this will prompt you for the Grafana password.
+curl -u admin http://localhost:3000/api/datasources | jq '.[] | select(.name=="Netdata")'
 ```
 
 ### Volume Verification

@@ -19,8 +19,6 @@
 #   - https://lobechat.com
 #   - BUILDKIT_STARTER_SPEC.md L13: UI & Developer Tools
 
-version: '3.8'
-
 services:
   # Lobe Chat UI
   lobe-chat:

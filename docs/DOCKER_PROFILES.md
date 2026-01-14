@@ -469,8 +469,8 @@ If you were using individual docker-compose files:
 
 ```bash
 # Old way
-docker compose -f docker-compose.observability.yml up -d
-docker compose -f docker-compose.identity.yml up -d
+docker compose -f docker/docker-compose.observability.yml up -d
+docker compose -f docker/docker-compose.identity.yml up -d
 
 # New way
 docker compose --profile observability --profile identity up -d
@@ -480,7 +480,7 @@ Individual compose files are still available for isolated testing:
 
 ```bash
 # Use individual file for isolation
-docker compose -f docker-compose.observability.yml up -d
+docker compose -f docker/docker-compose.observability.yml up -d
 ```
 
 ## Related Documentation

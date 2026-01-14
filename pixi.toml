@@ -428,13 +428,17 @@ httpx = ">=0.24"
 # Activate with: pixi run -e vectordb-ruvector <command>
 #
 # IMPORTANT: RuVector is NOT a Python package. It provides:
-#   - Rust crates: cargo add ruvector-core ruvector-graph ruvector-gnn
-#   - Node.js bindings: npm install ruvector
-#   - WebAssembly: npm install ruvector-wasm
-#   - CLI: cargo install ruvector-cli
+#   - Rust crates: ruvector-* on crates.io (e.g. ruvector-core, ruvector-graph)
+#   - Node.js bindings + CLI: `npx ruvector ...` (or `npm install ruvector`)
+#   - WebAssembly (browser): npm packages under @ruvector/*
 #
-# This feature provides Python client dependencies for HTTP/gRPC access.
-# The actual ruvector server runs as a Rust binary or Docker container.
+# Note on "server" mode:
+#   The `ruvector` CLI currently includes a `server` subcommand, but upstream
+#   reports it as "Coming Soon" (not yet a production HTTP/gRPC service).
+#   This pixi feature therefore only installs *client-side* dependencies.
+#
+# This feature provides Python client dependencies for future HTTP/gRPC access.
+# Today, RuVector is typically used embedded (local DB) via the npm CLI or Rust crates.
 #
 # Feature Flag: VECTOR_STORE=ruvector (in .env.state.example)
 # Primary Use Case: Production, distributed deployments, GNN-enhanced search
@@ -462,10 +466,8 @@ sentence-transformers = ">=2.0"
 numpy = ">=1.24,<3"
 
 [feature.vectordb-ruvector.pypi-dependencies]
-# ruvector Python client (HTTP wrapper)
-# Note: Full ruvector runs as Rust server; this is client-only
-# Install server via: cargo install ruvector-server
-# Or Docker: docker run -p 8000:8000 ruvector/ruvector
+# Client-only placeholders.
+# If/when an HTTP/gRPC server is available, add a Python client here.
 
 # =============================================================================
 # QuDAG Feature - Quantum-Resistant Distributed Communication (P3-011)

@@ -122,12 +122,12 @@ Connects to the `agentic-network` Docker network, allowing communication with:
 1. **Ensure prerequisites are running**:
    ```bash
    docker network create agentic-network
-   docker-compose -f docker-compose.localai.yml up -d
+  docker compose -f docker/docker-compose.localai.yml up -d
    ```
 
 2. **Build and start open-lovable**:
    ```bash
-   docker-compose -f docker-compose.ui.yml up -d --build open-lovable
+  docker compose -f docker/docker-compose.ui.yml up -d --build open-lovable
    ```
 
 3. **Access the application**:
@@ -155,7 +155,7 @@ For enhanced web scraping capabilities:
    ```
 4. **Restart the service**:
    ```bash
-   docker-compose -f docker-compose.ui.yml restart open-lovable
+  docker compose -f docker/docker-compose.ui.yml restart open-lovable
    ```
 
 ## Verification Commands
@@ -163,7 +163,7 @@ For enhanced web scraping capabilities:
 ### 1. Build the Service
 
 ```bash
-docker-compose -f docker-compose.ui.yml build open-lovable
+docker compose -f docker/docker-compose.ui.yml build open-lovable
 ```
 
 **Expected Output**: Successful build completion with image `aria/open-lovable:latest`
@@ -171,7 +171,7 @@ docker-compose -f docker-compose.ui.yml build open-lovable
 ### 2. Check Service Status
 
 ```bash
-docker-compose -f docker-compose.ui.yml ps open-lovable
+docker compose -f docker/docker-compose.ui.yml ps open-lovable
 ```
 
 **Expected Output**: Container running with status `Up` and healthy
@@ -187,7 +187,7 @@ docker inspect open-lovable | grep -A 5 "Health"
 ### 4. Check Logs
 
 ```bash
-docker-compose -f docker-compose.ui.yml logs -f open-lovable
+docker compose -f docker/docker-compose.ui.yml logs -f open-lovable
 ```
 
 **Expected Output**: Application startup logs with no errors
@@ -257,7 +257,7 @@ docker network inspect agentic-network | grep open-lovable
 **Solution**:
 ```bash
 # Rebuild without cache
-docker-compose -f docker-compose.ui.yml build --no-cache open-lovable
+docker compose -f docker/docker-compose.ui.yml build --no-cache open-lovable
 ```
 
 ### Service Won't Start
@@ -267,10 +267,10 @@ docker-compose -f docker-compose.ui.yml build --no-cache open-lovable
 **Solution**:
 ```bash
 # Check logs
-docker-compose -f docker-compose.ui.yml logs open-lovable
+docker compose -f docker/docker-compose.ui.yml logs open-lovable
 
 # Verify LocalAI is running
-docker-compose -f docker-compose.localai.yml ps
+docker compose -f docker/docker-compose.localai.yml ps
 ```
 
 ### Cannot Access Application
@@ -286,7 +286,7 @@ docker ps | grep open-lovable
 lsof -i :3211
 
 # Restart service
-docker-compose -f docker-compose.ui.yml restart open-lovable
+docker compose -f docker/docker-compose.ui.yml restart open-lovable
 ```
 
 ### AI Generation Not Working

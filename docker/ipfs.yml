@@ -18,8 +18,6 @@
 #   - https://github.com/ipfs/kubo
 #   - BUILDKIT_STARTER_SPEC.md L10: State & Storage
 
-version: '3.8'
-
 services:
   # IPFS Node
   ipfs:

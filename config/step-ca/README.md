@@ -51,7 +51,7 @@ step certificate inspect config/step-ca/pki/root_ca.crt
 
 ```bash
 # Using docker-compose
-docker-compose -f docker-compose.identity.yml up step-ca
+docker compose -f docker/docker-compose.identity.yml up step-ca
 
 # Or standalone
 step-ca config/step-ca/ca.json

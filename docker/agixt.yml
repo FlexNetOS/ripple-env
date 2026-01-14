@@ -21,8 +21,6 @@
 #   - https://agixt.com
 #   - BUILDKIT_STARTER_SPEC.md L7: Agent Runtime
 
-version: '3.8'
-
 services:
   # AGiXT Core Service
   agixt:

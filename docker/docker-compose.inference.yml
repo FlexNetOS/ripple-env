@@ -6,6 +6,9 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # Minimal AIO model set by default (override via LOCALAI_MODELS).
+      - PROFILE=${LOCALAI_PROFILE:-cpu}
+      - MODELS=${LOCALAI_MODELS:-/localai-config/text-small.yaml,/aio/cpu/embeddings.yaml}
       - THREADS=4
       - CONTEXT_SIZE=2048
       - MODELS_PATH=/models
@@ -13,6 +16,7 @@ services:
       # OpenAI-compatible API endpoint
       - OPENAI_API_BASE=http://localhost:8080/v1
     volumes:
+      - ./config/localai:/localai-config:ro
       - ./data/localai/models:/models:cached
       - ./data/localai/images:/tmp/generated/images:cached
     restart: unless-stopped
@@ -29,8 +33,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 10
+      start_period: 10m
     networks:
       - agentic-network
 
@@ -69,7 +73,7 @@ networks:
 # 2. Download models: 
 #    curl -L https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf \
 #      -o data/localai/models/mistral-7b-instruct-v0.2.Q4_K_M.gguf
-# 3. Start: docker-compose -f docker-compose.localai.yml up -d
+# 3. Start: docker compose -f docker/docker-compose.localai.yml up -d
 # 4. Test: curl http://localhost:8080/v1/models
 # 5. OpenAI-compatible API: 
 #    curl http://localhost:8080/v1/chat/completions \

@@ -91,14 +91,14 @@ vcache:
 ### 1. Start Services
 
 ```bash
-docker-compose -f docker/docker-compose.caching.yml up -d
+docker compose -f docker/docker-compose.caching.yml up -d
 ```
 
 ### 2. Verify Services
 
 ```bash
 # Check service status
-docker-compose -f docker/docker-compose.caching.yml ps
+docker compose -f docker/docker-compose.caching.yml ps
 
 # Check Redis connectivity
 docker exec vcache-redis redis-cli ping
@@ -347,13 +347,13 @@ vcache:
 ### Stop All Services
 
 ```bash
-docker-compose -f docker/docker-compose.caching.yml down
+docker compose -f docker/docker-compose.caching.yml down
 ```
 
 ### Remove Data Volumes
 
 ```bash
-docker-compose -f docker/docker-compose.caching.yml down -v
+docker compose -f docker/docker-compose.caching.yml down -v
 ```
 
 ## References

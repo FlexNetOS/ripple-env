@@ -155,9 +155,18 @@ spec:
         app.kubernetes.io/part-of: flexstack
     spec:
       serviceAccountName: prometheus
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: prometheus
           image: prom/prometheus:v2.48.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
           args:
             - '--config.file=/etc/prometheus/prometheus.yml'
             - '--storage.tsdb.path=/prometheus'
@@ -168,6 +177,8 @@ spec:
             - containerPort: 9090
               name: http
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: prometheus-config
               mountPath: /etc/prometheus
             - name: prometheus-data
@@ -196,6 +207,8 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 3
       volumes:
+        - name: tmp
+          emptyDir: {}
         - name: prometheus-config
           configMap:
             name: prometheus-config

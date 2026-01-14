@@ -68,10 +68,10 @@ This creates:
 
 ```bash
 # Start step-ca via docker-compose
-docker-compose -f docker-compose.identity.yml up -d step-ca
+docker compose -f docker/docker-compose.identity.yml up -d step-ca
 
 # Verify it's running
-docker-compose -f docker-compose.identity.yml ps step-ca
+docker compose -f docker/docker-compose.identity.yml ps step-ca
 
 # Check CA health
 step ca health --ca-url https://localhost:9000 --root config/step-ca/pki/root_ca.crt
@@ -317,7 +317,7 @@ provisioners:
 
 ```bash
 # Check logs
-docker-compose -f docker-compose.identity.yml logs step-ca
+docker compose -f docker/docker-compose.identity.yml logs step-ca
 
 # Common issues:
 # 1. Port 9000 already in use

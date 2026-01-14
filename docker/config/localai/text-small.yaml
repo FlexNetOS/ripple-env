@@ -1,0 +1,16 @@
+# Minimal text model config for LocalAI AIO images.
+#
+# Purpose:
+# - Keep first-run downloads and startup time small for dev/integration testing.
+# - Provide an OpenAI-compatible chat/completions-capable model.
+#
+# Notes:
+# - LocalAI will download the model into MODELS_PATH (/models) when using the huggingface:// URI.
+# - Override via LOCALAI_MODELS or LOCALAI_TEXT_MODEL in your compose/.env if desired.
+
+name: gpt-4
+mmap: true
+context_size: 2048
+parameters:
+  # Small, fast model suitable for basic smoke tests.
+  model: huggingface://hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF/llama-3.2-1b-instruct-q4_k_m.gguf

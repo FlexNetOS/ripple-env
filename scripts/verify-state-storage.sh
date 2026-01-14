@@ -17,6 +17,12 @@ echo "Layer 10 State & Storage Verification"
 echo "========================================"
 echo ""
 
+# Support both historical and current locations.
+STATE_COMPOSE_FILE="docker-compose.state.yml"
+if [ -f "docker/docker-compose.state.yml" ]; then
+    STATE_COMPOSE_FILE="docker/docker-compose.state.yml"
+fi
+
 PASSED=0
 FAILED=0
 
@@ -29,12 +35,12 @@ NC='\033[0m' # No Color
 # Helper functions
 pass() {
     echo -e "${GREEN}✓${NC} $1"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
 }
 
 fail() {
     echo -e "${RED}✗${NC} $1"
-    ((FAILED++))
+    FAILED=$((FAILED + 1))
 }
 
 warn() {
@@ -48,10 +54,10 @@ warn() {
 echo "[1/5] Checking configuration files..."
 echo ""
 
-if [ -f "docker-compose.state.yml" ]; then
-    pass "docker-compose.state.yml exists"
+if [ -f "$STATE_COMPOSE_FILE" ]; then
+    pass "$STATE_COMPOSE_FILE exists"
 else
-    fail "docker-compose.state.yml not found"
+    fail "docker-compose.state.yml not found (expected $STATE_COMPOSE_FILE)"
 fi
 
 if [ -f ".env.state.example" ]; then
@@ -60,20 +66,14 @@ else
     fail ".env.state.example not found"
 fi
 
-if [ -f "rust/Cargo.toml" ]; then
-    if grep -q "ruvector" rust/Cargo.toml; then
-        pass "ruvector dependency found in Cargo.toml"
-    else
-        fail "ruvector not found in Cargo.toml"
-    fi
-
-    if grep -q "redis" rust/Cargo.toml; then
-        pass "redis dependency found in Cargo.toml"
-    else
-        fail "redis not found in Cargo.toml"
-    fi
+# RuVector is currently consumed via npm/npx (embedded/local DB CLI).
+# The CLI also includes a `server` subcommand with HTTP/gRPC options; if you
+# plan to use it as a networked service, verify it by starting it and probing
+# an endpoint (e.g. GET /health) in your target version/environment.
+if [ -f ".npmrc" ]; then
+    pass ".npmrc exists (repo-local npm config)"
 else
-    fail "rust/Cargo.toml not found"
+    warn ".npmrc not found (npx may be broken if global npm config points to a missing drive)"
 fi
 
 echo ""
@@ -110,11 +110,11 @@ echo "[3/5] Validating docker-compose.state.yml..."
 echo ""
 
 if command -v docker >/dev/null 2>&1; then
-    if docker compose -f docker-compose.state.yml config --quiet 2>/dev/null; then
-        pass "docker-compose.state.yml syntax is valid"
+    if docker compose -f "$STATE_COMPOSE_FILE" config --quiet 2>/dev/null; then
+        pass "$STATE_COMPOSE_FILE syntax is valid"
     else
-        fail "docker-compose.state.yml has syntax errors"
-        docker compose -f docker-compose.state.yml config 2>&1 | head -10
+        fail "$STATE_COMPOSE_FILE has syntax errors"
+        docker compose -f "$STATE_COMPOSE_FILE" config 2>&1 | head -10
     fi
 
     # Check network
@@ -139,21 +139,21 @@ echo ""
 
 if command -v docker >/dev/null 2>&1; then
     # Check if services are running
-    if docker compose -f docker-compose.state.yml ps redis 2>/dev/null | grep -q "Up"; then
+    if docker compose -f "$STATE_COMPOSE_FILE" ps redis 2>/dev/null | grep -q "Up"; then
         pass "Redis is running"
 
         # Test Redis connection
-        if docker compose -f docker-compose.state.yml exec redis redis-cli ping 2>/dev/null | grep -q "PONG"; then
+        if docker compose -f "$STATE_COMPOSE_FILE" exec redis redis-cli ping 2>/dev/null | grep -q "PONG"; then
             pass "Redis responds to PING"
         else
             warn "Redis is running but not responding"
         fi
     else
         warn "Redis is not running"
-        echo "   Start with: docker compose -f docker-compose.state.yml up -d redis"
+        echo "   Start with: docker compose -f $STATE_COMPOSE_FILE up -d redis"
     fi
 
-    if docker compose -f docker-compose.state.yml ps minio 2>/dev/null | grep -q "Up"; then
+    if docker compose -f "$STATE_COMPOSE_FILE" ps minio 2>/dev/null | grep -q "Up"; then
         pass "MinIO is running"
 
         # Test MinIO health
@@ -164,7 +164,7 @@ if command -v docker >/dev/null 2>&1; then
         fi
     else
         warn "MinIO is not running"
-        echo "   Start with: docker compose -f docker-compose.state.yml up -d minio mc"
+        echo "   Start with: docker compose -f $STATE_COMPOSE_FILE up -d minio mc"
     fi
 else
     warn "Skipping service status check (Docker not available)"
@@ -176,33 +176,42 @@ echo ""
 # 5. Check ruvector Installation
 # =============================================================================
 
-echo "[5/5] Checking ruvector..."
+echo "[5/5] Checking ruvector (npm/npx CLI)..."
 echo ""
 
-if command -v cargo >/dev/null 2>&1; then
-    pass "Cargo is installed"
-
-    # Check if ruvector-cli is installed
-    if command -v ruvector-cli >/dev/null 2>&1; then
-        pass "ruvector-cli is installed"
-        RUVECTOR_VERSION=$(ruvector-cli --version 2>/dev/null || echo "unknown")
-        echo "   Version: $RUVECTOR_VERSION"
-    else
-        warn "ruvector-cli not installed"
-        echo "   Install with: cargo install ruvector-cli"
-    fi
-
-    # Check if ruvector library is accessible
-    cd rust
-    if cargo tree 2>/dev/null | grep -q "ruvector"; then
-        pass "ruvector library is in dependency tree"
-    else
-        warn "ruvector library not resolved (may need network access to GitHub)"
-    fi
-    cd ..
+if command -v node >/dev/null 2>&1; then
+    pass "Node.js is installed"
 else
-    fail "Cargo not found"
-    warn "Install Rust toolchain to use ruvector"
+    fail "Node.js not found"
+    warn "Install Node.js to use ruvector via npx"
+fi
+
+if command -v npx >/dev/null 2>&1; then
+    pass "npx is available"
+
+    # Some environments have a global npm prefix/cache pointing to a missing drive.
+    # Use repo-local locations for this script's npx invocations.
+    REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    mkdir -p "$REPO_ROOT/.npm-cache" "$REPO_ROOT/.npm-prefix" >/dev/null 2>&1 || true
+    export NPM_CONFIG_CACHE="${NPM_CONFIG_CACHE:-$REPO_ROOT/.npm-cache}"
+    export NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-$REPO_ROOT/.npm-prefix}"
+
+    # Attempt to run ruvector CLI. This may download the package on first run.
+    if RUVECTOR_VERSION=$(npx --yes ruvector --version 2>/dev/null); then
+        pass "ruvector CLI is runnable via npx"
+        echo "   Version: $RUVECTOR_VERSION"
+
+        if npx --yes ruvector doctor >/dev/null 2>&1; then
+            pass "ruvector doctor passed"
+        else
+            warn "ruvector doctor reported issues"
+        fi
+    else
+        warn "ruvector CLI did not run via npx"
+        echo "   Hint: if npm prefix/cache points to a missing drive, use scripts/ruvector.(ps1|sh) or set NPM_CONFIG_PREFIX/NPM_CONFIG_CACHE"
+    fi
+else
+    fail "npx not found"
 fi
 
 echo ""
@@ -223,10 +232,10 @@ if [ $FAILED -eq 0 ]; then
     echo -e "${GREEN}All checks passed!${NC}"
     echo ""
     echo "Next steps:"
-    echo "  1. Start services: docker compose -f docker-compose.state.yml up -d"
-    echo "  2. Test Redis: docker compose -f docker-compose.state.yml exec redis redis-cli ping"
+    echo "  1. Start services: docker compose -f $STATE_COMPOSE_FILE up -d"
+    echo "  2. Test Redis: docker compose -f $STATE_COMPOSE_FILE exec redis redis-cli ping"
     echo "  3. Access MinIO Console: http://localhost:9001 (minioadmin/minioadmin)"
-    echo "  4. Install ruvector CLI: cargo install ruvector-cli"
+    echo "  4. Run ruvector CLI: npx --yes ruvector --help"
     exit 0
 else
     echo -e "${RED}Some checks failed.${NC}"

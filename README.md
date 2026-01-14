@@ -262,7 +262,8 @@ ripple-env/
 ├── pixi.lock              # Pixi locked dependencies
 ├── bootstrap.sh           # Linux/macOS bootstrap script
 ├── bootstrap.ps1          # Windows PowerShell bootstrap script
-├── docker-compose.agixt.yml  # AGiXT Docker services
+├── docker/
+│   └── docker-compose.agixt.yml  # AGiXT Docker services
 ├── .envrc                 # Direnv configuration
 ├── .env.agixt.example     # AGiXT environment template
 ├── BUILDKIT_STARTER_SPEC.md  # Stack specification (SSoT)

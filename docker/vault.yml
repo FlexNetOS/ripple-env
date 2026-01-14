@@ -19,8 +19,6 @@
 #   - https://github.com/hashicorp/vault
 #   - BUILDKIT_STARTER_SPEC.md L5: Identity & Policy
 
-version: '3.8'
-
 services:
   vault:
     image: hashicorp/vault:1.15.4

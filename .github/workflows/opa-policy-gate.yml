@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup OPA
         uses: open-policy-agent/setup-opa@v2
@@ -134,7 +134,7 @@ jobs:
           cat opa-policy-report.md
 
       - name: Upload policy report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: opa-policy-report
           path: opa-policy-report.md
@@ -153,7 +153,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup OPA
         uses: open-policy-agent/setup-opa@v2
@@ -169,7 +169,7 @@ jobs:
           ls -lh build/opa/bundle.tar.gz
 
       - name: Upload OPA bundle
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: opa-bundle
           path: build/opa/bundle.tar.gz

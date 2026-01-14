@@ -1,0 +1,46 @@
+# Trivy ignore list (misconfig IDs)
+#
+# This repo runs `trivy fs --scanners vuln,misconfig .` in `make security`.
+# Some findings are policy-dependent or represent accepted risks in the *base*
+# manifests (e.g., node-level monitoring DaemonSets requiring host access).
+#
+# See: docs/SECURITY_SCAN_EXCEPTIONS.md
+
+# Policy-specific UID/GID constraints (many upstream images run as < 10000)
+AVD-KSV-0020
+AVD-KSV-0021
+
+# Policy-specific private-registry restrictions (these manifests reference public
+# images by default; production can mirror them into a private registry)
+AVD-KSV-0032
+AVD-KSV-0033
+AVD-KSV-0034
+AVD-KSV-0035
+AVD-KSV-0125
+
+# Node-level monitoring (Netdata) requires host access by design
+AVD-KSV-0023
+AVD-KSV-0024
+AVD-KSV-0121
+
+# Netdata (privileged host-monitoring DaemonSet) accepted risks
+AVD-KSV-0005
+AVD-KSV-0006
+AVD-KSV-0009
+AVD-KSV-0010
+AVD-KSV-0012
+AVD-KSV-0017
+AVD-KSV-0022
+
+# RBAC rules that include node proxy access (required in some clusters/tooling)
+AVD-KSV-0047
+
+# Controller RBAC warnings (Argo Rollouts requires patching Services/Ingresses)
+AVD-KSV-0048
+AVD-KSV-0056
+
+# Netdata config includes placeholder token fields (replace with Secret in prod)
+AVD-KSV-01010
+
+# Some stateful apps are not read-only-rootfs hardened in base manifests
+AVD-KSV-0014

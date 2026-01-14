@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v21
@@ -49,7 +49,7 @@ jobs:
       - name: Generate Docker SBOM
         run: |
           # List all docker-compose files and generate SBOMs
-          for compose in docker-compose*.yml; do
+          for compose in docker-compose*.yml docker/docker-compose*.yml docker/*.yml; do
             if [ -f "$compose" ]; then
               name=$(basename "$compose" .yml)
               echo "Generating SBOM for $compose"
@@ -105,7 +105,7 @@ jobs:
           COSIGN_EXPERIMENTAL: 1
 
       - name: Upload SBOM Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: sbom-${{ github.sha }}
           path: sbom/
@@ -126,10 +126,10 @@ jobs:
     needs: generate-sbom
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Download SBOM
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           name: sbom-${{ github.sha }}
           path: sbom/
@@ -151,7 +151,7 @@ jobs:
           done
 
       - name: Upload Vulnerability Reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: vulnerability-reports-${{ github.sha }}
           path: vulnerability-reports/

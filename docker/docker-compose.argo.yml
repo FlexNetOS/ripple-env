@@ -68,7 +68,7 @@ networks:
 # - Argo Workflows: Container-native workflow engine
 #
 # Quick Start:
-#   1. docker-compose -f docker-compose.argo.yml up -d
+#   1. docker compose -f docker/docker-compose.argo.yml up -d
 #   2. ./scripts/setup-argo-workflows.sh
 #   3. Access UIs:
 #      - Argo CD: https://localhost:30443
@@ -81,10 +81,10 @@ networks:
 #    mkdir -p data/k3s/kubeconfig scripts
 #
 # 2. Start k3s and install Argo stack:
-#    docker-compose -f docker-compose.argo.yml up -d
+#    docker compose -f docker/docker-compose.argo.yml up -d
 #
 # 3. Wait for installation (check logs):
-#    docker-compose -f docker-compose.argo.yml logs -f argocd-installer
+#    docker compose -f docker/docker-compose.argo.yml logs -f argocd-installer
 #
 # 4. Configure Argo Workflows (RECOMMENDED):
 #    export KUBECONFIG=./data/k3s/kubeconfig/kubeconfig.yaml

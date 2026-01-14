@@ -1,3 +1,9 @@
 # Ensure shell scripts remain LF so they run correctly in WSL/Linux even when
 # checked out on Windows systems with autocrlf enabled.
 *.sh text eol=lf
+# === Git LFS (large artifacts) ===
+# LocalAI model binaries should be stored in LFS rather than normal Git history.
+docker/data/localai/models/**/*.gguf filter=lfs diff=lfs merge=lfs -text
+docker/data/localai/models/**/*.bin filter=lfs diff=lfs merge=lfs -text
+docker/data/localai/models/**/*.tar.gz filter=lfs diff=lfs merge=lfs -text
+docker/data/localai/models/**/*.safetensors filter=lfs diff=lfs merge=lfs -text

@@ -3,7 +3,7 @@
 #
 # Usage:
 #   docker network create agentic-network 2>/dev/null || true
-#   docker compose -f docker-compose.llmops.yml up -d
+#   docker compose -f docker/docker-compose.llmops.yml up -d
 #
 # Endpoints:
 #   TensorZero Gateway: http://localhost:3030
@@ -27,7 +27,7 @@ services:
       # Configuration file path
       TENSORZERO_CONFIG: /etc/tensorzero/tensorzero.toml
     volumes:
-      - ./manifests/llmops/tensorzero.toml:/etc/tensorzero/tensorzero.toml:ro
+      - ../manifests/llmops/tensorzero.toml:/etc/tensorzero/tensorzero.toml:ro
     depends_on:
       tensorzero-clickhouse:
         condition: service_healthy

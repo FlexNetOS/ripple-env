@@ -102,6 +102,9 @@ spec:
         app.kubernetes.io/component: logging
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: loki
           image: grafana/loki:3.3.2
@@ -110,6 +113,12 @@ spec:
           ports:
             - containerPort: 3100
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           volumeMounts:
             - name: loki-config
               mountPath: /etc/loki
@@ -117,8 +126,10 @@ spec:
               mountPath: /loki
           resources:
             limits:
+              cpu: "500m"
               memory: 1Gi
             requests:
+              cpu: "100m"
               memory: 256Mi
           livenessProbe:
             httpGet:

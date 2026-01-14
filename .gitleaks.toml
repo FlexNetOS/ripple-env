@@ -1,0 +1,45 @@
+# Gitleaks configuration for this repo.
+#
+# Goal: keep security scans useful by reducing noise from generated/vendor dirs.
+#
+# This file extends gitleaks' built-in default rules.
+
+title = "ripple-env gitleaks config"
+
+[extend]
+useDefault = true
+
+# Global allowlist (applies across all rules)
+#
+# Notes:
+# - Gitleaks has changed its allowlist schema over time.
+#   * Newer versions: `[[allowlists]]`
+#   * Older versions: `[allowlist]`
+#   We include BOTH for compatibility.
+# - Path regexes match both '/' and '\\' separators.
+
+[[allowlists]]
+description = "Ignore generated/vendor/cache directories"
+paths = [
+  '''(^|[\\/])node_modules([\\/]|$)''',
+  '''(^|[\\/])rust[\\/]target([\\/]|$)''',
+  '''(^|[\\/])\.tmp([\\/]|$)''',
+  '''(^|[\\/])\.venv([\\/]|$)''',
+  '''(^|[\\/])\.npm-cache([\\/]|$)''',
+  '''(^|[\\/])\.npm-prefix([\\/]|$)''',
+  '''(^|[\\/])dist([\\/]|$)''',
+  '''(^|[\\/])build([\\/]|$)''',
+]
+
+[allowlist]
+description = "Ignore generated/vendor/cache directories (legacy schema)"
+paths = [
+  '''(^|[\\/])node_modules([\\/]|$)''',
+  '''(^|[\\/])rust[\\/]target([\\/]|$)''',
+  '''(^|[\\/])\.tmp([\\/]|$)''',
+  '''(^|[\\/])\.venv([\\/]|$)''',
+  '''(^|[\\/])\.npm-cache([\\/]|$)''',
+  '''(^|[\\/])\.npm-prefix([\\/]|$)''',
+  '''(^|[\\/])dist([\\/]|$)''',
+  '''(^|[\\/])build([\\/]|$)''',
+]

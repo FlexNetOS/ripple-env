@@ -20,6 +20,9 @@ in
   # Full development tools (optional extras)
   devTools = import ./dev-tools.nix { inherit pkgs; };
 
+  # Distributed systems tools (RuVector/QuDAG helpers, gRPC tooling, WASM tooling)
+  distributed = import ./distributed.nix { inherit pkgs; };
+
   # Development tools with feature flags for optimization
   devToolsMinimal = import ./dev-tools.nix {
     inherit pkgs;

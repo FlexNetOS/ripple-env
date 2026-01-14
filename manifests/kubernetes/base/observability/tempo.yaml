@@ -93,9 +93,18 @@ spec:
         app.kubernetes.io/component: tracing
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: tempo
           image: grafana/tempo:2.7.2
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
           args:
             - -config.file=/etc/tempo/tempo.yaml
           ports:
@@ -106,6 +115,8 @@ spec:
             - containerPort: 4318
               name: otlp-http
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: tempo-config
               mountPath: /etc/tempo
             - name: tempo-data
@@ -113,8 +124,10 @@ spec:
           resources:
             limits:
               memory: 1Gi
+              cpu: "500m"
             requests:
               memory: 256Mi
+              cpu: "100m"
           livenessProbe:
             httpGet:
               path: /ready
@@ -132,6 +145,8 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 3
       volumes:
+        - name: tmp
+          emptyDir: {}
         - name: tempo-config
           configMap:
             name: tempo-config

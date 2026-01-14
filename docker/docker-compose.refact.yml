@@ -62,7 +62,7 @@ networks:
 #    docker network create agentic-network
 #
 # 3. Start Refact:
-#    docker-compose -f docker-compose.refact.yml up -d
+#    docker compose -f docker/docker-compose.refact.yml up -d
 #
 # 4. Access Web UI:
 #    http://localhost:8008

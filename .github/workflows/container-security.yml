@@ -73,7 +73,7 @@ jobs:
           - postgres:17.2-alpine
           - redis:7.4-alpine
           - neo4j:5-community
-          - minio/minio:RELEASE.2024-12-18T13-15-44Z
+          - minio/minio:RELEASE.2025-09-07T16-13-09Z
           # AI/ML Services (MEDIUM-HIGH PRIORITY)
           - localai/localai:v2.24.2-aio-cpu
           - mindsdb/mindsdb:25.14.0

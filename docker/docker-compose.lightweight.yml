@@ -28,6 +28,9 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # Minimal AIO model set for lightweight profile (fast first boot, small downloads).
+      - PROFILE=${LOCALAI_PROFILE:-cpu}
+      - MODELS=${LOCALAI_MODELS:-/localai-config/text-small.yaml,/aio/cpu/embeddings.yaml}
       # Minimal threading for low-resource systems
       - THREADS=2
       # Reduced context for faster inference
@@ -45,14 +48,15 @@ services:
       # Disable backends we don't need
       - DISABLE_AUTOLOAD_MODELS=true
     volumes:
+      - ./config/localai:/localai-config:ro
       - ./data/localai/models:/models:cached
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
       interval: 60s
       timeout: 10s
-      retries: 3
-      start_period: 120s
+      retries: 10
+      start_period: 10m
     deploy:
       resources:
         limits:

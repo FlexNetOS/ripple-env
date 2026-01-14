@@ -20,8 +20,6 @@
 #   - https://github.com/aquasecurity/trivy
 #   - BUILDKIT_STARTER_SPEC.md L14: Security & Observability
 
-version: '3.8'
-
 services:
   # Trivy Server
   trivy-server:

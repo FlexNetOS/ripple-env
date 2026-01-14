@@ -21,6 +21,18 @@
     "dotenv": "^16.4.7",
     "chalk": "^5.4.1"
   },
+  "optionalDependencies": {
+    "ruvector": "^0.1.96",
+    "@ruvector/core": "^0.1.30",
+    "@ruvector/gnn": "0.1.19",
+    "@ruvector/graph-node": "^0.1.26",
+    "@ruvector/attention": "^0.1.0",
+    "@ruvector/router": "^0.1.15",
+    "@ruvector/tiny-dancer": "^0.1.15",
+    "@ruvector/sona": "^0.1.0",
+    "@ruvector/server": "^0.1.0",
+    "ruvector-extensions": "^0.1.0"
+  },
   "devDependencies": {
     "@swc/cli": "^0.7.9",
     "@swc/core": "^1.10.1"

@@ -21,8 +21,6 @@
 #   - https://github.com/Kong/kong
 #   - BUILDKIT_STARTER_SPEC.md L4: Edge & Agent Traffic
 
-version: '3.8'
-
 services:
   # Kong Gateway
   kong:
