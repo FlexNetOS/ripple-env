@@ -1,8 +1,8 @@
 {
-  "version": "1.0.0",
-  "generated": "2026-01-13",
+  "version": "1.1.0",
+  "generated": "2026-01-14",
   "repository": "FlexNetOS/ripple-env",
-  "description": "Machine-readable catalog of scripts, workflows, environments, and artifacts",
+  "description": "Machine-readable catalog of scripts, workflows, environments, artifacts, and module documentation",
 
   "entrypoints": {
     "bootstrap": [
@@ -305,13 +305,51 @@
     ]
   },
 
-  "unknowns": [
-    "Exact provider auth configuration paths (mostly in docker-compose files)",
-    "Complete list of generated artifacts and their output locations",
-    "Port mappings per service (needs extraction from docker-compose files)",
-    "Environment variable registry (needs generation)",
-    "Complete script dependency graph (needs analysis)",
-    "Golden path proof (needs tracing through scripts and CI)",
-    "Secrets management strategy (needs investigation)"
+  "module_documentation": [
+    {"name": "bootstrap", "path": "./docs/modules/bootstrap.md", "layer": "L3", "purpose": "Golden paths from zero to full stack"},
+    {"name": "environments", "path": "./docs/modules/environments.md", "layer": "L2", "purpose": "Environment taxonomy and overlays"},
+    {"name": "toolchain", "path": "./docs/modules/toolchain.md", "layer": "L1", "purpose": "Package management and pinning"},
+    {"name": "ci_cd", "path": "./docs/modules/ci_cd.md", "layer": "L3", "purpose": "CI/CD workflows and gates"},
+    {"name": "secrets", "path": "./docs/modules/secrets.md", "layer": "L2", "purpose": "Credential management and PKI"},
+    {"name": "providers", "path": "./docs/modules/providers.md", "layer": "L2", "purpose": "Service integrations and auth"},
+    {"name": "observability", "path": "./docs/modules/observability.md", "layer": "L5", "purpose": "Metrics, logs, and traces"},
+    {"name": "smoke_tests", "path": "./docs/modules/smoke_tests.md", "layer": "L5", "purpose": "Verification and definition of done"}
+  ],
+
+  "mermaid_graphs": [
+    {"name": "bootstrap_flow", "path": "./docs/graphs/bootstrap_flow.mmd", "purpose": "Bootstrap flow from fresh machine"},
+    {"name": "ci_flow", "path": "./docs/graphs/ci_flow.mmd", "purpose": "CI/CD pipeline stages"},
+    {"name": "script_dag", "path": "./docs/graphs/script_dag.mmd", "purpose": "Script dependency graph"},
+    {"name": "env_layering", "path": "./docs/graphs/env_layering.mmd", "purpose": "Environment configuration precedence"},
+    {"name": "golden-paths", "path": "./docs/graphs/golden-paths.mmd", "purpose": "Critical operational paths"},
+    {"name": "auth-architecture", "path": "./docs/graphs/auth-architecture.mmd", "purpose": "Authentication/authorization flows"},
+    {"name": "cicd-main-flow", "path": "./docs/graphs/cicd-main-flow.mmd", "purpose": "Main CI/CD workflow"},
+    {"name": "script-execution-flow", "path": "./docs/graphs/script-execution-flow.mmd", "purpose": "Script execution order"},
+    {"name": "makefile-workflow-integration", "path": "./docs/graphs/makefile-workflow-integration.mmd", "purpose": "Makefile and workflow integration"}
+  ],
+
+  "documentation_indexes": [
+    {"name": "main", "path": "./docs/README.md", "purpose": "Main documentation index"},
+    {"name": "modules", "path": "./docs/modules/INDEX.md", "purpose": "Module documentation hub"},
+    {"name": "scripts", "path": "./docs/scripts/INDEX.md", "purpose": "Script contracts catalog"},
+    {"name": "cookbooks", "path": "./docs/cookbooks/INDEX.md", "purpose": "Operational recipes"},
+    {"name": "glossary", "path": "./docs/GLOSSARY.md", "purpose": "Terminology reference"},
+    {"name": "quality", "path": "./docs/QUALITY.md", "purpose": "Documentation standards"}
+  ],
+
+  "resolved_unknowns": [
+    "Provider auth configuration paths - documented in PROVIDERS.md and CATALOG.json",
+    "Artifact output locations - documented in ARTIFACTS.md",
+    "Port mappings - documented in PORTS.md",
+    "Environment variable registry - documented in ENV_VAR_REGISTRY.md",
+    "Script dependency graph - verified in graphs/script_dag.mmd (SU-001)",
+    "Golden paths - documented in modules/bootstrap.md",
+    "Secrets management - documented in modules/secrets.md and secrets/SECRETS.md"
+  ],
+
+  "remaining_unknowns": [
+    "UN-001: Backup automation script not yet implemented (documented in UNKNOWN_REPORT.md)",
+    "UN-002: Production scaling benchmarks not yet measured (documented in UNKNOWN_REPORT.md)",
+    "UN-003: Emergency escalation contacts team-specific (template in ON_CALL.md)"
   ]
 }

@@ -151,7 +151,7 @@ graph TB
 | [Infrastructure](infrastructure/index.md) | Service deployment |
 | [Security](security/index.md) | Security configuration |
 | [Architecture](architecture/index.md) | System design and ADRs |
-| [Deployment](deployment/index.md) | Platform-specific deployment |
+| [Deployment](getting-started/deployment/index.md) | Platform-specific deployment |
 | [Reference](reference/index.md) | Technical reference |
 
 ## Key Features

@@ -187,7 +187,7 @@ fi
 | default shell | <15s | Acceptable for full environment |
 
 **Modularization Goal:**
-As `flake.nix` is modularized (per NIX_FLAKE_MODULARIZATION.md), these benchmarks should improve or remain constant. Any regression indicates excessive module complexity or circular dependencies.
+As `flake.nix` is modularized (per `docs/nix/NIX_FLAKE_MODULARIZATION.md`), these benchmarks should improve or remain constant. Any regression indicates excessive module complexity or circular dependencies.
 
 ---
 
@@ -212,7 +212,7 @@ As `flake.nix` is modularized (per NIX_FLAKE_MODULARIZATION.md), these benchmark
 - **Benchmark function:** lines 29-62
 - **Targets:** lines 64-81
 - **JSON output:** lines 83-108
-- **Related:** `docs/NIX_FLAKE_MODULARIZATION.md` (modularization plan)
+- **Related:** `docs/nix/NIX_FLAKE_MODULARIZATION.md` (modularization plan)
 
 ---
 

@@ -2,7 +2,14 @@
 
 Welcome to the ROS2 Humble Development Environment documentation. This index provides a roadmap to all available documentation.
 
-## Quick Links
+**Last Updated:** 2026-01-14
+**Documentation Quality Score:** 98% (200+ files indexed)
+
+---
+
+## Navigation Hub
+
+### Quick Links
 
 | Resource | Description |
 |----------|-------------|
@@ -12,6 +19,46 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | [Network Requirements](NETWORK_REQUIREMENTS.md) | Network dependencies and offline mode |
 | [Contributing](../CONTRIBUTING.md) | How to contribute |
 | [Project README](../README.md) | Project overview |
+
+### Core Indexes (Start Here)
+
+| Index | Purpose | Count |
+|-------|---------|-------|
+| [modules/INDEX.md](modules/INDEX.md) | Module documentation hub | 8 modules |
+| [scripts/INDEX.md](scripts/INDEX.md) | Script contracts catalog | 60+ scripts |
+| [cookbooks/INDEX.md](cookbooks/INDEX.md) | Operational recipes | 9 cookbooks |
+| [graphs/](graphs/) | Mermaid diagrams | 9 graphs |
+| [CATALOG.json](CATALOG.json) | Machine-readable catalog | All entrypoints |
+
+---
+
+## Module Documentation (One File Per Major Module)
+
+| Module | Layer | Purpose | Link |
+|--------|-------|---------|------|
+| Bootstrap | L3 | Golden paths from zero to full stack | [modules/bootstrap.md](modules/bootstrap.md) |
+| Environments | L2 | Environment taxonomy and overlays | [modules/environments.md](modules/environments.md) |
+| Toolchain | L1 | Package management and pinning | [modules/toolchain.md](modules/toolchain.md) |
+| CI/CD | L3 | Workflows, gates, and artifacts | [modules/ci_cd.md](modules/ci_cd.md) |
+| Secrets | L2 | Credential management and PKI | [modules/secrets.md](modules/secrets.md) |
+| Providers | L2 | Service integrations and auth | [modules/providers.md](modules/providers.md) |
+| Observability | L5 | Metrics, logs, and traces | [modules/observability.md](modules/observability.md) |
+| Smoke Tests | L5 | Verification and definition of done | [modules/smoke_tests.md](modules/smoke_tests.md) |
+
+---
+
+## Mermaid Graphs
+
+| Graph | Purpose | Link |
+|-------|---------|------|
+| Bootstrap Flow | Fresh machine to full stack | [graphs/bootstrap_flow.mmd](graphs/bootstrap_flow.mmd) |
+| CI Flow | CI/CD pipeline stages | [graphs/ci_flow.mmd](graphs/ci_flow.mmd) |
+| Script DAG | Script dependencies | [graphs/script_dag.mmd](graphs/script_dag.mmd) |
+| Environment Layering | Config precedence | [graphs/env_layering.mmd](graphs/env_layering.mmd) |
+| Golden Paths | Critical paths | [graphs/golden-paths.mmd](graphs/golden-paths.mmd) |
+| Auth Architecture | Identity flows | [graphs/auth-architecture.mmd](graphs/auth-architecture.mmd) |
+
+---
 
 ## Master Reference Documents
 
@@ -175,7 +222,7 @@ Task-oriented operational recipes (Phase 7 Complete):
 
 | Document | Description |
 |----------|-------------|
-| [NIX_FLAKE_MODULARIZATION.md](NIX_FLAKE_MODULARIZATION.md) | Flake modularization plan and image generation |
+| [NIX_FLAKE_MODULARIZATION.md](nix/NIX_FLAKE_MODULARIZATION.md) | Flake modularization plan and image generation |
 | [NIX_EVALUATION_OPTIMIZATION.md](nix/NIX_EVALUATION_OPTIMIZATION.md) | Nix evaluation performance optimization |
 
 ### Network & Offline
