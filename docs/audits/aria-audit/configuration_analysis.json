@@ -1,0 +1,49 @@
+{
+  "flake_analysis": {
+    "total_inputs": 4,
+    "inputs": [
+      {
+        "name": "nixpkgs",
+        "url": "github:nixos/nixpkgs/nixos-unstable"
+      },
+      {
+        "name": "stable",
+        "url": "github:nixos/nixpkgs/nixos-24.11"
+      },
+      {
+        "name": "parts",
+        "url": "github:hercules-ci/flake-parts"
+      },
+      {
+        "name": "systems",
+        "url": "github:nix-systems/default"
+      }
+    ],
+    "packages_found": 8,
+    "packages": [
+      "follows",
+      "legacyPackages",
+      "lib",
+      "nix",
+      "runCommand",
+      "stdenv",
+      "url",
+      "writeText"
+    ]
+  },
+  "pixi_analysis": {
+    "workspace_name": "robostack",
+    "channels": "\"robostack-humble\", \"conda-forge\"",
+    "platforms": "\"linux-64\", \"osx-64\", \"osx-arm64\", \"linux-aarch64\"",
+    "dependencies": 141,
+    "features": 18
+  },
+  "buildkit_coverage": {
+    "in_flake": [],
+    "in_pixi": [
+      "temporalio/temporal",
+      "agiresearch/aios"
+    ],
+    "total_buildkit_repos": 12
+  }
+}

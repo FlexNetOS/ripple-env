@@ -1,0 +1,545 @@
+{
+  "total_repositories": 166,
+  "implemented_count": 28,
+  "gap_count": 94,
+  "gaps_by_layer": {
+    "L1": 7,
+    "L2": 5,
+    "L3": 8,
+    "L4": 5,
+    "L5": 8,
+    "L6": 4,
+    "UNKNOWN": 51,
+    "L8": 4,
+    "L10": 8,
+    "L11": 7,
+    "L12": 4,
+    "L13": 2,
+    "L14": 6,
+    "L7": 4,
+    "L9": 0
+  },
+  "detailed_gaps": {
+    "L1": [
+      {
+        "name": "nushell/nushell",
+        "url": "https://github.com/nushell/nushell"
+      },
+      {
+        "name": "pixijs/pixijs",
+        "url": "https://github.com/pixijs/pixijs"
+      },
+      {
+        "name": "NixOS/nixpkgs",
+        "url": "https://github.com/NixOS/nixpkgs)** \u2014 reproducible host baseline, rollback stability. (NixOS is the Linux foundation we are using."
+      },
+      {
+        "name": "prefix-dev/pixi",
+        "url": "https://github.com/prefix-dev/pixi)** \u2014 multi-tool environment + task runner (polyglot"
+      },
+      {
+        "name": "nushell/nushell",
+        "url": "https://github.com/nushell/nushell)** \u2014 default shell.\n\n### 1.4 Isolation & sandboxing (portability + stability knobs)\n**Execution containment ladder (use the lightest that meets risk):**\n1"
+      },
+      {
+        "name": "pixijs/pixijs",
+        "url": "https://github.com/pixijs/pixijs"
+      },
+      {
+        "name": "jupyterlab/jupyterlab",
+        "url": "https://github.com/jupyterlab/jupyterlab)** \u2014 notebooks in Pixi-managed environments.\n\n**Testing layers (minimum viable):**\n- Unit tests (per language"
+      }
+    ],
+    "L2": [
+      {
+        "name": "anthropic-experimental/sandbox-runtime",
+        "url": "https://github.com/anthropic-experimental/sandbox-runtime"
+      },
+      {
+        "name": "kata-containers/kata-containers",
+        "url": "https://github.com/kata-containers/kata-containers"
+      },
+      {
+        "name": "firecracker-microvm/firecracker",
+        "url": "https://github.com/firecracker-microvm/firecracker"
+      },
+      {
+        "name": "anthropic-experimental/sandbox-runtime",
+        "url": "https://github.com/anthropic-experimental/sandbox-runtime"
+      },
+      {
+        "name": "arkflow-rs/arkflow",
+        "url": "https://github.com/arkflow-rs/arkflow)**.\n\n### 1.11 Tool execution plane (what agents actually run)\n- **Primary:** sandbox-runtime (tight per-tool sandbox"
+      }
+    ],
+    "L3": [
+      {
+        "name": "argoproj/argo-cd",
+        "url": "https://github.com/argoproj/argo-cd"
+      },
+      {
+        "name": "argoproj/argo-rollouts",
+        "url": "https://github.com/argoproj/argo-rollouts"
+      },
+      {
+        "name": "argoproj/argo-workflows",
+        "url": "https://github.com/argoproj/argo-workflows"
+      },
+      {
+        "name": "kubectl",
+        "url": "https://github.com/kubernetes/kubectl"
+      },
+      {
+        "name": "kustomize",
+        "url": "https://github.com/kubernetes-sigs/kustomize"
+      },
+      {
+        "name": "argoproj/argo-cd",
+        "url": "https://github.com/argoproj/argo-cd"
+      },
+      {
+        "name": "argoproj/argo-rollouts",
+        "url": "https://github.com/argoproj/argo-rollouts"
+      },
+      {
+        "name": "argoproj/argo-workflows",
+        "url": "https://github.com/argoproj/argo-workflows"
+      }
+    ],
+    "L4": [
+      {
+        "name": "Kong/kong",
+        "url": "https://github.com/Kong/kong"
+      },
+      {
+        "name": "agentgateway/agentgateway",
+        "url": "https://github.com/agentgateway/agentgateway"
+      },
+      {
+        "name": "Kong/kong",
+        "url": "https://github.com/Kong/kong"
+      },
+      {
+        "name": "agentgateway/agentgateway",
+        "url": "https://github.com/agentgateway/agentgateway"
+      },
+      {
+        "name": "jj-vcs/jj",
+        "url": "https://github.com/jj-vcs/jj) (VCS ergonomics)\n\n---\n\n## 5. One-line execution flow (reference)\n\n**UI (Lobe Chat)** \u2192 **Kong (edge"
+      }
+    ],
+    "L5": [
+      {
+        "name": "keycloak/keycloak",
+        "url": "https://github.com/keycloak/keycloak"
+      },
+      {
+        "name": "open-policy-agent/opa",
+        "url": "https://github.com/open-policy-agent/opa"
+      },
+      {
+        "name": "hashicorp/vault",
+        "url": "https://github.com/hashicorp/vault"
+      },
+      {
+        "name": "dani-garcia/vaultwarden",
+        "url": "https://github.com/dani-garcia/vaultwarden"
+      },
+      {
+        "name": "keycloak/keycloak",
+        "url": "https://github.com/keycloak/keycloak"
+      },
+      {
+        "name": "open-policy-agent/opa",
+        "url": "https://github.com/open-policy-agent/opa"
+      },
+      {
+        "name": "hashicorp/vault",
+        "url": "https://github.com/hashicorp/vault"
+      },
+      {
+        "name": "dani-garcia/vaultwarden",
+        "url": "https://github.com/dani-garcia/vaultwarden)** \u2014 Bitwarden-compatible password vault (human secrets + device creds; complements Vault).\n\n### 1.9 Messaging + durable orchestration (autonomy backbone"
+      }
+    ],
+    "L6": [
+      {
+        "name": "nats-io/nats-server",
+        "url": "https://github.com/nats-io/nats-server"
+      },
+      {
+        "name": "nats-io/nats-server",
+        "url": "https://github.com/nats-io/nats-server"
+      },
+      {
+        "name": "temporalio/temporal",
+        "url": "https://github.com/temporalio/temporal)** \u2014 durable workflows (retries, timers, state history"
+      },
+      {
+        "name": "n8n-io/n8n",
+        "url": "https://github.com/n8n-io/n8n)** \u2014 connector-heavy automation (only if needed; keep Temporal for correctness"
+      }
+    ],
+    "UNKNOWN": [
+      {
+        "name": "n8n-io/n8n",
+        "url": "https://github.com/n8n-io/n8n"
+      },
+      {
+        "name": "arkflow-rs/arkflow",
+        "url": "https://github.com/arkflow-rs/arkflow"
+      },
+      {
+        "name": "FlexNetOS/remote-agentic-coding-system",
+        "url": "https://github.com/FlexNetOS/remote-agentic-coding-system"
+      },
+      {
+        "name": "ruvnet/ruv-FANN",
+        "url": "https://github.com/ruvnet/ruv-FANN"
+      },
+      {
+        "name": "ruvnet/sublinear-time-solver",
+        "url": "https://github.com/ruvnet/sublinear-time-solver"
+      },
+      {
+        "name": "mindsdb/mindsdb",
+        "url": "https://github.com/mindsdb/mindsdb"
+      },
+      {
+        "name": "firecrawl/open-lovable",
+        "url": "https://github.com/firecrawl/open-lovable"
+      },
+      {
+        "name": "swc-project/swc",
+        "url": "https://github.com/swc-project/swc"
+      },
+      {
+        "name": "netdata/netdata",
+        "url": "https://github.com/netdata/netdata"
+      },
+      {
+        "name": "umami-software/umami",
+        "url": "https://github.com/umami-software/umami"
+      },
+      {
+        "name": "anchore/syft",
+        "url": "https://github.com/anchore/syft"
+      },
+      {
+        "name": "anchore/grype",
+        "url": "https://github.com/anchore/grype"
+      },
+      {
+        "name": "sigstore/cosign",
+        "url": "https://github.com/sigstore/cosign"
+      },
+      {
+        "name": "agenticsorg/quantum-agentics",
+        "url": "https://github.com/agenticsorg/quantum-agentics"
+      },
+      {
+        "name": "sqlite/sqlite",
+        "url": "https://github.com/sqlite/sqlite"
+      },
+      {
+        "name": "neondatabase/neon",
+        "url": "https://github.com/neondatabase/neon"
+      },
+      {
+        "name": "ruvnet/ruvector",
+        "url": "https://github.com/ruvnet/ruvector"
+      },
+      {
+        "name": "opentelemetry-collector",
+        "url": "https://github.com/open-telemetry/opentelemetry-collector"
+      },
+      {
+        "name": "containerd/containerd",
+        "url": "https://github.com/containerd/containerd"
+      },
+      {
+        "name": "runc",
+        "url": "https://github.com/opencontainers/runc"
+      },
+      {
+        "name": "helm",
+        "url": "https://github.com/helm/helm"
+      },
+      {
+        "name": "neovim",
+        "url": "https://github.com/neovim/neovim"
+      },
+      {
+        "name": "jj-vcs/jj",
+        "url": "https://github.com/jj-vcs/jj"
+      },
+      {
+        "name": "jq",
+        "url": "https://github.com/jqlang/jq"
+      },
+      {
+        "name": "yq",
+        "url": "https://github.com/mikefarah/yq) - YAML processor\n\n---\n\n## 0. Top-level design RULES (anti-drift)\n\n1. **One primary UI** (operators live here).\n2. **One inference plane** (all model calls go through it unless explicitly exempted"
+      },
+      {
+        "name": "neondatabase/neon",
+        "url": "https://github.com/neondatabase/neon"
+      },
+      {
+        "name": "smallstep/cli",
+        "url": "https://github.com/smallstep/cli)** \u2014 PKI automation (mTLS"
+      },
+      {
+        "name": "FlexNetOS/remote-agentic-coding-system",
+        "url": "https://github.com/FlexNetOS/remote-agentic-coding-system"
+      },
+      {
+        "name": "ruvnet/ruv-FANN",
+        "url": "https://github.com/ruvnet/ruv-FANN"
+      },
+      {
+        "name": "ruvnet/sublinear-time-solver",
+        "url": "https://github.com/ruvnet/sublinear-time-solver"
+      },
+      {
+        "name": "sqlite/sqlite",
+        "url": "https://github.com/sqlite/sqlite"
+      },
+      {
+        "name": "ruvnet/ruvector",
+        "url": "https://github.com/ruvnet/ruvector"
+      },
+      {
+        "name": "rustfs/rustfs",
+        "url": "https://github.com/rustfs/rustfs"
+      },
+      {
+        "name": "mindsdb/mindsdb",
+        "url": "https://github.com/mindsdb/mindsdb"
+      },
+      {
+        "name": "openai/evals",
+        "url": "https://github.com/openai/evals"
+      },
+      {
+        "name": "silentfortin/sentiment-monitoring-mlops",
+        "url": "https://github.com/silentfortin/sentiment-monitoring-mlops)** \u2014 reference patterns (not core platform"
+      },
+      {
+        "name": "open-telemetry/opentelemetry-specification",
+        "url": "https://github.com/open-telemetry/opentelemetry-specification"
+      },
+      {
+        "name": "netdata/netdata",
+        "url": "https://github.com/netdata/netdata"
+      },
+      {
+        "name": "umami-software/umami",
+        "url": "https://github.com/umami-software/umami)** \u2014 product analytics (UI usage"
+      },
+      {
+        "name": "agenticsorg/quantum-agentics",
+        "url": "https://github.com/agenticsorg/quantum-agentics)** \u2014 R&D (keep quarantined until proven).\n\n### 1.20 UI (human-only touchpoint"
+      },
+      {
+        "name": "firecrawl/open-lovable",
+        "url": "https://github.com/firecrawl/open-lovable"
+      },
+      {
+        "name": "swc-project/swc",
+        "url": "https://github.com/swc-project/swc"
+      },
+      {
+        "name": "automl/promptolution",
+        "url": "https://github.com/automl/promptolution"
+      },
+      {
+        "name": "BoundaryML/baml",
+        "url": "https://github.com/BoundaryML/baml"
+      },
+      {
+        "name": "memodb-io/memobase",
+        "url": "https://github.com/memodb-io/memobase"
+      },
+      {
+        "name": "MemoriLabs/Memori",
+        "url": "https://github.com/MemoriLabs/Memori"
+      },
+      {
+        "name": "FrankvdStam/mem-rs",
+        "url": "https://github.com/FrankvdStam/mem-rs"
+      },
+      {
+        "name": "usememos/memos",
+        "url": "https://github.com/usememos/memos"
+      },
+      {
+        "name": "AppFlowy-IO/AppFlowy-Cloud",
+        "url": "https://github.com/AppFlowy-IO/AppFlowy-Cloud)\n\n3"
+      },
+      {
+        "name": "neondatabase/neon",
+        "url": "https://github.com/neondatabase/neon) (preview DBs"
+      },
+      {
+        "name": "h-REA/hREA",
+        "url": "https://github.com/h-REA/hREA"
+      }
+    ],
+    "L8": [
+      {
+        "name": "googleapis/genai-toolbox",
+        "url": "https://github.com/googleapis/genai-toolbox"
+      },
+      {
+        "name": "ruvnet/midstream",
+        "url": "https://github.com/ruvnet/midstream"
+      },
+      {
+        "name": "googleapis/genai-toolbox",
+        "url": "https://github.com/googleapis/genai-toolbox"
+      },
+      {
+        "name": "ruvnet/midstream",
+        "url": "https://github.com/ruvnet/midstream"
+      }
+    ],
+    "L10": [
+      {
+        "name": "postgres/postgres",
+        "url": "https://github.com/postgres/postgres"
+      },
+      {
+        "name": "minio/minio",
+        "url": "https://github.com/minio/minio"
+      },
+      {
+        "name": "ipfs/kubo",
+        "url": "https://github.com/ipfs/kubo"
+      },
+      {
+        "name": "postgres/postgres",
+        "url": "https://github.com/postgres/postgres)** \u2014 system-of-record (agents, runs, audit, configs"
+      },
+      {
+        "name": "redis/redis",
+        "url": "https://github.com/redis/redis)** \u2014 cache (sessions, rate-limit counters, hot responses).\n\n**Prompt cache policy (on Redis"
+      },
+      {
+        "name": "minio/minio",
+        "url": "https://github.com/minio/minio"
+      },
+      {
+        "name": "ipfs/kubo",
+        "url": "https://github.com/ipfs/kubo)** \u2014 content-addressed packaging for integrity + distribution.\n- **Primary (mandatory, coordination backbone"
+      },
+      {
+        "name": "microsoft/prompty",
+        "url": "https://github.com/microsoft/prompty)\n\n2) **Memory augmentation** candidates (only if they beat Postgres+ruvector"
+      }
+    ],
+    "L11": [
+      {
+        "name": "holochain/lair",
+        "url": "https://github.com/holochain/lair"
+      },
+      {
+        "name": "holochain/holochain",
+        "url": "https://github.com/holochain/holochain)** \u2014 agent-centric P2P framework for distributed state, identity, and coordination. **This is the backbone of the agentic OS; all agent-to-agent communication routes through Holochain DHT.** Enables parallel distributed compute, inference, storage, and memory across heterogeneous hardware without central server dependency.\n  - **Required binaries:** `holochain` (conductor), `hc` (CLI), `lair-keystore` (secure key management)\n  - **Platform support:** Linux (native + WSL2) \u2705, macOS \u2705, Windows native \u274c (use WSL2)\n\n### 1.15 Data access + query acceleration (primary"
+      },
+      {
+        "name": "lightningrodlabs/holochain-runner",
+        "url": "https://github.com/lightningrodlabs/holochain-runner"
+      },
+      {
+        "name": "spartan-holochain-counsel/nix-overlay",
+        "url": "https://github.com/spartan-holochain-counsel/nix-overlay)** \u2014 Nix overlay (flake-first, with legacy `nix-shell` support) providing pinned Holochain-related binaries (notably `holochain`, `hc`, and `lair-keystore`"
+      },
+      {
+        "name": "spartan-holochain-counsel/node-holochain-backdrop",
+        "url": "https://github.com/spartan-holochain-counsel/node-holochain-backdrop"
+      },
+      {
+        "name": "holochain/devhub-dnas",
+        "url": "https://github.com/holochain/devhub-dnas"
+      },
+      {
+        "name": "holochain/syn",
+        "url": "https://github.com/holochain/syn)** \u2014 generalized Holochain DNA + UI library for building real-time shared-state hApps (collaborative apps on Holochain"
+      }
+    ],
+    "L12": [
+      {
+        "name": "promptfoo/promptfoo",
+        "url": "https://github.com/promptfoo/promptfoo"
+      },
+      {
+        "name": "tensorzero/tensorzero",
+        "url": "https://github.com/tensorzero/tensorzero"
+      },
+      {
+        "name": "tensorzero/tensorzero",
+        "url": "https://github.com/tensorzero/tensorzero"
+      },
+      {
+        "name": "promptfoo/promptfoo",
+        "url": "https://github.com/promptfoo/promptfoo"
+      }
+    ],
+    "L13": [
+      {
+        "name": "lobehub/lobe-chat",
+        "url": "https://github.com/lobehub/lobe-chat"
+      },
+      {
+        "name": "lobehub/lobe-chat",
+        "url": "https://github.com/lobehub/lobe-chat"
+      }
+    ],
+    "L14": [
+      {
+        "name": "prometheus/prometheus",
+        "url": "https://github.com/prometheus/prometheus"
+      },
+      {
+        "name": "grafana/grafana",
+        "url": "https://github.com/grafana/grafana"
+      },
+      {
+        "name": "grafana/loki",
+        "url": "https://github.com/grafana/loki"
+      },
+      {
+        "name": "aquasecurity/trivy",
+        "url": "https://github.com/aquasecurity/trivy"
+      },
+      {
+        "name": "prometheus/prometheus",
+        "url": "https://github.com/prometheus/prometheus"
+      },
+      {
+        "name": "aquasecurity/trivy",
+        "url": "https://github.com/aquasecurity/trivy"
+      }
+    ],
+    "L7": [
+      {
+        "name": "agiresearch/AIOS",
+        "url": "https://github.com/agiresearch/AIOS)** \u2014 user-space agent kernel.\n- **Primary (agent SDK"
+      },
+      {
+        "name": "ruvnet/claude-flow",
+        "url": "https://github.com/ruvnet/claude-flow)** \u2014 orchestration for Claude-style agent swarms (often paired with MCP"
+      },
+      {
+        "name": "smallcloudai/refact",
+        "url": "https://github.com/smallcloudai/refact)** \u2014 self-hostable software-dev agent (overlaps with AGiXT; only adopt if it replaces something).\n- **Primary (Rust orchestration runtime"
+      },
+      {
+        "name": "mudler/LocalAI",
+        "url": "https://github.com/mudler/LocalAI)** \u2014 single OpenAI-compatible serving plane (local models + adapters).\n- **AGiXT Integration:** AGiXT orchestrates multi-provider inference via LocalAI, supporting local models and approved cloud providers (Claude Code CLI, Codex CLI, etc.). Future support planned for Candle and Candle-VLLM backends.\n- **Required policy (autonomous DevOps):** run **multi-model fan-out (\u201cMOE\u201d)** for *every* change-making task:\n  - **Local tier:** \u2265 **5** small local models (target <3B active params"
+      }
+    ],
+    "L9": []
+  }
+}

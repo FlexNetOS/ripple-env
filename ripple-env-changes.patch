@@ -1,0 +1,2387 @@
+From dfdc51243059b5d7bf88ef6186a034c4cef73a9a Mon Sep 17 00:00:00 2001
+From: Ripple Dev <dev@ripple-env.local>
+Date: Wed, 14 Jan 2026 22:55:29 +0000
+Subject: [PATCH] feat: Comprehensive updates - sidebar, AI integrations,
+ kanban, browser panel
+
+- Frontend Double Min Sidebar:
+  - Added iconCollapsed state for collapsing icon rail
+  - Implemented toggleDoubleMinimize for both panels
+  - Added floating expand button when fully collapsed
+  - Synced between web and mobile platforms
+
+- Cross-Platform Sync:
+  - Updated mobile sidebar-context.tsx with new states
+  - Updated sidebar-persistence.ts for new fields
+  - Ensured web and mobile share same state structure
+
+- Web Browser Panel:
+  - Created WebBrowserPanel component with navigation
+  - Added quick links for LocalAI, AGiXT, GitHub, etc.
+  - Integrated into TwoLevelSidebar
+
+- Kanban Board:
+  - Created KanbanBoard component with drag-and-drop
+  - Supports task priorities, WIP limits, filtering
+  - Compatible with vibe-kanban data structures
+
+- AI Integrations:
+  - Added LocalAI service integration
+  - Added AGiXT service integration
+  - Created ai-integration.ts client service
+  - Added ai router to backend with health checks
+
+- Backend Connection:
+  - Added AI router to routers.ts
+  - LocalAI chat completion endpoint
+  - AGiXT chat and sandbox execution endpoints
+
+- Component Library:
+  - Created ui/index.ts exports
+  - Added RIPPLE_COLORS and RIPPLE_GRADIENTS constants
+---
+ .abacus.donotdelete                           |   1 +
+ .../client/src/components/KanbanBoard.tsx     | 641 ++++++++++++++++++
+ .../src/components/sidebar/IconNavigation.tsx |  39 +-
+ .../components/sidebar/TwoLevelSidebar.tsx    |  82 ++-
+ .../components/sidebar/WebBrowserPanel.tsx    | 256 +++++++
+ frontend/client/src/components/ui/index.ts    |  57 ++
+ .../client/src/contexts/SidebarContext.tsx    |  75 ++
+ .../client/src/services/ai-integration.ts     | 553 +++++++++++++++
+ .../contexts/sidebar-context.tsx              |  85 ++-
+ .../services/sidebar-persistence.ts           |  64 ++
+ frontend/server/routers.ts                    | 156 +++++
+ 11 files changed, 1993 insertions(+), 16 deletions(-)
+ create mode 100644 .abacus.donotdelete
+ create mode 100644 frontend/client/src/components/KanbanBoard.tsx
+ create mode 100644 frontend/client/src/components/sidebar/WebBrowserPanel.tsx
+ create mode 100644 frontend/client/src/components/ui/index.ts
+ create mode 100644 frontend/client/src/services/ai-integration.ts
+
+diff --git a/.abacus.donotdelete b/.abacus.donotdelete
+new file mode 100644
+index 0000000..a39acf2
+--- /dev/null
++++ b/.abacus.donotdelete
+@@ -0,0 +1 @@
++gAAAAABpaBx3ydzA3EQ5E4UTFHdjvxwzVhc6uruTNyelWIjyZFHSWzgsVsFxCG0I2VyI5ESyldDZw8Hagpn6h6N5-8lD0XN4OLWTM4pykNt41LKNn8mbADA=
+\ No newline at end of file
+diff --git a/frontend/client/src/components/KanbanBoard.tsx b/frontend/client/src/components/KanbanBoard.tsx
+new file mode 100644
+index 0000000..6cc20bb
+--- /dev/null
++++ b/frontend/client/src/components/KanbanBoard.tsx
+@@ -0,0 +1,641 @@
++/**
++ * Kanban Board Component
++ * Integrates task management with drag-and-drop functionality
++ * Compatible with vibe-kanban data structures
++ */
++
++import React, { useState, useCallback } from 'react';
++import * as LucideIcons from 'lucide-react';
++import { cn } from '@/lib/utils';
++import { motion, AnimatePresence, Reorder } from 'framer-motion';
++
++// Ripple brand colors
++const COLORS = {
++  primary: '#00D4FF',
++  secondary: '#9B7BFF',
++  accent: '#00E676',
++  warning: '#FFB300',
++  error: '#FF5252',
++  foreground: '#ECEDEE',
++  muted: '#9BA1A6',
++  border: '#2A2A2A',
++  surface: '#1A1A1A',
++  background: '#0A0A0A',
++};
++
++// Task priorities
++type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
++type TaskStatus = 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';
++
++interface KanbanTask {
++  id: string;
++  title: string;
++  description?: string;
++  status: TaskStatus;
++  priority: TaskPriority;
++  assignee?: string;
++  dueDate?: string;
++  tags?: string[];
++  subtasks?: { id: string; title: string; completed: boolean }[];
++  createdAt: string;
++  updatedAt: string;
++}
++
++interface KanbanColumn {
++  id: TaskStatus;
++  title: string;
++  icon: string;
++  color: string;
++  wipLimit?: number;
++}
++
++// Column definitions
++const COLUMNS: KanbanColumn[] = [
++  { id: 'backlog', title: 'Backlog', icon: 'Inbox', color: COLORS.muted },
++  { id: 'todo', title: 'To Do', icon: 'ListTodo', color: COLORS.warning },
++  { id: 'in_progress', title: 'In Progress', icon: 'PlayCircle', color: COLORS.primary, wipLimit: 5 },
++  { id: 'review', title: 'Review', icon: 'Eye', color: COLORS.secondary, wipLimit: 3 },
++  { id: 'done', title: 'Done', icon: 'CheckCircle', color: COLORS.accent },
++];
++
++// Priority colors
++const PRIORITY_COLORS: Record<TaskPriority, string> = {
++  low: COLORS.muted,
++  medium: COLORS.warning,
++  high: '#FF8C00',
++  critical: COLORS.error,
++};
++
++// Dynamic icon component
++function DynamicIcon({ name, size = 16, color = COLORS.foreground }: { 
++  name: string; 
++  size?: number; 
++  color?: string;
++}) {
++  // eslint-disable-next-line @typescript-eslint/no-explicit-any
++  const IconComponent = (LucideIcons as any)[name] || LucideIcons.Circle;
++  return <IconComponent size={size} color={color} />;
++}
++
++// Task Card Component
++interface TaskCardProps {
++  task: KanbanTask;
++  onEdit?: (task: KanbanTask) => void;
++  onDelete?: (id: string) => void;
++  isDragging?: boolean;
++}
++
++function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) {
++  const [showActions, setShowActions] = useState(false);
++  const completedSubtasks = task.subtasks?.filter(s => s.completed).length || 0;
++  const totalSubtasks = task.subtasks?.length || 0;
++
++  return (
++    <motion.div
++      layout
++      initial={{ opacity: 0, y: 20 }}
++      animate={{ opacity: 1, y: 0 }}
++      exit={{ opacity: 0, scale: 0.95 }}
++      whileHover={{ scale: 1.02 }}
++      className={cn(
++        "p-3 rounded-lg border border-[#2A2A2A] bg-[#1A1A1A] cursor-grab active:cursor-grabbing",
++        "hover:border-[#00D4FF]/30 transition-colors",
++        isDragging && "shadow-lg shadow-[#00D4FF]/20 border-[#00D4FF]/50"
++      )}
++      onMouseEnter={() => setShowActions(true)}
++      onMouseLeave={() => setShowActions(false)}
++    >
++      {/* Header */}
++      <div className="flex items-start justify-between gap-2 mb-2">
++        <div className="flex items-center gap-2">
++          {/* Priority indicator */}
++          <div 
++            className="w-2 h-2 rounded-full"
++            style={{ backgroundColor: PRIORITY_COLORS[task.priority] }}
++          />
++          <span className="text-xs text-[#9BA1A6] font-mono">#{task.id.slice(0, 8)}</span>
++        </div>
++        
++        {/* Action buttons */}
++        <AnimatePresence>
++          {showActions && (
++            <motion.div
++              initial={{ opacity: 0 }}
++              animate={{ opacity: 1 }}
++              exit={{ opacity: 0 }}
++              className="flex items-center gap-1"
++            >
++              <button
++                onClick={() => onEdit?.(task)}
++                className="p-1 rounded hover:bg-[rgba(255,255,255,0.1)] transition-colors"
++              >
++                <LucideIcons.Edit2 size={12} color={COLORS.muted} />
++              </button>
++              <button
++                onClick={() => onDelete?.(task.id)}
++                className="p-1 rounded hover:bg-[rgba(255,255,255,0.1)] transition-colors"
++              >
++                <LucideIcons.Trash2 size={12} color={COLORS.error} />
++              </button>
++            </motion.div>
++          )}
++        </AnimatePresence>
++      </div>
++
++      {/* Title */}
++      <h4 className="text-sm font-medium text-[#ECEDEE] mb-2 line-clamp-2">
++        {task.title}
++      </h4>
++
++      {/* Description */}
++      {task.description && (
++        <p className="text-xs text-[#9BA1A6] mb-3 line-clamp-2">
++          {task.description}
++        </p>
++      )}
++
++      {/* Tags */}
++      {task.tags && task.tags.length > 0 && (
++        <div className="flex flex-wrap gap-1 mb-3">
++          {task.tags.slice(0, 3).map(tag => (
++            <span
++              key={tag}
++              className="px-1.5 py-0.5 text-[10px] rounded bg-[rgba(0,212,255,0.1)] text-[#00D4FF]"
++            >
++              {tag}
++            </span>
++          ))}
++          {task.tags.length > 3 && (
++            <span className="px-1.5 py-0.5 text-[10px] rounded bg-[rgba(255,255,255,0.05)] text-[#9BA1A6]">
++              +{task.tags.length - 3}
++            </span>
++          )}
++        </div>
++      )}
++
++      {/* Footer */}
++      <div className="flex items-center justify-between pt-2 border-t border-[#2A2A2A]">
++        {/* Subtasks progress */}
++        {totalSubtasks > 0 && (
++          <div className="flex items-center gap-1.5 text-[10px] text-[#9BA1A6]">
++            <LucideIcons.CheckSquare size={12} />
++            <span>{completedSubtasks}/{totalSubtasks}</span>
++          </div>
++        )}
++
++        {/* Due date */}
++        {task.dueDate && (
++          <div className="flex items-center gap-1.5 text-[10px] text-[#9BA1A6]">
++            <LucideIcons.Calendar size={12} />
++            <span>{new Date(task.dueDate).toLocaleDateString()}</span>
++          </div>
++        )}
++
++        {/* Assignee */}
++        {task.assignee && (
++          <div className="w-5 h-5 rounded-full bg-[#2A2A2A] flex items-center justify-center">
++            <span className="text-[10px] text-[#ECEDEE]">
++              {task.assignee.charAt(0).toUpperCase()}
++            </span>
++          </div>
++        )}
++      </div>
++    </motion.div>
++  );
++}
++
++// Column Component
++interface ColumnProps {
++  column: KanbanColumn;
++  tasks: KanbanTask[];
++  onTaskMove?: (taskId: string, newStatus: TaskStatus) => void;
++  onTaskEdit?: (task: KanbanTask) => void;
++  onTaskDelete?: (id: string) => void;
++  onAddTask?: (status: TaskStatus) => void;
++}
++
++function Column({ column, tasks, onTaskMove, onTaskEdit, onTaskDelete, onAddTask }: ColumnProps) {
++  const [isDragOver, setIsDragOver] = useState(false);
++  const isOverWipLimit = column.wipLimit && tasks.length >= column.wipLimit;
++
++  const handleDragOver = (e: React.DragEvent) => {
++    e.preventDefault();
++    setIsDragOver(true);
++  };
++
++  const handleDragLeave = () => {
++    setIsDragOver(false);
++  };
++
++  const handleDrop = (e: React.DragEvent) => {
++    e.preventDefault();
++    setIsDragOver(false);
++    const taskId = e.dataTransfer.getData('taskId');
++    if (taskId) {
++      onTaskMove?.(taskId, column.id);
++    }
++  };
++
++  const handleDragStart = (e: React.DragEvent, taskId: string) => {
++    e.dataTransfer.setData('taskId', taskId);
++  };
++
++  return (
++    <div
++      className={cn(
++        "flex-1 min-w-[280px] max-w-[320px] flex flex-col",
++        "rounded-xl border border-[#2A2A2A] bg-[#0F0F0F]",
++        isDragOver && "border-[#00D4FF]/50 bg-[#00D4FF]/5"
++      )}
++      onDragOver={handleDragOver}
++      onDragLeave={handleDragLeave}
++      onDrop={handleDrop}
++    >
++      {/* Column Header */}
++      <div className="flex items-center justify-between p-3 border-b border-[#2A2A2A]">
++        <div className="flex items-center gap-2">
++          <DynamicIcon name={column.icon} size={18} color={column.color} />
++          <h3 className="font-medium text-[#ECEDEE]">{column.title}</h3>
++          <span className="px-1.5 py-0.5 text-xs rounded bg-[rgba(255,255,255,0.1)] text-[#9BA1A6]">
++            {tasks.length}
++            {column.wipLimit && `/${column.wipLimit}`}
++          </span>
++        </div>
++        <button
++          onClick={() => onAddTask?.(column.id)}
++          className="p-1 rounded hover:bg-[rgba(255,255,255,0.1)] transition-colors"
++        >
++          <LucideIcons.Plus size={16} color={COLORS.muted} />
++        </button>
++      </div>
++
++      {/* WIP Limit Warning */}
++      {isOverWipLimit && (
++        <div className="px-3 py-2 bg-[rgba(255,140,0,0.1)] border-b border-[rgba(255,140,0,0.2)]">
++          <div className="flex items-center gap-2 text-[10px] text-[#FF8C00]">
++            <LucideIcons.AlertTriangle size={12} />
++            <span>WIP limit reached</span>
++          </div>
++        </div>
++      )}
++
++      {/* Tasks */}
++      <div className="flex-1 p-2 space-y-2 overflow-y-auto scrollbar-hide">
++        <AnimatePresence mode="popLayout">
++          {tasks.map(task => (
++            <div
++              key={task.id}
++              draggable
++              onDragStart={(e) => handleDragStart(e, task.id)}
++            >
++              <TaskCard
++                task={task}
++                onEdit={onTaskEdit}
++                onDelete={onTaskDelete}
++              />
++            </div>
++          ))}
++        </AnimatePresence>
++
++        {tasks.length === 0 && (
++          <div className="flex flex-col items-center justify-center py-8 text-[#9BA1A6]">
++            <LucideIcons.Inbox size={24} className="mb-2 opacity-50" />
++            <p className="text-xs">No tasks</p>
++          </div>
++        )}
++      </div>
++    </div>
++  );
++}
++
++// Main Kanban Board Component
++interface KanbanBoardProps {
++  initialTasks?: KanbanTask[];
++  onTasksChange?: (tasks: KanbanTask[]) => void;
++}
++
++export function KanbanBoard({ initialTasks = [], onTasksChange }: KanbanBoardProps) {
++  const [tasks, setTasks] = useState<KanbanTask[]>(initialTasks.length > 0 ? initialTasks : SAMPLE_TASKS);
++  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
++  const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('backlog');
++  const [searchQuery, setSearchQuery] = useState('');
++  const [filterPriority, setFilterPriority] = useState<TaskPriority | 'all'>('all');
++
++  const handleTaskMove = useCallback((taskId: string, newStatus: TaskStatus) => {
++    setTasks(prev => {
++      const updated = prev.map(task =>
++        task.id === taskId
++          ? { ...task, status: newStatus, updatedAt: new Date().toISOString() }
++          : task
++      );
++      onTasksChange?.(updated);
++      return updated;
++    });
++  }, [onTasksChange]);
++
++  const handleTaskDelete = useCallback((taskId: string) => {
++    setTasks(prev => {
++      const updated = prev.filter(task => task.id !== taskId);
++      onTasksChange?.(updated);
++      return updated;
++    });
++  }, [onTasksChange]);
++
++  const handleAddTask = useCallback((status: TaskStatus) => {
++    setNewTaskStatus(status);
++    setShowNewTaskModal(true);
++  }, []);
++
++  const handleCreateTask = useCallback((title: string, description: string, priority: TaskPriority) => {
++    const newTask: KanbanTask = {
++      id: `task-${Date.now()}`,
++      title,
++      description,
++      status: newTaskStatus,
++      priority,
++      createdAt: new Date().toISOString(),
++      updatedAt: new Date().toISOString(),
++    };
++    setTasks(prev => {
++      const updated = [...prev, newTask];
++      onTasksChange?.(updated);
++      return updated;
++    });
++    setShowNewTaskModal(false);
++  }, [newTaskStatus, onTasksChange]);
++
++  // Filter tasks
++  const filteredTasks = tasks.filter(task => {
++    const matchesSearch = searchQuery === '' || 
++      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
++      task.description?.toLowerCase().includes(searchQuery.toLowerCase());
++    const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
++    return matchesSearch && matchesPriority;
++  });
++
++  // Group tasks by status
++  const tasksByStatus = COLUMNS.reduce((acc, column) => {
++    acc[column.id] = filteredTasks.filter(task => task.status === column.id);
++    return acc;
++  }, {} as Record<TaskStatus, KanbanTask[]>);
++
++  return (
++    <div className="flex flex-col h-full bg-[#0A0A0A]">
++      {/* Header */}
++      <div className="flex items-center justify-between p-4 border-b border-[#2A2A2A]">
++        <div className="flex items-center gap-4">
++          <h2 className="text-xl font-semibold text-[#ECEDEE]">Kanban Board</h2>
++          <span className="px-2 py-0.5 text-xs rounded bg-[rgba(0,212,255,0.1)] text-[#00D4FF]">
++            {tasks.length} tasks
++          </span>
++        </div>
++
++        <div className="flex items-center gap-3">
++          {/* Search */}
++          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#2A2A2A] bg-[#1A1A1A]">
++            <LucideIcons.Search size={14} color={COLORS.muted} />
++            <input
++              type="text"
++              value={searchQuery}
++              onChange={(e) => setSearchQuery(e.target.value)}
++              placeholder="Search tasks..."
++              className="bg-transparent text-sm text-[#ECEDEE] placeholder-[#9BA1A6] outline-none w-40"
++            />
++          </div>
++
++          {/* Priority Filter */}
++          <select
++            value={filterPriority}
++            onChange={(e) => setFilterPriority(e.target.value as TaskPriority | 'all')}
++            className="px-3 py-1.5 rounded-lg border border-[#2A2A2A] bg-[#1A1A1A] text-sm text-[#ECEDEE] outline-none"
++          >
++            <option value="all">All Priorities</option>
++            <option value="critical">Critical</option>
++            <option value="high">High</option>
++            <option value="medium">Medium</option>
++            <option value="low">Low</option>
++          </select>
++
++          {/* New Task Button */}
++          <button
++            onClick={() => handleAddTask('backlog')}
++            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#00D4FF] to-[#9B7BFF] text-white text-sm font-medium hover:opacity-90 transition-opacity"
++          >
++            <LucideIcons.Plus size={16} />
++            New Task
++          </button>
++        </div>
++      </div>
++
++      {/* Board */}
++      <div className="flex-1 overflow-x-auto p-4">
++        <div className="flex gap-4 h-full">
++          {COLUMNS.map(column => (
++            <Column
++              key={column.id}
++              column={column}
++              tasks={tasksByStatus[column.id] || []}
++              onTaskMove={handleTaskMove}
++              onTaskEdit={(task) => console.log('Edit task:', task)}
++              onTaskDelete={handleTaskDelete}
++              onAddTask={handleAddTask}
++            />
++          ))}
++        </div>
++      </div>
++
++      {/* New Task Modal */}
++      <AnimatePresence>
++        {showNewTaskModal && (
++          <NewTaskModal
++            status={newTaskStatus}
++            onClose={() => setShowNewTaskModal(false)}
++            onCreate={handleCreateTask}
++          />
++        )}
++      </AnimatePresence>
++    </div>
++  );
++}
++
++// New Task Modal
++interface NewTaskModalProps {
++  status: TaskStatus;
++  onClose: () => void;
++  onCreate: (title: string, description: string, priority: TaskPriority) => void;
++}
++
++function NewTaskModal({ status, onClose, onCreate }: NewTaskModalProps) {
++  const [title, setTitle] = useState('');
++  const [description, setDescription] = useState('');
++  const [priority, setPriority] = useState<TaskPriority>('medium');
++
++  const handleSubmit = (e: React.FormEvent) => {
++    e.preventDefault();
++    if (title.trim()) {
++      onCreate(title.trim(), description.trim(), priority);
++    }
++  };
++
++  return (
++    <>
++      <motion.div
++        initial={{ opacity: 0 }}
++        animate={{ opacity: 1 }}
++        exit={{ opacity: 0 }}
++        className="fixed inset-0 bg-black/60 z-40"
++        onClick={onClose}
++      />
++      <motion.div
++        initial={{ opacity: 0, scale: 0.95 }}
++        animate={{ opacity: 1, scale: 1 }}
++        exit={{ opacity: 0, scale: 0.95 }}
++        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-50"
++      >
++        <form
++          onSubmit={handleSubmit}
++          className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-6 shadow-2xl"
++        >
++          <h3 className="text-lg font-semibold text-[#ECEDEE] mb-4">Create New Task</h3>
++
++          <div className="space-y-4">
++            <div>
++              <label className="block text-xs text-[#9BA1A6] mb-1">Title</label>
++              <input
++                type="text"
++                value={title}
++                onChange={(e) => setTitle(e.target.value)}
++                placeholder="Enter task title..."
++                className="w-full px-3 py-2 rounded-lg border border-[#2A2A2A] bg-[#0A0A0A] text-[#ECEDEE] placeholder-[#9BA1A6] outline-none focus:border-[#00D4FF]/50"
++                autoFocus
++              />
++            </div>
++
++            <div>
++              <label className="block text-xs text-[#9BA1A6] mb-1">Description</label>
++              <textarea
++                value={description}
++                onChange={(e) => setDescription(e.target.value)}
++                placeholder="Enter task description..."
++                rows={3}
++                className="w-full px-3 py-2 rounded-lg border border-[#2A2A2A] bg-[#0A0A0A] text-[#ECEDEE] placeholder-[#9BA1A6] outline-none focus:border-[#00D4FF]/50 resize-none"
++              />
++            </div>
++
++            <div>
++              <label className="block text-xs text-[#9BA1A6] mb-1">Priority</label>
++              <select
++                value={priority}
++                onChange={(e) => setPriority(e.target.value as TaskPriority)}
++                className="w-full px-3 py-2 rounded-lg border border-[#2A2A2A] bg-[#0A0A0A] text-[#ECEDEE] outline-none focus:border-[#00D4FF]/50"
++              >
++                <option value="low">Low</option>
++                <option value="medium">Medium</option>
++                <option value="high">High</option>
++                <option value="critical">Critical</option>
++              </select>
++            </div>
++
++            <div className="text-xs text-[#9BA1A6]">
++              Status: <span className="text-[#00D4FF]">{status.replace('_', ' ')}</span>
++            </div>
++          </div>
++
++          <div className="flex items-center justify-end gap-2 mt-6">
++            <button
++              type="button"
++              onClick={onClose}
++              className="px-4 py-2 rounded-lg text-[#9BA1A6] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
++            >
++              Cancel
++            </button>
++            <button
++              type="submit"
++              disabled={!title.trim()}
++              className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00D4FF] to-[#9B7BFF] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
++            >
++              Create Task
++            </button>
++          </div>
++        </form>
++      </motion.div>
++    </>
++  );
++}
++
++// Sample tasks for demo
++const SAMPLE_TASKS: KanbanTask[] = [
++  {
++    id: 'task-001',
++    title: 'Implement double minimize sidebar',
++    description: 'Add functionality to collapse both icon rail and detail panel',
++    status: 'done',
++    priority: 'high',
++    tags: ['frontend', 'ui'],
++    createdAt: '2024-01-10T10:00:00Z',
++    updatedAt: '2024-01-14T15:00:00Z',
++  },
++  {
++    id: 'task-002',
++    title: 'Integrate LocalAI service',
++    description: 'Connect frontend to LocalAI for LLM completions',
++    status: 'in_progress',
++    priority: 'high',
++    assignee: 'dev',
++    tags: ['ai', 'integration'],
++    createdAt: '2024-01-12T09:00:00Z',
++    updatedAt: '2024-01-14T12:00:00Z',
++  },
++  {
++    id: 'task-003',
++    title: 'Setup AGiXT agents',
++    description: 'Configure AGiXT sandbox and agent chains',
++    status: 'in_progress',
++    priority: 'medium',
++    tags: ['ai', 'backend'],
++    createdAt: '2024-01-13T14:00:00Z',
++    updatedAt: '2024-01-14T10:00:00Z',
++  },
++  {
++    id: 'task-004',
++    title: 'Add web browser panel',
++    description: 'Implement embedded browser in sidebar',
++    status: 'review',
++    priority: 'medium',
++    tags: ['frontend', 'feature'],
++    createdAt: '2024-01-11T11:00:00Z',
++    updatedAt: '2024-01-14T14:00:00Z',
++  },
++  {
++    id: 'task-005',
++    title: 'Cross-platform sync testing',
++    description: 'Verify state sync between web and mobile',
++    status: 'todo',
++    priority: 'critical',
++    tags: ['testing', 'sync'],
++    createdAt: '2024-01-14T08:00:00Z',
++    updatedAt: '2024-01-14T08:00:00Z',
++  },
++  {
++    id: 'task-006',
++    title: 'Component library documentation',
++    description: 'Document all shared components',
++    status: 'backlog',
++    priority: 'low',
++    tags: ['docs'],
++    createdAt: '2024-01-09T10:00:00Z',
++    updatedAt: '2024-01-09T10:00:00Z',
++  },
++  {
++    id: 'task-007',
++    title: 'Configuration audit',
++    description: 'Review all config files for issues',
++    status: 'todo',
++    priority: 'high',
++    tags: ['config', 'security'],
++    createdAt: '2024-01-14T09:00:00Z',
++    updatedAt: '2024-01-14T09:00:00Z',
++  },
++];
++
++export default KanbanBoard;
+diff --git a/frontend/client/src/components/sidebar/IconNavigation.tsx b/frontend/client/src/components/sidebar/IconNavigation.tsx
+index eb97182..ce621de 100644
+--- a/frontend/client/src/components/sidebar/IconNavigation.tsx
++++ b/frontend/client/src/components/sidebar/IconNavigation.tsx
+@@ -120,10 +120,15 @@ export function IconNavigation() {
+     setActiveSection, 
+     activeWorkspace, 
+     setActiveWorkspace,
++    iconCollapsed,
++    setIconCollapsed,
+     detailCollapsed,
+     setDetailCollapsed,
++    toggleDoubleMinimize,
++    isFullyCollapsed,
+     setShowNotifications,
+     setShowFavorites,
++    setShowWebBrowser,
+   } = useSidebar();
+   
+   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
+@@ -214,14 +219,14 @@ export function IconNavigation() {
+         )}
+       </div>
+ 
+-      {/* Collapse/Expand Toggle */}
++      {/* Collapse/Expand Toggle - Detail Sidebar */}
+       <button
+         onClick={() => setDetailCollapsed(!detailCollapsed)}
+         className={cn(
+-          "w-10 h-10 rounded-[10px] flex items-center justify-center mb-2 transition-all duration-200",
++          "w-10 h-10 rounded-[10px] flex items-center justify-center mb-1 transition-all duration-200",
+           "hover:bg-[rgba(255,255,255,0.05)]"
+         )}
+-        title={detailCollapsed ? "Expand sidebar" : "Collapse sidebar"}
++        title={detailCollapsed ? "Expand detail panel" : "Collapse detail panel"}
+       >
+         {detailCollapsed ? (
+           <LucideIcons.PanelLeftOpen size={18} color={COLORS.muted} />
+@@ -230,6 +235,34 @@ export function IconNavigation() {
+         )}
+       </button>
+ 
++      {/* Double Minimize Toggle - Both panels */}
++      <button
++        onClick={toggleDoubleMinimize}
++        className={cn(
++          "w-10 h-10 rounded-[10px] flex items-center justify-center mb-2 transition-all duration-200",
++          isFullyCollapsed ? "bg-[rgba(0,212,255,0.15)]" : "hover:bg-[rgba(255,255,255,0.05)]"
++        )}
++        title={isFullyCollapsed ? "Expand sidebar" : "Minimize sidebar completely"}
++      >
++        {isFullyCollapsed ? (
++          <LucideIcons.Maximize2 size={16} color={COLORS.primary} />
++        ) : (
++          <LucideIcons.Minimize2 size={16} color={COLORS.muted} />
++        )}
++      </button>
++
++      {/* Web Browser Button */}
++      <button
++        onClick={() => setShowWebBrowser(true)}
++        className={cn(
++          "w-10 h-10 rounded-[10px] flex items-center justify-center mb-2 transition-all duration-200",
++          "hover:bg-[rgba(255,255,255,0.05)]"
++        )}
++        title="Open web browser"
++      >
++        <LucideIcons.Globe size={18} color={COLORS.muted} />
++      </button>
++
+       {/* Navigation Icons - Scrollable */}
+       <div className="flex-1 w-full overflow-y-auto scrollbar-hide">
+         <div className="flex flex-col items-center gap-1.5 py-1">
+diff --git a/frontend/client/src/components/sidebar/TwoLevelSidebar.tsx b/frontend/client/src/components/sidebar/TwoLevelSidebar.tsx
+index afeed03..a3b61d2 100644
+--- a/frontend/client/src/components/sidebar/TwoLevelSidebar.tsx
++++ b/frontend/client/src/components/sidebar/TwoLevelSidebar.tsx
+@@ -4,7 +4,14 @@ import { getLoginUrl } from '@/const';
+ import { Button } from '@/components/ui/button';
+ import { IconNavigation } from './IconNavigation';
+ import { DetailSidebar } from './DetailSidebar';
+-import { Loader2 } from 'lucide-react';
++import { WebBrowserPanel } from './WebBrowserPanel';
++import { NotificationsPanel } from './NotificationsPanel';
++import { FavoritesPanel } from './FavoritesPanel';
++import { CommandPalette } from './CommandPalette';
++import { Loader2, Maximize2 } from 'lucide-react';
++import { useSidebar } from '@/contexts/SidebarContext';
++import { motion, AnimatePresence } from 'framer-motion';
++import { cn } from '@/lib/utils';
+ 
+ interface TwoLevelSidebarProps {
+   children?: React.ReactNode;
+@@ -59,6 +66,26 @@ function SignInPrompt() {
+   );
+ }
+ 
++// Floating expand button when sidebar is fully collapsed
++function FloatingExpandButton() {
++  const { toggleDoubleMinimize, isFullyCollapsed } = useSidebar();
++  
++  if (!isFullyCollapsed) return null;
++  
++  return (
++    <motion.button
++      initial={{ opacity: 0, scale: 0.8 }}
++      animate={{ opacity: 1, scale: 1 }}
++      exit={{ opacity: 0, scale: 0.8 }}
++      onClick={toggleDoubleMinimize}
++      className="fixed left-4 top-1/2 -translate-y-1/2 z-50 w-10 h-10 rounded-full bg-[#1A1A1A] border border-[#2A2A2A] flex items-center justify-center shadow-lg hover:bg-[#2A2A2A] transition-colors"
++      title="Expand sidebar"
++    >
++      <Maximize2 size={18} color="#00D4FF" />
++    </motion.button>
++  );
++}
++
+ export function TwoLevelSidebar({ children }: TwoLevelSidebarProps) {
+   const { loading, user } = useAuth();
+ 
+@@ -72,19 +99,62 @@ export function TwoLevelSidebar({ children }: TwoLevelSidebarProps) {
+     return <SignInPrompt />;
+   }
+ 
++  return (
++    <TwoLevelSidebarContent>
++      {children}
++    </TwoLevelSidebarContent>
++  );
++}
++
++// Inner component that uses sidebar context
++function TwoLevelSidebarContent({ children }: { children?: React.ReactNode }) {
++  const { iconCollapsed, isFullyCollapsed } = useSidebar();
++
+   return (
+     <div className="flex h-screen w-full bg-[#0A0A0A]">
+-      {/* Sidebar container - flex-shrink-0 prevents compression */}
+-      <div className="flex h-full flex-shrink-0">
+-        <IconNavigation />
+-        <DetailSidebar />
+-      </div>
++      {/* Sidebar container - animated collapse */}
++      <AnimatePresence>
++        {!isFullyCollapsed && (
++          <motion.div 
++            className="flex h-full flex-shrink-0"
++            initial={{ width: 'auto', opacity: 1 }}
++            animate={{ width: 'auto', opacity: 1 }}
++            exit={{ width: 0, opacity: 0 }}
++            transition={{ duration: 0.3, ease: 'easeInOut' }}
++          >
++            <motion.div
++              initial={false}
++              animate={{ 
++                width: iconCollapsed ? 0 : 64,
++                opacity: iconCollapsed ? 0 : 1
++              }}
++              transition={{ duration: 0.3, ease: 'easeInOut' }}
++              className="overflow-hidden"
++            >
++              <IconNavigation />
++            </motion.div>
++            <DetailSidebar />
++          </motion.div>
++        )}
++      </AnimatePresence>
++      
++      {/* Floating expand button when fully collapsed */}
++      <AnimatePresence>
++        <FloatingExpandButton />
++      </AnimatePresence>
++      
+       {/* Main content area - flex-1 takes remaining space */}
+       {children && (
+         <div className="flex-1 h-full overflow-auto bg-[#0F0F0F]">
+           {children}
+         </div>
+       )}
++      
++      {/* Modal Panels */}
++      <NotificationsPanel />
++      <FavoritesPanel />
++      <CommandPalette />
++      <WebBrowserPanel />
+     </div>
+   );
+ }
+diff --git a/frontend/client/src/components/sidebar/WebBrowserPanel.tsx b/frontend/client/src/components/sidebar/WebBrowserPanel.tsx
+new file mode 100644
+index 0000000..4f5dd75
+--- /dev/null
++++ b/frontend/client/src/components/sidebar/WebBrowserPanel.tsx
+@@ -0,0 +1,256 @@
++import React, { useState, useRef } from 'react';
++import { useSidebar } from '@/contexts/SidebarContext';
++import * as LucideIcons from 'lucide-react';
++import { cn } from '@/lib/utils';
++import { motion, AnimatePresence } from 'framer-motion';
++
++// Ripple brand colors
++const COLORS = {
++  primary: '#00D4FF',
++  secondary: '#9B7BFF',
++  accent: '#00E676',
++  foreground: '#ECEDEE',
++  muted: '#9BA1A6',
++  border: '#2A2A2A',
++  surface: '#1A1A1A',
++};
++
++// Bookmarks for quick access
++const QUICK_LINKS = [
++  { name: 'Google', url: 'https://google.com', icon: 'Search' },
++  { name: 'GitHub', url: 'https://github.com', icon: 'Github' },
++  { name: 'Stack Overflow', url: 'https://stackoverflow.com', icon: 'HelpCircle' },
++  { name: 'MDN Docs', url: 'https://developer.mozilla.org', icon: 'BookOpen' },
++  { name: 'NPM', url: 'https://i.ytimg.com/vi/BuIE2P-Rm7U/maxresdefault.jpg', icon: 'Package' },
++  { name: 'LocalAI', url: 'http://localhost:8080', icon: 'Bot' },
++  { name: 'AGiXT', url: 'http://localhost:7437', icon: 'Sparkles' },
++];
++
++// Dynamic icon component
++function DynamicIcon({ name, size = 16, color = COLORS.foreground }: { 
++  name: string; 
++  size?: number; 
++  color?: string;
++}) {
++  // eslint-disable-next-line @typescript-eslint/no-explicit-any
++  const IconComponent = (LucideIcons as any)[name] || LucideIcons.Circle;
++  return <IconComponent size={size} color={color} />;
++}
++
++export function WebBrowserPanel() {
++  const { showWebBrowser, setShowWebBrowser, browserUrl, setBrowserUrl } = useSidebar();
++  const [inputUrl, setInputUrl] = useState(browserUrl);
++  const [isLoading, setIsLoading] = useState(false);
++  const [history, setHistory] = useState<string[]>([browserUrl]);
++  const [historyIndex, setHistoryIndex] = useState(0);
++  const iframeRef = useRef<HTMLIFrameElement>(null);
++
++  const handleNavigate = (url: string) => {
++    let normalizedUrl = url;
++    if (!url.startsWith('http://') && !url.startsWith('https://')) {
++      // Check if it looks like a domain
++      if (url.includes('.') && !url.includes(' ')) {
++        normalizedUrl = `https://${url}`;
++      } else {
++        // Treat as search query
++        normalizedUrl = `https://www.google.com/search?q=${encodeURIComponent(url)}`;
++      }
++    }
++    
++    setIsLoading(true);
++    setBrowserUrl(normalizedUrl);
++    setInputUrl(normalizedUrl);
++    
++    // Update history
++    const newHistory = [...history.slice(0, historyIndex + 1), normalizedUrl];
++    setHistory(newHistory);
++    setHistoryIndex(newHistory.length - 1);
++    
++    // Simulate load complete
++    setTimeout(() => setIsLoading(false), 1000);
++  };
++
++  const handleBack = () => {
++    if (historyIndex > 0) {
++      const newIndex = historyIndex - 1;
++      setHistoryIndex(newIndex);
++      const url = history[newIndex];
++      setBrowserUrl(url);
++      setInputUrl(url);
++    }
++  };
++
++  const handleForward = () => {
++    if (historyIndex < history.length - 1) {
++      const newIndex = historyIndex + 1;
++      setHistoryIndex(newIndex);
++      const url = history[newIndex];
++      setBrowserUrl(url);
++      setInputUrl(url);
++    }
++  };
++
++  const handleRefresh = () => {
++    setIsLoading(true);
++    if (iframeRef.current) {
++      iframeRef.current.src = browserUrl;
++    }
++    setTimeout(() => setIsLoading(false), 1000);
++  };
++
++  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
++    if (e.key === 'Enter') {
++      handleNavigate(inputUrl);
++    }
++  };
++
++  return (
++    <AnimatePresence>
++      {showWebBrowser && (
++        <>
++          {/* Backdrop */}
++          <motion.div
++            initial={{ opacity: 0 }}
++            animate={{ opacity: 1 }}
++            exit={{ opacity: 0 }}
++            className="fixed inset-0 bg-black/60 z-40"
++            onClick={() => setShowWebBrowser(false)}
++          />
++          
++          {/* Browser Panel */}
++          <motion.div
++            initial={{ opacity: 0, x: -20 }}
++            animate={{ opacity: 1, x: 0 }}
++            exit={{ opacity: 0, x: -20 }}
++            transition={{ duration: 0.2 }}
++            className="fixed left-20 top-4 bottom-4 w-[800px] max-w-[calc(100vw-120px)] bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl z-50 flex flex-col overflow-hidden shadow-2xl"
++          >
++            {/* Browser Header */}
++            <div className="flex items-center gap-2 p-3 border-b border-[#2A2A2A] bg-[#0F0F0F]">
++              {/* Navigation Controls */}
++              <div className="flex items-center gap-1">
++                <button
++                  onClick={handleBack}
++                  disabled={historyIndex <= 0}
++                  className={cn(
++                    "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
++                    historyIndex > 0 
++                      ? "hover:bg-[rgba(255,255,255,0.05)] text-[#9BA1A6]" 
++                      : "text-[#4A4A4A] cursor-not-allowed"
++                  )}
++                >
++                  <LucideIcons.ArrowLeft size={16} />
++                </button>
++                <button
++                  onClick={handleForward}
++                  disabled={historyIndex >= history.length - 1}
++                  className={cn(
++                    "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
++                    historyIndex < history.length - 1 
++                      ? "hover:bg-[rgba(255,255,255,0.05)] text-[#9BA1A6]" 
++                      : "text-[#4A4A4A] cursor-not-allowed"
++                  )}
++                >
++                  <LucideIcons.ArrowRight size={16} />
++                </button>
++                <button
++                  onClick={handleRefresh}
++                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[rgba(255,255,255,0.05)] text-[#9BA1A6] transition-colors"
++                >
++                  {isLoading ? (
++                    <LucideIcons.Loader2 size={16} className="animate-spin" />
++                  ) : (
++                    <LucideIcons.RotateCw size={16} />
++                  )}
++                </button>
++              </div>
++
++              {/* URL Bar */}
++              <div className="flex-1 flex items-center h-9 bg-[#1A1A1A] rounded-lg border border-[#2A2A2A] px-3 gap-2">
++                <LucideIcons.Lock size={14} color={COLORS.accent} />
++                <input
++                  type="text"
++                  value={inputUrl}
++                  onChange={(e) => setInputUrl(e.target.value)}
++                  onKeyDown={handleKeyDown}
++                  className="flex-1 bg-transparent text-sm text-[#ECEDEE] placeholder-[#9BA1A6] outline-none"
++                  placeholder="Enter URL or search..."
++                />
++                <button
++                  onClick={() => handleNavigate(inputUrl)}
++                  className="text-[#9BA1A6] hover:text-[#00D4FF] transition-colors"
++                >
++                  <LucideIcons.ArrowRight size={16} />
++                </button>
++              </div>
++
++              {/* Actions */}
++              <div className="flex items-center gap-1">
++                <button
++                  onClick={() => window.open(browserUrl, '_blank')}
++                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[rgba(255,255,255,0.05)] text-[#9BA1A6] transition-colors"
++                  title="Open in new tab"
++                >
++                  <LucideIcons.ExternalLink size={16} />
++                </button>
++                <button
++                  onClick={() => setShowWebBrowser(false)}
++                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[rgba(255,255,255,0.05)] text-[#9BA1A6] transition-colors"
++                >
++                  <LucideIcons.X size={16} />
++                </button>
++              </div>
++            </div>
++
++            {/* Quick Links */}
++            <div className="flex items-center gap-2 px-3 py-2 border-b border-[#2A2A2A] bg-[#0F0F0F] overflow-x-auto scrollbar-hide">
++              {QUICK_LINKS.map((link) => (
++                <button
++                  key={link.name}
++                  onClick={() => handleNavigate(link.url)}
++                  className={cn(
++                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors",
++                    browserUrl.includes(link.url.replace('https://', '').replace('http://', '').split('/')[0])
++                      ? "bg-[#00D4FF]/10 text-[#00D4FF]"
++                      : "text-[#9BA1A6] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#ECEDEE]"
++                  )}
++                >
++                  <DynamicIcon name={link.icon} size={14} />
++                  {link.name}
++                </button>
++              ))}
++            </div>
++
++            {/* Browser Content */}
++            <div className="flex-1 relative bg-white">
++              {isLoading && (
++                <div className="absolute inset-0 bg-[#0A0A0A] flex items-center justify-center z-10">
++                  <div className="flex flex-col items-center gap-3">
++                    <LucideIcons.Loader2 size={32} className="animate-spin text-[#00D4FF]" />
++                    <p className="text-sm text-[#9BA1A6]">Loading...</p>
++                  </div>
++                </div>
++              )}
++              <iframe
++                ref={iframeRef}
++                src={browserUrl}
++                className="w-full h-full border-0"
++                title="Embedded Browser"
++                sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads"
++                onLoad={() => setIsLoading(false)}
++              />
++            </div>
++
++            {/* Status Bar */}
++            <div className="flex items-center justify-between px-3 py-1.5 border-t border-[#2A2A2A] bg-[#0F0F0F] text-[10px] text-[#6B7280]">
++              <span>{browserUrl}</span>
++              <span>Embedded Browser • Some sites may not load due to security restrictions</span>
++            </div>
++          </motion.div>
++        </>
++      )}
++    </AnimatePresence>
++  );
++}
++
++export default WebBrowserPanel;
+diff --git a/frontend/client/src/components/ui/index.ts b/frontend/client/src/components/ui/index.ts
+new file mode 100644
+index 0000000..4b11861
+--- /dev/null
++++ b/frontend/client/src/components/ui/index.ts
+@@ -0,0 +1,57 @@
++/**
++ * Ripple UI Component Library
++ * 
++ * Export all UI components for easy importing throughout the application.
++ * Usage: import { Button, Card, Badge } from '@/components/ui';
++ */
++
++// Core Radix-based components
++export * from './accordion';
++export * from './alert-dialog';
++export * from './avatar';
++export * from './badge';
++export * from './button';
++export * from './card';
++export * from './checkbox';
++export * from './collapsible';
++export * from './dialog';
++export * from './dropdown-menu';
++export * from './input';
++export * from './label';
++export * from './popover';
++export * from './progress';
++export * from './radio-group';
++export * from './scroll-area';
++export * from './select';
++export * from './separator';
++export * from './sheet';
++export * from './skeleton';
++export * from './slider';
++export * from './switch';
++export * from './tabs';
++export * from './textarea';
++export * from './toast';
++export * from './toaster';
++export * from './tooltip';
++export * from './use-toast';
++
++// Re-export Ripple brand colors
++export const RIPPLE_COLORS = {
++  primary: '#00D4FF',
++  secondary: '#9B7BFF',
++  accent: '#00E676',
++  warning: '#FFB300',
++  error: '#FF5252',
++  foreground: '#ECEDEE',
++  muted: '#9BA1A6',
++  border: '#2A2A2A',
++  surface: '#1A1A1A',
++  background: '#0A0A0A',
++} as const;
++
++// Gradient presets
++export const RIPPLE_GRADIENTS = {
++  primary: 'linear-gradient(135deg, #00D4FF 0%, #9B7BFF 100%)',
++  accent: 'linear-gradient(135deg, #9B7BFF 0%, #00E676 100%)',
++  full: 'linear-gradient(135deg, #00D4FF 0%, #9B7BFF 50%, #00E676 100%)',
++} as const;
+diff --git a/frontend/client/src/contexts/SidebarContext.tsx b/frontend/client/src/contexts/SidebarContext.tsx
+index 5cb8c44..1b76cee 100644
+--- a/frontend/client/src/contexts/SidebarContext.tsx
++++ b/frontend/client/src/contexts/SidebarContext.tsx
+@@ -8,14 +8,25 @@ export interface SidebarContextProps {
+   setActiveWorkspace: (workspace: WorkspaceType) => void;
+   expandedItems: Set<string>;
+   toggleExpanded: (itemKey: string) => void;
++  // Double minimize support - icon rail can also collapse
++  iconCollapsed: boolean;
++  setIconCollapsed: (collapsed: boolean) => void;
+   detailCollapsed: boolean;
+   setDetailCollapsed: (collapsed: boolean) => void;
++  // Double minimize toggle - collapses both icon rail and detail sidebar
++  toggleDoubleMinimize: () => void;
++  isFullyCollapsed: boolean;
+   showNotifications: boolean;
+   setShowNotifications: (show: boolean) => void;
+   showFavorites: boolean;
+   setShowFavorites: (show: boolean) => void;
+   showCommandPalette: boolean;
+   setShowCommandPalette: (show: boolean) => void;
++  // Web browser panel
++  showWebBrowser: boolean;
++  setShowWebBrowser: (show: boolean) => void;
++  browserUrl: string;
++  setBrowserUrl: (url: string) => void;
+   onNavigate?: (route: string) => void;
+   setOnNavigate: (callback: ((route: string) => void) | undefined) => void;
+ }
+@@ -35,7 +46,9 @@ const STORAGE_KEYS = {
+   activeSection: 'sidebar_activeSection',
+   activeWorkspace: 'sidebar_activeWorkspace',
+   expandedItems: 'sidebar_expandedItems',
++  iconCollapsed: 'sidebar_iconCollapsed',
+   detailCollapsed: 'sidebar_detailCollapsed',
++  browserUrl: 'sidebar_browserUrl',
+ };
+ 
+ function loadFromStorage<T>(key: string, defaultValue: T): T {
+@@ -66,10 +79,13 @@ export function SidebarProvider({ children }: SidebarProviderProps) {
+   const [activeSection, setActiveSectionState] = useState('ai-command-center');
+   const [activeWorkspace, setActiveWorkspaceState] = useState<WorkspaceType>('all');
+   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
++  const [iconCollapsed, setIconCollapsedState] = useState(false);
+   const [detailCollapsed, setDetailCollapsedState] = useState(false);
+   const [showNotifications, setShowNotificationsState] = useState(false);
+   const [showFavorites, setShowFavoritesState] = useState(false);
+   const [showCommandPalette, setShowCommandPaletteState] = useState(false);
++  const [showWebBrowser, setShowWebBrowserState] = useState(false);
++  const [browserUrl, setBrowserUrlState] = useState('https://google.com');
+   const [onNavigate, setOnNavigateState] = useState<((route: string) => void) | undefined>(undefined);
+ 
+   // Load persisted state on mount
+@@ -77,12 +93,16 @@ export function SidebarProvider({ children }: SidebarProviderProps) {
+     const savedSection = loadFromStorage(STORAGE_KEYS.activeSection, 'ai-command-center');
+     const savedWorkspace = loadFromStorage<WorkspaceType>(STORAGE_KEYS.activeWorkspace, 'all');
+     const savedExpanded = loadFromStorage<string[]>(STORAGE_KEYS.expandedItems, []);
++    const savedIconCollapsed = loadFromStorage(STORAGE_KEYS.iconCollapsed, false);
+     const savedCollapsed = loadFromStorage(STORAGE_KEYS.detailCollapsed, false);
++    const savedBrowserUrl = loadFromStorage(STORAGE_KEYS.browserUrl, 'https://google.com');
+ 
+     setActiveSectionState(savedSection);
+     setActiveWorkspaceState(savedWorkspace);
+     setExpandedItems(new Set(savedExpanded));
++    setIconCollapsedState(savedIconCollapsed);
+     setDetailCollapsedState(savedCollapsed);
++    setBrowserUrlState(savedBrowserUrl);
+   }, []);
+ 
+   // Keyboard shortcut for command palette (⌘K / Ctrl+K)
+@@ -133,11 +153,50 @@ export function SidebarProvider({ children }: SidebarProviderProps) {
+     saveToStorage(STORAGE_KEYS.activeWorkspace, workspace);
+   }, []);
+ 
++  const setIconCollapsed = useCallback((collapsed: boolean) => {
++    setIconCollapsedState(collapsed);
++    saveToStorage(STORAGE_KEYS.iconCollapsed, collapsed);
++  }, []);
++
+   const setDetailCollapsed = useCallback((collapsed: boolean) => {
+     setDetailCollapsedState(collapsed);
+     saveToStorage(STORAGE_KEYS.detailCollapsed, collapsed);
+   }, []);
+ 
++  // Double minimize - collapse both icon rail and detail sidebar
++  const toggleDoubleMinimize = useCallback(() => {
++    const isCurrentlyFullyCollapsed = iconCollapsed && detailCollapsed;
++    if (isCurrentlyFullyCollapsed) {
++      // Expand both
++      setIconCollapsedState(false);
++      setDetailCollapsedState(false);
++      saveToStorage(STORAGE_KEYS.iconCollapsed, false);
++      saveToStorage(STORAGE_KEYS.detailCollapsed, false);
++    } else {
++      // Collapse both
++      setIconCollapsedState(true);
++      setDetailCollapsedState(true);
++      saveToStorage(STORAGE_KEYS.iconCollapsed, true);
++      saveToStorage(STORAGE_KEYS.detailCollapsed, true);
++    }
++  }, [iconCollapsed, detailCollapsed]);
++
++  const isFullyCollapsed = iconCollapsed && detailCollapsed;
++
++  const setShowWebBrowser = useCallback((show: boolean) => {
++    setShowWebBrowserState(show);
++    if (show) {
++      setShowNotificationsState(false);
++      setShowFavoritesState(false);
++      setShowCommandPaletteState(false);
++    }
++  }, []);
++
++  const setBrowserUrl = useCallback((url: string) => {
++    setBrowserUrlState(url);
++    saveToStorage(STORAGE_KEYS.browserUrl, url);
++  }, []);
++
+   const setShowNotifications = useCallback((show: boolean) => {
+     setShowNotificationsState(show);
+     if (show) {
+@@ -173,14 +232,22 @@ export function SidebarProvider({ children }: SidebarProviderProps) {
+     setActiveWorkspace,
+     expandedItems,
+     toggleExpanded,
++    iconCollapsed,
++    setIconCollapsed,
+     detailCollapsed,
+     setDetailCollapsed,
++    toggleDoubleMinimize,
++    isFullyCollapsed,
+     showNotifications,
+     setShowNotifications,
+     showFavorites,
+     setShowFavorites,
+     showCommandPalette,
+     setShowCommandPalette,
++    showWebBrowser,
++    setShowWebBrowser,
++    browserUrl,
++    setBrowserUrl,
+     onNavigate,
+     setOnNavigate,
+   }), [
+@@ -190,14 +257,22 @@ export function SidebarProvider({ children }: SidebarProviderProps) {
+     setActiveWorkspace,
+     expandedItems, 
+     toggleExpanded,
++    iconCollapsed,
++    setIconCollapsed,
+     detailCollapsed,
+     setDetailCollapsed,
++    toggleDoubleMinimize,
++    isFullyCollapsed,
+     showNotifications,
+     setShowNotifications,
+     showFavorites,
+     setShowFavorites,
+     showCommandPalette,
+     setShowCommandPalette,
++    showWebBrowser,
++    setShowWebBrowser,
++    browserUrl,
++    setBrowserUrl,
+     onNavigate,
+     setOnNavigate,
+   ]);
+diff --git a/frontend/client/src/services/ai-integration.ts b/frontend/client/src/services/ai-integration.ts
+new file mode 100644
+index 0000000..73b52e3
+--- /dev/null
++++ b/frontend/client/src/services/ai-integration.ts
+@@ -0,0 +1,553 @@
++/**
++ * AI Integration Service
++ * Provides unified interface for LocalAI and AGiXT integrations
++ */
++
++// Configuration types
++export interface LocalAIConfig {
++  baseUrl: string;
++  apiKey?: string;
++  defaultModel?: string;
++  timeout?: number;
++}
++
++export interface AGiXTConfig {
++  baseUrl: string;
++  apiKey?: string;
++  agentName?: string;
++  sandboxEnabled?: boolean;
++}
++
++export interface AIMessage {
++  role: 'system' | 'user' | 'assistant';
++  content: string;
++}
++
++export interface AICompletionOptions {
++  model?: string;
++  temperature?: number;
++  maxTokens?: number;
++  topP?: number;
++  stream?: boolean;
++}
++
++export interface AICompletionResponse {
++  id: string;
++  content: string;
++  model: string;
++  usage?: {
++    promptTokens: number;
++    completionTokens: number;
++    totalTokens: number;
++  };
++}
++
++export interface AGiXTCommand {
++  command: string;
++  args?: Record<string, unknown>;
++  conversationId?: string;
++}
++
++export interface AGiXTResponse {
++  response: string;
++  conversationId?: string;
++  commands?: {
++    name: string;
++    result: unknown;
++  }[];
++}
++
++// Default configurations
++const DEFAULT_LOCALAI_CONFIG: LocalAIConfig = {
++  baseUrl: 'http://localhost:8080',
++  defaultModel: 'llama-3.2-3b-instruct',
++  timeout: 60000,
++};
++
++const DEFAULT_AGIXT_CONFIG: AGiXTConfig = {
++  baseUrl: 'http://localhost:7437',
++  agentName: 'ripple-assistant',
++  sandboxEnabled: true,
++};
++
++/**
++ * LocalAI Integration Class
++ */
++export class LocalAIService {
++  private config: LocalAIConfig;
++
++  constructor(config?: Partial<LocalAIConfig>) {
++    this.config = { ...DEFAULT_LOCALAI_CONFIG, ...config };
++  }
++
++  /**
++   * Check if LocalAI service is available
++   */
++  async healthCheck(): Promise<boolean> {
++    try {
++      const response = await fetch(`${this.config.baseUrl}/v1/models`, {
++        method: 'GET',
++        headers: this.getHeaders(),
++        signal: AbortSignal.timeout(5000),
++      });
++      return response.ok;
++    } catch {
++      return false;
++    }
++  }
++
++  /**
++   * Get available models
++   */
++  async getModels(): Promise<string[]> {
++    try {
++      const response = await fetch(`${this.config.baseUrl}/v1/models`, {
++        method: 'GET',
++        headers: this.getHeaders(),
++      });
++
++      if (!response.ok) {
++        throw new Error(`Failed to fetch models: ${response.statusText}`);
++      }
++
++      const data = await response.json();
++      return data.data?.map((m: { id: string }) => m.id) || [];
++    } catch (error) {
++      console.error('LocalAI: Failed to get models', error);
++      return [];
++    }
++  }
++
++  /**
++   * Create a chat completion
++   */
++  async chatCompletion(
++    messages: AIMessage[],
++    options?: AICompletionOptions
++  ): Promise<AICompletionResponse> {
++    const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
++      method: 'POST',
++      headers: this.getHeaders(),
++      body: JSON.stringify({
++        model: options?.model || this.config.defaultModel,
++        messages,
++        temperature: options?.temperature ?? 0.7,
++        max_tokens: options?.maxTokens ?? 2048,
++        top_p: options?.topP ?? 0.9,
++        stream: options?.stream ?? false,
++      }),
++    });
++
++    if (!response.ok) {
++      throw new Error(`LocalAI completion failed: ${response.statusText}`);
++    }
++
++    const data = await response.json();
++    return {
++      id: data.id,
++      content: data.choices?.[0]?.message?.content || '',
++      model: data.model,
++      usage: data.usage ? {
++        promptTokens: data.usage.prompt_tokens,
++        completionTokens: data.usage.completion_tokens,
++        totalTokens: data.usage.total_tokens,
++      } : undefined,
++    };
++  }
++
++  /**
++   * Generate embeddings
++   */
++  async createEmbeddings(texts: string[], model?: string): Promise<number[][]> {
++    const response = await fetch(`${this.config.baseUrl}/v1/embeddings`, {
++      method: 'POST',
++      headers: this.getHeaders(),
++      body: JSON.stringify({
++        model: model || 'embeddings',
++        input: texts,
++      }),
++    });
++
++    if (!response.ok) {
++      throw new Error(`LocalAI embeddings failed: ${response.statusText}`);
++    }
++
++    const data = await response.json();
++    return data.data?.map((d: { embedding: number[] }) => d.embedding) || [];
++  }
++
++  /**
++   * Stream chat completion
++   */
++  async *streamChatCompletion(
++    messages: AIMessage[],
++    options?: Omit<AICompletionOptions, 'stream'>
++  ): AsyncGenerator<string> {
++    const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
++      method: 'POST',
++      headers: this.getHeaders(),
++      body: JSON.stringify({
++        model: options?.model || this.config.defaultModel,
++        messages,
++        temperature: options?.temperature ?? 0.7,
++        max_tokens: options?.maxTokens ?? 2048,
++        top_p: options?.topP ?? 0.9,
++        stream: true,
++      }),
++    });
++
++    if (!response.ok || !response.body) {
++      throw new Error(`LocalAI stream failed: ${response.statusText}`);
++    }
++
++    const reader = response.body.getReader();
++    const decoder = new TextDecoder();
++
++    while (true) {
++      const { done, value } = await reader.read();
++      if (done) break;
++
++      const chunk = decoder.decode(value);
++      const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
++
++      for (const line of lines) {
++        const data = line.slice(6);
++        if (data === '[DONE]') return;
++
++        try {
++          const parsed = JSON.parse(data);
++          const content = parsed.choices?.[0]?.delta?.content;
++          if (content) yield content;
++        } catch {
++          // Skip invalid JSON
++        }
++      }
++    }
++  }
++
++  private getHeaders(): HeadersInit {
++    const headers: HeadersInit = {
++      'Content-Type': 'application/json',
++    };
++    if (this.config.apiKey) {
++      headers['Authorization'] = `Bearer ${this.config.apiKey}`;
++    }
++    return headers;
++  }
++}
++
++/**
++ * AGiXT Integration Class
++ */
++export class AGiXTService {
++  private config: AGiXTConfig;
++
++  constructor(config?: Partial<AGiXTConfig>) {
++    this.config = { ...DEFAULT_AGIXT_CONFIG, ...config };
++  }
++
++  /**
++   * Check if AGiXT service is available
++   */
++  async healthCheck(): Promise<boolean> {
++    try {
++      const response = await fetch(`${this.config.baseUrl}/api/status`, {
++        method: 'GET',
++        headers: this.getHeaders(),
++        signal: AbortSignal.timeout(5000),
++      });
++      return response.ok;
++    } catch {
++      return false;
++    }
++  }
++
++  /**
++   * Get available agents
++   */
++  async getAgents(): Promise<string[]> {
++    try {
++      const response = await fetch(`${this.config.baseUrl}/api/agent`, {
++        method: 'GET',
++        headers: this.getHeaders(),
++      });
++
++      if (!response.ok) {
++        throw new Error(`Failed to fetch agents: ${response.statusText}`);
++      }
++
++      const data = await response.json();
++      return data.agents || [];
++    } catch (error) {
++      console.error('AGiXT: Failed to get agents', error);
++      return [];
++    }
++  }
++
++  /**
++   * Get available chains
++   */
++  async getChains(): Promise<string[]> {
++    try {
++      const response = await fetch(`${this.config.baseUrl}/api/chain`, {
++        method: 'GET',
++        headers: this.getHeaders(),
++      });
++
++      if (!response.ok) {
++        throw new Error(`Failed to fetch chains: ${response.statusText}`);
++      }
++
++      const data = await response.json();
++      return data.chains || [];
++    } catch (error) {
++      console.error('AGiXT: Failed to get chains', error);
++      return [];
++    }
++  }
++
++  /**
++   * Chat with an agent
++   */
++  async chat(
++    message: string,
++    conversationId?: string,
++    agentName?: string
++  ): Promise<AGiXTResponse> {
++    const response = await fetch(
++      `${this.config.baseUrl}/api/agent/${agentName || this.config.agentName}/chat`,
++      {
++        method: 'POST',
++        headers: this.getHeaders(),
++        body: JSON.stringify({
++          user_input: message,
++          conversation_id: conversationId || 'default',
++          injected_memories: 1,
++        }),
++      }
++    );
++
++    if (!response.ok) {
++      throw new Error(`AGiXT chat failed: ${response.statusText}`);
++    }
++
++    const data = await response.json();
++    return {
++      response: data.response || '',
++      conversationId: data.conversation_id,
++      commands: data.commands,
++    };
++  }
++
++  /**
++   * Execute a command
++   */
++  async executeCommand(command: AGiXTCommand): Promise<unknown> {
++    const response = await fetch(
++      `${this.config.baseUrl}/api/agent/${this.config.agentName}/command`,
++      {
++        method: 'POST',
++        headers: this.getHeaders(),
++        body: JSON.stringify({
++          command_name: command.command,
++          command_args: command.args || {},
++          conversation_id: command.conversationId || 'default',
++        }),
++      }
++    );
++
++    if (!response.ok) {
++      throw new Error(`AGiXT command failed: ${response.statusText}`);
++    }
++
++    return response.json();
++  }
++
++  /**
++   * Run a chain
++   */
++  async runChain(
++    chainName: string,
++    userInput: string,
++    agentName?: string,
++    conversationId?: string
++  ): Promise<AGiXTResponse> {
++    const response = await fetch(`${this.config.baseUrl}/api/chain/${chainName}/run`, {
++      method: 'POST',
++      headers: this.getHeaders(),
++      body: JSON.stringify({
++        agent_name: agentName || this.config.agentName,
++        user_input: userInput,
++        conversation_id: conversationId || 'default',
++      }),
++    });
++
++    if (!response.ok) {
++      throw new Error(`AGiXT chain failed: ${response.statusText}`);
++    }
++
++    const data = await response.json();
++    return {
++      response: data.response || '',
++      conversationId: data.conversation_id,
++    };
++  }
++
++  /**
++   * Execute code in sandbox
++   */
++  async executeInSandbox(
++    code: string,
++    language: 'python' | 'node' | 'bash' | 'rust' | 'go' = 'python'
++  ): Promise<{ output: string; exitCode: number }> {
++    if (!this.config.sandboxEnabled) {
++      throw new Error('Sandbox execution is disabled');
++    }
++
++    const response = await fetch(`${this.config.baseUrl}/api/sandbox/execute`, {
++      method: 'POST',
++      headers: this.getHeaders(),
++      body: JSON.stringify({
++        code,
++        language,
++        timeout: 60,
++      }),
++    });
++
++    if (!response.ok) {
++      throw new Error(`AGiXT sandbox execution failed: ${response.statusText}`);
++    }
++
++    const data = await response.json();
++    return {
++      output: data.output || '',
++      exitCode: data.exit_code ?? -1,
++    };
++  }
++
++  /**
++   * Get conversation history
++   */
++  async getConversationHistory(
++    conversationId: string,
++    agentName?: string,
++    limit?: number
++  ): Promise<AIMessage[]> {
++    const response = await fetch(
++      `${this.config.baseUrl}/api/conversation/${agentName || this.config.agentName}/${conversationId}?limit=${limit || 50}`,
++      {
++        method: 'GET',
++        headers: this.getHeaders(),
++      }
++    );
++
++    if (!response.ok) {
++      throw new Error(`AGiXT conversation history failed: ${response.statusText}`);
++    }
++
++    const data = await response.json();
++    return (data.conversation || []).map((msg: { role: string; content: string }) => ({
++      role: msg.role as 'system' | 'user' | 'assistant',
++      content: msg.content,
++    }));
++  }
++
++  private getHeaders(): HeadersInit {
++    const headers: HeadersInit = {
++      'Content-Type': 'application/json',
++    };
++    if (this.config.apiKey) {
++      headers['Authorization'] = `Bearer ${this.config.apiKey}`;
++    }
++    return headers;
++  }
++}
++
++/**
++ * Unified AI Service - Combines LocalAI and AGiXT
++ */
++export class AIService {
++  public localai: LocalAIService;
++  public agixt: AGiXTService;
++
++  constructor(localaiConfig?: Partial<LocalAIConfig>, agixtConfig?: Partial<AGiXTConfig>) {
++    this.localai = new LocalAIService(localaiConfig);
++    this.agixt = new AGiXTService(agixtConfig);
++  }
++
++  /**
++   * Check all AI services health
++   */
++  async healthCheck(): Promise<{ localai: boolean; agixt: boolean }> {
++    const [localaiHealth, agixtHealth] = await Promise.all([
++      this.localai.healthCheck(),
++      this.agixt.healthCheck(),
++    ]);
++    return { localai: localaiHealth, agixt: agixtHealth };
++  }
++
++  /**
++   * Smart completion - uses LocalAI for simple completions, AGiXT for complex tasks
++   */
++  async smartCompletion(
++    messages: AIMessage[],
++    options?: AICompletionOptions & { useAgent?: boolean; agentName?: string }
++  ): Promise<string> {
++    // If agent mode is requested or message seems complex, use AGiXT
++    if (options?.useAgent) {
++      const lastUserMessage = messages.filter(m => m.role === 'user').pop();
++      if (lastUserMessage) {
++        const response = await this.agixt.chat(lastUserMessage.content, undefined, options.agentName);
++        return response.response;
++      }
++    }
++
++    // Otherwise use LocalAI
++    const response = await this.localai.chatCompletion(messages, options);
++    return response.content;
++  }
++}
++
++// Singleton instances
++export const localAI = new LocalAIService();
++export const agixt = new AGiXTService();
++export const aiService = new AIService();
++
++// React hook for AI services
++import { useState, useEffect, useCallback } from 'react';
++
++export interface AIServiceStatus {
++  localai: boolean;
++  agixt: boolean;
++  checking: boolean;
++}
++
++export function useAIServices() {
++  const [status, setStatus] = useState<AIServiceStatus>({
++    localai: false,
++    agixt: false,
++    checking: true,
++  });
++
++  const checkHealth = useCallback(async () => {
++    setStatus(prev => ({ ...prev, checking: true }));
++    const health = await aiService.healthCheck();
++    setStatus({ ...health, checking: false });
++    return health;
++  }, []);
++
++  useEffect(() => {
++    checkHealth();
++    // Recheck every 30 seconds
++    const interval = setInterval(checkHealth, 30000);
++    return () => clearInterval(interval);
++  }, [checkHealth]);
++
++  return {
++    status,
++    checkHealth,
++    localai: aiService.localai,
++    agixt: aiService.agixt,
++    smartCompletion: aiService.smartCompletion.bind(aiService),
++  };
++}
+diff --git a/frontend/minimalist_sidebar_react/contexts/sidebar-context.tsx b/frontend/minimalist_sidebar_react/contexts/sidebar-context.tsx
+index b0e7eab..0ceb797 100644
+--- a/frontend/minimalist_sidebar_react/contexts/sidebar-context.tsx
++++ b/frontend/minimalist_sidebar_react/contexts/sidebar-context.tsx
+@@ -35,6 +35,15 @@ export interface SidebarContextProps {
+   toggleSidebar: () => void;
+   expandedItems: Set<string>;
+   toggleExpanded: (itemKey: string) => void;
++  // Double minimize support - synced with web
++  iconCollapsed: boolean;
++  setIconCollapsed: (collapsed: boolean) => void;
++  // Detail sidebar collapsed state
++  detailCollapsed: boolean;
++  setDetailCollapsed: (collapsed: boolean) => void;
++  // Double minimize toggle
++  toggleDoubleMinimize: () => void;
++  isFullyCollapsed: boolean;
+   // Notifications panel
+   showNotifications: boolean;
+   setShowNotifications: (show: boolean) => void;
+@@ -44,12 +53,14 @@ export interface SidebarContextProps {
+   // Quick switcher
+   showQuickSwitcher: boolean;
+   setShowQuickSwitcher: (show: boolean) => void;
++  // Web browser panel - synced with web
++  showWebBrowser: boolean;
++  setShowWebBrowser: (show: boolean) => void;
++  browserUrl: string;
++  setBrowserUrl: (url: string) => void;
+   // Navigation callback
+   onNavigate?: (route: string) => void;
+   setOnNavigate: (callback: ((route: string) => void) | undefined) => void;
+-  // Detail sidebar collapsed state
+-  detailCollapsed: boolean;
+-  setDetailCollapsed: (collapsed: boolean) => void;
+   // Persistence loaded flag
+   isPersistenceLoaded: boolean;
+ }
+@@ -74,9 +85,12 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
+   const [activeSection, setActiveSectionState] = useState('ai');
+   const [activeWorkspace, setActiveWorkspaceState] = useState<WorkspaceType>('all');
+   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
++  const [iconCollapsed, setIconCollapsedState] = useState(false);
+   const [showNotifications, setShowNotifications] = useState(false);
+   const [showFavorites, setShowFavorites] = useState(false);
+   const [showQuickSwitcher, setShowQuickSwitcher] = useState(false);
++  const [showWebBrowser, setShowWebBrowserState] = useState(false);
++  const [browserUrl, setBrowserUrlState] = useState('https://google.com');
+   const [onNavigate, setOnNavigate] = useState<((route: string) => void) | undefined>(undefined);
+   const [detailCollapsed, setDetailCollapsedState] = useState(false);
+   const [isPersistenceLoaded, setIsPersistenceLoaded] = useState(false);
+@@ -90,6 +104,8 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
+         setActiveWorkspaceState(state.activeWorkspace);
+         setExpandedItems(new Set(state.expandedItems));
+         setDetailCollapsedState(state.detailCollapsed);
++        setIconCollapsedState(state.iconCollapsed || false);
++        setBrowserUrlState(state.browserUrl || 'https://google.com');
+         setIsPersistenceLoaded(true);
+       } catch (error) {
+         console.error('Failed to load persisted sidebar state:', error);
+@@ -99,6 +115,45 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
+     loadPersistedState();
+   }, []);
+ 
++  // Icon collapsed setter with persistence
++  const setIconCollapsed = useCallback((collapsed: boolean) => {
++    setIconCollapsedState(collapsed);
++    sidebarPersistence.saveIconCollapsed(collapsed);
++  }, []);
++
++  // Double minimize toggle
++  const toggleDoubleMinimize = useCallback(() => {
++    const isCurrentlyFullyCollapsed = iconCollapsed && detailCollapsed;
++    if (isCurrentlyFullyCollapsed) {
++      setIconCollapsedState(false);
++      setDetailCollapsedState(false);
++      sidebarPersistence.saveIconCollapsed(false);
++      sidebarPersistence.saveDetailCollapsed(false);
++    } else {
++      setIconCollapsedState(true);
++      setDetailCollapsedState(true);
++      sidebarPersistence.saveIconCollapsed(true);
++      sidebarPersistence.saveDetailCollapsed(true);
++    }
++  }, [iconCollapsed, detailCollapsed]);
++
++  const isFullyCollapsed = iconCollapsed && detailCollapsed;
++
++  // Web browser controls
++  const setShowWebBrowser = useCallback((show: boolean) => {
++    setShowWebBrowserState(show);
++    if (show) {
++      setShowNotifications(false);
++      setShowFavorites(false);
++      setShowQuickSwitcher(false);
++    }
++  }, []);
++
++  const setBrowserUrl = useCallback((url: string) => {
++    setBrowserUrlState(url);
++    sidebarPersistence.saveBrowserUrl(url);
++  }, []);
++
+   const toggleSidebar = useCallback(() => {
+     setIsOpen(prev => !prev);
+   }, []);
+@@ -154,16 +209,24 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
+     toggleSidebar,
+     expandedItems,
+     toggleExpanded,
++    iconCollapsed,
++    setIconCollapsed,
++    detailCollapsed,
++    setDetailCollapsed,
++    toggleDoubleMinimize,
++    isFullyCollapsed,
+     showNotifications,
+     setShowNotifications,
+     showFavorites,
+     setShowFavorites,
+     showQuickSwitcher,
+     setShowQuickSwitcher,
++    showWebBrowser,
++    setShowWebBrowser,
++    browserUrl,
++    setBrowserUrl,
+     onNavigate,
+     setOnNavigate,
+-    detailCollapsed,
+-    setDetailCollapsed,
+     isPersistenceLoaded,
+   }), [
+     state, 
+@@ -175,12 +238,20 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
+     toggleSidebar, 
+     expandedItems, 
+     toggleExpanded,
++    iconCollapsed,
++    setIconCollapsed,
++    detailCollapsed,
++    setDetailCollapsed,
++    toggleDoubleMinimize,
++    isFullyCollapsed,
+     showNotifications,
+     showFavorites,
+     showQuickSwitcher,
++    showWebBrowser,
++    setShowWebBrowser,
++    browserUrl,
++    setBrowserUrl,
+     onNavigate,
+-    detailCollapsed,
+-    setDetailCollapsed,
+     isPersistenceLoaded,
+   ]);
+ 
+diff --git a/frontend/minimalist_sidebar_react/services/sidebar-persistence.ts b/frontend/minimalist_sidebar_react/services/sidebar-persistence.ts
+index f6d6e71..c6ee8e7 100644
+--- a/frontend/minimalist_sidebar_react/services/sidebar-persistence.ts
++++ b/frontend/minimalist_sidebar_react/services/sidebar-persistence.ts
+@@ -11,7 +11,9 @@ const STORAGE_KEYS = {
+   EXPANDED_ITEMS: '@ripple/expanded_items',
+   ACTIVE_SECTION: '@ripple/active_section',
+   ACTIVE_WORKSPACE: '@ripple/active_workspace',
++  ICON_COLLAPSED: '@ripple/icon_collapsed',
+   DETAIL_COLLAPSED: '@ripple/detail_collapsed',
++  BROWSER_URL: '@ripple/browser_url',
+ };
+ 
+ export interface SidebarPersistenceState {
+@@ -19,7 +21,9 @@ export interface SidebarPersistenceState {
+   activeSection: string;
+   activeWorkspace: WorkspaceType;
+   expandedItems: string[];
++  iconCollapsed: boolean;
+   detailCollapsed: boolean;
++  browserUrl: string;
+ }
+ 
+ const DEFAULT_STATE: SidebarPersistenceState = {
+@@ -27,7 +31,9 @@ const DEFAULT_STATE: SidebarPersistenceState = {
+   activeSection: 'ai',
+   activeWorkspace: 'all',
+   expandedItems: [],
++  iconCollapsed: false,
+   detailCollapsed: false,
++  browserUrl: 'https://google.com',
+ };
+ 
+ class SidebarPersistenceService {
+@@ -157,6 +163,35 @@ class SidebarPersistenceService {
+     return 'all';
+   }
+ 
++  /**
++   * Save icon rail collapsed state
++   */
++  async saveIconCollapsed(collapsed: boolean): Promise<void> {
++    try {
++      await AsyncStorage.setItem(STORAGE_KEYS.ICON_COLLAPSED, JSON.stringify(collapsed));
++      if (this.cache) {
++        this.cache.iconCollapsed = collapsed;
++      }
++    } catch (error) {
++      console.error('Failed to save icon collapsed state:', error);
++    }
++  }
++
++  /**
++   * Load icon rail collapsed state
++   */
++  async loadIconCollapsed(): Promise<boolean> {
++    try {
++      const stored = await AsyncStorage.getItem(STORAGE_KEYS.ICON_COLLAPSED);
++      if (stored) {
++        return JSON.parse(stored);
++      }
++    } catch (error) {
++      console.error('Failed to load icon collapsed state:', error);
++    }
++    return false;
++  }
++
+   /**
+    * Save detail sidebar collapsed state
+    */
+@@ -186,6 +221,35 @@ class SidebarPersistenceService {
+     return false;
+   }
+ 
++  /**
++   * Save browser URL
++   */
++  async saveBrowserUrl(url: string): Promise<void> {
++    try {
++      await AsyncStorage.setItem(STORAGE_KEYS.BROWSER_URL, url);
++      if (this.cache) {
++        this.cache.browserUrl = url;
++      }
++    } catch (error) {
++      console.error('Failed to save browser URL:', error);
++    }
++  }
++
++  /**
++   * Load browser URL
++   */
++  async loadBrowserUrl(): Promise<string> {
++    try {
++      const stored = await AsyncStorage.getItem(STORAGE_KEYS.BROWSER_URL);
++      if (stored) {
++        return stored;
++      }
++    } catch (error) {
++      console.error('Failed to load browser URL:', error);
++    }
++    return 'https://google.com';
++  }
++
+   /**
+    * Clear all sidebar state
+    */
+diff --git a/frontend/server/routers.ts b/frontend/server/routers.ts
+index 6b272e5..9008926 100644
+--- a/frontend/server/routers.ts
++++ b/frontend/server/routers.ts
+@@ -22,6 +22,162 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+ export const appRouter = router({
+   system: systemRouter,
+ 
++  // ==================== AI ROUTER ====================
++  ai: router({
++    // Health check for AI services
++    health: publicProcedure.query(async () => {
++      const checkService = async (url: string, timeout = 5000): Promise<boolean> => {
++        try {
++          const controller = new AbortController();
++          const timeoutId = setTimeout(() => controller.abort(), timeout);
++          const response = await fetch(url, { signal: controller.signal });
++          clearTimeout(timeoutId);
++          return response.ok;
++        } catch {
++          return false;
++        }
++      };
++
++      const [localai, agixt] = await Promise.all([
++        checkService('http://localhost:8080/v1/models'),
++        checkService('http://localhost:7437/api/status'),
++      ]);
++
++      return { localai, agixt };
++    }),
++
++    // Get available LocalAI models
++    getModels: protectedProcedure.query(async () => {
++      try {
++        const response = await fetch('http://localhost:8080/v1/models');
++        if (!response.ok) return [];
++        const data = await response.json();
++        return data.data?.map((m: { id: string }) => m.id) || [];
++      } catch {
++        return [];
++      }
++    }),
++
++    // Get available AGiXT agents
++    getAgents: protectedProcedure.query(async () => {
++      try {
++        const response = await fetch('http://localhost:7437/api/agent');
++        if (!response.ok) return [];
++        const data = await response.json();
++        return data.agents || [];
++      } catch {
++        return [];
++      }
++    }),
++
++    // LocalAI chat completion
++    localaiChat: protectedProcedure
++      .input(z.object({
++        messages: z.array(z.object({
++          role: z.enum(['system', 'user', 'assistant']),
++          content: z.string(),
++        })),
++        model: z.string().optional(),
++        temperature: z.number().min(0).max(2).optional(),
++        maxTokens: z.number().min(1).max(8192).optional(),
++      }))
++      .mutation(async ({ input }) => {
++        const response = await fetch('http://localhost:8080/v1/chat/completions', {
++          method: 'POST',
++          headers: { 'Content-Type': 'application/json' },
++          body: JSON.stringify({
++            model: input.model || 'llama-3.2-3b-instruct',
++            messages: input.messages,
++            temperature: input.temperature ?? 0.7,
++            max_tokens: input.maxTokens ?? 2048,
++          }),
++        });
++
++        if (!response.ok) {
++          throw new TRPCError({ 
++            code: 'INTERNAL_SERVER_ERROR', 
++            message: 'LocalAI request failed' 
++          });
++        }
++
++        const data = await response.json();
++        return {
++          content: data.choices?.[0]?.message?.content || '',
++          model: data.model,
++          usage: data.usage,
++        };
++      }),
++
++    // AGiXT chat
++    agixtChat: protectedProcedure
++      .input(z.object({
++        message: z.string().min(1),
++        agentName: z.string().optional(),
++        conversationId: z.string().optional(),
++      }))
++      .mutation(async ({ input }) => {
++        const agentName = input.agentName || 'ripple-assistant';
++        const response = await fetch(
++          `http://localhost:7437/api/agent/${agentName}/chat`,
++          {
++            method: 'POST',
++            headers: { 'Content-Type': 'application/json' },
++            body: JSON.stringify({
++              user_input: input.message,
++              conversation_id: input.conversationId || 'default',
++              injected_memories: 1,
++            }),
++          }
++        );
++
++        if (!response.ok) {
++          throw new TRPCError({ 
++            code: 'INTERNAL_SERVER_ERROR', 
++            message: 'AGiXT request failed' 
++          });
++        }
++
++        const data = await response.json();
++        return {
++          response: data.response || '',
++          conversationId: data.conversation_id,
++          commands: data.commands,
++        };
++      }),
++
++    // AGiXT sandbox execution
++    executeSandbox: protectedProcedure
++      .input(z.object({
++        code: z.string().min(1),
++        language: z.enum(['python', 'node', 'bash', 'rust', 'go']),
++        timeout: z.number().min(1).max(300).optional(),
++      }))
++      .mutation(async ({ input }) => {
++        const response = await fetch('http://localhost:7437/api/sandbox/execute', {
++          method: 'POST',
++          headers: { 'Content-Type': 'application/json' },
++          body: JSON.stringify({
++            code: input.code,
++            language: input.language,
++            timeout: input.timeout || 60,
++          }),
++        });
++
++        if (!response.ok) {
++          throw new TRPCError({ 
++            code: 'INTERNAL_SERVER_ERROR', 
++            message: 'Sandbox execution failed' 
++          });
++        }
++
++        const data = await response.json();
++        return {
++          output: data.output || '',
++          exitCode: data.exit_code ?? -1,
++        };
++      }),
++  }),
++
+   // ==================== AUTH ROUTER ====================
+   auth: router({
+     me: publicProcedure.query((opts) => opts.ctx.user),
+-- 
+2.39.5
+
