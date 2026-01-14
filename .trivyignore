@@ -1,6 +1,6 @@
 # Trivy ignore list (misconfig IDs)
 #
-# This repo runs `trivy fs --security-checks vuln,config .` in `make security`.
+# This repo runs `trivy fs --scanners vuln,misconfig .` in `make security`.
 # Some findings are policy-dependent or represent accepted risks in the *base*
 # manifests (e.g., node-level monitoring DaemonSets requiring host access).
 #

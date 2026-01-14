@@ -2,7 +2,7 @@
 
 This repository runs a security gate (`make security`) that includes a Trivy **config** scan:
 
-- `trivy fs --security-checks vuln,config .`
+- `trivy fs --scanners vuln,misconfig .`
 
 The config scan evaluates Kubernetes manifests against a broad ruleset. Some rules are:
 
@@ -10,9 +10,24 @@ The config scan evaluates Kubernetes manifests against a broad ruleset. Some rul
 2) incompatible with certain workloads by design (e.g., node-level monitoring DaemonSets), or
 3) not applied in the **base** manifests to avoid breaking runtime behavior.
 
-Those items are tracked in `.trivyignore` using Trivy's misconfiguration IDs.
+Those items are tracked in `.trivyignore.yaml` (preferred, supports path-scoping) or
+`.trivyignore` (legacy) using Trivy's misconfiguration IDs.
 
 ### What we currently ignore (and why)
+
+#### Terraform runner egress (self-hosted CI)
+
+- `AVD-AWS-0104` (scoped ignore for `infrastructure/terraform/main.tf`)
+
+Trivy flags unrestricted egress as a critical finding. For CI runners, outbound
+internet access is commonly required (GitHub APIs/artifacts and AWS endpoints).
+
+This repo treats unrestricted egress as an **explicitly documented exception**
+for the runner example, with the expectation that production deployments will:
+
+- restrict egress via proxy/firewall, and/or
+- use VPC endpoints where feasible, and
+- avoid giving the runner direct internet access in sensitive environments.
 
 #### Private registry / trusted registry policy
 

@@ -67,6 +67,8 @@ spec:
                 secretKeyRef:
                   name: vault-credentials
                   key: VAULT_DEV_ROOT_TOKEN_ID
+            - name: VAULT_DISABLE_MLOCK
+              value: "true"
             - name: VAULT_DEV_LISTEN_ADDRESS
               value: "0.0.0.0:8200"
             - name: VAULT_ADDR
@@ -88,8 +90,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-              add:
-                - IPC_LOCK
             runAsNonRoot: true
           livenessProbe:
             exec:

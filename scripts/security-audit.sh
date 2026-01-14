@@ -11,11 +11,22 @@ SECURITY_AUDIT_REQUIRE_TRIVY="${SECURITY_AUDIT_REQUIRE_TRIVY:-0}"
 SECURITY_AUDIT_REQUIRE_SECRETS="${SECURITY_AUDIT_REQUIRE_SECRETS:-0}"
 if command -v trivy &> /dev/null; then
     ignorefile_args=()
-    if [ -f ".trivyignore" ]; then
+    if [ -f ".trivyignore.yaml" ]; then
+        ignorefile_args=(--ignorefile .trivyignore.yaml)
+    elif [ -f ".trivyignore" ]; then
         ignorefile_args=(--ignorefile .trivyignore)
     fi
 
-    trivy fs --security-checks vuln,config "${ignorefile_args[@]}" .
+    # Trivy attempts to render Helm charts. If chart dependencies are not
+    # vendored locally, this produces noisy errors and may skip chart scanning.
+    # Keep the default audit offline/deterministic by skipping the chart unless
+    # the dependency directory exists.
+    trivy_skip_args=()
+    if [ -d "charts/flexstack" ] && [ ! -d "charts/flexstack/charts" ]; then
+        trivy_skip_args=(--skip-dirs charts/flexstack)
+    fi
+
+    trivy fs --quiet --scanners vuln,misconfig "${ignorefile_args[@]}" "${trivy_skip_args[@]}" .
 else
     if [ "$SECURITY_AUDIT_REQUIRE_TRIVY" = "1" ]; then
       echo "Error: trivy not found. Install trivy or set SECURITY_AUDIT_REQUIRE_TRIVY=0 to skip."

@@ -65,6 +65,42 @@ variable "runner_labels" {
   default     = ["self-hosted", "Windows", "WSL2", "nix"]
 }
 
+variable "admin_cidr_blocks" {
+  description = <<-EOT
+    CIDR blocks allowed to access the instance for administrative purposes.
+
+    Notes:
+    - For production, prefer SSM Session Manager (no inbound ports required).
+    - If you enable inbound access, restrict this to your corporate VPN egress.
+  EOT
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_rdp" {
+  description = "Enable inbound RDP (3389) to the runner instance (NOT recommended unless restricted)."
+  type        = bool
+  default     = false
+}
+
+variable "enable_winrm" {
+  description = "Enable inbound WinRM HTTPS (5986) to the runner instance (NOT recommended unless restricted)."
+  type        = bool
+  default     = false
+}
+
+variable "egress_cidr_blocks" {
+  description = <<-EOT
+    CIDR blocks the runner is allowed to reach (egress).
+
+    Default is unrestricted egress, which is common for CI runners so they can
+    reach GitHub and AWS endpoints. For hardened environments, restrict egress
+    and route traffic via a proxy/VPC endpoints.
+  EOT
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
 # Provider
 provider "aws" {
   region = var.aws_region
@@ -111,30 +147,38 @@ resource "aws_security_group" "runner" {
   description = "Security group for GitHub Actions runner"
   vpc_id      = data.aws_vpc.default.id
 
-  # RDP access (optional, for debugging)
-  ingress {
-    description = "RDP"
-    from_port   = 3389
-    to_port     = 3389
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Restrict in production!
+  # Inbound admin access is disabled by default.
+  # Prefer SSM Session Manager instead of opening ports.
+  dynamic "ingress" {
+    for_each = var.enable_rdp && length(var.admin_cidr_blocks) > 0 ? [1] : []
+    content {
+      description = "RDP (restricted)"
+      from_port   = 3389
+      to_port     = 3389
+      protocol    = "tcp"
+      cidr_blocks = var.admin_cidr_blocks
+    }
   }
 
-  # WinRM for management
-  ingress {
-    description = "WinRM HTTPS"
-    from_port   = 5986
-    to_port     = 5986
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Restrict in production!
+  dynamic "ingress" {
+    for_each = var.enable_winrm && length(var.admin_cidr_blocks) > 0 ? [1] : []
+    content {
+      description = "WinRM HTTPS (restricted)"
+      from_port   = 5986
+      to_port     = 5986
+      protocol    = "tcp"
+      cidr_blocks = var.admin_cidr_blocks
+    }
   }
 
-  # Allow all outbound
+  # Allow all outbound (commonly required for CI runners).
+  # See docs/SECURITY_SCAN_EXCEPTIONS.md for the rationale and hardening guidance.
   egress {
+    description = "Runner egress"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.egress_cidr_blocks
   }
 
   tags = {
@@ -229,6 +273,13 @@ resource "aws_instance" "runner" {
 
   # Enable detailed monitoring
   monitoring = true
+
+  # Require IMDSv2 session tokens for metadata access
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
 
   # User data for setup
   user_data = base64encode(local.user_data)

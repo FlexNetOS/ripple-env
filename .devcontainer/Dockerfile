@@ -4,7 +4,7 @@
 # Build: docker build -t ripple-env-devcontainer .devcontainer/
 # Run:   docker run -it ripple-env-devcontainer
 #
-FROM nixos/nix:latest AS base
+FROM nixos/nix:2.33.0 AS base
 
 # Configure Nix with flakes support
 RUN mkdir -p /etc/nix && \
@@ -187,6 +187,11 @@ ENV SSL_CERT_FILE="/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt"
 ENV NIX_SSL_CERT_FILE="/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt"
 
 WORKDIR /workspaces
+
+# Basic healthcheck so container runtimes can detect broken images.
+# (Trivy recommends having an explicit HEALTHCHECK.)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD ["/nix/var/nix/profiles/default/bin/bash", "-lc", "nix --version >/dev/null"]
 
 # Default command
 CMD ["/nix/var/nix/profiles/default/bin/zsh"]

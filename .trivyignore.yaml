@@ -1,0 +1,73 @@
+# Trivy ignore list (YAML)
+#
+# This file allows path-scoped suppression (see Trivy docs).
+# It is used by scripts/security-audit.sh when present.
+#
+# See: docs/SECURITY_SCAN_EXCEPTIONS.md
+
+misconfigurations:
+  # Policy-specific UID/GID constraints (many upstream images run as < 10000)
+  - id: AVD-KSV-0020
+    statement: "Policy-specific UID floor; upstream images often use smaller non-root UIDs."
+  - id: AVD-KSV-0021
+    statement: "Policy-specific GID floor; upstream images often use smaller non-root GIDs."
+
+  # Private registry / trusted registry policy
+  - id: AVD-KSV-0032
+    statement: "Base manifests reference upstream public images for ease of setup; mirror/pin in prod."
+  - id: AVD-KSV-0033
+    statement: "Base manifests reference upstream public images for ease of setup; mirror/pin in prod."
+  - id: AVD-KSV-0034
+    statement: "Base manifests reference upstream public images for ease of setup; mirror/pin in prod."
+  - id: AVD-KSV-0035
+    statement: "Base manifests reference upstream public images for ease of setup; mirror/pin in prod."
+  - id: AVD-KSV-0125
+    statement: "Base manifests reference upstream public images for ease of setup; mirror/pin in prod."
+
+  # Node-level monitoring (Netdata) requires host access by design
+  - id: AVD-KSV-0023
+    statement: "Netdata DaemonSet requires host access in the base deployment."
+  - id: AVD-KSV-0024
+    statement: "Netdata DaemonSet requires host access in the base deployment."
+  - id: AVD-KSV-0121
+    statement: "Netdata DaemonSet uses host access by design."
+
+  # Netdata (privileged host-monitoring DaemonSet) accepted risks
+  - id: AVD-KSV-0005
+    statement: "Netdata DaemonSet is privileged/host-level by design in base manifests."
+  - id: AVD-KSV-0006
+    statement: "Netdata DaemonSet is privileged/host-level by design in base manifests."
+  - id: AVD-KSV-0009
+    statement: "Netdata DaemonSet is privileged/host-level by design in base manifests."
+  - id: AVD-KSV-0010
+    statement: "Netdata DaemonSet is privileged/host-level by design in base manifests."
+  - id: AVD-KSV-0012
+    statement: "Netdata DaemonSet is privileged/host-level by design in base manifests."
+  - id: AVD-KSV-0017
+    statement: "Netdata DaemonSet is privileged/host-level by design in base manifests."
+  - id: AVD-KSV-0022
+    statement: "Netdata DaemonSet is privileged/host-level by design in base manifests."
+
+  # RBAC rules that include node proxy access (required in some clusters/tooling)
+  - id: AVD-KSV-0047
+    statement: "Some observability components require node proxy access in certain clusters."
+
+  # Controller RBAC warnings (Argo Rollouts requires patching Services/Ingresses)
+  - id: AVD-KSV-0048
+    statement: "Controller RBAC can look broad to scanners; expected for Argo Rollouts operation."
+  - id: AVD-KSV-0056
+    statement: "Controller RBAC can look broad to scanners; expected for Argo Rollouts operation."
+
+  # Placeholder tokens in ConfigMaps
+  - id: AVD-KSV-01010
+    statement: "Placeholder token fields in ConfigMaps; replace with Secret in production."
+
+  # Some stateful apps are not read-only-rootfs hardened in base manifests
+  - id: AVD-KSV-0014
+    statement: "readOnlyRootFilesystem not enabled everywhere in base manifests to avoid breaking runtime."
+
+  # Terraform runner egress (self-hosted CI runners commonly need outbound internet)
+  - id: AVD-AWS-0104
+    paths:
+      - "infrastructure/terraform/main.tf"
+    statement: "Runner example defaults to unrestricted egress for GitHub/AWS access; restrict egress in production."
