@@ -229,6 +229,8 @@ docker/data/localai/models/**/*.gguf.partial
 
 # Copilot/agent workspace artifacts
 tmpclaude-*
+*claude-*-cwd
+cUsers*Tempclaude-*-cwd
 .DS_Store
 Thumbs.db
 
