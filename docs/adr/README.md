@@ -1,6 +1,7 @@
 # Architecture Decision Records
 
 This directory contains Architecture Decision Records (ADRs) documenting significant technical decisions for the ripple-env project.
+This project adheres to [Architecture Decision Records](https://github.com/joelparkerhenderson/architecture-decision-record) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## ADR Index
 
