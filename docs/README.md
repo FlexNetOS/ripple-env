@@ -24,7 +24,10 @@ Welcome to the ROS2 Humble Development Environment documentation. This index pro
 | [ENV_VAR_REGISTRY.md](ENV_VAR_REGISTRY.md) | Environment variable reference | Complete |
 | [PORTS.md](PORTS.md) | Port mappings registry | Complete |
 | [RUNBOOKS.md](RUNBOOKS.md) | Operational procedures and cookbooks | Complete |
-| [UNKNOWN_REPORT.md](UNKNOWN_REPORT.md) | Documentation gaps and unknowns | Complete |
+| [UNKNOWN_REPORT.md](UNKNOWN_REPORT.md) | Documentation gaps and unknowns | Phase 7 & 8 Complete |
+| [QUALITY.md](QUALITY.md) | Documentation quality standards | Phase 8 Complete |
+| [COMPATIBILITY_MATRIX.md](COMPATIBILITY_MATRIX.md) | Version compatibility reference | Phase 8 Complete |
+| [PRODUCTION_SCALE.md](PRODUCTION_SCALE.md) | Production resource requirements | Phase 8 Complete |
 | [scripts/INDEX.md](scripts/INDEX.md) | Script catalog and contracts | Complete |
 | [modules/bootstrap.md](modules/bootstrap.md) | Golden path documentation | Complete |
 | [graphs/bootstrap_flow.mmd](graphs/bootstrap_flow.mmd) | Bootstrap flow diagram | Complete |
@@ -98,9 +101,19 @@ New to the project? Start here:
 
 ### Cookbooks
 
+Task-oriented operational recipes (Phase 7 Complete):
+
 | Document | Description |
 |----------|-------------|
-| [cookbooks/INDEX.md](cookbooks/INDEX.md) | Task-oriented recipes |
+| [cookbooks/INDEX.md](cookbooks/INDEX.md) | Cookbook index - all recipes |
+| [cookbooks/SECRET_ROTATION.md](cookbooks/SECRET_ROTATION.md) | Monthly credential rotation and emergency procedures |
+| [cookbooks/DEPENDENCY_UPDATES.md](cookbooks/DEPENDENCY_UPDATES.md) | Weekly/monthly Nix, Pixi, PyTorch updates |
+| [cookbooks/PROVIDER_ONBOARDING.md](cookbooks/PROVIDER_ONBOARDING.md) | Step-by-step new service integration |
+| [cookbooks/VERSION_PINNING_POLICY.md](cookbooks/VERSION_PINNING_POLICY.md) | When to pin exact versions vs ranges |
+| [cookbooks/EMERGENCY_PROCEDURES.md](cookbooks/EMERGENCY_PROCEDURES.md) | Incident response for outages and failures |
+| [cookbooks/BACKUP_RESTORE.md](cookbooks/BACKUP_RESTORE.md) | Disaster recovery and backup procedures |
+| [cookbooks/PERFORMANCE_TUNING.md](cookbooks/PERFORMANCE_TUNING.md) | WSL, Nix, Docker optimization |
+| [cookbooks/MAJOR_VERSION_UPGRADE.md](cookbooks/MAJOR_VERSION_UPGRADE.md) | Python, ROS2, Nix major upgrades |
 | [cookbooks/LOCALAI-MODELS-CACHE.md](cookbooks/LOCALAI-MODELS-CACHE.md) | Fetch + cache LocalAI models (Git LFS) |
 
 ### Distributed Systems
