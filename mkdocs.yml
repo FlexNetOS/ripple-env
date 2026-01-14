@@ -138,7 +138,8 @@ extra:
   generator: false
   analytics:
     provider: google
-    property: !ENV GOOGLE_ANALYTICS_KEY
+    # Make docs builds resilient when analytics is unset (e.g., local builds).
+    property: !ENV [GOOGLE_ANALYTICS_KEY, ""]
   version:
     provider: mike
     default: latest
@@ -212,6 +213,11 @@ nav:
     - AI Resources: reference/ai-resources.md
     - Channel Strategy: reference/channel-strategy.md
     - Dependency Conflicts: reference/conflicts.md
+
+  - Audits:
+    - audits/index.md
+    - Immutable Evidence: audits/immutable/index.md
+    - Consolidation Plan (2026-01-14): audits/CONSOLIDATION_PLAN_2026-01-14.md
 
   - Contributing:
     - contributing/index.md

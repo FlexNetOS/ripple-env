@@ -36,7 +36,15 @@ def repo_root() -> Path:
 
 
 def run_git(args: list[str], cwd: Path) -> str:
-    return subprocess.check_output(["git", *args], cwd=str(cwd)).decode("utf-8", errors="replace")
+    p = subprocess.run(
+        ["git", *args],
+        cwd=str(cwd),
+        capture_output=True,
+        text=True,
+    )
+    if p.returncode != 0:
+        raise RuntimeError(p.stderr.strip() or f"git {' '.join(args)} failed")
+    return p.stdout
 
 
 def load_yaml_text(text: str) -> dict:

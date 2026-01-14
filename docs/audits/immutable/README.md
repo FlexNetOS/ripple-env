@@ -26,3 +26,17 @@ Where `<ref>` is `ripple-vX.Y.Z` if tagged, else `sha-<12>`.
 ## Milestone-only updates
 
 Per the consolidation plan, updates here should be committed to `main` only when a milestone occurs (tagging, bundle slot change, snapshot hash change, or canonical rollup rewrite).
+
+## Validation and replay tooling
+
+- Schema:
+  - `docs/audits/immutable/index.schema.json`
+
+- Validation:
+  - `python scripts/validate-immutable-index.py --strict-paths`
+
+- Changed-only replay selection:
+  - `python scripts/select-immutable-replay.py`
+
+- CI workflow skeleton:
+  - `.github/workflows/snapshot-replay.yml`
