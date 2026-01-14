@@ -1,0 +1,72 @@
+%% Environment Layering Graph
+%% Shows configuration precedence and environment overlays
+%% Evidence: flake.nix, pixi.toml, .envrc, scripts/env-vars.sh
+
+graph TB
+    subgraph "Configuration Precedence (Highest to Lowest)"
+        direction TB
+        CLI[Command Line Args<br/>--override-input, --flag]
+        ENVVAR[Environment Variables<br/>OPENAI_API_KEY, etc.]
+        ENVLOCAL[.env.local<br/>Local overrides - gitignored]
+        ENVFILE[.env<br/>Committed defaults]
+        DIRENV[.envrc<br/>direnv auto-loading]
+        NIXSHELL[Nix Shell Variables<br/>From devShell]
+        SYSENV[System Environment<br/>OS defaults]
+    end
+
+    CLI --> ENVVAR
+    ENVVAR --> ENVLOCAL
+    ENVLOCAL --> ENVFILE
+    ENVFILE --> DIRENV
+    DIRENV --> NIXSHELL
+    NIXSHELL --> SYSENV
+
+    subgraph "Nix Channel Strategy"
+        UNSTABLE[nixos-unstable<br/>Development]
+        STABLE[nixos-24.11<br/>Production]
+
+        UNSTABLE --> DEVSHELL[Dev Shells]
+        STABLE --> IMAGES[NixOS Images]
+    end
+
+    subgraph "Pixi Environment Layers"
+        direction TB
+        PIXIBASE[Base Dependencies<br/>Python, ROS2, build-tools]
+
+        PIXIBASE --> FEAT_CUDA[Feature: cuda<br/>pytorch-cuda, cudatoolkit]
+        PIXIBASE --> FEAT_AIOS[Feature: aios<br/>cerebrum, aios-kernel]
+        PIXIBASE --> FEAT_LLMOPS[Feature: llmops<br/>mlflow, trulens]
+        PIXIBASE --> FEAT_DOCS[Feature: docs<br/>mkdocs-material]
+
+        FEAT_CUDA --> ENV_CUDA[Environment: cuda]
+        FEAT_AIOS --> ENV_AIOS[Environment: aios]
+        FEAT_AIOS --> ENV_AIOS_CUDA[Environment: aios-cuda]
+        FEAT_CUDA --> ENV_AIOS_CUDA
+        FEAT_LLMOPS --> ENV_LLMOPS[Environment: llmops]
+        FEAT_DOCS --> ENV_DOCS[Environment: docs]
+    end
+
+    subgraph "Docker Compose Overlays"
+        DC_BASE[docker-compose.yml<br/>Core services]
+
+        DC_BASE --> DC_OBS[docker-compose.observability.yml]
+        DC_BASE --> DC_MSG[docker-compose.messaging.yml]
+        DC_BASE --> DC_ID[docker-compose.identity.yml]
+        DC_BASE --> DC_AI[docker-compose.inference.yml]
+        DC_BASE --> DC_EDGE[docker-compose.edge.yml]
+    end
+
+    subgraph "Platform Overlays"
+        COMMON[modules/common/<br/>Cross-platform]
+
+        COMMON --> LINUX[modules/linux/<br/>systemd, udev, docker]
+        COMMON --> MACOS[modules/macos/<br/>homebrew, system prefs]
+        COMMON --> WSL[WSL2 Config<br/>.wslconfig, mount opts]
+    end
+
+    style CLI fill:#ff9100,color:#fff
+    style UNSTABLE fill:#7c4dff,color:#fff
+    style STABLE fill:#00bfa5,color:#fff
+    style PIXIBASE fill:#4051b5,color:#fff
+    style DC_BASE fill:#4051b5,color:#fff
+    style COMMON fill:#4051b5,color:#fff

@@ -99,7 +99,7 @@ These external resources provide excellent Nix education:
 ### Path 2: Know ROS2, New to Nix
 
 1. Watch: [Zero to Nix](https://zero-to-nix.com/) (external)
-2. Read: [Flake Modularization](../NIX_FLAKE_MODULARIZATION.md)
+2. Read: [Flake Modularization](../nix/NIX_FLAKE_MODULARIZATION.md)
 3. Watch: Nix and Flakes videos (when available)
 4. Practice: Customizing the flake
 

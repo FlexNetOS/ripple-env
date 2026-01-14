@@ -214,4 +214,4 @@ nix/
 
 - [Getting Started Guide](GETTING_STARTED.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
-- [Flake Modularization Plan](NIX_FLAKE_MODULARIZATION.md)
+- [Flake Modularization Plan](./NIX_FLAKE_MODULARIZATION.md)

@@ -7,4 +7,4 @@ tags:
   - flake
 ---
 
---8<-- "NIX_FLAKE_MODULARIZATION.md"
+--8<-- "nix/NIX_FLAKE_MODULARIZATION.md"

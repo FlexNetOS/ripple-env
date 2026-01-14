@@ -260,7 +260,7 @@ verify-inputs
 
 - [Getting Started](../getting-started/GETTING_STARTED.md) - Initial setup
 - [Troubleshooting](../TROUBLESHOOTING.md) - Common issues
-- [NIX_FLAKE_MODULARIZATION.md](../NIX_FLAKE_MODULARIZATION.md) - Flake structure
+- [NIX_FLAKE_MODULARIZATION.md](../nix/NIX_FLAKE_MODULARIZATION.md) - Flake structure
 
 ## External Resources
 

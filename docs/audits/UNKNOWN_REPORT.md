@@ -772,4 +772,47 @@ None - All phases 1-8 complete
 - **Phase 7**: Created 8 operational cookbooks + index update (100%)
 - **Phase 8**: Created 3 quality documents + unknown report update (100%)
 - **Post-Audit**: Identified 3 new items for future work
+- **2026-01-14 Re-Audit**: Added 8 module docs, 1 graph, updated indexes
 - **Overall**: 29 total items tracked, 26 resolved, 3 documented for future work (90% resolution rate)
+
+---
+
+## 2026-01-14 Re-Audit Additions
+
+### New Module Documentation
+
+| Module | Layer | Path |
+|--------|-------|------|
+| Environments | L2 | `docs/modules/environments.md` |
+| Toolchain | L1 | `docs/modules/toolchain.md` |
+| CI/CD | L3 | `docs/modules/ci_cd.md` |
+| Secrets | L2 | `docs/modules/secrets.md` |
+| Providers | L2 | `docs/modules/providers.md` |
+| Observability | L5 | `docs/modules/observability.md` |
+| Smoke Tests | L5 | `docs/modules/smoke_tests.md` |
+| Modules Index | All | `docs/modules/INDEX.md` |
+
+### New Mermaid Graphs
+
+| Graph | Path |
+|-------|------|
+| Environment Layering | `docs/graphs/env_layering.mmd` |
+
+### Updated Documentation
+
+| File | Changes |
+|------|---------|
+| `docs/README.md` | Added Navigation Hub, Module section, Graphs section |
+| `docs/CATALOG.json` | Added module_documentation, mermaid_graphs, documentation_indexes sections |
+| `docs/CHANGELOG_DOCS.md` | Created for audit trail |
+
+### Acceptance Criteria Met
+
+- [x] Every executable entrypoint has a contract doc (60+ scripts)
+- [x] `docs/modules/bootstrap.md` contains proven golden paths
+- [x] Mermaid graphs exist for bootstrap, CI, script DAG, env layering
+- [x] `docs/CATALOG.json` lists scripts, tasks, flows, environments, artifacts
+- [x] `docs/audits/UNKNOWN_REPORT.md` exists and is actionable
+- [x] `docs/README.md` provides fast navigation to everything
+- [x] All 8 required module docs created
+- [x] Documentation organized in proper sub-directories

@@ -555,7 +555,7 @@ nix build .#images.vm
 
 **Architecture Notes:**
 
-The flake.nix is planned for modularization (see `docs/NIX_FLAKE_MODULARIZATION.md`) to:
+The flake.nix is planned for modularization (see `docs/nix/NIX_FLAKE_MODULARIZATION.md`) to:
 1. Separate concerns: packages, shells, commands, images
 2. Enable independent testing of each module
 3. Support parallel development on different components
