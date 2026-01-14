@@ -69,7 +69,7 @@ networks:
 # 2. Download models: 
 #    curl -L https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf \
 #      -o data/localai/models/mistral-7b-instruct-v0.2.Q4_K_M.gguf
-# 3. Start: docker-compose -f docker-compose.localai.yml up -d
+# 3. Start: docker compose -f docker/docker-compose.localai.yml up -d
 # 4. Test: curl http://localhost:8080/v1/models
 # 5. OpenAI-compatible API: 
 #    curl http://localhost:8080/v1/chat/completions \

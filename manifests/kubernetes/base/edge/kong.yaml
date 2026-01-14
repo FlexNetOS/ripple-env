@@ -56,12 +56,21 @@ spec:
         app.kubernetes.io/component: database
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: postgres:17.2-alpine
           ports:
             - containerPort: 5432
               name: postgres
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           env:
             - name: POSTGRES_USER
               valueFrom:
@@ -83,8 +92,10 @@ spec:
               mountPath: /var/lib/postgresql/data
           resources:
             limits:
+              cpu: "500m"
               memory: 512Mi
             requests:
+              cpu: "100m"
               memory: 256Mi
           livenessProbe:
             exec:
@@ -139,11 +150,20 @@ spec:
   ttlSecondsAfterFinished: 300
   template:
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       restartPolicy: OnFailure
       containers:
         - name: kong-migrations
           image: kong:3.9.0-alpine
           command: ["kong", "migrations", "bootstrap"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           env:
             - name: KONG_DATABASE
               value: postgres
@@ -190,6 +210,9 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8001"
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: kong
           image: kong:3.9.0-alpine
@@ -202,6 +225,12 @@ spec:
               name: admin
             - containerPort: 8002
               name: admin-gui
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           env:
             - name: KONG_DATABASE
               value: postgres

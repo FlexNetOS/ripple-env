@@ -80,7 +80,7 @@ services:
       - "--log-format=json"
       - "/policies"
     volumes:
-      - ./config/opa/policies:/policies:ro
+      - ../config/opa/policies:/policies:ro
     networks:
       - agentic-network
     healthcheck:
@@ -99,7 +99,7 @@ services:
     ports:
       - "8383:80"
     volumes:
-      - ./config/opa/bundles:/usr/share/nginx/html:ro
+      - ../config/opa/bundles:/usr/share/nginx/html:ro
     networks:
       - agentic-network
     healthcheck:

@@ -8,8 +8,8 @@
 
 ```bash
 docker network create agentic-network && \
-docker-compose -f docker-compose.localai.yml up -d && \
-docker-compose -f docker-compose.ui.yml up -d --build open-lovable
+docker compose -f docker/docker-compose.localai.yml up -d && \
+docker compose -f docker/docker-compose.ui.yml up -d --build open-lovable
 ```
 
 **Access**: http://localhost:3211
@@ -23,7 +23,7 @@ docker-compose -f docker-compose.ui.yml up -d --build open-lovable
 docker network create agentic-network
 
 # 2. Start LocalAI (required dependency)
-docker-compose -f docker-compose.localai.yml up -d
+docker compose -f docker/docker-compose.localai.yml up -d
 ```
 
 ---
@@ -32,13 +32,13 @@ docker-compose -f docker-compose.localai.yml up -d
 
 ```bash
 # Build the service
-docker-compose -f docker-compose.ui.yml build open-lovable
+docker compose -f docker/docker-compose.ui.yml build open-lovable
 
 # Start the service
-docker-compose -f docker-compose.ui.yml up -d open-lovable
+docker compose -f docker/docker-compose.ui.yml up -d open-lovable
 
 # Watch logs
-docker-compose -f docker-compose.ui.yml logs -f open-lovable
+docker compose -f docker/docker-compose.ui.yml logs -f open-lovable
 ```
 
 ---
@@ -105,21 +105,21 @@ OPEN_LOVABLE_TELEMETRY_DISABLED=true
 
 ```bash
 # Restart service
-docker-compose -f docker-compose.ui.yml restart open-lovable
+docker compose -f docker/docker-compose.ui.yml restart open-lovable
 
 # Stop service
-docker-compose -f docker-compose.ui.yml stop open-lovable
+docker compose -f docker/docker-compose.ui.yml stop open-lovable
 
 # Remove service (keeps volumes)
-docker-compose -f docker-compose.ui.yml down
+docker compose -f docker/docker-compose.ui.yml down
 
 # Remove everything (including volumes)
-docker-compose -f docker-compose.ui.yml down -v
+docker compose -f docker/docker-compose.ui.yml down -v
 docker volume rm ripple-env_open-lovable-data ripple-env_open-lovable-projects
 
 # Rebuild from scratch
-docker-compose -f docker-compose.ui.yml build --no-cache open-lovable
-docker-compose -f docker-compose.ui.yml up -d open-lovable
+docker compose -f docker/docker-compose.ui.yml build --no-cache open-lovable
+docker compose -f docker/docker-compose.ui.yml up -d open-lovable
 ```
 
 ---
@@ -129,7 +129,7 @@ docker-compose -f docker-compose.ui.yml up -d open-lovable
 ### Service won't start
 ```bash
 # Check logs
-docker-compose -f docker-compose.ui.yml logs open-lovable
+docker compose -f docker/docker-compose.ui.yml logs open-lovable
 
 # Verify LocalAI is running
 docker ps | grep localai
@@ -138,7 +138,7 @@ docker ps | grep localai
 ### Build fails
 ```bash
 # Clear cache and rebuild
-docker-compose -f docker-compose.ui.yml build --no-cache open-lovable
+docker compose -f docker/docker-compose.ui.yml build --no-cache open-lovable
 ```
 
 ### Can't access web UI

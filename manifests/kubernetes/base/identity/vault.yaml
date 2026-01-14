@@ -52,6 +52,9 @@ spec:
         app.kubernetes.io/component: secrets
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: vault
           image: hashicorp/vault:1.18
@@ -81,9 +84,13 @@ spec:
               memory: 256Mi
               cpu: "250m"
           securityContext:
+            allowPrivilegeEscalation: false
             capabilities:
+              drop:
+                - ALL
               add:
                 - IPC_LOCK
+            runAsNonRoot: true
           livenessProbe:
             exec:
               command:

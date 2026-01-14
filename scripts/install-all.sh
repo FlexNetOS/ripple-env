@@ -50,7 +50,19 @@ MISSING_DEPS=()
 check_command "nix" || MISSING_DEPS+=("nix")
 check_command "pixi" || MISSING_DEPS+=("pixi")
 check_command "docker" || MISSING_DEPS+=("docker")
-check_command "docker-compose" || check_command "docker" || MISSING_DEPS+=("docker-compose")
+
+# Prefer v2 plugin (`docker compose`), fallback to legacy `docker-compose`.
+COMPOSE=()
+if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    log_success "docker compose (v2) is available"
+    COMPOSE=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+    log_success "docker-compose (legacy) is available"
+    COMPOSE=(docker-compose)
+else
+    log_warn "docker compose not available (docker compose / docker-compose)"
+    MISSING_DEPS+=("docker-compose")
+fi
 
 if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
     log_error "Missing dependencies: ${MISSING_DEPS[*]}"
@@ -123,6 +135,16 @@ fi
 # =============================================================================
 log_info "Phase 5: Starting core services..."
 
+resolve_compose_file() {
+    # usage: resolve_compose_file docker-compose.observability.yml
+    local base="$1"
+    if [ -f "docker/$base" ]; then
+        echo "docker/$base"
+    else
+        echo "$base"
+    fi
+}
+
 # Define service groups in dependency order
 declare -A SERVICE_GROUPS=(
     ["observability"]="docker-compose.observability.yml"
@@ -136,10 +158,10 @@ declare -A SERVICE_GROUPS=(
 
 # Start services in order
 for group in observability messaging automation edge inference ui; do
-    compose_file="${SERVICE_GROUPS[$group]}"
+    compose_file="$(resolve_compose_file "${SERVICE_GROUPS[$group]}")"
     if [ -f "$compose_file" ]; then
         log_info "Starting $group services from $compose_file..."
-        docker-compose -f "$compose_file" up -d || {
+        "${COMPOSE[@]}" -f "$compose_file" up -d || {
             log_warn "Failed to start $group services"
         }
         # Wait for services to be ready

@@ -10,11 +10,16 @@ echo "Scanning for vulnerabilities..."
 SECURITY_AUDIT_REQUIRE_TRIVY="${SECURITY_AUDIT_REQUIRE_TRIVY:-0}"
 SECURITY_AUDIT_REQUIRE_SECRETS="${SECURITY_AUDIT_REQUIRE_SECRETS:-0}"
 if command -v trivy &> /dev/null; then
-    trivy fs --security-checks vuln,config .
+    ignorefile_args=()
+    if [ -f ".trivyignore" ]; then
+        ignorefile_args=(--ignorefile .trivyignore)
+    fi
+
+    trivy fs --security-checks vuln,config "${ignorefile_args[@]}" .
 else
     if [ "$SECURITY_AUDIT_REQUIRE_TRIVY" = "1" ]; then
-        echo "Error: trivy not found. Install trivy or set SECURITY_AUDIT_REQUIRE_TRIVY=0 to skip."
-        exit 1
+      echo "Error: trivy not found. Install trivy or set SECURITY_AUDIT_REQUIRE_TRIVY=0 to skip."
+      exit 1
     fi
     echo "Warning: trivy not found; skipping vulnerability scan."
     echo "Tip: install trivy (recommended) or run a container-based scan via docker/trivy.yml if available."

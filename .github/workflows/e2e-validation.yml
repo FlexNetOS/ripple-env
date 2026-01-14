@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -84,10 +84,12 @@ jobs:
 
       - name: Validate Docker Compose files
         run: |
-          for f in docker-compose*.yml; do
-            echo "Validating $f..."
-            docker-compose -f "$f" config > /dev/null || exit 1
-            echo "✅ $f is valid"
+          for f in docker-compose*.yml docker/docker-compose*.yml docker/*.yml; do
+            if [ -f "$f" ]; then
+              echo "Validating $f..."
+              docker compose -f "$f" config > /dev/null || exit 1
+              echo "✅ $f is valid"
+            fi
           done
 
   # ===========================================================================
@@ -98,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v21
@@ -124,7 +126,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install Pixi
         uses: prefix-dev/setup-pixi@v0.9.3
@@ -193,7 +195,7 @@ jobs:
         options: --privileged
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -208,7 +210,7 @@ jobs:
 
       - name: Start Observability Stack
         run: |
-          docker-compose -f docker-compose.observability.yml up -d
+          docker compose -f docker/docker-compose.observability.yml up -d
           sleep 30
 
       - name: Test Prometheus
@@ -221,7 +223,7 @@ jobs:
 
       - name: Start Messaging Stack
         run: |
-          docker-compose -f docker-compose.messaging.yml up -d
+          docker compose -f docker/docker-compose.messaging.yml up -d
           sleep 30
 
       - name: Test NATS
@@ -236,7 +238,7 @@ jobs:
 
       - name: Start Automation Stack
         run: |
-          docker-compose -f docker-compose.automation.yml up -d
+          docker compose -f docker/docker-compose.automation.yml up -d
           sleep 30
 
       - name: Test OPA
@@ -255,7 +257,7 @@ jobs:
 
       - name: Start Edge Stack
         run: |
-          docker-compose -f docker-compose.edge.yml up -d
+          docker compose -f docker/docker-compose.edge.yml up -d
           sleep 30
 
       - name: Test Kong Gateway
@@ -264,7 +266,7 @@ jobs:
 
       - name: Start LocalAI
         run: |
-          docker-compose -f docker-compose.localai.yml up -d
+          docker compose -f docker/docker-compose.localai.yml up -d
           # LocalAI initialization is handled by health check retries
 
       - name: Test LocalAI
@@ -278,7 +280,7 @@ jobs:
 
       - name: Start AGiXT Stack
         run: |
-          docker-compose -f docker-compose.agixt.yml up -d
+          docker compose -f docker/docker-compose.agixt.yml up -d
           # AGiXT initialization is handled by health check retries
 
       - name: Test AGiXT
@@ -303,12 +305,12 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          docker-compose -f docker-compose.agixt.yml down -v || true
-          docker-compose -f docker-compose.localai.yml down -v || true
-          docker-compose -f docker-compose.edge.yml down -v || true
-          docker-compose -f docker-compose.automation.yml down -v || true
-          docker-compose -f docker-compose.messaging.yml down -v || true
-          docker-compose -f docker-compose.observability.yml down -v || true
+          docker compose -f docker/docker-compose.agixt.yml down -v || true
+          docker compose -f docker/docker-compose.localai.yml down -v || true
+          docker compose -f docker/docker-compose.edge.yml down -v || true
+          docker compose -f docker/docker-compose.automation.yml down -v || true
+          docker compose -f docker/docker-compose.messaging.yml down -v || true
+          docker compose -f docker/docker-compose.observability.yml down -v || true
           docker network rm agentic-network || true
 
   # ===========================================================================
@@ -320,7 +322,7 @@ jobs:
     needs: [validate-pixi, validate-nix]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install Pixi
         uses: prefix-dev/setup-pixi@v0.9.3
@@ -354,7 +356,7 @@ jobs:
     if: always()
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Generate report
         run: |
@@ -382,7 +384,7 @@ jobs:
           cat validation-report.md
 
       - name: Upload report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: validation-report
           path: validation-report.md

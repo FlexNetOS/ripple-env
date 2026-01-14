@@ -37,7 +37,7 @@ AgentGateway supports the Model Context Protocol (MCP) for agent communication:
 The configuration is automatically mounted as read-only in the AgentGateway container:
 ```yaml
 volumes:
-  - ./config/agentgateway:/config:ro
+  - ../config/agentgateway:/config:ro
 ```
 
 ## Customization
@@ -46,7 +46,7 @@ To customize the configuration:
 1. Edit `config.yaml` with your desired settings
 2. Restart the AgentGateway service:
    ```bash
-   docker-compose -f docker-compose.edge.yml restart agentgateway
+  docker compose -f docker/docker-compose.edge.yml restart agentgateway
    ```
 
 ## Health Checks

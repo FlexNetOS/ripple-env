@@ -28,7 +28,7 @@ nix develop
 ### Step 2: Start Step-CA
 
 ```bash
-docker-compose -f docker-compose.identity.yml up -d step-ca
+docker compose -f docker/docker-compose.identity.yml up -d step-ca
 ```
 
 **What it does**:
@@ -39,7 +39,7 @@ docker-compose -f docker-compose.identity.yml up -d step-ca
 **Verify**:
 ```bash
 # Check container
-docker-compose -f docker-compose.identity.yml ps step-ca
+docker compose -f docker/docker-compose.identity.yml ps step-ca
 
 # Check health
 step ca health --ca-url https://localhost:9000 --root config/step-ca/pki/root_ca.crt
@@ -68,7 +68,7 @@ step ca health --ca-url https://localhost:9000 --root config/step-ca/pki/root_ca
 #    - volumes for certificates
 #    - environment variables for mTLS
 # 3. Restart
-docker-compose -f docker-compose.identity.yml restart keycloak
+docker compose -f docker/docker-compose.identity.yml restart keycloak
 ```
 
 ### Option 2: Test with curl
@@ -109,7 +109,7 @@ step ca health --ca-url https://localhost:9000 --root config/step-ca/pki/root_ca
 cat config/step-ca/ca.json | jq .
 
 # Check logs
-docker-compose -f docker-compose.identity.yml logs step-ca
+docker compose -f docker/docker-compose.identity.yml logs step-ca
 ```
 
 ### Verification

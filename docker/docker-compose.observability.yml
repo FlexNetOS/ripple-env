@@ -3,7 +3,7 @@
 #
 # Usage:
 #   docker network create agentic-network 2>/dev/null || true
-#   docker compose -f docker-compose.observability.yml up -d
+#   docker compose -f docker/docker-compose.observability.yml up -d
 #
 # Endpoints:
 #   Prometheus:     http://localhost:9090
@@ -35,7 +35,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./manifests/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../manifests/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     networks:
       - agentic-network
@@ -64,7 +64,7 @@ services:
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./manifests/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../manifests/observability/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       prometheus:
         condition: service_healthy
@@ -87,7 +87,7 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./manifests/observability/loki.yml:/etc/loki/local-config.yaml:ro
+      - ../manifests/observability/loki.yml:/etc/loki/local-config.yaml:ro
       - loki-data:/loki
     networks:
       - agentic-network
@@ -106,7 +106,7 @@ services:
     container_name: promtail
     command: -config.file=/etc/promtail/config.yml
     volumes:
-      - ./manifests/observability/promtail.yml:/etc/promtail/config.yml:ro
+      - ../manifests/observability/promtail.yml:/etc/promtail/config.yml:ro
       - /var/log:/var/log:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -159,7 +159,7 @@ services:
     ports:
       - "9093:9093"
     volumes:
-      - ./manifests/observability/alertmanager.yml:/etc/alertmanager/config.yml:ro
+      - ../manifests/observability/alertmanager.yml:/etc/alertmanager/config.yml:ro
       - alertmanager-data:/alertmanager
     networks:
       - agentic-network
@@ -246,7 +246,7 @@ services:
       - "8889:8889"   # Prometheus exporter metrics
       - "13133:13133" # Health check extension
     volumes:
-      - ./manifests/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+      - ../manifests/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
     depends_on:
       - prometheus
       - loki

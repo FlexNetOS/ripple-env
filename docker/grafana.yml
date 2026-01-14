@@ -18,8 +18,6 @@
 #   - https://github.com/grafana/grafana
 #   - BUILDKIT_STARTER_SPEC.md L14: Security & Observability
 
-version: '3.8'
-
 services:
   # Grafana Server
   grafana:

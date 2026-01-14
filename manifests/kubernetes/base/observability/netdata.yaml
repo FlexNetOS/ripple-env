@@ -108,6 +108,9 @@ spec:
         app.kubernetes.io/name: netdata
         app.kubernetes.io/component: observability
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: netdata
       hostNetwork: true
       hostPID: true
@@ -146,7 +149,10 @@ spec:
               memory: 256Mi
               cpu: "200m"
           securityContext:
+            allowPrivilegeEscalation: false
             capabilities:
+              drop:
+                - ALL
               add:
                 - SYS_PTRACE
                 - SYS_ADMIN

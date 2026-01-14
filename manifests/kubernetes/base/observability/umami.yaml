@@ -79,6 +79,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            runAsNonRoot: true
           env:
             - name: POSTGRES_DB
               value: umami
@@ -152,6 +153,10 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
           resources:
             limits:
               memory: 64Mi
@@ -174,6 +179,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            runAsNonRoot: true
           ports:
             - containerPort: 3000
               name: http

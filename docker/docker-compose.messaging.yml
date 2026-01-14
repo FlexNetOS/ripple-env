@@ -57,7 +57,7 @@ services:
       temporal-db:
         condition: service_healthy
     volumes:
-      - ./config/temporal:/etc/temporal/config/dynamicconfig
+      - ../config/temporal:/etc/temporal/config/dynamicconfig
     networks:
       - agentic-network
     healthcheck:

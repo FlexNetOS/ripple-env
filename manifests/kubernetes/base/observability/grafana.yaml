@@ -99,12 +99,21 @@ spec:
       securityContext:
         fsGroup: 472
         runAsUser: 472
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: grafana
           image: grafana/grafana:11.4.0
           ports:
             - containerPort: 3000
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           env:
             - name: GF_SECURITY_ADMIN_USER
               valueFrom:
@@ -129,8 +138,10 @@ spec:
               mountPath: /etc/grafana/provisioning/datasources
           resources:
             limits:
+              cpu: "500m"
               memory: 1Gi
             requests:
+              cpu: "100m"
               memory: 256Mi
           livenessProbe:
             httpGet:

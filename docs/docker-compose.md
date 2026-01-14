@@ -67,21 +67,21 @@ For the full stack, services should start in this order:
 
 | File | Purpose | Services |
 |------|---------|----------|
-| `docker-compose.localai.yml` | Local LLM inference | LocalAI |
-| `docker-compose.agixt.yml` | AI agent platform | AGiXT, PostgreSQL, MinIO |
-| `docker-compose.temporal.yml` | Workflow orchestration | Temporal, PostgreSQL |
-| `docker-compose.messaging.yml` | Messaging layer | NATS |
-| `docker-compose.observability.yml` | Monitoring | Prometheus, Grafana, Tempo |
-| `docker-compose.automation.yml` | Automation | n8n, OPA |
+| `docker/docker-compose.localai.yml` | Local LLM inference | LocalAI |
+| `docker/docker-compose.agixt.yml` | AI agent platform | AGiXT, PostgreSQL, MinIO |
+| `docker/docker-compose.temporal.yml` | Workflow orchestration | Temporal, PostgreSQL |
+| `docker/docker-compose.messaging.yml` | Messaging layer | NATS |
+| `docker/docker-compose.observability.yml` | Monitoring | Prometheus, Grafana, Tempo |
+| `docker/docker-compose.automation.yml` | Automation | n8n, OPA |
 
 ### Specialized Stacks
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.identity.yml` | Keycloak, Vaultwarden |
-| `docker-compose.edge.yml` | Kong Gateway |
-| `docker-compose.data.yml` | Database services |
-| `docker-compose.holochain.yml` | P2P coordination |
+| `docker/docker-compose.identity.yml` | Keycloak, Vaultwarden |
+| `docker/docker-compose.edge.yml` | Kong Gateway |
+| `docker/docker-compose.data.yml` | Database services |
+| `docker/docker-compose.holochain.yml` | P2P coordination |
 
 ## Quick Start
 
@@ -97,17 +97,17 @@ docker network create agentic-network
 
 ```bash
 # Observability first (for monitoring)
-docker-compose -f docker/docker-compose.observability.yml up -d
+docker compose -f docker/docker-compose.observability.yml up -d
 
 # Messaging
-docker-compose -f docker/docker-compose.messaging.yml up -d
+docker compose -f docker/docker-compose.messaging.yml up -d
 
 # Automation
-docker-compose -f docker/docker-compose.automation.yml up -d
+docker compose -f docker/docker-compose.automation.yml up -d
 
 # AI Services
-docker-compose -f docker/docker-compose.localai.yml up -d
-docker-compose -f docker/docker-compose.agixt.yml up -d
+docker compose -f docker/docker-compose.localai.yml up -d
+docker compose -f docker/docker-compose.agixt.yml up -d
 ```
 
 ### Using Helper Commands
@@ -176,7 +176,7 @@ services:
 
 ### Per-Service Variables
 
-See individual `docker-compose.*.yml` files for service-specific configuration.
+See individual `docker/docker-compose.*.yml` files for service-specific configuration.
 
 ## Volumes
 
@@ -208,7 +208,7 @@ Data is stored in `./data/<service>/`:
 
 ```bash
 # Check logs
-docker-compose -f docker/docker-compose.<service>.yml logs -f
+docker compose -f docker/docker-compose.<service>.yml logs -f
 
 # Check health
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
@@ -245,17 +245,17 @@ ss -tlnp | grep 8080
 
 ```bash
 # Stop all services
-docker-compose -f docker/docker-compose.*.yml down
+docker compose -f docker/docker-compose.*.yml down
 
 # Remove volumes (CAUTION: data loss)
-docker-compose -f docker/docker-compose.*.yml down -v
+docker compose -f docker/docker-compose.*.yml down -v
 
 # Remove network
 docker network rm agentic-network
 
 # Start fresh
 docker network create agentic-network
-docker-compose -f docker/docker-compose.observability.yml up -d
+docker compose -f docker/docker-compose.observability.yml up -d
 ```
 
 ## Best Practices

@@ -123,10 +123,10 @@ docker network create agentic-network
 mkdir -p config/agentgateway
 
 # 3. Start services
-docker compose -f docker-compose.edge.yml up -d
+docker compose -f docker/docker-compose.edge.yml up -d
 
 # 4. Check status
-docker compose -f docker-compose.edge.yml ps
+docker compose -f docker/docker-compose.edge.yml ps
 
 # 5. Verify services
 ./scripts/verify-edge.sh
@@ -162,7 +162,7 @@ AGENTGATEWAY_ENABLED=true
 Load environment variables:
 ```bash
 export $(cat .env.edge | xargs)
-docker compose -f docker-compose.edge.yml --env-file .env.edge up -d
+docker compose -f docker/docker-compose.edge.yml --env-file .env.edge up -d
 ```
 
 ### AgentGateway Configuration
@@ -204,7 +204,7 @@ curl http://localhost:8090/health
 
 ```bash
 # Check all services
-docker compose -f docker-compose.edge.yml ps
+docker compose -f docker/docker-compose.edge.yml ps
 
 # Expected output:
 # NAME               STATUS              PORTS
@@ -310,11 +310,11 @@ AgentGateway supports Model Context Protocol (MCP):
 
 ```bash
 # All services
-docker compose -f docker-compose.edge.yml logs -f
+docker compose -f docker/docker-compose.edge.yml logs -f
 
 # Specific service
-docker compose -f docker-compose.edge.yml logs -f kong
-docker compose -f docker-compose.edge.yml logs -f agentgateway
+docker compose -f docker/docker-compose.edge.yml logs -f kong
+docker compose -f docker/docker-compose.edge.yml logs -f agentgateway
 ```
 
 ### Service Metrics
@@ -333,13 +333,13 @@ curl http://localhost:8001/status | jq
 
 ```bash
 # Check service status
-docker compose -f docker-compose.edge.yml ps
+docker compose -f docker/docker-compose.edge.yml ps
 
 # Check logs
-docker compose -f docker-compose.edge.yml logs
+docker compose -f docker/docker-compose.edge.yml logs
 
 # Restart services
-docker compose -f docker-compose.edge.yml restart
+docker compose -f docker/docker-compose.edge.yml restart
 ```
 
 ### Kong Database Issues
@@ -349,11 +349,11 @@ docker compose -f docker-compose.edge.yml restart
 docker inspect kong-database | jq '.[0].State.Health'
 
 # Run migrations manually
-docker compose -f docker-compose.edge.yml run --rm kong-migrations
+docker compose -f docker/docker-compose.edge.yml run --rm kong-migrations
 
 # Reset database (WARNING: destroys data)
-docker compose -f docker-compose.edge.yml down -v
-docker compose -f docker-compose.edge.yml up -d
+docker compose -f docker/docker-compose.edge.yml down -v
+docker compose -f docker/docker-compose.edge.yml up -d
 ```
 
 ### Network Issues
@@ -386,10 +386,10 @@ AGENTGATEWAY_API_PORT=18090
 
 ```bash
 # Pull latest images
-docker compose -f docker-compose.edge.yml pull
+docker compose -f docker/docker-compose.edge.yml pull
 
 # Restart with new images
-docker compose -f docker-compose.edge.yml up -d
+docker compose -f docker/docker-compose.edge.yml up -d
 ```
 
 ### Backup Configuration
@@ -406,10 +406,10 @@ tar -czf agentgateway-config-backup.tar.gz config/agentgateway/
 
 ```bash
 # Stop services
-docker compose -f docker-compose.edge.yml down
+docker compose -f docker/docker-compose.edge.yml down
 
 # Remove volumes (WARNING: destroys data)
-docker compose -f docker-compose.edge.yml down -v
+docker compose -f docker/docker-compose.edge.yml down -v
 
 # Remove network
 docker network rm agentic-network
@@ -419,7 +419,7 @@ docker network rm agentic-network
 
 ### Kong Performance
 
-Edit environment variables in `docker-compose.edge.yml`:
+Edit environment variables in `docker/docker-compose.edge.yml`:
 
 ```yaml
 KONG_NGINX_WORKER_PROCESSES: 4

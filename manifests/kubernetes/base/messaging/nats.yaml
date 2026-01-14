@@ -54,6 +54,17 @@ stringData:
       # Connection timeout
       timeout: 5
     }
+  cluster.conf: |
+    # Cluster Authorization Configuration
+    cluster {
+      port: 6222
+      # Cluster auth
+      authorization {
+        user: cluster_admin
+        password: $CLUSTER_PASSWORD
+        timeout: 2
+      }
+    }
   CLUSTER_PASSWORD: "cluster_secure_password_change_me"
 ---
 apiVersion: v1
@@ -75,15 +86,9 @@ data:
     # Load auth from mounted secret
     include /etc/nats/auth/auth.conf
 
-    cluster {
-      port: 6222
-      # Cluster auth (use same credentials as client)
-      authorization {
-        user: cluster_admin
-        password: $CLUSTER_PASSWORD
-        timeout: 2
-      }
-    }
+    # Cluster configuration is loaded from a Secret to avoid storing
+    # password-bearing keys in a ConfigMap.
+    include /etc/nats/auth/cluster.conf
 
     jetstream {
       store_dir: /data
@@ -147,6 +152,9 @@ spec:
         prometheus.io/port: "8222"
         prometheus.io/path: "/varz"
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: nats
           image: nats:2.10.24-alpine
@@ -197,6 +205,12 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
       volumes:
         - name: nats-config
           configMap:
@@ -207,6 +221,8 @@ spec:
             items:
               - key: auth.conf
                 path: auth.conf
+              - key: cluster.conf
+                path: cluster.conf
         - name: nats-data
           persistentVolumeClaim:
             claimName: nats-data

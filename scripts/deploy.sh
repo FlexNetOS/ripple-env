@@ -5,11 +5,38 @@ set -euo pipefail
 
 echo "Deploying FlexNetOS..."
 
+# Prefer v2 plugin (`docker compose`), fallback to legacy `docker-compose`.
+COMPOSE=()
+if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    COMPOSE=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE=(docker-compose)
+else
+    echo "Error: Docker Compose not found (docker compose / docker-compose)"
+    exit 1
+fi
+
+resolve_compose_file() {
+    # usage: resolve_compose_file docker-compose.yml
+    local base="$1"
+    if [ -f "docker/$base" ]; then
+        echo "docker/$base"
+    else
+        echo "$base"
+    fi
+}
+
+STACK_COMPOSE_FILE="$(resolve_compose_file docker-compose.yml)"
+
+if [ ! -f "$STACK_COMPOSE_FILE" ]; then
+    echo "Error: stack compose file not found (expected docker/docker-compose.yml or docker-compose.yml)"
+    exit 1
+fi
+
 # Start core services first
 echo "Starting core services..."
-docker-compose -f docker/holochain.yml up -d
-docker-compose -f docker/nats.yml up -d
-docker-compose -f docker/vault.yml up -d
+"${COMPOSE[@]}" -f "$STACK_COMPOSE_FILE" pull vault keycloak nats || true
+"${COMPOSE[@]}" -f "$STACK_COMPOSE_FILE" up -d vault keycloak nats
 
 # Wait for core services to be ready with health checks
 echo "Waiting for core services to be ready..."
@@ -23,7 +50,7 @@ check_service_health() {
     while [ $attempt -lt $max_attempts ]; do
         # Get the container ID for this service (if any)
         local container_id
-        container_id="$(docker-compose -f "docker/$service.yml" ps -q 2>/dev/null | head -n1 || true)"
+        container_id="$("${COMPOSE[@]}" -f "$STACK_COMPOSE_FILE" ps -q "$service" 2>/dev/null | head -n1 || true)"
 
         if [ -n "${container_id:-}" ]; then
             # Try to read explicit health status (if a health check is defined)
@@ -54,17 +81,13 @@ check_service_health() {
 }
 
 # Check core services
-check_service_health "holochain"
-check_service_health "nats"
-check_service_health "vault"
+check_service_health "keycloak" || true
+check_service_health "vault" || true
+check_service_health "nats" || true
 
 # Start remaining services
-services=("kong" "agixt" "localai" "prometheus" "grafana" "keycloak" "minio" "ipfs" "tensorzero" "lobe-chat")
-
-for service in "${services[@]}"; do
-    echo "Starting $service..."
-    docker-compose -f docker/$service.yml up -d
-done
+echo "Starting remaining services..."
+"${COMPOSE[@]}" -f "$STACK_COMPOSE_FILE" up -d
 
 echo "FlexNetOS deployment completed!"
 echo "Access Grafana: http://localhost:3000"

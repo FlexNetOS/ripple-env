@@ -16,7 +16,7 @@ ifeq ($(OS),Windows_NT)
 	endif
 endif
 
-.SHELLFLAGS := -eu -o pipefail -c
+.SHELLFLAGS := -l -e -o pipefail -c
 
 .PHONY: help doctor install build test test-e2e deploy security monitor dev clean
 

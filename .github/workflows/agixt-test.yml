@@ -4,14 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docker-compose.agixt.yml'
+      - 'docker/docker-compose.agixt.yml'
       - 'config/agixt/**'
       - 'scripts/health-check.sh'
       - '.github/workflows/agixt-test.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'docker-compose.agixt.yml'
+      - 'docker/docker-compose.agixt.yml'
       - 'config/agixt/**'
       - 'scripts/health-check.sh'
       - '.github/workflows/agixt-test.yml'
@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -41,12 +41,12 @@ jobs:
       - name: Start AGiXT dependencies
         run: |
           # Start PostgreSQL for AGiXT if needed
-          docker-compose -f docker-compose.agixt.yml up -d postgres minio || true
+          docker compose -f docker/docker-compose.agixt.yml up -d postgres minio || true
           sleep 10
 
       - name: Start AGiXT
         run: |
-          docker-compose -f docker-compose.agixt.yml up -d
+          docker compose -f docker/docker-compose.agixt.yml up -d
           echo "AGiXT containers started, waiting for initialization..."
 
       - name: Wait for AGiXT API readiness
@@ -115,7 +115,7 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          docker-compose -f docker-compose.agixt.yml down -v || true
+          docker compose -f docker/docker-compose.agixt.yml down -v || true
           docker network rm agentic-network || true
 
   test-agixt-config:
@@ -123,12 +123,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml
 
       - name: Validate AGiXT docker-compose
         run: |
-          docker-compose -f docker-compose.agixt.yml config > /dev/null
-          echo "✅ docker-compose.agixt.yml is valid"
+          docker compose -f docker/docker-compose.agixt.yml config > /dev/null
+          echo "✅ docker/docker-compose.agixt.yml is valid"
 
       - name: Check AGiXT configuration files
         run: |
@@ -148,5 +158,5 @@ jobs:
 
       - name: Check environment variables
         run: |
-          echo "Checking required environment variables in docker-compose.agixt.yml..."
-          grep -E "^\s+\w+:" docker-compose.agixt.yml | grep -E "(POSTGRES|AGIXT|OPENAI|API)" | head -20 || true
+          echo "Checking required environment variables in docker/docker-compose.agixt.yml..."
+          grep -E "^\s+\w+:" docker/docker-compose.agixt.yml | grep -E "(POSTGRES|AGIXT|OPENAI|API)" | head -20 || true

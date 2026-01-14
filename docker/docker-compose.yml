@@ -199,7 +199,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./manifests/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../manifests/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     networks:
       - flexstack-network
@@ -237,7 +237,7 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./manifests/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../manifests/observability/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       prometheus:
         condition: service_healthy
@@ -270,7 +270,7 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./manifests/observability/loki.yml:/etc/loki/local-config.yaml:ro
+      - ../manifests/observability/loki.yml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     networks:
       - flexstack-network
@@ -299,7 +299,7 @@ services:
     profiles: ["observability", "full"]
     command: -config.file=/etc/promtail/config.yml
     volumes:
-      - ./manifests/observability/promtail.yml:/etc/promtail/config.yml:ro
+      - ../manifests/observability/promtail.yml:/etc/promtail/config.yml:ro
       - /var/log:/var/log:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -358,7 +358,7 @@ services:
     ports:
       - "9093:9093"
     volumes:
-      - ./manifests/observability/alertmanager.yml:/etc/alertmanager/config.yml:ro
+      - ../manifests/observability/alertmanager.yml:/etc/alertmanager/config.yml:ro
       - alertmanager_data:/alertmanager
     networks:
       - flexstack-network
@@ -619,8 +619,8 @@ services:
       DOCKER_STEPCA_INIT_PROVISIONER_NAME: "admin"
       DOCKER_STEPCA_INIT_SKIP_CONFIRM: "true"
     volumes:
-      - ./config/step-ca:/home/step
-      - ./config/step-ca/secrets/password.txt:/run/secrets/step-ca-password:ro
+      - ../config/step-ca:/home/step
+      - ../config/step-ca/secrets/password.txt:/run/secrets/step-ca-password:ro
     ports:
       - "9443:9000"
     networks:
@@ -698,7 +698,7 @@ services:
     ports:
       - "8200:8200"
     volumes:
-      - ./config/vault:/vault/config
+      - ../config/vault:/vault/config
       - vault_data:/vault/file
     cap_add:
       - IPC_LOCK
@@ -918,7 +918,7 @@ services:
       - "8091:8091"
       - "8092:8092"
     volumes:
-      - ./config/agentgateway:/config:ro
+      - ../config/agentgateway:/config:ro
     depends_on:
       kong:
         condition: service_healthy
@@ -988,7 +988,7 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ./config/temporal:/etc/temporal/config/dynamicconfig
+      - ../config/temporal:/etc/temporal/config/dynamicconfig
     networks:
       - flexstack-network
     healthcheck:
@@ -1105,7 +1105,7 @@ services:
     ports:
       - "8181:8181"
     volumes:
-      - ./config/opa/policies:/policies:ro
+      - ../config/opa/policies:/policies:ro
     networks:
       - flexstack-network
     healthcheck:

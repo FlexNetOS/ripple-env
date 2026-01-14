@@ -222,14 +222,14 @@ openssl x509 -in test.crt -noout -text | grep -E "(Subject:|DNS:|X509v3)"
 
 ```bash
 # Ensure templates are mounted in docker-compose
-docker-compose -f docker-compose.identity.yml exec step-ca ls -la /home/step/templates/x509/
+docker compose -f docker/docker-compose.identity.yml exec step-ca ls -la /home/step/templates/x509/
 ```
 
 ### Invalid Template Syntax
 
 ```bash
 # Check step-ca logs for template errors
-docker-compose -f docker-compose.identity.yml logs step-ca | grep template
+docker compose -f docker/docker-compose.identity.yml logs step-ca | grep template
 ```
 
 ### Missing Variables

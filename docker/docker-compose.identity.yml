@@ -15,7 +15,7 @@
 #   ./scripts/init-step-ca.sh
 #
 #   # Start services:
-#   docker-compose -f docker-compose.identity.yml up -d
+#   docker compose -f docker/docker-compose.identity.yml up -d
 #
 # Access:
 #   - Step-CA: https://localhost:9000 (mTLS certificate authority)
@@ -47,9 +47,9 @@ services:
       DOCKER_STEPCA_INIT_SKIP_CONFIRM: "true"
     volumes:
       # CA configuration and PKI
-      - ./config/step-ca:/home/step
+      - ../config/step-ca:/home/step
       # Password file (created by init-step-ca.sh)
-      - ./config/step-ca/secrets/password.txt:/run/secrets/step-ca-password:ro
+      - ../config/step-ca/secrets/password.txt:/run/secrets/step-ca-password:ro
     ports:
       - "9000:9000"
     networks:
@@ -95,7 +95,7 @@ services:
       # KC_HTTPS_TRUST_STORE_FILE: /etc/ssl/certs/aria-root-ca.crt
     volumes: []
       # mTLS certificates (mount when available)
-      # - ./config/step-ca/pki/root_ca.crt:/etc/ssl/certs/aria-root-ca.crt:ro
+      # - ../config/step-ca/pki/root_ca.crt:/etc/ssl/certs/aria-root-ca.crt:ro
       # - ./data/certs/keycloak:/etc/certs:ro
     ports:
       - "8080:8080"
@@ -161,7 +161,7 @@ services:
     volumes:
       - vaultwarden-data:/data
       # mTLS certificates (mount when available)
-      # - ./config/step-ca/pki/root_ca.crt:/etc/ssl/certs/aria-root-ca.crt:ro
+      # - ../config/step-ca/pki/root_ca.crt:/etc/ssl/certs/aria-root-ca.crt:ro
       # - ./data/certs/vaultwarden:/etc/certs:ro
     ports:
       - "8081:80"
@@ -196,11 +196,11 @@ services:
       VAULT_SKIP_VERIFY: "true"
     volumes:
       # Vault configuration
-      - ./config/vault:/vault/config
+      - ../config/vault:/vault/config
       # Vault data (only for dev mode)
       - vault-data:/vault/file
       # mTLS certificates (mount when available)
-      # - ./config/step-ca/pki/root_ca.crt:/etc/ssl/certs/aria-root-ca.crt:ro
+      # - ../config/step-ca/pki/root_ca.crt:/etc/ssl/certs/aria-root-ca.crt:ro
       # - ./data/certs/vault:/vault/certs:ro
     ports:
       - "8200:8200"

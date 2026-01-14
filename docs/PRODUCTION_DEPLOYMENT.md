@@ -69,7 +69,12 @@ aws secretsmanager create-secret --name aria/keycloak --secret-string "$(openssl
 
 ```bash
 # Deploy with security configurations
-docker-compose -f docker-compose.yml -f docker-compose.security.yml up -d
+
+# Deploy (baseline)
+docker compose -f docker/docker-compose.yml up -d
+
+# Optional: add a security-hardening override file (example shown below)
+# docker compose -f docker/docker-compose.yml -f docker/docker-compose.security.yml up -d
 
 # Or use the provided deployment script
 ./scripts/deploy-production.sh
@@ -93,7 +98,7 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image
 ### Container Security
 
 ```yaml
-# docker-compose.security.yml
+# docker-compose.security.yml (example override file)
 version: '3.8'
 services:
   app:

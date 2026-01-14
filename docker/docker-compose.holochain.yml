@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   holochain-bootstrap:
     image: holochain/bootstrap-server:0.6.0
@@ -21,7 +19,7 @@ services:
       holochain-bootstrap:
         condition: service_healthy
     volumes:
-      - ./manifests/holochain:/holochain
+      - ../manifests/holochain:/holochain
       - holochain-data:/data
     environment:
       HOLOCHAIN_BOOTSTRAP_URL: "http://holochain-bootstrap:8888"

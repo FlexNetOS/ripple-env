@@ -2,8 +2,8 @@
 # BUILDKIT_STARTER_SPEC.md Layer 6: Messaging & Orchestration
 #
 # Usage:
-#   docker compose -f docker-compose.temporal.yml up -d
-#   docker compose -f docker-compose.temporal.yml logs -f
+#   docker compose -f docker/docker-compose.temporal.yml up -d
+#   docker compose -f docker/docker-compose.temporal.yml logs -f
 #
 # Web UI: http://localhost:8088
 # API: localhost:7233
@@ -50,7 +50,7 @@ services:
     ports:
       - "7233:7233"  # gRPC frontend
     volumes:
-      - ./manifests/temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+      - ../manifests/temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
     healthcheck:
       test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
       interval: 30s

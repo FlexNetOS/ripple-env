@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   redis:
     image: redis:7-alpine
@@ -56,7 +54,7 @@ services:
       - MAX_CACHE_SIZE=1GB
       - CONFIG_PATH=/etc/vcache/config.yaml
     volumes:
-      - ./config/vcache/config.yaml:/etc/vcache/config.yaml:ro
+      - ../config/vcache/config.yaml:/etc/vcache/config.yaml:ro
       - vcache_logs:/var/log/vcache
     depends_on:
       redis:

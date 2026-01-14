@@ -57,6 +57,9 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "7239"
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: temporal
           image: temporalio/auto-setup:1.26.2
@@ -65,6 +68,12 @@ spec:
               name: grpc
             - containerPort: 7239
               name: metrics
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           env:
             - name: DB
               value: postgresql
@@ -156,12 +165,21 @@ spec:
         app.kubernetes.io/component: ui
         app.kubernetes.io/part-of: flexstack
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: temporal-ui
           image: temporalio/ui:2.34.0
           ports:
             - containerPort: 8080
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           env:
             - name: TEMPORAL_ADDRESS
               value: temporal:7233
@@ -169,8 +187,10 @@ spec:
               value: http://localhost:3000
           resources:
             limits:
+              cpu: "200m"
               memory: 256Mi
             requests:
+              cpu: "50m"
               memory: 64Mi
           livenessProbe:
             httpGet:

@@ -94,7 +94,7 @@ services:
   # Note: Built from source - no official Docker image available yet (see issue #74)
   open-lovable:
     build:
-      context: ./config/dockerfiles
+      context: ../config/dockerfiles
       dockerfile: Dockerfile.open-lovable
       args:
         OPEN_LOVABLE_VERSION: ${OPEN_LOVABLE_VERSION:-main}
@@ -132,7 +132,7 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
-    # Note: LocalAI is expected to be started separately (e.g. via docker-compose.localai.yml)
+    # Note: LocalAI is expected to be started separately (e.g. via docker/docker-compose.localai.yml)
     # on the shared external network, so we do not declare a local `depends_on` here.
 
 volumes:
@@ -149,8 +149,8 @@ networks:
 
 # Usage:
 # 1. Ensure network exists: docker network create agentic-network
-# 2. Ensure LocalAI is running: docker-compose -f docker-compose.localai.yml up -d
-# 3. Build and start UI services: docker-compose -f docker-compose.ui.yml up -d --build
+# 2. Ensure LocalAI is running: docker compose -f docker/docker-compose.localai.yml up -d
+# 3. Build and start UI services: docker compose -f docker/docker-compose.ui.yml up -d --build
 # 4. Access Lobe Chat: http://localhost:3210
 # 5. Access Open-Lovable: http://localhost:3211
 # 6. Access MinIO Console: http://localhost:9001 (use LOBE_MINIO_ROOT_USER/PASSWORD env vars)

@@ -27,8 +27,7 @@ The following JetStream streams are configured for message persistence:
 Using Docker Compose:
 
 ```bash
-cd docker
-docker-compose -f docker-compose.messaging.yml up -d nats
+docker compose -f docker/docker-compose.messaging.yml up -d nats
 ```
 
 ### 2. Initialize JetStream Streams

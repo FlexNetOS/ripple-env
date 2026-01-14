@@ -94,17 +94,17 @@ Features enabled:
 ### Start the Observability Stack
 
 ```bash
-cd /home/user/ripple-env/docker
+cd /home/user/ripple-env
 
 # Create network if it doesn't exist
 docker network create agentic-network 2>/dev/null || true
 
 # Start all observability services
-docker compose -f docker-compose.observability.yml up -d
+docker compose -f docker/docker-compose.observability.yml up -d
 
 # Verify Tempo is running
-docker compose -f docker-compose.observability.yml ps tempo
-docker compose -f docker-compose.observability.yml logs tempo
+docker compose -f docker/docker-compose.observability.yml ps tempo
+docker compose -f docker/docker-compose.observability.yml logs tempo
 ```
 
 ### Verify Services

@@ -24,7 +24,7 @@ argo-workflows/
 ### 1. Install Argo Workflows
 Argo Workflows is automatically installed when you run:
 ```bash
-docker-compose -f docker-compose.argo.yml up -d
+docker compose -f docker/docker-compose.argo.yml up -d
 ```
 
 ### 2. Verify Installation

@@ -21,8 +21,6 @@
 #   - https://github.com/tensorzero/tensorzero
 #   - BUILDKIT_STARTER_SPEC.md L12: LLMOps & Evaluation
 
-version: '3.8'
-
 services:
   # TensorZero Gateway
   tensorzero:

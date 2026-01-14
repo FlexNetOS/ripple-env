@@ -6,7 +6,9 @@ on:
     paths:
       - 'flake.nix'
       - 'pixi.toml'
-      - 'docker-compose.*.yml'
+      - 'docker-compose*.yml'
+      - 'docker/docker-compose*.yml'
+      - 'docker/**'
       - 'config/**/*.yml'
       - '.github/workflows/config-validation.yml'
   pull_request:
@@ -19,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
@@ -35,8 +37,11 @@ jobs:
           import yaml
           import sys
           import glob
-          
-          files = glob.glob("docker-compose.*.yml")
+
+          files = sorted(set(glob.glob("docker-compose*.yml") + glob.glob("docker/docker-compose*.yml")))
+          if not files:
+              print("❌ No docker-compose files found")
+              sys.exit(1)
           errors = []
           
           for file in files:
@@ -66,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
       
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v21
@@ -111,10 +116,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
@@ -162,10 +167,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -200,10 +205,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
@@ -259,7 +264,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
       
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
@@ -288,7 +293,7 @@ jobs:
     if: always()
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Generate report
         run: |
@@ -323,7 +328,7 @@ jobs:
           cat validation-report.md
       
       - name: Upload report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: validation-report
           path: validation-report.md

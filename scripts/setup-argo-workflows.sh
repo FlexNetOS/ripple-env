@@ -26,7 +26,7 @@ check_kubectl() {
     echo "Checking kubectl connectivity..."
     if ! kubectl get nodes > /dev/null 2>&1; then
         echo -e "${RED}Error: Cannot connect to Kubernetes cluster${NC}"
-        echo "Make sure k3s is running: docker-compose -f docker-compose.argo.yml up -d"
+        echo "Make sure k3s is running: docker compose -f docker/docker-compose.argo.yml up -d"
         exit 1
     fi
     echo -e "${GREEN}✓ kubectl connectivity verified${NC}"
@@ -38,7 +38,7 @@ check_argo_installed() {
     echo "Checking Argo Workflows installation..."
     if ! kubectl get namespace argo > /dev/null 2>&1; then
         echo -e "${RED}Error: Argo namespace not found${NC}"
-        echo "Run the installation first: docker-compose -f docker-compose.argo.yml up -d"
+        echo "Run the installation first: docker compose -f docker/docker-compose.argo.yml up -d"
         exit 1
     fi
     echo -e "${GREEN}✓ Argo namespace exists${NC}"

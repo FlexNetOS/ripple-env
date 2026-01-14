@@ -20,8 +20,6 @@
 #   - https://github.com/mudler/LocalAI
 #   - BUILDKIT_STARTER_SPEC.md L9: Inference Plane
 
-version: '3.8'
-
 services:
   localai:
     image: localai/localai:latest-aio-cpu
