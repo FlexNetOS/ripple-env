@@ -280,7 +280,7 @@ jobs:
 
       - name: Start AGiXT Stack
         run: |
-          docker compose -f docker/docker-compose.agixt.yml up -d
+          docker compose -f docker/agixt.yml up -d
           # AGiXT initialization is handled by health check retries
 
       - name: Test AGiXT
@@ -305,7 +305,7 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          docker compose -f docker/docker-compose.agixt.yml down -v || true
+          docker compose -f docker/agixt.yml down -v || true
           docker compose -f docker/docker-compose.localai.yml down -v || true
           docker compose -f docker/docker-compose.edge.yml down -v || true
           docker compose -f docker/docker-compose.automation.yml down -v || true
