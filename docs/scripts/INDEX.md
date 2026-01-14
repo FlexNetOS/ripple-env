@@ -139,10 +139,11 @@ This index catalogs all 60 script entrypoints discovered in Phase 1. Each script
 
 ---
 
-## Performance Scripts (2)
+## Performance Scripts (3)
 
 | Script | Purpose | Contract Doc | Category |
 |--------|---------|--------------|----------|
+| `benchmark.sh` | Performance benchmarking and baseline metrics | [benchmark.sh.md](./benchmark.sh.md) ✅ | performance |
 | `isolate-cpu.sh` | Isolate CPU for performance | [isolate-cpu.sh.md](./isolate-cpu.sh.md) ⏳ | performance |
 | `benchmark-eval.sh` | Run benchmarks | [benchmark-eval.sh.md](./benchmark-eval.sh.md) ⏳ | performance |
 
