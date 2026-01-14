@@ -6,7 +6,12 @@
       "Bash(ls:*)",
       "Bash(python:*)",
       "mcp__filesystem__read_multiple_files",
-      "mcp__filesystem__directory_tree"
+      "mcp__filesystem__directory_tree",
+      "Bash(git add:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: add SECRET_ROTATION cookbook \\(Phase 7 completion\\)\n\nComplete Phase 7 operational cookbooks with SECRET_ROTATION.md.\n\nThis cookbook documents:\n- Monthly credential rotation \\(API keys, certs, agenix secrets\\)\n- Emergency rotation procedures for compromised credentials\n- Step-CA certificate automation via scripts/rotate-certs.sh\n- Vault token rotation procedures\n- External provider key rotation \\(OpenAI, Anthropic, GitHub\\)\n\nEvidence-based procedures referencing:\n- scripts/rotate-certs.sh\n- docs/SECRETS.md\n- docker/docker-compose.identity.yml\n- agenix encrypted secrets\n\nAll 8 Phase 7 cookbooks now complete.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(chmod:*)"
     ]
   }
 }
