@@ -195,7 +195,7 @@ create_manifest() {
     cd "$REPO_ROOT"
 
     cat > "$LOCAL_BACKUP_PATH/MANIFEST.txt" << EOF
-Backup created: $(date --iso-8601=seconds)
+Backup created: $(date -u +%Y-%m-%dT%H:%M:%S%z)
 Repository: $(git remote get-url origin 2>/dev/null || echo "UNKNOWN")
 Branch: $(git branch --show-current 2>/dev/null || echo "UNKNOWN")
 Commit: $(git rev-parse HEAD 2>/dev/null || echo "UNKNOWN")
