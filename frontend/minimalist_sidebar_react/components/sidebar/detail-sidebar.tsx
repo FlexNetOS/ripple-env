@@ -170,9 +170,10 @@ function StatusDot({ status }: StatusDotProps) {
 
 interface MenuItemProps {
   item: PanelMenuItem;
+  onPress?: (itemId: string) => void;
 }
 
-function MenuItem({ item }: MenuItemProps) {
+function MenuItem({ item, onPress }: MenuItemProps) {
   const colors = useColors();
   const iconName = iconMap[item.icon] || 'circle';
 
@@ -182,6 +183,7 @@ function MenuItem({ item }: MenuItemProps) {
         styles.menuItem,
         pressed && styles.menuItemPressed,
       ]}
+      onPress={() => onPress?.(item.id)}
     >
       <View style={styles.menuItemLeft}>
         <View style={styles.iconContainer}>
@@ -209,9 +211,10 @@ function MenuItem({ item }: MenuItemProps) {
 
 interface MenuSectionProps {
   section: PanelMenuSection;
+  onItemPress?: (itemId: string) => void;
 }
 
-function MenuSection({ section }: MenuSectionProps) {
+function MenuSection({ section, onItemPress }: MenuSectionProps) {
   const colors = useColors();
   const [isExpanded, setIsExpanded] = useState(section.defaultExpanded !== false);
 
@@ -237,7 +240,7 @@ function MenuSection({ section }: MenuSectionProps) {
       {isExpanded && (
         <View style={styles.sectionItems}>
           {section.items.map((item) => (
-            <MenuItem key={item.id} item={item} />
+            <MenuItem key={item.id} item={item} onPress={onItemPress} />
           ))}
         </View>
       )}
@@ -297,7 +300,7 @@ function Header({ title, badge, badgeColor, onToggleCollapse, isCollapsed }: Hea
 }
 
 export function DetailSidebar() {
-  const { activeSection } = useSidebar();
+  const { activeSection, onNavigate } = useSidebar();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -308,6 +311,16 @@ export function DetailSidebar() {
   const animatedWidth = useAnimatedStyle(() => ({
     width: withTiming(isCollapsed ? 64 : 280, { duration: 300 }),
   }));
+
+  // Handle menu item clicks - navigate if there's a route mapping
+  const handleItemPress = (itemId: string) => {
+    // Import route mapping from context
+    const { sectionRouteMap } = require('@/contexts/sidebar-context');
+    const route = sectionRouteMap[itemId];
+    if (route && onNavigate) {
+      onNavigate(route);
+    }
+  };
 
   return (
     <Animated.View style={[
@@ -331,7 +344,7 @@ export function DetailSidebar() {
           <SearchBar />
           <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
             {content.sections.map((section) => (
-              <MenuSection key={section.id} section={section} />
+              <MenuSection key={section.id} section={section} onItemPress={handleItemPress} />
             ))}
           </ScrollView>
         </>
