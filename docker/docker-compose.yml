@@ -48,7 +48,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_MULTIPLE_DATABASES: keycloak,temporal,n8n,mindsdb,mlflow
+      POSTGRES_MULTIPLE_DATABASES: keycloak,temporal,n8n,mindsdb,mlflow,agixt
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-multi-db.sh:/docker-entrypoint-initdb.d/init-multi-db.sh:ro

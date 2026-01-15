@@ -22,6 +22,16 @@ export const sectionRouteMap: Record<string, string> = {
   'storage': '/(drawer)/infra',
   'logs': '/(drawer)/build',
   'analytics': '/(drawer)',
+  // Vibe Kanban integration
+  'vibe-kanban': '/(drawer)/vibe-kanban',
+  'open-vibe-kanban': '/(drawer)/vibe-kanban',
+  'vk-all-projects': '/(drawer)/vibe-kanban',
+  'vk-recent': '/(drawer)/vibe-kanban',
+  'vk-running': '/(drawer)/vibe-kanban',
+  'vk-pending': '/(drawer)/vibe-kanban',
+  'vk-completed': '/(drawer)/vibe-kanban',
+  'new-vk-task': '/(drawer)/vibe-kanban',
+  'configure-agents': '/(drawer)/vibe-kanban',
 };
 
 export interface SidebarContextProps {
