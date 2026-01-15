@@ -1,72 +1,228 @@
-%% Environment Layering Graph
-%% Shows configuration precedence and environment overlays
-%% Evidence: flake.nix, pixi.toml, .envrc, scripts/env-vars.sh
-
+```mermaid
 graph TB
-    subgraph "Configuration Precedence (Highest to Lowest)"
-        direction TB
-        CLI[Command Line Args<br/>--override-input, --flag]
-        ENVVAR[Environment Variables<br/>OPENAI_API_KEY, etc.]
-        ENVLOCAL[.env.local<br/>Local overrides - gitignored]
-        ENVFILE[.env<br/>Committed defaults]
-        DIRENV[.envrc<br/>direnv auto-loading]
-        NIXSHELL[Nix Shell Variables<br/>From devShell]
-        SYSENV[System Environment<br/>OS defaults]
+    %% ==================================================================
+    %% Environment Layering & Config Precedence
+    %% ==================================================================
+    %% Evidence: pixi.toml, .env.example, .env.state.example, scripts/env-vars.sh
+    %% Status: Phase 3 Verified
+    %% ==================================================================
+
+    subgraph L1["L1: Base Environment (Lowest Priority)"]
+        BASE[pixi.toml default<br/>---<br/>Python 3.11<br/>ROS2 Humble Desktop<br/>Base scientific/ML stack<br/>Build tools]
     end
 
-    CLI --> ENVVAR
-    ENVVAR --> ENVLOCAL
-    ENVLOCAL --> ENVFILE
-    ENVFILE --> DIRENV
-    DIRENV --> NIXSHELL
-    NIXSHELL --> SYSENV
-
-    subgraph "Nix Channel Strategy"
-        UNSTABLE[nixos-unstable<br/>Development]
-        STABLE[nixos-24.11<br/>Production]
-
-        UNSTABLE --> DEVSHELL[Dev Shells]
-        STABLE --> IMAGES[NixOS Images]
+    subgraph L2["L2: Environment Features"]
+        FEAT_CUDA[cuda<br/>---<br/>PyTorch + CUDA 12.4<br/>channels: pytorch > nvidia]
+        FEAT_AIOS[aios<br/>---<br/>Python 3.10-3.11 strict<br/>pydantic==2.7.0<br/>numpy==1.24.3]
+        FEAT_LLMOPS[llmops<br/>---<br/>TruLens<br/>MLflow<br/>OpenTelemetry]
+        FEAT_FINETUNE[finetuning<br/>---<br/>Unsloth PyPI<br/>PEFT, bitsandbytes<br/>Training utilities]
+        FEAT_CACHE[caching<br/>---<br/>vCache<br/>Redis<br/>Semantic caching]
+        FEAT_VECTOR[vectordb-*<br/>---<br/>ChromaDB or RuVector<br/>Embedding support]
+        FEAT_QUDAG[qudag<br/>---<br/>Quantum-resistant<br/>MCP integration]
+        FEAT_DOCS[docs<br/>---<br/>MkDocs Material<br/>Mermaid diagrams]
     end
 
-    subgraph "Pixi Environment Layers"
-        direction TB
-        PIXIBASE[Base Dependencies<br/>Python, ROS2, build-tools]
-
-        PIXIBASE --> FEAT_CUDA[Feature: cuda<br/>pytorch-cuda, cudatoolkit]
-        PIXIBASE --> FEAT_AIOS[Feature: aios<br/>cerebrum, aios-kernel]
-        PIXIBASE --> FEAT_LLMOPS[Feature: llmops<br/>mlflow, trulens]
-        PIXIBASE --> FEAT_DOCS[Feature: docs<br/>mkdocs-material]
-
-        FEAT_CUDA --> ENV_CUDA[Environment: cuda]
-        FEAT_AIOS --> ENV_AIOS[Environment: aios]
-        FEAT_AIOS --> ENV_AIOS_CUDA[Environment: aios-cuda]
-        FEAT_CUDA --> ENV_AIOS_CUDA
-        FEAT_LLMOPS --> ENV_LLMOPS[Environment: llmops]
-        FEAT_DOCS --> ENV_DOCS[Environment: docs]
+    subgraph L3["L3: Platform-Specific Adjustments"]
+        PLAT_LINUX[Linux Native<br/>---<br/>Full CUDA support<br/>All features available]
+        PLAT_MACOS[macOS<br/>---<br/>ARM64 + x86_64<br/>No CUDA<br/>Dev tools only]
+        PLAT_WSL[WSL2<br/>---<br/>NIX_BUILD_CORES=2<br/>Memory optimizations<br/>stable-env.sh]
     end
 
-    subgraph "Docker Compose Overlays"
-        DC_BASE[docker-compose.yml<br/>Core services]
-
-        DC_BASE --> DC_OBS[docker-compose.observability.yml]
-        DC_BASE --> DC_MSG[docker-compose.messaging.yml]
-        DC_BASE --> DC_ID[docker-compose.identity.yml]
-        DC_BASE --> DC_AI[docker-compose.inference.yml]
-        DC_BASE --> DC_EDGE[docker-compose.edge.yml]
+    subgraph L4["L4: Stack-Specific Configuration"]
+        STACK_STATE[.env.state<br/>---<br/>Redis: cache TTL<br/>MinIO: buckets<br/>RuVector: GNN config<br/>Vector store selection]
+        STACK_AGIXT[.env.agixt<br/>---<br/>AGiXT API keys<br/>PostgreSQL creds<br/>MinIO creds]
+        STACK_QUDAG[.env.qudag<br/>---<br/>QuDAG endpoints<br/>Crypto config]
+        STACK_MAIN[.env<br/>---<br/>Service credentials<br/>Keycloak, Grafana<br/>Database passwords<br/>API keys]
     end
 
-    subgraph "Platform Overlays"
-        COMMON[modules/common/<br/>Cross-platform]
-
-        COMMON --> LINUX[modules/linux/<br/>systemd, udev, docker]
-        COMMON --> MACOS[modules/macos/<br/>homebrew, system prefs]
-        COMMON --> WSL[WSL2 Config<br/>.wslconfig, mount opts]
+    subgraph L5["L5: User Overrides (Highest Priority)"]
+        USER_EXPORT[Exported Vars<br/>---<br/>export VAR=value<br/>Immediate precedence]
+        USER_LOCAL[.envrc.local<br/>---<br/>Local direnv overrides<br/>Never committed]
     end
 
-    style CLI fill:#ff9100,color:#fff
-    style UNSTABLE fill:#7c4dff,color:#fff
-    style STABLE fill:#00bfa5,color:#fff
-    style PIXIBASE fill:#4051b5,color:#fff
-    style DC_BASE fill:#4051b5,color:#fff
-    style COMMON fill:#4051b5,color:#fff
+    %% Flow: Base → Features → Platform → Stack → User
+    BASE --> FEAT_CUDA
+    BASE --> FEAT_AIOS
+    BASE --> FEAT_LLMOPS
+    BASE --> FEAT_FINETUNE
+    BASE --> FEAT_CACHE
+    BASE --> FEAT_VECTOR
+    BASE --> FEAT_QUDAG
+    BASE --> FEAT_DOCS
+
+    FEAT_CUDA --> PLAT_LINUX
+    FEAT_AIOS --> PLAT_LINUX
+    FEAT_AIOS --> PLAT_MACOS
+    FEAT_LLMOPS --> PLAT_LINUX
+    FEAT_LLMOPS --> PLAT_MACOS
+    FEAT_FINETUNE --> PLAT_LINUX
+    FEAT_FINETUNE --> PLAT_MACOS
+    FEAT_CACHE --> PLAT_LINUX
+    FEAT_CACHE --> PLAT_MACOS
+    FEAT_VECTOR --> PLAT_LINUX
+    FEAT_VECTOR --> PLAT_MACOS
+    FEAT_QUDAG --> PLAT_LINUX
+    FEAT_QUDAG --> PLAT_MACOS
+    FEAT_DOCS --> PLAT_LINUX
+    FEAT_DOCS --> PLAT_MACOS
+
+    FEAT_CUDA --> PLAT_WSL
+    FEAT_AIOS --> PLAT_WSL
+    FEAT_LLMOPS --> PLAT_WSL
+
+    PLAT_LINUX --> STACK_STATE
+    PLAT_LINUX --> STACK_AGIXT
+    PLAT_LINUX --> STACK_QUDAG
+    PLAT_LINUX --> STACK_MAIN
+
+    PLAT_MACOS --> STACK_STATE
+    PLAT_MACOS --> STACK_MAIN
+
+    PLAT_WSL --> STACK_STATE
+    PLAT_WSL --> STACK_AGIXT
+    PLAT_WSL --> STACK_MAIN
+
+    STACK_STATE --> USER_EXPORT
+    STACK_AGIXT --> USER_EXPORT
+    STACK_QUDAG --> USER_EXPORT
+    STACK_MAIN --> USER_EXPORT
+
+    USER_EXPORT --> USER_LOCAL
+    USER_LOCAL --> FINAL[Final Environment]
+
+    %% Styling
+    classDef base fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef feature fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef platform fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef stack fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef user fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef final fill:#c5e1a5,stroke:#558b2f,stroke-width:3px
+
+    class BASE base
+    class FEAT_CUDA,FEAT_AIOS,FEAT_LLMOPS,FEAT_FINETUNE,FEAT_CACHE,FEAT_VECTOR,FEAT_QUDAG,FEAT_DOCS feature
+    class PLAT_LINUX,PLAT_MACOS,PLAT_WSL platform
+    class STACK_STATE,STACK_AGIXT,STACK_QUDAG,STACK_MAIN stack
+    class USER_EXPORT,USER_LOCAL user
+    class FINAL final
+```
+
+---
+
+## Config Precedence Example
+
+**Scenario:** User runs `pixi run -e aios-cuda python train.py` on WSL2
+
+**Resolution Layers:**
+
+```
+L1 (Base):          Python 3.11, ROS2 Humble, numpy>=1.24
+L2 (aios-cuda):     Python 3.10-3.11, pydantic==2.7.0, numpy==1.24.3, CUDA 12.4
+                    ↓ Feature override: Python → 3.10, numpy → 1.24.3 (strict)
+L3 (WSL2):          NIX_BUILD_CORES=2, memory optimizations
+                    ↓ Platform override: Build parallelism limited
+L4 (.env.state):    VECTOR_STORE=ruvector, RUVECTOR_GNN_ENABLED=true
+                    ↓ Stack config: Vector DB selection
+L5 (User export):   export AIOS_PORT=9000
+                    ↓ User override: Port changed from 8000 → 9000
+```
+
+**Final Environment Values:**
+- `python` → **3.10** (AIOS constraint via L2)
+- `numpy` → **1.24.3** (AIOS strict pin via L2)
+- `pydantic` → **2.7.0** (AIOS strict pin via L2)
+- `NIX_BUILD_CORES` → **2** (WSL stability via L3)
+- `VECTOR_STORE` → **ruvector** (stack config via L4)
+- `AIOS_PORT` → **9000** (user override via L5, was 8000)
+
+---
+
+## Environment Variable Lookup Order
+
+```mermaid
+graph LR
+    A[Variable Requested] --> B{Exported?}
+    B -->|Yes| C[Use Exported Value]
+    B -->|No| D{In .envrc.local?}
+    D -->|Yes| E[Use .envrc.local Value]
+    D -->|No| F{In .env?}
+    F -->|Yes| G[Use .env Value]
+    F -->|No| H{In .env.state/.env.agixt?}
+    H -->|Yes| I[Use Stack-Specific Value]
+    H -->|No| J{In scripts/env-vars.sh?}
+    J -->|Yes| K[Use Script Default]
+    J -->|No| L{In docker-compose?}
+    L -->|Yes| M[Use Compose Default]
+    L -->|No| N[Variable Undefined]
+
+    C --> DONE[Value Resolved]
+    E --> DONE
+    G --> DONE
+    I --> DONE
+    K --> DONE
+    M --> DONE
+    N --> ERROR[Error or Empty]
+
+    style C fill:#4caf50,color:#fff
+    style E fill:#4caf50,color:#fff
+    style G fill:#8bc34a,color:#fff
+    style I fill:#cddc39,color:#000
+    style K fill:#ffeb3b,color:#000
+    style M fill:#ffc107,color:#000
+    style N fill:#f44336,color:#fff
+```
+
+**Priority (Highest → Lowest):**
+1. Exported environment variables
+2. `.envrc.local` (direnv local overrides)
+3. `.env` (main config file)
+4. `.env.state`, `.env.agixt`, `.env.qudag` (stack-specific)
+5. `scripts/env-vars.sh` (script defaults)
+6. `docker-compose*.yml` (compose defaults)
+7. Undefined (error or empty)
+
+---
+
+## Channel Priority Visualization
+
+```mermaid
+graph TB
+    subgraph "Default Environment"
+        D1[robostack-humble]
+        D2[conda-forge]
+        D1 -->|priority 1| PKG_DEFAULT[Package Resolution]
+        D2 -->|priority 2| PKG_DEFAULT
+    end
+
+    subgraph "CUDA Environment"
+        C1[pytorch]
+        C2[nvidia]
+        C3[conda-forge]
+        C1 -->|priority 1| PKG_CUDA[Package Resolution]
+        C2 -->|priority 2| PKG_CUDA
+        C3 -->|priority 3| PKG_CUDA
+    end
+
+    PKG_DEFAULT --> INSTALL_DEFAULT[Installed Packages]
+    PKG_CUDA --> INSTALL_CUDA[Installed Packages]
+
+    style D1 fill:#4caf50,color:#fff
+    style C1 fill:#ff5722,color:#fff
+    style C2 fill:#ff9800,color:#fff
+    style PKG_DEFAULT fill:#2196f3,color:#fff
+    style PKG_CUDA fill:#2196f3,color:#fff
+```
+
+**Evidence:** `pixi.toml` lines 14, 161
+
+---
+
+**Evidence:**
+- `pixi.toml` (572 lines, 12 environments, channel strategy)
+- `.env.example` (237 lines, all service credentials)
+- `.env.state.example` (166 lines, storage/vector DB config)
+- `.envrc` (142 lines, direnv auto-activation)
+- `scripts/env-vars.sh` (33 lines, AI/ML paths)
+- `scripts/stable-env.sh` (62 lines, WSL stability)
+
+**Status:** Phase 3 Complete
+**Last Updated:** 2026-01-13
