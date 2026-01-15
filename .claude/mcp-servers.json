@@ -2,8 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schemas/mcp-servers.json",
   "mcpServers": {
     "openai-proxy": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/mcp-server-openai"],
+      "command": "pixi",
+      "args": ["run", "-e", "js", "pnpm", "dlx", "@anthropic/mcp-server-openai"],
       "env": {
         "OPENAI_API_KEY": "${OPENAI_API_KEY}"
       },
@@ -11,8 +11,8 @@
     },
 
     "ollama": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/mcp-server-ollama"],
+      "command": "pixi",
+      "args": ["run", "-e", "js", "pnpm", "dlx", "@anthropic/mcp-server-ollama"],
       "env": {
         "OLLAMA_HOST": "http://localhost:11434"
       },
@@ -20,8 +20,8 @@
     },
 
     "localai": {
-      "command": "npx",
-      "args": ["-y", "mcp-server-localai"],
+      "command": "pixi",
+      "args": ["run", "-e", "js", "pnpm", "dlx", "mcp-server-localai"],
       "env": {
         "LOCALAI_ENDPOINT": "http://localhost:8080/v1",
         "LOCALAI_API_KEY": "${LOCALAI_API_KEY}"
@@ -30,8 +30,8 @@
     },
 
     "litellm": {
-      "command": "npx",
-      "args": ["-y", "mcp-server-litellm"],
+      "command": "pixi",
+      "args": ["run", "-e", "js", "pnpm", "dlx", "mcp-server-litellm"],
       "env": {
         "LITELLM_PROXY_URL": "http://localhost:4000",
         "LITELLM_API_KEY": "${LITELLM_API_KEY}"

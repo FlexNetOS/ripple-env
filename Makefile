@@ -32,7 +32,7 @@ help:
 	@echo "==================================="
 	@echo "Available targets:"
 	@echo "  doctor      - Show toolchain versions"
-	@echo "  install     - Install JS deps (npm)"
+	@echo "  install     - Install JS deps (pnpm via pixi)"
 	@echo "  build       - Build JS artifacts (swc)"
 	@echo "  test        - Deterministic local checks (no cluster required)"
 	@echo "  test-e2e    - Run full e2e validation script"
@@ -44,8 +44,9 @@ help:
 
 doctor:
 	@echo "PWD=$$(pwd)"
+	@command -v pixi >/dev/null 2>&1 && pixi --version || echo "pixi: (not found)"
 	@command -v node >/dev/null 2>&1 && node --version || echo "node: (not found)"
-	@command -v npm >/dev/null 2>&1 && npm --version || echo "npm: (not found)"
+	@command -v pnpm >/dev/null 2>&1 && pnpm --version || echo "pnpm: (not found)"
 	@command -v cargo >/dev/null 2>&1 && cargo --version || echo "cargo: (not found)"
 	@command -v python >/dev/null 2>&1 && python --version || true
 	@command -v python3 >/dev/null 2>&1 && python3 --version || true
@@ -54,19 +55,19 @@ doctor:
 	@command -v nix >/dev/null 2>&1 && nix --version || echo "nix: (not found)"
 
 install:
-	@echo "Installing JS dependencies (npm)…"
-	@if [ -f package-lock.json ]; then npm ci; else npm install; fi
+	@echo "Installing JS dependencies (pnpm via pixi)…"
+	@pixi run -e js pnpm install
 
 build:
 	@echo "Building JS artifacts (swc)…"
-	@npm run -s swc:build
+	@pixi run -e js pnpm run -s swc:build
 	@echo "NOTE: Nix builds are performed in CI/WSL via nix flake check/build."
 
 test:
 	@echo "Running deterministic local checks…"
 	@bash ./scripts/validate-configs.sh
-	@npm run -s swc:build
-	@npm run -s agents:test
+	@pixi run -e js pnpm run -s swc:build
+	@pixi run -e js pnpm run -s agents:test
 	@if [ -d rust ] && command -v cargo >/dev/null 2>&1; then cargo test --manifest-path rust/Cargo.toml; else echo "Skipping cargo tests (rust/ missing or cargo not found)"; fi
 	@if command -v nix >/dev/null 2>&1; then nix flake check; else echo "Skipping nix flake check (nix not found)"; fi
 
