@@ -957,7 +957,7 @@ After implementing tasks from the generated backlog, the following files MUST be
 ### Bootstrap Scripts
 | File | Update When | What to Update |
 |------|-------------|----------------|
-| `bootstrap.sh` | New Nix packages, tools, or dependencies added | Add verification commands, update STAGES, add installation steps |
+| `bootstrap.sh` | New Nix packages, tools, or dependencies added | Add verification commands (including `verify_pixi()`), ensure pixi verification is listed in the `STAGES` array, add installation steps |
 | `bootstrap.ps1` | Windows/WSL changes, new tooling | Mirror Linux bootstrap changes, update WSL configuration |
 
 ### Build Automation
