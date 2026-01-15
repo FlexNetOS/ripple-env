@@ -70,6 +70,7 @@ Use claude-code-router for multi-model dispatch:
 - `flake.nix` — Nix flake configuration
 - `pixi.toml` — Pixi/Conda packages
 - `bootstrap.sh` / `bootstrap.ps1` — Setup scripts
+- `Makefile` — Build automation and convenience targets
 - `.github/workflows/*.yml` — CI/CD workflows
 
 ## Available Resources in `.claude/`
@@ -912,6 +913,56 @@ If symlinks found: **Delete them and update file references instead.**
 
 ---
 
+## Post-Implementation Updates
+
+<post_implementation>
+## Files to Audit and Update After Task Implementation
+
+After implementing tasks from the generated backlog, the following files MUST be reviewed and updated to ensure consistency:
+
+### Bootstrap Scripts
+| File | Update When | What to Update |
+|------|-------------|----------------|
+| `bootstrap.sh` | New Nix packages, tools, or dependencies added | Add verification commands, update STAGES, add installation steps |
+| `bootstrap.ps1` | Windows/WSL changes, new tooling | Mirror Linux bootstrap changes, update WSL configuration |
+
+### Build Automation
+| File | Update When | What to Update |
+|------|-------------|----------------|
+| `Makefile` | New build targets, validation steps, or docker services | Add targets, update docker compose paths, add security/test commands |
+
+### Post-Task Verification Checklist
+
+After completing any P0/P1 task, verify:
+
+```bash
+# 1. Bootstrap scripts still work
+./bootstrap.sh --verify --profile minimal
+
+# 2. Makefile targets function correctly
+make doctor
+make test
+
+# 3. CI workflows pass
+# (automatically verified via GitHub Actions)
+```
+
+### Cross-Reference Matrix
+
+When modifying these files, also check:
+
+| If You Change... | Also Update... |
+|------------------|----------------|
+| `flake.nix` packages | `bootstrap.sh` verification, `Makefile` doctor target |
+| `pixi.toml` dependencies | `bootstrap.sh` verify_pixi(), `Makefile` test target |
+| Docker services | `Makefile` dev/monitor targets, `bootstrap.ps1` WSL config |
+| CI workflows | `Makefile` test-e2e target, `bootstrap.sh` --ci mode |
+| New tools/binaries | All bootstrap scripts, `Makefile` doctor target |
+
+</post_implementation>
+
+---
+
 ## Caching Strategy
 
 <caching>
@@ -1162,6 +1213,7 @@ Begin by reading `BUILDKIT_STARTER_SPEC.md` and reporting the initial repository
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.3.0 | 2026-01 | Added Makefile to configuration files, added Post-Implementation Updates section with bootstrap scripts and Makefile audit checklist, cross-reference matrix for file dependencies |
 | 2.2.0 | 2026-01 | Added Kimi K2 Thinking for cross-analysis, Phase 0 consistency validation, config-consistency-agent, OPA policies, analysis tools (TheAuditor, ast-grep, Conftest, Semgrep) |
 | 2.1.0 | 2026-01 | Fixed 13/14 layer inconsistency, added caching strategy, parallel execution wave model, corrected Task tool patterns, model optimization matrix |
 | 2.0.0 | 2026-01 | Major rewrite: Added model specifications, 14 domain teams, feature flag handling, installation mapping, BUILDKIT_STARTER_SPEC.md integration |
