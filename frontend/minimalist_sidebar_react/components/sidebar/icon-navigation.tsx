@@ -29,6 +29,7 @@ const panelIconMap: Record<string, { lib: 'material' | 'community' | 'feather'; 
   'legal-compliance': { lib: 'community', name: 'scale-balance' },
   'tasks': { lib: 'feather', name: 'check-square' },
   'projects': { lib: 'community', name: 'view-dashboard-outline' },
+  'vibe-kanban': { lib: 'community', name: 'view-column-outline' }, // Kanban board icon
   'calendar': { lib: 'feather', name: 'calendar' },
   'files': { lib: 'feather', name: 'folder' },
   'analytics-hub': { lib: 'feather', name: 'bar-chart-2' },
