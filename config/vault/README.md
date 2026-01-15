@@ -2,6 +2,54 @@
 
 This directory contains Vault policies and configuration for secure secret management across the ARIA platform.
 
+> **P0-004 Update (2026-01-15)**: Vault is now configured for **production mode** by default with persistent file storage. Set `VAULT_DEV_MODE=true` in your environment for development/testing.
+
+## Quick Start
+
+### Development Mode (quick testing)
+```bash
+# Set dev mode
+export VAULT_DEV_MODE=true
+export VAULT_DEV_ROOT_TOKEN_ID=root
+
+# Start services
+docker compose -f docker/docker-compose.identity.yml up -d vault
+
+# Use root token for testing
+export VAULT_ADDR='http://localhost:8200'
+export VAULT_TOKEN='root'
+```
+
+### Production Mode (persistent storage)
+```bash
+# Ensure VAULT_DEV_MODE is not set or set to false
+unset VAULT_DEV_MODE
+# OR
+export VAULT_DEV_MODE=false
+
+# Start Vault
+docker compose -f docker/docker-compose.identity.yml up -d vault
+
+# Initialize Vault (first time only)
+export VAULT_ADDR='http://localhost:8200'
+vault operator init -key-shares=5 -key-threshold=3
+
+# IMPORTANT: Save the unseal keys and root token securely!
+# Example output:
+#   Unseal Key 1: xxx
+#   Unseal Key 2: xxx
+#   ...
+#   Initial Root Token: hvs.xxxxx
+
+# Unseal Vault (required after every restart)
+vault operator unseal <key1>
+vault operator unseal <key2>
+vault operator unseal <key3>
+
+# Authenticate
+vault login <root-token>
+```
+
 ## Security Issues Fixed
 
 ### SEC-001: Keycloak Credentials (HIGH Severity)

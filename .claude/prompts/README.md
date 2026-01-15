@@ -100,6 +100,7 @@ chromadb = { features = ["vectordb-chromadb"] }
 4. **Feature Flag Matrix** — All conflicts resolved
 5. **Workflow Verification** — CI checklist
 6. **Task Backlog** — P0/P1/P2/P3 prioritized
+7. **CHANGELOG Draft** — Proposed changelog entry for audit findings
 
 ## Creating New Prompts
 

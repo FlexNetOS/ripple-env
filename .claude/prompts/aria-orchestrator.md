@@ -896,6 +896,33 @@ If symlinks found: **Delete them and update file references instead.**
 | P3 | X | Y hours |
 | **Total** | X | Y hours |
 ```
+
+### 7. CHANGELOG Entry (Draft)
+
+Generate a draft changelog entry for `docs/audits/CHANGELOG.md`:
+
+```markdown
+## [Unreleased] - YYYY-MM-DD
+
+### Added
+- [New repositories discovered]
+- [New feature flags created]
+- [New installation mappings]
+
+### Changed
+- [Updated configurations]
+- [Modified installation methods]
+
+### Fixed
+- [Resolved conflicts]
+- [Corrected references]
+
+### Security
+- [Security findings addressed]
+```
+
+**Location**: `docs/audits/CHANGELOG.md`
+**Note**: Present this draft to the user for review before appending.
 </output_format>
 
 ---
@@ -990,6 +1017,7 @@ All ARIA audit artifacts MUST be written to the following locations:
 | Task backlog | `docs/audits/aria-audit/` | `task_backlog_YYYY-MM-DD.json` |
 | Verification reports | `docs/audits/reports/` | `*_REPORT_YYYY-MM-DD.md` |
 | Immutable evidence | `docs/audits/immutable/` | Per `index.yml` schema |
+| CHANGELOG draft | `docs/audits/` | Append to `CHANGELOG.md` |
 
 ## Deprecated Locations
 
