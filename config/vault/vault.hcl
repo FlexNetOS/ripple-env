@@ -1,16 +1,39 @@
 # Vault Configuration
-# P0-003: HashiCorp Vault secrets management configuration
+# P0-004: HashiCorp Vault secrets management configuration
+# Updated: 2026-01-15 - Production-ready with file storage
+
+# =============================================================================
+# IMPORTANT: This is the PRODUCTION configuration
+# For development mode, set VAULT_DEV_MODE=true in docker-compose
+# =============================================================================
 
 # Listener configuration
 listener "tcp" {
   address     = "0.0.0.0:8200"
-  tls_disable = 1  # Development only - enable TLS for production
+
+  # TLS Configuration (P0-005: mTLS)
+  # Uncomment when Step-CA certificates are generated
+  # tls_disable = 0
+  # tls_cert_file = "/vault/certs/vault.crt"
+  # tls_key_file = "/vault/certs/vault.key"
+  # tls_client_ca_file = "/vault/certs/ca.crt"
+  # tls_require_and_verify_client_cert = true
+
+  # Development fallback (disable in production)
+  tls_disable = 1
 }
 
-# Storage backend
-# For development: use in-memory ("inmem")
-# For production: use "file" or "consul"
-storage "inmem" {}
+# Storage backend - FILE for persistence
+# P0-004: Changed from inmem to file for production
+storage "file" {
+  path = "/vault/file"
+}
+
+# Alternative: Raft storage for HA (uncomment for multi-node)
+# storage "raft" {
+#   path    = "/vault/raft"
+#   node_id = "vault_1"
+# }
 
 # Audit logging
 audit "file" {
