@@ -4,15 +4,18 @@
 # BUILDKIT_STARTER_SPEC.md Layer 5: Identity & Policy
 #
 # Components:
-#   - Step-CA: Certificate Authority for mTLS (ARIA P1-005, SEC-003)
+#   - Step-CA: Certificate Authority for mTLS (P0-005, SEC-003)
 #   - Keycloak: OIDC identity provider
 #   - PostgreSQL: Keycloak database
 #   - Vaultwarden: Bitwarden-compatible password vault (optional)
-#   - HashiCorp Vault: Secrets management and encryption (P0-001)
+#   - HashiCorp Vault: Secrets management and encryption (P0-004)
 #
 # Usage:
 #   # Initialize CA first (one-time):
 #   ./scripts/init-step-ca.sh
+#
+#   # Generate service certificates (required for mTLS):
+#   ./scripts/generate-service-certs.sh
 #
 #   # Start services:
 #   docker compose -f docker/docker-compose.identity.yml up -d
@@ -23,8 +26,13 @@
 #   - Vaultwarden: http://localhost:8081 (use VAULTWARDEN_ADMIN_TOKEN env var)
 #   - Vault UI: http://localhost:8200 (use VAULT_DEV_ROOT_TOKEN_ID env var)
 #
+# Environment Variables:
+#   - VAULT_DEV_MODE: Set to 'true' for dev mode (in-memory), 'false' for production
+#   - ENABLE_MTLS: Set to 'true' to enable mTLS (requires certificates)
+#
 # mTLS Documentation:
-#   - See docs/MTLS_SETUP.md for complete mTLS configuration guide
+#   - See docs/getting-started/MTLS_SETUP.md for complete guide
+#   - See docs/getting-started/MTLS-IMPLEMENTATION-CHECKLIST.md for checklist
 # =============================================================================
 
 services:
@@ -182,26 +190,41 @@ services:
   # HashiCorp Vault - Secrets Management
   # ---------------------------------------------------------------------------
   # https://github.com/hashicorp/vault
-  # Provides secrets management, encryption, and dynamic credentials (P0-001)
+  # Provides secrets management, encryption, and dynamic credentials
+  # P0-004: Updated for production mode with file storage
   vault:
     image: hashicorp/vault:1.18
     container_name: vault
+    # Production mode: use 'server' command with config file
+    # Dev mode: use 'server -dev' (set VAULT_DEV_MODE=true)
+    command: >
+      sh -c '
+        if [ "$${VAULT_DEV_MODE:-false}" = "true" ]; then
+          vault server -dev -dev-root-token-id=$${VAULT_DEV_ROOT_TOKEN_ID:-root} -dev-listen-address=0.0.0.0:8200
+        else
+          vault server -config=/vault/config/vault.hcl
+        fi
+      '
     environment:
-      # Development mode settings (DO NOT use in production)
+      # Set VAULT_DEV_MODE=true for development, false/unset for production
+      VAULT_DEV_MODE: ${VAULT_DEV_MODE:-false}
+      # Dev mode token (only used when VAULT_DEV_MODE=true)
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:-root}
-      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
       # API address
-      VAULT_ADDR: "http://0.0.0.0:8200"
-      # Skip TLS verification in dev mode
-      VAULT_SKIP_VERIFY: "true"
+      VAULT_ADDR: "http://127.0.0.1:8200"
+      # Skip TLS verification (disable in production with mTLS)
+      VAULT_SKIP_VERIFY: ${VAULT_SKIP_VERIFY:-true}
     volumes:
       # Vault configuration
-      - ../config/vault:/vault/config
-      # Vault data (only for dev mode)
+      - ../config/vault:/vault/config:ro
+      # Vault persistent data (P0-004: required for production mode)
       - vault-data:/vault/file
-      # mTLS certificates (mount when available)
-      # - ../config/step-ca/pki/root_ca.crt:/etc/ssl/certs/aria-root-ca.crt:ro
-      # - ./data/certs/vault:/vault/certs:ro
+      # Vault logs
+      - vault-logs:/vault/logs
+      # mTLS certificates (P0-005: uncomment when Step-CA certs are generated)
+      # - ../config/step-ca/pki/root_ca.crt:/vault/certs/ca.crt:ro
+      # - ./data/certs/vault/vault.crt:/vault/certs/vault.crt:ro
+      # - ./data/certs/vault/vault.key:/vault/certs/vault.key:ro
     ports:
       - "8200:8200"
     cap_add:
@@ -212,7 +235,9 @@ services:
     networks:
       - identity-network
     healthcheck:
-      test: ["CMD", "vault", "status"]
+      # In production mode, vault status returns exit code 2 when sealed (which is expected before init/unseal)
+      # We use a more lenient check that passes if vault is responding
+      test: ["CMD-SHELL", "vault status -format=json 2>/dev/null || wget -q --spider http://127.0.0.1:8200/v1/sys/health?standbyok=true&sealedok=true || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -229,4 +254,6 @@ volumes:
   vaultwarden-data:
     driver: local
   vault-data:
+    driver: local
+  vault-logs:
     driver: local
