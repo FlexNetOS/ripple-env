@@ -1,0 +1,297 @@
+{
+  "census_date": "2026-01-15",
+  "source_documents": [
+    "docs/BUILDKIT_STARTER_SPEC.md",
+    "README.md"
+  ],
+  "total_repositories": 87,
+  "status_summary": {
+    "installed": 52,
+    "partial": 6,
+    "missing": 29,
+    "coverage_percentage": 66.7
+  },
+  "domains": [
+    {
+      "domain": "Host OS & Environment",
+      "layer": "L1.2-L1.3",
+      "expected": 3,
+      "installed": 3,
+      "missing": 0,
+      "repositories": [
+        {"name": "NixOS/nixpkgs", "status": "INSTALLED", "location": "flake.nix:22-23"},
+        {"name": "prefix-dev/pixi", "status": "INSTALLED", "location": "pixi.toml:1"},
+        {"name": "nushell/nushell", "status": "INSTALLED", "location": "modules/common/shell/nushell.nix:1"}
+      ]
+    },
+    {
+      "domain": "Isolation & Runtime",
+      "layer": "L1.4",
+      "expected": 3,
+      "installed": 0,
+      "missing": 3,
+      "repositories": [
+        {"name": "anthropic-experimental/sandbox-runtime", "status": "MISSING", "location": "DOCUMENTED ONLY"},
+        {"name": "kata-containers/kata-containers", "status": "MISSING", "location": "DOCUMENTED ONLY"},
+        {"name": "firecracker-microvm/firecracker", "status": "MISSING", "location": "MISSING"}
+      ]
+    },
+    {
+      "domain": "Cluster & Delivery",
+      "layer": "L1.5-L1.6",
+      "expected": 5,
+      "installed": 3,
+      "missing": 2,
+      "repositories": [
+        {"name": "argoproj/argo-cd", "status": "INSTALLED", "location": "manifests/argocd/"},
+        {"name": "argoproj/argo-rollouts", "status": "INSTALLED", "location": "manifests/kubernetes/base/delivery/"},
+        {"name": "argoproj/argo-workflows", "status": "INSTALLED", "location": "manifests/argo-workflows/"},
+        {"name": "bytebase/bytebase", "status": "MISSING", "location": "MISSING"},
+        {"name": "neondatabase/neon", "status": "MISSING", "location": "MISSING"}
+      ]
+    },
+    {
+      "domain": "Edge & Agent Traffic",
+      "layer": "L1.7",
+      "expected": 2,
+      "installed": 1,
+      "missing": 1,
+      "repositories": [
+        {"name": "Kong/kong", "status": "INSTALLED", "location": "docker/docker-compose.edge.yml"},
+        {"name": "agentgateway/agentgateway", "status": "MISSING", "location": "MISSING"}
+      ]
+    },
+    {
+      "domain": "Identity & Policy",
+      "layer": "L1.8",
+      "expected": 5,
+      "installed": 5,
+      "missing": 0,
+      "repositories": [
+        {"name": "keycloak/keycloak", "status": "INSTALLED", "location": "docker/docker-compose.identity.yml:71"},
+        {"name": "open-policy-agent/opa", "status": "INSTALLED", "location": "docker/docker-compose.automation.yml:70"},
+        {"name": "hashicorp/vault", "status": "INSTALLED", "location": "docker/docker-compose.identity.yml:186"},
+        {"name": "smallstep/cli", "status": "INSTALLED", "location": "docker/docker-compose.identity.yml:36"},
+        {"name": "dani-garcia/vaultwarden", "status": "INSTALLED", "location": "docker/docker-compose.identity.yml:144"}
+      ]
+    },
+    {
+      "domain": "Messaging & Orchestration",
+      "layer": "L1.9",
+      "expected": 3,
+      "installed": 3,
+      "missing": 0,
+      "repositories": [
+        {"name": "nats-io/nats-server", "status": "INSTALLED", "location": "docker/docker-compose.messaging.yml:13"},
+        {"name": "temporalio/temporal", "status": "INSTALLED", "location": "docker/docker-compose.messaging.yml:41"},
+        {"name": "n8n-io/n8n", "status": "INSTALLED", "location": "docker/docker-compose.automation.yml:13"}
+      ]
+    },
+    {
+      "domain": "Agent Runtime",
+      "layer": "L1.10",
+      "expected": 10,
+      "installed": 4,
+      "partial": 1,
+      "missing": 5,
+      "repositories": [
+        {"name": "agiresearch/AIOS", "status": "PARTIAL", "location": "docker/aios.yml (Docker only)"},
+        {"name": "agiresearch/Cerebrum", "status": "INSTALLED", "location": "pixi.toml:258"},
+        {"name": "Josh-XT/AGiXT", "status": "INSTALLED", "location": "docker/agixt.yml"},
+        {"name": "agno-agi/agno", "status": "INSTALLED", "location": "pixi.toml:121"},
+        {"name": "ruvnet/agentic-flow", "status": "MISSING", "location": "Node.js - not in pixi"},
+        {"name": "ruvnet/claude-flow", "status": "MISSING", "location": "Node.js - not in pixi"},
+        {"name": "ruvnet/Synaptic-Mesh", "status": "MISSING", "location": "MISSING"},
+        {"name": "ruvnet/daa", "status": "MISSING", "location": "MISSING"},
+        {"name": "smallcloudai/refact", "status": "INSTALLED", "location": "docker/docker-compose.refact.yml"},
+        {"name": "arkflow-rs/arkflow", "status": "MISSING", "location": "MISSING"}
+      ]
+    },
+    {
+      "domain": "Tool Execution",
+      "layer": "L1.11",
+      "expected": 5,
+      "installed": 2,
+      "missing": 3,
+      "repositories": [
+        {"name": "googleapis/genai-toolbox", "status": "INSTALLED", "location": "modules/common/ai/genai-toolbox.nix"},
+        {"name": "FlexNetOS/remote-agentic-coding-system", "status": "MISSING", "location": "MISSING - P0 GAP"},
+        {"name": "ruvnet/midstream", "status": "MISSING", "location": "MISSING"},
+        {"name": "ruvnet/ruv-FANN", "status": "MISSING", "location": "MISSING"},
+        {"name": "ruvnet/sublinear-time-solver", "status": "MISSING", "location": "MISSING"}
+      ]
+    },
+    {
+      "domain": "Inference",
+      "layer": "L1.12",
+      "expected": 1,
+      "installed": 1,
+      "missing": 0,
+      "repositories": [
+        {"name": "mudler/LocalAI", "status": "INSTALLED", "location": "docker/docker-compose.localai.yml"}
+      ]
+    },
+    {
+      "domain": "State & Storage",
+      "layer": "L1.13-L1.14",
+      "expected": 8,
+      "installed": 8,
+      "missing": 0,
+      "repositories": [
+        {"name": "postgres/postgres", "status": "INSTALLED", "location": "docker/docker-compose.core.yml"},
+        {"name": "redis/redis", "status": "INSTALLED", "location": "docker/docker-compose.core.yml"},
+        {"name": "minio/minio", "status": "INSTALLED", "location": "docker/docker-compose.core.yml"},
+        {"name": "ipfs/kubo", "status": "INSTALLED", "location": "docker/docker-compose.ipfs.yml"},
+        {"name": "holochain/holochain", "status": "INSTALLED", "location": "docker/docker-compose.holochain.yml"},
+        {"name": "holochain/lair", "status": "INSTALLED", "location": "flake.nix (overlay)"},
+        {"name": "ruvnet/ruvector", "status": "INSTALLED", "location": "package.json + pixi.toml"},
+        {"name": "sqlite/sqlite", "status": "INSTALLED", "location": "nix packages"}
+      ]
+    },
+    {
+      "domain": "Data & Query",
+      "layer": "L1.15",
+      "expected": 3,
+      "installed": 2,
+      "missing": 1,
+      "repositories": [
+        {"name": "mindsdb/mindsdb", "status": "INSTALLED", "location": "docker/docker-compose.mindsdb.yml"},
+        {"name": "apache/datafusion", "status": "INSTALLED", "location": "rust/Cargo.toml"},
+        {"name": "neo4j-labs", "status": "MISSING", "location": "Partial - manifests only"}
+      ]
+    },
+    {
+      "domain": "LLMOps & Evaluation",
+      "layer": "L1.16",
+      "expected": 3,
+      "installed": 3,
+      "missing": 0,
+      "repositories": [
+        {"name": "promptfoo/promptfoo", "status": "INSTALLED", "location": "pixi.toml:340-360"},
+        {"name": "truera/trulens", "status": "INSTALLED", "location": "pixi.toml:357"},
+        {"name": "tensorzero/tensorzero", "status": "INSTALLED", "location": "pixi.toml:347"}
+      ]
+    },
+    {
+      "domain": "Training",
+      "layer": "L1.17",
+      "expected": 3,
+      "installed": 3,
+      "missing": 0,
+      "repositories": [
+        {"name": "mlflow/mlflow", "status": "INSTALLED", "location": "pixi.toml:376"},
+        {"name": "unslothai/unsloth", "status": "INSTALLED", "location": "pixi.toml:388-407"},
+        {"name": "silentfortin/sentiment-monitoring-mlops", "status": "PARTIAL", "location": "Reference only"}
+      ]
+    },
+    {
+      "domain": "UI",
+      "layer": "L1.20",
+      "expected": 3,
+      "installed": 2,
+      "missing": 1,
+      "repositories": [
+        {"name": "lobehub/lobe-chat", "status": "INSTALLED", "location": "docker/docker-compose.ui.yml"},
+        {"name": "firecrawl/open-lovable", "status": "MISSING", "location": "MISSING"},
+        {"name": "pixijs/pixijs", "status": "INSTALLED", "location": "package.json"}
+      ]
+    },
+    {
+      "domain": "Build Tools",
+      "layer": "L1.21",
+      "expected": 2,
+      "installed": 2,
+      "missing": 0,
+      "repositories": [
+        {"name": "swc-project/swc", "status": "INSTALLED", "location": "package.json"},
+        {"name": "evanw/esbuild", "status": "INSTALLED", "location": "package.json"}
+      ]
+    },
+    {
+      "domain": "Notebooks",
+      "layer": "L1.22",
+      "expected": 1,
+      "installed": 1,
+      "missing": 0,
+      "repositories": [
+        {"name": "jupyterlab/jupyterlab", "status": "INSTALLED", "location": "pixi.toml"}
+      ]
+    },
+    {
+      "domain": "Observability",
+      "layer": "L1.18",
+      "expected": 6,
+      "installed": 6,
+      "missing": 0,
+      "repositories": [
+        {"name": "prometheus/prometheus", "status": "INSTALLED", "location": "docker/docker-compose.observability.yml:24"},
+        {"name": "grafana/grafana", "status": "INSTALLED", "location": "docker/docker-compose.observability.yml:52"},
+        {"name": "grafana/loki", "status": "INSTALLED", "location": "docker/docker-compose.observability.yml:83"},
+        {"name": "netdata/netdata", "status": "INSTALLED", "location": "docker/docker-compose.observability.yml:267"},
+        {"name": "umami-software/umami", "status": "INSTALLED", "location": "docker/docker-compose.observability.yml:305"},
+        {"name": "open-telemetry/opentelemetry-collector", "status": "INSTALLED", "location": "docker/docker-compose.observability.yml:238"}
+      ]
+    },
+    {
+      "domain": "Security",
+      "layer": "Cross-cutting",
+      "expected": 4,
+      "installed": 1,
+      "missing": 3,
+      "repositories": [
+        {"name": "aquasecurity/trivy", "status": "INSTALLED", "location": "docker/trivy.yml"},
+        {"name": "anchore/syft", "status": "PARTIAL", "location": "CI workflow only"},
+        {"name": "anchore/grype", "status": "PARTIAL", "location": "CI workflow only"},
+        {"name": "sigstore/cosign", "status": "PARTIAL", "location": "CI workflow only"}
+      ]
+    },
+    {
+      "domain": "DevOps & Autonomy",
+      "layer": "L1.19",
+      "expected": 2,
+      "installed": 0,
+      "missing": 2,
+      "repositories": [
+        {"name": "agenticsorg/devops", "status": "MISSING", "location": "MISSING"},
+        {"name": "agenticsorg/quantum-agentics", "status": "MISSING", "location": "MISSING"}
+      ]
+    },
+    {
+      "domain": "Additional Tools",
+      "layer": "Various",
+      "expected": 18,
+      "installed": 12,
+      "missing": 6,
+      "repositories": [
+        {"name": "vcache-project/vCache", "status": "MISSING", "location": "MISSING"},
+        {"name": "messkan/prompt-cache", "status": "MISSING", "location": "MISSING"},
+        {"name": "containerd/containerd", "status": "INSTALLED", "location": "nix packages"},
+        {"name": "opencontainers/runc", "status": "INSTALLED", "location": "nix packages"},
+        {"name": "helm/helm", "status": "INSTALLED", "location": "nix/packages/dev-tools.nix"},
+        {"name": "kubernetes/kubectl", "status": "INSTALLED", "location": "nix/packages/dev-tools.nix"},
+        {"name": "kubernetes-sigs/kustomize", "status": "INSTALLED", "location": "nix/packages/dev-tools.nix"},
+        {"name": "neovim/neovim", "status": "INSTALLED", "location": "modules/common/editor/neovim.nix"},
+        {"name": "git/git", "status": "INSTALLED", "location": "nix packages"},
+        {"name": "jj-vcs/jj", "status": "MISSING", "location": "MISSING"},
+        {"name": "curl/curl", "status": "INSTALLED", "location": "nix packages"},
+        {"name": "jqlang/jq", "status": "INSTALLED", "location": "nix packages"},
+        {"name": "mikefarah/yq", "status": "INSTALLED", "location": "nix packages"}
+      ]
+    },
+    {
+      "domain": "Holochain Ecosystem",
+      "layer": "L1.14",
+      "expected": 6,
+      "installed": 4,
+      "missing": 2,
+      "repositories": [
+        {"name": "lightningrodlabs/holochain-runner", "status": "MISSING", "location": "MISSING"},
+        {"name": "spartan-holochain-counsel/nix-overlay", "status": "INSTALLED", "location": "flake.nix inputs"},
+        {"name": "spartan-holochain-counsel/node-holochain-backdrop", "status": "MISSING", "location": "MISSING"},
+        {"name": "holochain/devhub-dnas", "status": "PARTIAL", "location": "Referenced only"},
+        {"name": "holochain/syn", "status": "PARTIAL", "location": "Referenced only"},
+        {"name": "h-REA/hREA", "status": "PARTIAL", "location": "Referenced only"}
+      ]
+    }
+  ]
+}
