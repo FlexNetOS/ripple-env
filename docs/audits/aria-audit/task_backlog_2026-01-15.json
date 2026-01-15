@@ -1,0 +1,473 @@
+{
+  "audit_date": "2026-01-15",
+  "source": "ARIA Full Audit",
+  "total_tasks": 32,
+  "by_priority": {
+    "P0": 5,
+    "P1": 12,
+    "P2": 10,
+    "P3": 5
+  },
+  "tasks": [
+    {
+      "id": "P0-001",
+      "priority": "P0",
+      "title": "Install sandbox-runtime for MCP tool isolation",
+      "description": "anthropic-experimental/sandbox-runtime is documented but not installed. This is the primary execution containment layer per BUILDKIT spec L1.4.",
+      "layer": "L1.4",
+      "status": "TODO",
+      "files_to_modify": [
+        "flake.nix",
+        "nix/packages/base.nix"
+      ],
+      "verification": "which sandbox-runtime && sandbox-runtime --version",
+      "dependencies": [],
+      "estimate": "HIGH"
+    },
+    {
+      "id": "P0-002",
+      "priority": "P0",
+      "title": "Install or document substitute for remote-agentic-coding-system",
+      "description": "FlexNetOS/remote-agentic-coding-system is listed as PRIMARY in L1.11 but completely missing from repository.",
+      "layer": "L1.11",
+      "status": "TODO",
+      "files_to_create": [
+        "docker/docker-compose.remote-coding.yml",
+        "docs/getting-started/REMOTE_CODING_SETUP.md"
+      ],
+      "verification": "Remote development bridge functional",
+      "dependencies": [],
+      "estimate": "HIGH"
+    },
+    {
+      "id": "P0-003",
+      "priority": "P0",
+      "title": "Install agentgateway for MCP routing",
+      "description": "agentgateway/agentgateway is the Agent/MCP traffic plane per L1.7. Currently MISSING.",
+      "layer": "L1.7",
+      "status": "TODO",
+      "files_to_create": [
+        "docker/docker-compose.agentgateway.yml",
+        "config/agentgateway/"
+      ],
+      "verification": "curl http://localhost:PORT/health",
+      "dependencies": [],
+      "estimate": "HIGH"
+    },
+    {
+      "id": "P0-004",
+      "priority": "P0",
+      "title": "Configure production Vault (not DEV mode)",
+      "description": "Vault is running in DEV MODE with in-memory storage. Production requires persistent storage and proper initialization.",
+      "layer": "L1.8",
+      "status": "TODO",
+      "files_to_modify": [
+        "docker/docker-compose.identity.yml",
+        "config/vault/vault.hcl"
+      ],
+      "verification": "vault status shows initialized and sealed/unsealed properly",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P0-005",
+      "priority": "P0",
+      "title": "Enable mTLS between services",
+      "description": "Step-CA is installed but mTLS is commented out in docker-compose files. Need to generate certificates and enable mTLS.",
+      "layer": "L1.8",
+      "status": "TODO",
+      "files_to_modify": [
+        "docker/*.yml (uncomment mTLS sections)"
+      ],
+      "verification": "Services communicate over mTLS",
+      "dependencies": ["P0-004"],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P1-001",
+      "priority": "P1",
+      "title": "Enable Kubernetes tools in default shell",
+      "description": "kubectl, helm, kustomize are optional (withKubernetes=false). Should be enabled for k8s operations.",
+      "layer": "L1.5",
+      "status": "TODO",
+      "files_to_modify": [
+        "nix/packages/dev-tools.nix"
+      ],
+      "verification": "kubectl version --client && helm version && kustomize version",
+      "dependencies": [],
+      "estimate": "LOW"
+    },
+    {
+      "id": "P1-002",
+      "priority": "P1",
+      "title": "Install Kata Containers for VM-backed isolation",
+      "description": "kata-containers is L1.4 default isolation but not installed. Linux x86_64 only.",
+      "layer": "L1.4",
+      "status": "TODO",
+      "files_to_create": [
+        "nix/packages/platform.nix (Linux section)"
+      ],
+      "verification": "kata-runtime --version && docker run --runtime kata hello-world",
+      "dependencies": [],
+      "estimate": "HIGH",
+      "platform_notes": "Linux x86_64 only, requires nested virt in WSL2"
+    },
+    {
+      "id": "P1-003",
+      "priority": "P1",
+      "title": "Create Nix packages for AIOS",
+      "description": "AIOS is Docker-only. Create Nix derivation for pure Nix environments.",
+      "layer": "L1.10",
+      "status": "TODO",
+      "files_to_create": [
+        "nix/packages/aios.nix",
+        "modules/common/ai/aios.nix"
+      ],
+      "verification": "aios --version in nix shell",
+      "dependencies": [],
+      "estimate": "HIGH"
+    },
+    {
+      "id": "P1-004",
+      "priority": "P1",
+      "title": "Create Nix packages for AGiXT",
+      "description": "AGiXT is Docker-only. Create Nix derivation for pure Nix environments.",
+      "layer": "L1.10",
+      "status": "TODO",
+      "files_to_create": [
+        "nix/packages/agixt.nix",
+        "modules/common/ai/agixt.nix"
+      ],
+      "verification": "agixt --version in nix shell",
+      "dependencies": [],
+      "estimate": "HIGH"
+    },
+    {
+      "id": "P1-005",
+      "priority": "P1",
+      "title": "Add feature flag system for agent runtime selection",
+      "description": "Create .env.agent-runtime.example with AGENT_RUNTIME selection (aios|agixt|refact).",
+      "layer": "L1.10",
+      "status": "TODO",
+      "files_to_create": [
+        ".env.agent-runtime.example",
+        "scripts/select-agent-runtime.sh"
+      ],
+      "verification": "Feature flag switches between agent runtimes",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P1-006",
+      "priority": "P1",
+      "title": "Create smoke tests for agent runtime components",
+      "description": "No integration testing between AIOS, AGiXT, and LocalAI.",
+      "layer": "L1.10",
+      "status": "TODO",
+      "files_to_create": [
+        "tests/integration/test_agent_runtime.py",
+        "scripts/smoke-test-agents.sh"
+      ],
+      "verification": "pytest tests/integration/ passes",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P1-007",
+      "priority": "P1",
+      "title": "Fix ruvector optionalDependencies issue",
+      "description": "ruvector packages are optionalDependencies in package.json (may fail silently).",
+      "layer": "L1.13",
+      "status": "TODO",
+      "files_to_modify": [
+        "package.json"
+      ],
+      "verification": "npm install completes with ruvector packages",
+      "dependencies": [],
+      "estimate": "LOW"
+    },
+    {
+      "id": "P1-008",
+      "priority": "P1",
+      "title": "Add bytebase for DB CI/CD",
+      "description": "bytebase/bytebase is PRIMARY in L1.6 but not installed.",
+      "layer": "L1.6",
+      "status": "TODO",
+      "files_to_create": [
+        "docker/docker-compose.bytebase.yml",
+        "config/bytebase/"
+      ],
+      "verification": "curl http://localhost:PORT/health",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P1-009",
+      "priority": "P1",
+      "title": "Add neon for preview DBs",
+      "description": "neondatabase/neon is PRIMARY in L1.6 but not installed.",
+      "layer": "L1.6",
+      "status": "TODO",
+      "files_to_create": [
+        "docs/getting-started/NEON_SETUP.md"
+      ],
+      "verification": "Neon integration documented",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P1-010",
+      "priority": "P1",
+      "title": "Document isolation strategy",
+      "description": "Create ADR explaining current isolation (Docker) vs target (sandbox/Kata/Firecracker).",
+      "layer": "L1.4",
+      "status": "TODO",
+      "files_to_create": [
+        "docs/architecture/ADR-ISOLATION-STRATEGY.md"
+      ],
+      "verification": "Document exists and explains upgrade path",
+      "dependencies": [],
+      "estimate": "LOW"
+    },
+    {
+      "id": "P1-011",
+      "priority": "P1",
+      "title": "Update genai-toolbox vendorHash",
+      "description": "genai-toolbox Nix module needs vendorHash from first build.",
+      "layer": "L1.11",
+      "status": "TODO",
+      "files_to_modify": [
+        "modules/common/ai/genai-toolbox.nix"
+      ],
+      "verification": "nix build .#packages.x86_64-linux.genai-toolbox",
+      "dependencies": [],
+      "estimate": "LOW"
+    },
+    {
+      "id": "P1-012",
+      "priority": "P1",
+      "title": "Add open-lovable UI/codegen tool",
+      "description": "firecrawl/open-lovable is PRIMARY in L1.20 but not installed.",
+      "layer": "L1.20",
+      "status": "TODO",
+      "files_to_create": [
+        "docker/docker-compose.open-lovable.yml"
+      ],
+      "verification": "Open Lovable UI accessible",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P2-001",
+      "priority": "P2",
+      "title": "Install Firecracker for microVM pools",
+      "description": "firecracker is L1.4 burst/high-risk isolation but not installed. Linux x86_64 only.",
+      "layer": "L1.4",
+      "status": "TODO",
+      "files_to_create": [
+        "nix/packages/platform.nix (Linux section)"
+      ],
+      "verification": "firecracker --version",
+      "dependencies": [],
+      "estimate": "HIGH",
+      "platform_notes": "Linux x86_64 only, requires KVM"
+    },
+    {
+      "id": "P2-002",
+      "priority": "P2",
+      "title": "Add agentic-flow to package.json",
+      "description": "ruvnet/agentic-flow is PRIMARY agent dev→deploy flow but not installed (Node.js).",
+      "layer": "L1.10",
+      "status": "TODO",
+      "files_to_modify": [
+        "package.json"
+      ],
+      "verification": "npm run agentic-flow --help",
+      "dependencies": [],
+      "estimate": "LOW"
+    },
+    {
+      "id": "P2-003",
+      "priority": "P2",
+      "title": "Add claude-flow to package.json",
+      "description": "ruvnet/claude-flow is PRIMARY swarm orchestration but not installed (Node.js).",
+      "layer": "L1.10",
+      "status": "TODO",
+      "files_to_modify": [
+        "package.json"
+      ],
+      "verification": "npx claude-flow --help",
+      "dependencies": [],
+      "estimate": "LOW"
+    },
+    {
+      "id": "P2-004",
+      "priority": "P2",
+      "title": "Add k3s or kind for local Kubernetes testing",
+      "description": "No local Kubernetes cluster for integration testing.",
+      "layer": "L1.5",
+      "status": "TODO",
+      "files_to_create": [
+        "nix/packages/dev-tools.nix (kind)",
+        "scripts/local-k8s.sh"
+      ],
+      "verification": "kind create cluster && kubectl cluster-info",
+      "dependencies": ["P1-001"],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P2-005",
+      "priority": "P2",
+      "title": "Add vCache for prompt caching",
+      "description": "vcache-project/vCache is PRIMARY prompt cache but not installed.",
+      "layer": "L1.13",
+      "status": "TODO",
+      "files_to_create": [
+        "docker/docker-compose.vcache.yml"
+      ],
+      "verification": "vCache service running",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P2-006",
+      "priority": "P2",
+      "title": "Add prompt-cache utility",
+      "description": "messkan/prompt-cache is PRIMARY prompt caching but not installed.",
+      "layer": "L1.13",
+      "status": "TODO",
+      "files_to_modify": [
+        "pixi.toml"
+      ],
+      "verification": "prompt-cache available in pixi environment",
+      "dependencies": [],
+      "estimate": "LOW"
+    },
+    {
+      "id": "P2-007",
+      "priority": "P2",
+      "title": "Add midstream streaming middleware",
+      "description": "ruvnet/midstream is PRIMARY streaming analysis but not installed.",
+      "layer": "L1.11",
+      "status": "TODO",
+      "files_to_create": [
+        "modules/common/ai/midstream.nix"
+      ],
+      "verification": "midstream available",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P2-008",
+      "priority": "P2",
+      "title": "Add agenticsorg/devops for agentic ops",
+      "description": "agenticsorg/devops is PRIMARY agentic ops but not installed.",
+      "layer": "L1.19",
+      "status": "TODO",
+      "files_to_create": [
+        "docs/getting-started/AGENTIC_DEVOPS.md"
+      ],
+      "verification": "Documentation and integration plan exists",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P2-009",
+      "priority": "P2",
+      "title": "Add holochain-runner for quick Holochain startup",
+      "description": "lightningrodlabs/holochain-runner is reference tool but not installed.",
+      "layer": "L1.14",
+      "status": "TODO",
+      "files_to_modify": [
+        "package.json"
+      ],
+      "verification": "npx holochain-runner --help",
+      "dependencies": [],
+      "estimate": "LOW"
+    },
+    {
+      "id": "P2-010",
+      "priority": "P2",
+      "title": "Add jj-vcs for VCS ergonomics",
+      "description": "jj-vcs/jj is developer workflow tool but not installed.",
+      "layer": "Additional Tools",
+      "status": "TODO",
+      "files_to_modify": [
+        "nix/packages/dev-tools.nix"
+      ],
+      "verification": "jj version",
+      "dependencies": [],
+      "estimate": "LOW"
+    },
+    {
+      "id": "P3-001",
+      "priority": "P3",
+      "title": "Add arkflow-rs/arkflow Rust orchestration",
+      "description": "arkflow is PRIMARY Rust orchestration runtime but not installed.",
+      "layer": "L1.10",
+      "status": "TODO",
+      "files_to_modify": [
+        "rust/Cargo.toml"
+      ],
+      "verification": "arkflow crate compiles",
+      "dependencies": [],
+      "estimate": "HIGH"
+    },
+    {
+      "id": "P3-002",
+      "priority": "P3",
+      "title": "Add Synaptic-Mesh distributed agent mesh",
+      "description": "ruvnet/Synaptic-Mesh is PRIMARY coordination/mesh but not installed.",
+      "layer": "L1.10",
+      "status": "TODO",
+      "files_to_create": [
+        "docs/architecture/ADR-AGENT-MESH.md"
+      ],
+      "verification": "Evaluation document exists",
+      "dependencies": [],
+      "estimate": "HIGH"
+    },
+    {
+      "id": "P3-003",
+      "priority": "P3",
+      "title": "Add daa decentralized agent coordination",
+      "description": "ruvnet/daa is PRIMARY coordination but not installed.",
+      "layer": "L1.10",
+      "status": "TODO",
+      "files_to_create": [
+        "docs/architecture/ADR-AGENT-COORDINATION.md"
+      ],
+      "verification": "Evaluation document exists",
+      "dependencies": [],
+      "estimate": "HIGH"
+    },
+    {
+      "id": "P3-004",
+      "priority": "P3",
+      "title": "Add ruv-FANN neural network utility",
+      "description": "ruvnet/ruv-FANN is PRIMARY NN utility but not installed.",
+      "layer": "L1.11",
+      "status": "TODO",
+      "files_to_modify": [
+        "rust/Cargo.toml"
+      ],
+      "verification": "ruv-fann crate compiles",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    },
+    {
+      "id": "P3-005",
+      "priority": "P3",
+      "title": "Add sublinear-time-solver",
+      "description": "ruvnet/sublinear-time-solver is PRIMARY solver tool but not installed.",
+      "layer": "L1.11",
+      "status": "TODO",
+      "files_to_create": [
+        "docs/tools/SUBLINEAR_SOLVER.md"
+      ],
+      "verification": "Evaluation document exists",
+      "dependencies": [],
+      "estimate": "MEDIUM"
+    }
+  ]
+}

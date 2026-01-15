@@ -100,6 +100,7 @@
 | [/test](./commands/test.md) | Run package tests |
 | [/flake-check](./commands/flake-check.md) | Validate Nix flake |
 | [/update-deps](./commands/update-deps.md) | Update project dependencies |
+| [/implementation](./commands/implementation.md) | Execute tasks from ARIA task backlog |
 
 ### ARIA Orchestrator Commands
 
@@ -111,6 +112,7 @@
 | [/aria-audit-ci](./commands/aria-audit-ci.md) | CI/CD workflows audit |
 | [/aria-audit-agents](./commands/aria-audit-agents.md) | Agents and skills configuration audit |
 | [/aria-tasks](./commands/aria-tasks.md) | Generate task backlog from audit findings |
+| [/implementation](./commands/implementation.md) | Execute tasks from task backlog |
 
 ### Prompts (Reusable Templates)
 
