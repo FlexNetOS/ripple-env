@@ -70,6 +70,7 @@ Use claude-code-router for multi-model dispatch:
 - `flake.nix` — Nix flake configuration
 - `pixi.toml` — Pixi/Conda packages
 - `bootstrap.sh` / `bootstrap.ps1` — Setup scripts
+- `Makefile` — Build automation and convenience targets
 - `.github/workflows/*.yml` — CI/CD workflows
 
 ## Available Resources in `.claude/`
@@ -686,7 +687,10 @@ ci_workflow_checks:
 |----------|---------|------------------|
 | `/` (root) | Core config only | flake.nix, pixi.toml, bootstrap.*, README.md, LICENSE |
 | `/docs/` | All documentation | *.md specs, guides, ADRs |
-| `/docs/reports/` | Generated reports | Audit reports, analysis outputs |
+| `/docs/audits/` | Audit artifacts | All ARIA outputs, reports, immutable evidence |
+| `/docs/audits/aria-audit/` | ARIA artifacts | Census, mapping, task backlog JSON/YAML |
+| `/docs/audits/reports/` | Generated reports | Audit reports, analysis outputs |
+| `/docs/audits/immutable/` | Immutable evidence | Snapshots, rollups (index.yml) |
 | `/docs/implementation/` | Implementation plans | Phase plans, migration guides |
 | `/docker/` | Docker configs | docker-compose.*.yml |
 | `/.claude/` | Agent system | agents/, skills/, prompts/, policies/ |
@@ -717,8 +721,12 @@ ripple-env/
 │
 ├── docs/                       # 📚 Documentation
 │   ├── BUILDKIT_STARTER_SPEC.md  # SSoT
+│   ├── audits/                 # 🔍 ARIA Audit Artifacts
+│   │   ├── aria-audit/         # Census, mapping, task backlog
+│   │   ├── reports/            # Generated reports
+│   │   ├── immutable/          # Immutable evidence (index.yml)
+│   │   └── index.md            # Audit navigation
 │   ├── implementation/         # Phase plans
-│   ├── reports/                # Audit reports
 │   ├── adr/                    # Architecture decisions
 │   └── *.md                    # Guides & specs
 │
@@ -889,6 +897,33 @@ If symlinks found: **Delete them and update file references instead.**
 | P3 | X | Y hours |
 | **Total** | X | Y hours |
 ```
+
+### 7. CHANGELOG Entry (Draft)
+
+Generate a draft changelog entry for `docs/audits/CHANGELOG.md`:
+
+```markdown
+## [Unreleased] - YYYY-MM-DD
+
+### Added
+- [New repositories discovered]
+- [New feature flags created]
+- [New installation mappings]
+
+### Changed
+- [Updated configurations]
+- [Modified installation methods]
+
+### Fixed
+- [Resolved conflicts]
+- [Corrected references]
+
+### Security
+- [Security findings addressed]
+```
+
+**Location**: `docs/audits/CHANGELOG.md`
+**Note**: Present this draft to the user for review before appending.
 </output_format>
 
 ---
@@ -909,6 +944,56 @@ If symlinks found: **Delete them and update file references instead.**
 9. **Cache Results**: Store intermediate results to avoid redundant work
 10. **Wave-Based Execution**: Process in dependency-ordered waves
 </constraints>
+
+---
+
+## Post-Implementation Updates
+
+<post_implementation>
+## Files to Audit and Update After Task Implementation
+
+After implementing tasks from the generated backlog, the following files MUST be reviewed and updated to ensure consistency:
+
+### Bootstrap Scripts
+| File | Update When | What to Update |
+|------|-------------|----------------|
+| `bootstrap.sh` | New Nix packages, tools, or dependencies added | Add verification commands (including `verify_pixi()`), ensure pixi verification is listed in the `STAGES` array, add installation steps |
+| `bootstrap.ps1` | Windows/WSL changes, new tooling | Mirror Linux bootstrap changes, update WSL configuration |
+
+### Build Automation
+| File | Update When | What to Update |
+|------|-------------|----------------|
+| `Makefile` | New build targets, validation steps, or docker services | Add targets, update docker compose paths, add security/test commands |
+
+### Post-Task Verification Checklist
+
+After completing any P0/P1 task, verify:
+
+```bash
+# 1. Bootstrap scripts still work
+./bootstrap.sh --verify --profile minimal
+
+# 2. Makefile targets function correctly
+make doctor
+make test
+
+# 3. CI workflows pass
+# (automatically verified via GitHub Actions)
+```
+
+### Cross-Reference Matrix
+
+When modifying these files, also check:
+
+| If You Change... | Also Update... |
+|------------------|----------------|
+| `flake.nix` packages | `bootstrap.sh` verification, `Makefile` doctor target |
+| `pixi.toml` dependencies | `bootstrap.sh` verify_pixi(), `Makefile` test target |
+| Docker services | `Makefile` dev/monitor targets, `bootstrap.ps1` WSL config |
+| CI workflows | `Makefile` test-e2e target, `bootstrap.sh` --ci mode |
+| New tools/binaries | All bootstrap scripts, `Makefile` doctor target |
+
+</post_implementation>
 
 ---
 
@@ -965,6 +1050,62 @@ else:
     save_to_cache()
 ```
 </caching>
+
+---
+
+## Audit Output Configuration
+
+<audit_output>
+## Output Directories
+
+All ARIA audit artifacts MUST be written to the following locations:
+
+| Artifact Type | Directory | Format |
+|---------------|-----------|--------|
+| Repository census | `docs/audits/aria-audit/` | `repository_census_YYYY-MM-DD.json` |
+| Installation mapping | `docs/audits/aria-audit/` | `installation_mapping_YYYY-MM-DD.json` |
+| Feature flag matrix | `docs/audits/aria-audit/` | `feature_flags_YYYY-MM-DD.yaml` |
+| Task backlog | `docs/audits/aria-audit/` | `task_backlog_YYYY-MM-DD.json` |
+| Verification reports | `docs/audits/reports/` | `*_REPORT_YYYY-MM-DD.md` |
+| Immutable evidence | `docs/audits/immutable/` | Per `index.yml` schema |
+| CHANGELOG draft | `docs/audits/` | Append to `CHANGELOG.md` |
+
+## Deprecated Locations
+
+**Do NOT write artifacts to these locations:**
+- `.aria/` — Legacy directory, deprecated
+- Root-level report files
+- `docs/reports/` — Use `docs/audits/reports/` instead
+
+## File Naming Convention
+
+```
+<artifact-type>_<YYYY-MM-DD>.<ext>
+
+Examples:
+- repository_census_2026-01-15.json
+- VERIFICATION_REPORT_2026-01-15.md
+- P0_TASK_SPECIFICATIONS_2026-01-15.yaml
+```
+
+## Bootstrap Scripts Reference
+
+**Available scripts for installation:**
+
+| Script | Purpose | Platform |
+|--------|---------|----------|
+| `bootstrap.sh` | Foundation setup (Nix, pixi, shells, git, direnv) | Linux/macOS |
+| `bootstrap.ps1` | Windows WSL2 setup (creates NixOS distro, calls bootstrap.sh) | Windows |
+| `scripts/install-all.sh` | Docker services orchestration (Phases 5-6) | Linux/macOS |
+
+**Note**: No single script currently installs all ~87 repositories from BUILDKIT_STARTER_SPEC.md.
+Installation is distributed across:
+- Nix packages → `flake.nix`
+- Pixi packages → `pixi.toml`
+- Docker services → `docker/*.yml`
+- Rust crates → `rust/Cargo.toml`
+- NPM packages → via Nix wrappers or pixi
+</audit_output>
 
 ---
 
@@ -1162,6 +1303,7 @@ Begin by reading `BUILDKIT_STARTER_SPEC.md` and reporting the initial repository
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.3.0 | 2026-01 | Added Makefile to configuration files, added Post-Implementation Updates section with bootstrap scripts and Makefile audit checklist, cross-reference matrix for file dependencies |
 | 2.2.0 | 2026-01 | Added Kimi K2 Thinking for cross-analysis, Phase 0 consistency validation, config-consistency-agent, OPA policies, analysis tools (TheAuditor, ast-grep, Conftest, Semgrep) |
 | 2.1.0 | 2026-01 | Fixed 13/14 layer inconsistency, added caching strategy, parallel execution wave model, corrected Task tool patterns, model optimization matrix |
 | 2.0.0 | 2026-01 | Major rewrite: Added model specifications, 14 domain teams, feature flag handling, installation mapping, BUILDKIT_STARTER_SPEC.md integration |

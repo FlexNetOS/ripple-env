@@ -365,26 +365,26 @@ Before adding a new repo/service, answer:
 
 ---
 
-## 4. Open decisions (explicit)
+## 4. Needs Implementation (explicit)
 
-1) **Prompt DSL / prompt toolchain** candidates:
+1) **Prompt DSL / prompt toolchain** :
    - [automl/promptolution](https://github.com/automl/promptolution)
    - [BoundaryML/baml](https://github.com/BoundaryML/baml)
    - [microsoft/prompty](https://github.com/microsoft/prompty)
 
-2) **Memory augmentation** candidates (only if they beat Postgres+ruvector):
+2) **Memory augmentation** :
    - [memodb-io/memobase](https://github.com/memodb-io/memobase)
    - [MemoriLabs/Memori](https://github.com/MemoriLabs/Memori)
    - [FrankvdStam/mem-rs](https://github.com/FrankvdStam/mem-rs)
    - [usememos/memos](https://github.com/usememos/memos)
    - [AppFlowy-IO/AppFlowy-Cloud](https://github.com/AppFlowy-IO/AppFlowy-Cloud)
 
-3) **DB variants / future-scale** candidates:
+3) **DB variants** :
    - [neondatabase/neon](https://github.com/neondatabase/neon) (preview DBs)
    - rust-postgres (client/lib)
    - [neo4j-labs](https://github.com/neo4j-labs) (graph)
 
-4) **Developer workflow tooling** candidates:
+4) **Developer workflow tooling** :
    - [jj-vcs/jj](https://github.com/jj-vcs/jj) (VCS ergonomics)
 
 ---
@@ -619,7 +619,7 @@ nix/
 | Linux ARM64 | ✅ Full | ✅ | ✅ | Edge/IoT nodes |
 | macOS x86_64 | ✅ Full | ✅ | ✅ | Secondary dev |
 | macOS ARM64 | ✅ Full | ✅ | ✅ | Apple Silicon |
-| Windows native | ❌ None | ❌ | ❌ | **Must use WSL2** |
+| Windows native | ❌ None | ❌ | ❌ | **Must use WSL2 for Holochain to work (Windows works without it)** |
 | WSL2 (Linux) | ✅ Full | ✅ | ✅ | Windows solution |
 
 **Critical constraint:** Holochain requires Linux or macOS. Windows users **must** use the WSL2 bootstrapper. This is non-negotiable for the agentic OS.
@@ -912,7 +912,7 @@ qudag-mcp = { git = "https://github.com/ruvnet/qudag", branch = "main" }
 inference_policy:
   name: ripple-moe
   trigger: change_making_task  # code changes, config changes, deployments
-  
+
   local_tier:
     min_parallel: 5
     max_parallel: 8
@@ -933,7 +933,7 @@ inference_policy:
         weight: 1.0
         specialization: code
     timeout_ms: 30000
-    
+
   cloud_tier:
     min_parallel: 2
     max_parallel: 4
@@ -949,13 +949,13 @@ inference_policy:
         priority: 3
     timeout_ms: 60000
     fallback_on_timeout: true
-    
+
   reducer:
     strategy: weighted_consensus
     min_agreement: 0.6  # 60% of weighted votes must agree
     policy_gate: opa://inference/merge
     conflict_resolution: highest_weight_wins
-    
+
   audit:
     log_all_responses: true
     store_disagreements: true
@@ -968,7 +968,7 @@ inference_policy:
 # manifests/distributed/compute_policy.yaml
 compute_policy:
   name: flexstack-compute
-  
+
   workload_classes:
     build:
       prefer: cloud-ephemeral
@@ -978,7 +978,7 @@ compute_policy:
         cpu: 4
         memory_gb: 16
         timeout_minutes: 60
-        
+
     inference:
       prefer: gpu-node-pool
       fallback: cpu-moe-distributed
@@ -987,7 +987,7 @@ compute_policy:
         gpu: 1
         memory_gb: 24
         timeout_seconds: 120
-        
+
     storage_heavy:
       prefer: storage-tier-nodes
       fallback: any-available
@@ -995,7 +995,7 @@ compute_policy:
       resource_request:
         storage_gb: 100
         bandwidth_mbps: 500
-        
+
     agent_task:
       prefer: nearest-available
       fallback: any-available
@@ -1004,13 +1004,13 @@ compute_policy:
         cpu: 1
         memory_gb: 4
         timeout_minutes: 30
-        
+
   scheduling:
     algorithm: locality_aware_binpack
     preemption_enabled: false
     max_queue_depth: 1000
     rebalance_interval_seconds: 300
-    
+
   autoscaling:
     enabled: true
     min_nodes: 1
@@ -1026,7 +1026,7 @@ compute_policy:
 # manifests/distributed/storage_policy.yaml
 storage_policy:
   name: flexstack-storage
-  
+
   tiers:
     hot:
       backend: minio
@@ -1034,23 +1034,23 @@ storage_policy:
       regions: [us-west, us-east, eu-west]
       max_object_size_gb: 50
       retention_days: 90
-      
+
     warm:
       backend: ipfs
       replication: auto  # DHT handles
       pin_policy: popular_first
       min_providers: 3
-      
+
     cold:
       backend: ipfs_cluster
       replication: 2
       archive_after_days: 90
-      
+
   routing:
     content_addressed: true
     prefer_local: true
     max_redirect_hops: 3
-    
+
   caching:
     local_cache_gb: 50
     cache_policy: lru
@@ -1063,7 +1063,7 @@ storage_policy:
 # manifests/distributed/memory_policy.yaml
 memory_policy:
   name: flexstack-memory
-  
+
   vector_store:
     backend: ruvector
     sharding:
@@ -1071,13 +1071,13 @@ memory_policy:
       shard_count: 16
       replication_factor: 2
     coordination: holochain_memory_shards
-    
+
   cache:
     backend: redis_cluster
     nodes: 6
     memory_per_node_gb: 8
     eviction_policy: allkeys-lru
-    
+
   prompt_cache:
     enabled: true
     backends:
@@ -1085,7 +1085,7 @@ memory_policy:
       - prompt-cache
     ttl_seconds: 3600
     max_entries: 100000
-    
+
   sync:
     gossip_interval_ms: 1000
     full_sync_interval_seconds: 300

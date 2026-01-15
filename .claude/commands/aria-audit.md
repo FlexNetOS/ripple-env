@@ -79,4 +79,12 @@ For each team:
 - **Evidence-Based** — Cite file:line or URL for findings
 - **Read-Only Audit** — Do not modify files during discovery
 
+## Output Configuration
+
+All artifacts produced by this audit MUST be written to:
+- `docs/audits/aria-audit/` — Primary output directory (census, mappings, task backlog)
+- `docs/audits/reports/` — Verification reports and summaries
+
+**Do NOT write to `.aria/` — this directory is deprecated.**
+
 Begin by reading `BUILDKIT_STARTER_SPEC.md` and reporting the initial repository census.

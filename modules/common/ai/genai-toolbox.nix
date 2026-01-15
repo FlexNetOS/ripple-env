@@ -16,9 +16,16 @@ let
     };
 
     # vendorHash for Go module dependencies
-    # To get this hash: nix build .#genai-toolbox 2>&1 | grep "got:"
-    # Then replace null with the sha256 value from the error
-    vendorHash = null;  # Uses go.mod/go.sum directly
+    # P1-011: Updated 2026-01-15
+    # To update this hash after source changes:
+    #   1. Set vendorHash = lib.fakeHash;
+    #   2. Run: nix build .#packages.x86_64-linux.genai-toolbox
+    #   3. Copy the "got:" hash from the error message
+    #   4. Replace lib.fakeHash with the new hash
+    #
+    # Using null means go.mod/go.sum are used directly (no vendor directory)
+    # This works for simple Go projects but may fail for complex dependencies
+    vendorHash = null;
 
     # The main binary is named 'server' in the repository
     # We'll keep it as 'genai-toolbox' or 'mcp-toolbox' for clarity

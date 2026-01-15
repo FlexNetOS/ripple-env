@@ -1,0 +1,259 @@
+# ARIA Audit: Feature Flag Matrix
+# Date: 2026-01-15
+# Purpose: A/B feature flags for conflicting components per BUILDKIT_STARTER_SPEC.md
+
+feature_flags:
+  # =============================================================================
+  # AGENT RUNTIME SELECTION (L1.10)
+  # =============================================================================
+  - name: AGENT_RUNTIME
+    description: "Select primary agent orchestration platform"
+    scope: "L1.10 Agent Runtime"
+    default: "agixt"
+    values:
+      - value: "aios"
+        components: ["AIOS Kernel", "Cerebrum SDK"]
+        installation: "docker/aios.yml"
+        notes: "Python-first, lightweight agent kernel"
+
+      - value: "agixt"
+        components: ["AGiXT", "AGiXT SDK"]
+        installation: "docker/agixt.yml"
+        notes: "Full-featured orchestration with multi-agent support"
+
+      - value: "refact"
+        components: ["Refact.ai"]
+        installation: "docker/docker-compose.refact.yml"
+        notes: "Coding-focused with IDE integration"
+
+    conflict_resolution: "These three platforms overlap in functionality. Feature flag allows runtime selection."
+    env_file: ".env"
+    example: "AGENT_RUNTIME=agixt"
+
+  # =============================================================================
+  # VECTOR DATABASE SELECTION (L1.13)
+  # =============================================================================
+  - name: VECTOR_STORE
+    description: "Select vector database for semantic search"
+    scope: "L1.13 Core State"
+    default: "chromadb"
+    values:
+      - value: "chromadb"
+        components: ["ChromaDB"]
+        installation: "pixi.toml [feature.vectordb-chromadb]"
+        notes: "Embedded Python database, simple and stable"
+
+      - value: "ruvector"
+        components: ["RuVector", "@ruvector/core", "@ruvector/gnn"]
+        installation: "package.json + pixi.toml [feature.vectordb-ruvector]"
+        notes: "Rust-native with GNN self-learning, advanced but experimental"
+
+    conflict_resolution: "ChromaDB is stable default, ruvector for advanced GNN features"
+    env_file: ".env"
+    example: "VECTOR_STORE=chromadb"
+
+  # =============================================================================
+  # TOOL ISOLATION LEVEL (L1.4)
+  # =============================================================================
+  - name: TOOL_ISOLATION_LEVEL
+    description: "Select tool execution isolation boundary"
+    scope: "L1.4 Isolation & Sandboxing"
+    default: "docker"
+    values:
+      - value: "none"
+        components: ["Direct execution"]
+        installation: "N/A"
+        notes: "No isolation - development only"
+        security_level: "NONE"
+
+      - value: "docker"
+        components: ["Docker containers"]
+        installation: "docker/*.yml"
+        notes: "Standard container isolation"
+        security_level: "BASIC"
+
+      - value: "sandbox"
+        components: ["sandbox-runtime"]
+        installation: "NOT INSTALLED - P0 GAP"
+        notes: "Tight FS/net isolation for MCP tools"
+        security_level: "MEDIUM"
+
+      - value: "kata"
+        components: ["Kata Containers"]
+        installation: "NOT INSTALLED - P1 GAP"
+        notes: "VM-backed containers for service isolation"
+        security_level: "HIGH"
+
+      - value: "firecracker"
+        components: ["Firecracker microVMs"]
+        installation: "NOT INSTALLED - P2 GAP"
+        notes: "Per-run microVM pools for untrusted code"
+        security_level: "MAXIMUM"
+
+    conflict_resolution: "Escalating security levels - higher isolation = more overhead"
+    env_file: ".env"
+    example: "TOOL_ISOLATION_LEVEL=docker"
+
+  # =============================================================================
+  # MCP GATEWAY SELECTION (L1.7)
+  # =============================================================================
+  - name: MCP_GATEWAY
+    description: "Select MCP (Model Context Protocol) routing layer"
+    scope: "L1.7 Edge & Agent Traffic"
+    default: "genai-toolbox"
+    values:
+      - value: "genai-toolbox"
+        components: ["genai-toolbox"]
+        installation: "modules/common/ai/genai-toolbox.nix"
+        notes: "Database tool wrappers, currently only MCP server"
+
+      - value: "agentgateway"
+        components: ["AgentGateway"]
+        installation: "NOT INSTALLED - MISSING"
+        notes: "Full MCP routing layer with governance"
+
+    conflict_resolution: "genai-toolbox is interim until AgentGateway is ready"
+    env_file: ".env"
+    example: "MCP_GATEWAY=genai-toolbox"
+
+  # =============================================================================
+  # INFERENCE BACKEND (L1.12)
+  # =============================================================================
+  - name: INFERENCE_BACKEND
+    description: "Select model inference backend"
+    scope: "L1.12 Inference Plane"
+    default: "localai"
+    values:
+      - value: "localai"
+        components: ["LocalAI"]
+        installation: "docker/docker-compose.localai.yml"
+        notes: "OpenAI-compatible local inference"
+
+      - value: "cloud"
+        components: ["Claude Code CLI", "Codex CLI", "OpenRouter"]
+        installation: "External API"
+        notes: "Cloud-based inference via approved providers"
+
+      - value: "hybrid"
+        components: ["LocalAI + Cloud providers"]
+        installation: "docker/docker-compose.localai.yml + API keys"
+        notes: "MOE fan-out: 5+ local models + 2+ cloud coders"
+
+    conflict_resolution: "Hybrid is recommended per BUILDKIT spec MOE policy"
+    env_file: ".env"
+    example: "INFERENCE_BACKEND=localai"
+
+  # =============================================================================
+  # NIXPKGS CHANNEL (L1.2)
+  # =============================================================================
+  - name: NIX_CHANNEL
+    description: "Select nixpkgs channel for builds"
+    scope: "L1.2 Host OS"
+    default: "unstable"
+    values:
+      - value: "unstable"
+        components: ["nixos-unstable"]
+        installation: "flake.nix:22"
+        notes: "Latest packages, faster development velocity"
+
+      - value: "stable"
+        components: ["nixos-24.11"]
+        installation: "flake.nix:23"
+        notes: "Production-safe, tested packages"
+
+    conflict_resolution: "Dual strategy - unstable for dev, stable for production images"
+    env_file: "flake.nix (compile-time)"
+    example: "Use --override-input nixpkgs github:nixos/nixpkgs/nixos-24.11"
+
+  # =============================================================================
+  # KUBERNETES TOOLS (L1.5)
+  # =============================================================================
+  - name: WITH_KUBERNETES
+    description: "Include Kubernetes CLI tools in shell"
+    scope: "L1.5 Cluster Substrate"
+    default: "false"
+    values:
+      - value: "true"
+        components: ["kubectl", "helm", "kustomize"]
+        installation: "nix/packages/dev-tools.nix"
+        notes: "Full Kubernetes tooling (~150MB)"
+
+      - value: "false"
+        components: []
+        installation: "N/A"
+        notes: "Minimal shell without k8s tools"
+
+    conflict_resolution: "Optional to reduce shell size when not doing k8s work"
+    env_file: "flake.nix (compile-time)"
+    example: "Set withKubernetes = true in dev-tools.nix"
+
+  # =============================================================================
+  # PROMPT CACHING (L1.13)
+  # =============================================================================
+  - name: PROMPT_CACHE
+    description: "Select prompt caching implementation"
+    scope: "L1.13 Core State - Prompt Cache"
+    default: "redis"
+    values:
+      - value: "redis"
+        components: ["Redis"]
+        installation: "docker/docker-compose.core.yml"
+        notes: "Standard Redis caching"
+
+      - value: "vcache"
+        components: ["vCache"]
+        installation: "NOT INSTALLED - MISSING"
+        notes: "Specialized prompt cache layer"
+
+      - value: "prompt-cache"
+        components: ["messkan/prompt-cache"]
+        installation: "NOT INSTALLED - MISSING"
+        notes: "Dedicated prompt caching utility"
+
+    conflict_resolution: "Redis is functional interim until specialized caching deployed"
+    env_file: ".env"
+    example: "PROMPT_CACHE=redis"
+
+# =============================================================================
+# INSTALLATION MATRIX SUMMARY
+# =============================================================================
+installation_summary:
+  fully_available_flags:
+    - AGENT_RUNTIME
+    - VECTOR_STORE
+    - INFERENCE_BACKEND
+    - NIX_CHANNEL
+    - WITH_KUBERNETES
+
+  partially_available_flags:
+    - TOOL_ISOLATION_LEVEL  # Only 'docker' and 'none' available
+    - MCP_GATEWAY           # Only genai-toolbox available
+    - PROMPT_CACHE          # Only redis available
+
+  gaps_requiring_installation:
+    - sandbox-runtime (TOOL_ISOLATION_LEVEL=sandbox)
+    - kata-containers (TOOL_ISOLATION_LEVEL=kata)
+    - firecracker (TOOL_ISOLATION_LEVEL=firecracker)
+    - agentgateway (MCP_GATEWAY=agentgateway)
+    - vCache (PROMPT_CACHE=vcache)
+    - prompt-cache (PROMPT_CACHE=prompt-cache)
+
+# =============================================================================
+# RECOMMENDED DEFAULT CONFIGURATION
+# =============================================================================
+recommended_defaults:
+  production:
+    AGENT_RUNTIME: "agixt"
+    VECTOR_STORE: "chromadb"
+    TOOL_ISOLATION_LEVEL: "docker"  # Should be 'kata' when installed
+    MCP_GATEWAY: "genai-toolbox"
+    INFERENCE_BACKEND: "hybrid"
+    PROMPT_CACHE: "redis"
+
+  development:
+    AGENT_RUNTIME: "agixt"
+    VECTOR_STORE: "chromadb"
+    TOOL_ISOLATION_LEVEL: "none"
+    MCP_GATEWAY: "genai-toolbox"
+    INFERENCE_BACKEND: "localai"
+    PROMPT_CACHE: "redis"
