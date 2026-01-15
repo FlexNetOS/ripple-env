@@ -19,9 +19,9 @@
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
-          overlays = [
-            nixos-wsl.overlays.default
-          ];
+          # Note: nixos-wsl does not export overlays.default
+          # WSL functionality is provided via nixosModules.wsl instead
+          overlays = [];
         };
 
         # WSL-specific configuration

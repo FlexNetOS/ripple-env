@@ -119,6 +119,7 @@ temporalio = ">=1.7"        # Temporal Python SDK for durable workflows
 
 [feature.toolchain.pypi-dependencies]
 agno = ">=0.1"
+h2 = ">=4.0"  # HTTP/2 support for httpx (satisfies httpx[http2] requirement from agno)
 # P2-004: ruvnet/Synaptic-Mesh - CANNOT BE INSTALLED VIA PIP
 # This is a Rust/TypeScript/WASM project, not a Python package
 # Repository: https://github.com/ruvnet/Synaptic-Mesh
