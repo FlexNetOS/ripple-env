@@ -184,7 +184,7 @@ class TestROS2Environment:
     def test_ros2_domain_id_configurable(self):
         """Verify ROS_DOMAIN_ID can be set."""
         code, stdout, stderr = run_command(
-            ["pixi", "run", "bash", "-c", "ROS_DOMAIN_ID=42 echo $ROS_DOMAIN_ID"]
+            ["pixi", "run", "bash", "-c", "export ROS_DOMAIN_ID=42 && echo $ROS_DOMAIN_ID"]
         )
         assert code == 0, f"Failed to set ROS_DOMAIN_ID: {stderr}"
         assert "42" in stdout, "ROS_DOMAIN_ID not properly set"

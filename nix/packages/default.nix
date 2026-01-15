@@ -24,9 +24,10 @@ in
   distributed = import ./distributed.nix { inherit pkgs; };
 
   # Development tools with feature flags for optimization
+  # P1-001: Kubernetes tools enabled by default for BUILDKIT compliance
   devToolsMinimal = import ./dev-tools.nix {
     inherit pkgs;
-    withKubernetes = false;
+    withKubernetes = true;  # P1-001: Enable kubectl, helm, kustomize
     withHeavyVMs = false;
     withAI = false;
   };
