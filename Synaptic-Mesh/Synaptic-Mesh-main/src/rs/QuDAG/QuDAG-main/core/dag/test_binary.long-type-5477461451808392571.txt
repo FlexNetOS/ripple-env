@@ -1,1 +1,0 @@
-impl Future<Output = std::result::Result<std::collections::HashSet<vertex::VertexId>, dag::DagError>>

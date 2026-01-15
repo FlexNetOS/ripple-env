@@ -619,7 +619,7 @@ nix/
 | Linux ARM64 | ✅ Full | ✅ | ✅ | Edge/IoT nodes |
 | macOS x86_64 | ✅ Full | ✅ | ✅ | Secondary dev |
 | macOS ARM64 | ✅ Full | ✅ | ✅ | Apple Silicon |
-| Windows native | ❌ None | ❌ | ❌ | **Must use WSL2** |
+| Windows native | ❌ None | ❌ | ❌ | **Must use WSL2 for Holochain to work (Windows works without it)** |
 | WSL2 (Linux) | ✅ Full | ✅ | ✅ | Windows solution |
 
 **Critical constraint:** Holochain requires Linux or macOS. Windows users **must** use the WSL2 bootstrapper. This is non-negotiable for the agentic OS.

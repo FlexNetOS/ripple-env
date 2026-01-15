@@ -1,1 +1,0 @@
-"""Performance validation tests for QuDAG benchmarking."""
