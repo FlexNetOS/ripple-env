@@ -686,7 +686,10 @@ ci_workflow_checks:
 |----------|---------|------------------|
 | `/` (root) | Core config only | flake.nix, pixi.toml, bootstrap.*, README.md, LICENSE |
 | `/docs/` | All documentation | *.md specs, guides, ADRs |
-| `/docs/reports/` | Generated reports | Audit reports, analysis outputs |
+| `/docs/audits/` | Audit artifacts | All ARIA outputs, reports, immutable evidence |
+| `/docs/audits/aria-audit/` | ARIA artifacts | Census, mapping, task backlog JSON/YAML |
+| `/docs/audits/reports/` | Generated reports | Audit reports, analysis outputs |
+| `/docs/audits/immutable/` | Immutable evidence | Snapshots, rollups (index.yml) |
 | `/docs/implementation/` | Implementation plans | Phase plans, migration guides |
 | `/docker/` | Docker configs | docker-compose.*.yml |
 | `/.claude/` | Agent system | agents/, skills/, prompts/, policies/ |
@@ -717,8 +720,12 @@ ripple-env/
 │
 ├── docs/                       # 📚 Documentation
 │   ├── BUILDKIT_STARTER_SPEC.md  # SSoT
+│   ├── audits/                 # 🔍 ARIA Audit Artifacts
+│   │   ├── aria-audit/         # Census, mapping, task backlog
+│   │   ├── reports/            # Generated reports
+│   │   ├── immutable/          # Immutable evidence (index.yml)
+│   │   └── index.md            # Audit navigation
 │   ├── implementation/         # Phase plans
-│   ├── reports/                # Audit reports
 │   ├── adr/                    # Architecture decisions
 │   └── *.md                    # Guides & specs
 │
@@ -965,6 +972,61 @@ else:
     save_to_cache()
 ```
 </caching>
+
+---
+
+## Audit Output Configuration
+
+<audit_output>
+## Output Directories
+
+All ARIA audit artifacts MUST be written to the following locations:
+
+| Artifact Type | Directory | Format |
+|---------------|-----------|--------|
+| Repository census | `docs/audits/aria-audit/` | `repository_census_YYYY-MM-DD.json` |
+| Installation mapping | `docs/audits/aria-audit/` | `installation_mapping_YYYY-MM-DD.json` |
+| Feature flag matrix | `docs/audits/aria-audit/` | `feature_flags_YYYY-MM-DD.yaml` |
+| Task backlog | `docs/audits/aria-audit/` | `task_backlog_YYYY-MM-DD.json` |
+| Verification reports | `docs/audits/reports/` | `*_REPORT_YYYY-MM-DD.md` |
+| Immutable evidence | `docs/audits/immutable/` | Per `index.yml` schema |
+
+## Deprecated Locations
+
+**Do NOT write artifacts to these locations:**
+- `.aria/` — Legacy directory, deprecated
+- Root-level report files
+- `docs/reports/` — Use `docs/audits/reports/` instead
+
+## File Naming Convention
+
+```
+<artifact-type>_<YYYY-MM-DD>.<ext>
+
+Examples:
+- repository_census_2026-01-15.json
+- VERIFICATION_REPORT_2026-01-15.md
+- P0_TASK_SPECIFICATIONS_2026-01-15.yaml
+```
+
+## Bootstrap Scripts Reference
+
+**Available scripts for installation:**
+
+| Script | Purpose | Platform |
+|--------|---------|----------|
+| `bootstrap.sh` | Foundation setup (Nix, pixi, shells, git, direnv) | Linux/macOS |
+| `bootstrap.ps1` | Windows WSL2 setup (creates NixOS distro, calls bootstrap.sh) | Windows |
+| `scripts/install-all.sh` | Docker services orchestration (Phases 5-6) | Linux/macOS |
+
+**Note**: No single script currently installs all ~87 repositories from BUILDKIT_STARTER_SPEC.md.
+Installation is distributed across:
+- Nix packages → `flake.nix`
+- Pixi packages → `pixi.toml`
+- Docker services → `docker/*.yml`
+- Rust crates → `rust/Cargo.toml`
+- NPM packages → via Nix wrappers or pixi
+</audit_output>
 
 ---
 
