@@ -102,6 +102,12 @@ function DrawerLayoutInner() {
         }}
       />
       <Drawer.Screen
+        name="vibe-kanban"
+        options={{
+          title: 'Vibe Kanban',
+        }}
+      />
+      <Drawer.Screen
         name="settings"
         options={{
           title: 'Settings',

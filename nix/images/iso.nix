@@ -22,6 +22,8 @@ in
 nixpkgsInput.lib.nixosSystem {
   system = "x86_64-linux";
 
+  specialArgs = { inherit isStable; };
+
   modules = [
     # ISO installer base
     "${nixpkgsInput}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
@@ -30,7 +32,7 @@ nixpkgsInput.lib.nixosSystem {
     ./security-hardening.nix
 
     # ROS2 development environment
-    ({ config, pkgs, lib, ... }: {
+    ({ config, pkgs, lib, isStable, ... }: {
       # Enable security hardening (standard level for installer)
       security.hardening = {
         enable = true;
@@ -43,11 +45,6 @@ nixpkgsInput.lib.nixosSystem {
         volumeID = "NIXOS_ROS2";
         makeEfiBootable = true;
         makeUsbBootable = true;
-      };
-
-      # Use new image module format (fixes deprecation warning)
-      image = {
-        fileName = "nixos-ros2-${config.system.nixos.label}-x86_64-linux.iso";
       };
 
       # Nix configuration
@@ -70,5 +67,12 @@ nixpkgsInput.lib.nixosSystem {
       # System state version
       system.stateVersion = "24.05";
     })
-  ];
+
+  ] ++ (if isStable then [] else [
+    # Use new image module format (fixes deprecation warning)
+    # Only available in unstable, not in nixos-24.11 stable
+    ({ config, ... }: {
+      image.fileName = "nixos-ros2-${config.system.nixos.label}-x86_64-linux.iso";
+    })
+  ]);
 }

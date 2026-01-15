@@ -389,6 +389,62 @@ export const PROJECTS: SidebarPanel = {
   ],
 };
 
+// Panel 7b: Vibe Kanban (AI Coding Agent Orchestration)
+export const VIBE_KANBAN: SidebarPanel = {
+  id: 'vibe-kanban',
+  title: 'Vibe Kanban',
+  icon: 'kanban',
+  badge: 3,
+  badgeColor: '#8B5CF6', // purple for AI
+  workspaces: ['all', 'productivity', 'intelligence', 'infrastructure'],
+  sections: [
+    {
+      id: 'ai-agents',
+      title: 'AI CODING AGENTS',
+      collapsible: true,
+      defaultExpanded: true,
+      items: [
+        { id: 'claude-code', label: 'Claude Code', icon: 'bot', status: 'online', badge: 2, badgeColor: '#22C55E' },
+        { id: 'gemini-cli', label: 'Gemini CLI', icon: 'bot', status: 'online' },
+        { id: 'codex', label: 'Codex', icon: 'bot', status: 'away' },
+        { id: 'amp', label: 'Amp', icon: 'bot', status: 'offline' },
+      ],
+    },
+    {
+      id: 'active-tasks',
+      title: 'ACTIVE TASKS',
+      collapsible: true,
+      defaultExpanded: true,
+      items: [
+        { id: 'vk-running', label: 'Running', icon: 'play-circle', badge: 2, badgeColor: '#3B82F6' },
+        { id: 'vk-pending', label: 'Pending Review', icon: 'clock', badge: 4, badgeColor: '#F59E0B' },
+        { id: 'vk-completed', label: 'Completed Today', icon: 'check-circle', badge: 8, badgeColor: '#22C55E' },
+      ],
+    },
+    {
+      id: 'projects',
+      title: 'KANBAN PROJECTS',
+      collapsible: true,
+      defaultExpanded: true,
+      items: [
+        { id: 'vk-all-projects', label: 'All Projects', icon: 'layout-dashboard' },
+        { id: 'vk-recent', label: 'Recently Active', icon: 'clock' },
+      ],
+    },
+    {
+      id: 'quick-actions',
+      title: 'QUICK ACTIONS',
+      collapsible: true,
+      defaultExpanded: true,
+      items: [
+        { id: 'open-vibe-kanban', label: 'Open Full Dashboard', icon: 'external-link' },
+        { id: 'new-vk-task', label: 'New Task', icon: 'plus' },
+        { id: 'configure-agents', label: 'Configure Agents', icon: 'settings' },
+      ],
+    },
+  ],
+};
+
 // Panel 8: Calendar
 export const CALENDAR: SidebarPanel = {
   id: 'calendar',
@@ -768,6 +824,7 @@ export const ALL_PANELS: SidebarPanel[] = [
   LEGAL_COMPLIANCE,
   TASKS,
   PROJECTS,
+  VIBE_KANBAN, // AI Coding Agent Orchestration
   CALENDAR,
   FILES,
   ANALYTICS_HUB,
