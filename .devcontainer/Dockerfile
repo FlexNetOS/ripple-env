@@ -164,7 +164,6 @@ RUN nix profile install --impure \
 
 # Install cryptography and security tools (from distributed.nix)
 RUN nix profile install --impure \
-    nixpkgs#openssl \
     nixpkgs#libsodium \
     nixpkgs#age \
     nixpkgs#sops \
@@ -235,11 +234,10 @@ RUN nix profile install --impure \
 
 # Install AI/ML tools (from dev-tools.nix)
 # Note: local-ai is a large package (~500MB+) and may not be available on all platforms
-# Using || true to allow the build to continue if unavailable
 RUN nix profile install --impure \
     nixpkgs#aichat \
-    nixpkgs#aider-chat \
-    nixpkgs#local-ai 2>/dev/null || echo "Note: local-ai not available on this platform"
+    nixpkgs#aider-chat || true
+RUN nix profile install --impure nixpkgs#local-ai || true
 
 # Install Linux platform-specific tools (from platform.nix)
 RUN nix profile install --impure \
