@@ -109,12 +109,17 @@ RUN nix profile install --impure \
     nixpkgs#python313Packages.pip \
     nixpkgs#python313Packages.virtualenv
 
-# Install build tools
+# Install build tools and compilation cache
 RUN nix profile install --impure \
     nixpkgs#gcc \
+    nixpkgs#gcc13 \
     nixpkgs#gnumake \
     nixpkgs#cmake \
-    nixpkgs#pkg-config
+    nixpkgs#ninja \
+    nixpkgs#pkg-config \
+    nixpkgs#ccache \
+    nixpkgs#sccache \
+    nixpkgs#mold
 
 # Install Kubernetes tools
 RUN nix profile install --impure \
@@ -128,6 +133,111 @@ RUN nix profile install --impure \
 RUN nix profile install --impure \
     nixpkgs#jujutsu \
     nixpkgs#lazygit
+
+# Install Rust toolchain (from dev-tools.nix)
+RUN nix profile install --impure \
+    nixpkgs#cargo \
+    nixpkgs#rustc \
+    nixpkgs#rust-analyzer \
+    nixpkgs#rustfmt \
+    nixpkgs#clippy \
+    nixpkgs#maturin \
+    nixpkgs#sqlx-cli
+
+# Install Node.js ecosystem (from dev-tools.nix)
+RUN nix profile install --impure \
+    nixpkgs#nodejs_22 \
+    nixpkgs#nodePackages.npm \
+    nixpkgs#nodePackages.pnpm
+
+# Install distributed systems tools (from distributed.nix)
+RUN nix profile install --impure \
+    nixpkgs#grpcurl \
+    nixpkgs#grpcui \
+    nixpkgs#protobuf \
+    nixpkgs#protoc-gen-go \
+    nixpkgs#protoc-gen-go-grpc \
+    nixpkgs#wasm-pack \
+    nixpkgs#wasm-bindgen-cli \
+    nixpkgs#binaryen \
+    nixpkgs#websocat \
+    nixpkgs#graphviz
+
+# Install cryptography and security tools (from distributed.nix)
+RUN nix profile install --impure \
+    nixpkgs#openssl \
+    nixpkgs#libsodium \
+    nixpkgs#age \
+    nixpkgs#sops \
+    nixpkgs#vault \
+    nixpkgs#step-cli \
+    nixpkgs#cosign \
+    nixpkgs#trivy \
+    nixpkgs#syft \
+    nixpkgs#grype \
+    nixpkgs#opa
+
+# Install hardware interface tools (from hardware.nix)
+RUN nix profile install --impure \
+    nixpkgs#libv4l \
+    nixpkgs#v4l-utils \
+    nixpkgs#gphoto2 \
+    nixpkgs#can-utils \
+    nixpkgs#socat \
+    nixpkgs#screen \
+    nixpkgs#minicom \
+    nixpkgs#picocom \
+    nixpkgs#usbutils \
+    nixpkgs#libusb1
+
+# Install simulation tools (from simulation.nix)
+RUN nix profile install --impure \
+    nixpkgs#ogre \
+    nixpkgs#assimp \
+    nixpkgs#mesa \
+    nixpkgs#glxinfo \
+    nixpkgs#xorg.xeyes \
+    nixpkgs#xdotool \
+    nixpkgs#bullet \
+    nixpkgs#ode \
+    nixpkgs#graphviz \
+    nixpkgs#ffmpeg \
+    nixpkgs#imagemagick \
+    nixpkgs#xvfb-run
+
+# Install infrastructure and monitoring (from base.nix and dev-tools.nix)
+RUN nix profile install --impure \
+    nixpkgs#prometheus \
+    nixpkgs#natscli \
+    nixpkgs#nats-server \
+    nixpkgs#trippy \
+    nixpkgs#kubo \
+    nixpkgs#sqlite \
+    nixpkgs#tree-sitter
+
+# Install additional shell and dev utilities (from dev-tools.nix)
+RUN nix profile install --impure \
+    nixpkgs#fzf \
+    nixpkgs#unzip \
+    nixpkgs#gzip \
+    nixpkgs#gnutar \
+    nixpkgs#portaudio \
+    nixpkgs#devpod \
+    nixpkgs#runc
+
+# Install configuration management (from base.nix)
+RUN nix profile install --impure \
+    nixpkgs#home-manager \
+    nixpkgs#chezmoi \
+    nixpkgs#stow \
+    nixpkgs#shellcheck \
+    nixpkgs#yamllint
+
+# Install AI/ML tools (from dev-tools.nix) - optional but included for full support
+RUN nix profile install --impure \
+    nixpkgs#aichat \
+    nixpkgs#aider-chat \
+    nixpkgs#local-ai || true
 
 # Install Pixi package manager
 RUN curl -fsSL https://pixi.sh/install.sh | bash && \

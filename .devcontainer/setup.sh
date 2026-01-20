@@ -14,7 +14,7 @@ echo "==> Setting up ripple-env workspace..."
 echo "==> Verifying Nix environment..."
 
 # Check core tools are available
-for cmd in nix git gh direnv pixi nu; do
+for cmd in nix git gh direnv pixi nu cargo rustc node npm pnpm grpcurl protoc wasm-pack kubectl; do
     if command -v "$cmd" >/dev/null 2>&1; then
         echo "    ✓ $cmd"
     else
@@ -96,6 +96,19 @@ echo "  - gh $(gh --version 2>/dev/null | head -1 | cut -d' ' -f3 || echo 'insta
 echo "  - direnv $(direnv --version 2>/dev/null || echo 'installed')"
 command -v pixi >/dev/null 2>&1 && echo "  - pixi $(pixi --version 2>/dev/null || echo 'installed')"
 echo "  - nushell $(nu --version 2>/dev/null || echo 'installed')"
+echo "  - rust $(rustc --version 2>/dev/null || echo 'installed')"
+echo "  - cargo $(cargo --version 2>/dev/null || echo 'installed')"
+echo "  - node $(node --version 2>/dev/null || echo 'installed')"
+echo "  - npm $(npm --version 2>/dev/null || echo 'installed')"
+echo "  - pnpm $(pnpm --version 2>/dev/null || echo 'installed')"
+echo ""
+echo "Additional tooling:"
+echo "  - Distributed systems: grpcurl, protoc, wasm-pack, websocat"
+echo "  - Hardware: v4l-utils, can-utils, socat, minicom"
+echo "  - Simulation: ogre, mesa, bullet, ffmpeg"
+echo "  - Security: trivy, syft, grype, vault, cosign"
+echo "  - Infrastructure: prometheus, nats-server, kubo"
+echo "  - AI/ML: aichat, aider-chat, local-ai"
 echo ""
 echo "Available shells:"
 echo "  - zsh (default)"
