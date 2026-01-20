@@ -147,7 +147,6 @@ RUN nix profile install --impure \
 # Install Node.js ecosystem (from dev-tools.nix)
 RUN nix profile install --impure \
     nixpkgs#nodejs_22 \
-    nixpkgs#nodePackages.npm \
     nixpkgs#nodePackages.pnpm
 
 # Install distributed systems tools (from distributed.nix)
