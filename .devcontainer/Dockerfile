@@ -188,7 +188,9 @@ RUN nix profile install --impure \
     nixpkgs#minicom \
     nixpkgs#picocom \
     nixpkgs#usbutils \
-    nixpkgs#libusb1
+    nixpkgs#libusb1 \
+    nixpkgs#libgpiod \
+    nixpkgs#i2c-tools
 
 # Install simulation tools (from simulation.nix)
 RUN nix profile install --impure \
@@ -238,6 +240,18 @@ RUN nix profile install --impure \
     nixpkgs#aichat \
     nixpkgs#aider-chat \
     nixpkgs#local-ai || true
+
+# Install Linux platform-specific tools (from platform.nix)
+RUN nix profile install --impure \
+    nixpkgs#inotify-tools \
+    nixpkgs#strace \
+    nixpkgs#gdb \
+    nixpkgs#gvisor
+
+# Note: Holochain packages (holochain, hc, lair-keystore) require the Holochain overlay
+# These are available in the flake's development shells via `nix develop`
+# To use them in the devcontainer, run: `nix develop` to enter the shell
+# Or install manually: nix profile install github:spartan-holochain-counsel/nix-overlay#holochain
 
 # Install Pixi package manager
 RUN curl -fsSL https://pixi.sh/install.sh | bash && \
