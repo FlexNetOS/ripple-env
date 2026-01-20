@@ -202,7 +202,6 @@ RUN nix profile install --impure \
     nixpkgs#xdotool \
     nixpkgs#bullet \
     nixpkgs#ode \
-    nixpkgs#graphviz \
     nixpkgs#ffmpeg \
     nixpkgs#imagemagick \
     nixpkgs#xvfb-run
@@ -235,11 +234,13 @@ RUN nix profile install --impure \
     nixpkgs#shellcheck \
     nixpkgs#yamllint
 
-# Install AI/ML tools (from dev-tools.nix) - optional but included for full support
+# Install AI/ML tools (from dev-tools.nix)
+# Note: local-ai is a large package (~500MB+) and may not be available on all platforms
+# Using || true to allow the build to continue if unavailable
 RUN nix profile install --impure \
     nixpkgs#aichat \
     nixpkgs#aider-chat \
-    nixpkgs#local-ai || true
+    nixpkgs#local-ai 2>/dev/null || echo "Note: local-ai not available on this platform"
 
 # Install Linux platform-specific tools (from platform.nix)
 RUN nix profile install --impure \

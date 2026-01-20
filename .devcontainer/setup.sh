@@ -14,7 +14,25 @@ echo "==> Setting up ripple-env workspace..."
 echo "==> Verifying Nix environment..."
 
 # Check core tools are available
-for cmd in nix git gh direnv pixi nu cargo rustc node npm pnpm grpcurl protoc wasm-pack kubectl; do
+declare -a tools=(
+    "nix"
+    "git"
+    "gh"
+    "direnv"
+    "pixi"
+    "nu"
+    "cargo"
+    "rustc"
+    "node"
+    "npm"
+    "pnpm"
+    "grpcurl"
+    "protoc"
+    "wasm-pack"
+    "kubectl"
+)
+
+for cmd in "${tools[@]}"; do
     if command -v "$cmd" >/dev/null 2>&1; then
         echo "    ✓ $cmd"
     else
