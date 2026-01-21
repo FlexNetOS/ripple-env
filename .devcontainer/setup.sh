@@ -19,8 +19,8 @@ echo "==> Setting up ripple-env workspace..."
 # =============================================================================
 echo "==> Verifying Nix environment..."
 
-# Check core tools are available
-declare -a tools=(
+# Required tools (should always be present)
+declare -a required_tools=(
     "nix"
     "git"
     "gh"
@@ -31,6 +31,10 @@ declare -a tools=(
     "rustc"
     "node"
     "pnpm"
+)
+
+# Optional tools (may not be present in all environments)
+declare -a optional_tools=(
     "grpcurl"
     "protoc"
     "wasm-pack"
@@ -39,11 +43,21 @@ declare -a tools=(
     "docker"
 )
 
-for cmd in "${tools[@]}"; do
+echo "  Required tools:"
+for cmd in "${required_tools[@]}"; do
     if command -v "$cmd" >/dev/null 2>&1; then
         echo "    ✓ $cmd"
     else
-        echo "    ✗ $cmd (missing or optional)"
+        echo "    ✗ $cmd (missing - required)"
+    fi
+done
+
+echo "  Optional tools:"
+for cmd in "${optional_tools[@]}"; do
+    if command -v "$cmd" >/dev/null 2>&1; then
+        echo "    ✓ $cmd"
+    else
+        echo "    - $cmd (not installed)"
     fi
 done
 
@@ -89,8 +103,9 @@ fi
 # =============================================================================
 if [ -f "pixi.toml" ]; then
     echo "==> Pixi project detected"
-    echo "    Run 'pixi install' to set up Python/Node.js/ROS2 environment"
-    echo "    Node.js and pnpm are managed by pixi for cross-platform consistency"
+    echo "    Run 'pixi install' to set up dependencies"
+    echo "    Base dependencies: Node.js (>=22.0), pnpm for cross-platform builds"
+    echo "    Toolchain (Linux): Python, ROS2, ML/AI packages"
     # Optionally auto-install (uncomment if desired):
     # pixi install
 fi

@@ -21,11 +21,13 @@
     },
     "nushell": {
       "path": "nu",
-      "icon": "terminal-powershell"
+      "icon": "terminal"
     }
   },
   "terminal.integrated.shellIntegration.enabled": true,
   "terminal.integrated.scrollback": 10000,
+
+  // Windows-specific terminal settings
   "terminal.integrated.windowsUseConptyDll": true,
 
   // ==========================================================================
