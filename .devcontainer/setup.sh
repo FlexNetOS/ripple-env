@@ -24,7 +24,6 @@ declare -a tools=(
     "cargo"
     "rustc"
     "node"
-    "npm"
     "pnpm"
     "grpcurl"
     "protoc"
