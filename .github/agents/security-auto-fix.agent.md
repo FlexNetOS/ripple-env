@@ -176,18 +176,61 @@ You should be invoked when:
 - Security audit is requested
 
 ### Workflow Integration
+
+GitHub Copilot agents are invoked through your IDE or the GitHub CLI, not as GitHub Actions. Here's how to integrate the security auto-fix agent with your workflow:
+
+#### In Your IDE (VS Code, JetBrains, etc.)
+When security scans fail in CI:
+1. Pull the latest code with scan results
+2. Open GitHub Copilot Chat
+3. Invoke the agent:
+   ```
+   @security_auto_fix Review the latest Trivy scan results and fix HIGH and CRITICAL vulnerabilities
+   ```
+
+#### Via GitHub CLI (gh copilot)
+```bash
+# After a security scan identifies issues
+gh copilot suggest "Using the @security_auto_fix agent, fix the vulnerabilities identified in the latest security scan"
+```
+
+#### Automated Issue Creation in CI
+You can create GitHub Issues from CI that prompt developers to use the agent:
 ```yaml
-# Conceptual Example: Auto-fix after security scan
-# Note: This is a conceptual example showing potential integration.
-# GitHub Copilot agents are invoked through the IDE/CLI, not as GitHub Actions.
 - name: Run Security Scan
   run: trivy fs --severity HIGH,CRITICAL --format json . > scan-results.json
+  continue-on-error: true
 
-- name: Create Issue for Security Fixes
+- name: Create Security Fix Issue
   if: failure()
-  run: |
-    echo "Security vulnerabilities found. Use @security_auto_fix agent to remediate."
-    # See SECURITY_AUTO_FIX_GUIDE.md for integration patterns
+  uses: actions/github-script@v7
+  with:
+    script: |
+      const fs = require('fs');
+      const results = JSON.parse(fs.readFileSync('scan-results.json', 'utf8'));
+      
+      let body = '## 🔒 Security Vulnerabilities Detected\n\n';
+      body += '### How to Fix\n\n';
+      body += 'Use the GitHub Copilot security auto-fix agent:\n\n';
+      body += '```\n@security_auto_fix Fix the following vulnerabilities:\n';
+      
+      // Add vulnerability details
+      for (const result of results.Results || []) {
+        if (result.Vulnerabilities) {
+          for (const vuln of result.Vulnerabilities.slice(0, 5)) {
+            body += `- ${vuln.PkgName}: ${vuln.VulnerabilityID} (${vuln.Severity})\n`;
+          }
+        }
+      }
+      body += '```\n';
+      
+      await github.rest.issues.create({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        title: '🔒 Security Vulnerabilities Need Fixing',
+        body: body,
+        labels: ['security', 'automated']
+      });
 ```
 
 ## Limitations and Escalation
