@@ -74,8 +74,8 @@ for agent_file in $agent_files; do
     fi
     
     # Check if there's content after frontmatter
-    content_lines=$(tail -n +3 "$agent_file" | sed '/^---$/,$d' | wc -l)
-    body_lines=$(sed -n '/^---$/,//!p; /^---$/q' "$agent_file" | tail -n +2 | wc -l)
+    # Extract content after the second --- delimiter
+    body_lines=$(awk '/^---$/{count++; next} count==2{print}' "$agent_file" | wc -l)
     
     if [ "$body_lines" -lt 10 ]; then
         echo "   ⚠️  Agent body is very short ($body_lines lines)"
