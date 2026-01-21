@@ -119,9 +119,14 @@ mkdir -p "$HOME/.config/home-manager"
 mkdir -p "$HOME/.config/ripple-env"
 mkdir -p "$HOME/.cache/ripple-env"
 
-if [ -f "home.nix" ] && [ ! -f "$HOME/.config/home-manager/home.nix" ]; then
-    echo "    Copying home.nix template to $HOME/.config/home-manager/"
-    cp home.nix "$HOME/.config/home-manager/home.nix" 2>/dev/null || true
+if [ -f "home.nix" ]; then
+    if [ ! -f "$HOME/.config/home-manager/home.nix" ]; then
+        echo "    Copying home.nix template to $HOME/.config/home-manager/"
+        cp home.nix "$HOME/.config/home-manager/home.nix" 2>/dev/null || true
+    else
+        echo "    Existing home-manager config detected at $HOME/.config/home-manager/home.nix"
+        echo "    To update from this workspace template, review and manually copy ./home.nix if desired."
+    fi
 fi
 
 if command -v home-manager >/dev/null 2>&1; then
