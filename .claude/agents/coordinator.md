@@ -42,6 +42,7 @@ The Coordinator manages task routing between specialized agents based on context
 | migration-agent | Upgrades, deprecations, version | upgrade, migrate, deprecate, version, breaking | sonnet |
 | test-runner-agent | Testing, coverage, CI | test, pytest, coverage, ci, failing | haiku |
 | docs-agent | Documentation, changelog | docs, readme, changelog, api docs | haiku |
+| workflow-fixer-agent | CI/CD failures, log analysis, fixes | workflow failed, ci failed, build failed, fix ci, pipeline broken | sonnet |
 
 ## Routing Rules
 
@@ -66,6 +67,7 @@ User can specify agent with:
 - `@migrate` - Route to Migration Agent
 - `@test` - Route to Test Runner Agent
 - `@docs` - Route to Documentation Agent
+- `@fix-workflow` - Route to Workflow Fixer Agent
 
 ### Multi-Agent Tasks
 For tasks spanning multiple domains:
