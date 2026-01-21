@@ -67,7 +67,7 @@ localhostForwarding=true
 | Standard | 8GB | 4 | 100GB | ROS2 + PyTorch CPU |
 | GPU | 16GB | 8 | 200GB | LocalAI + ML models |
 | Full Stack | 32GB | 8+ | 500GB | All services |
-| High-End Workstation | 384GB | 40 | 2TB+ | Multi-GPU AI training, large-scale builds |
+| High-End Workstation | 384GB | 40 | 2TB+ (WSL VHDX; ≥8TB SSD physical) | Multi-GPU AI training, large-scale builds |
 
 **High-End Workstation Profile** (AMD Threadripper PRO 7965WX, 512GB RAM, Dual RTX 5090):
 
