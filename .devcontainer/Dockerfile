@@ -218,8 +218,6 @@ RUN nix profile install --impure \
 RUN nix profile install --impure \
     nixpkgs#fzf \
     nixpkgs#unzip \
-    nixpkgs#gzip \
-    nixpkgs#gnutar \
     nixpkgs#portaudio \
     nixpkgs#devpod \
     nixpkgs#runc
