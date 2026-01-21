@@ -137,9 +137,7 @@ When MCP tools are available, prefer them for better structured data:
 **Location**: <file:line or job:step>
 
 ### Log Extract
-```
-<relevant log lines>
-```
+    <relevant log lines>
 
 ### Diagnosis
 <explanation of what went wrong and why>
