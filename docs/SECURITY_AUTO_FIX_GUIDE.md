@@ -358,7 +358,7 @@ gh api repos/FlexNetOS/ripple-env/code-scanning/alerts --jq 'group_by(.rule.seve
 
 ## Support and Resources
 
-- **Documentation**: `/home/runner/work/ripple-env/ripple-env/.github/agents/README.md`
+- **Documentation**: `.github/agents/README.md`
 - **Security Workflow**: `.github/workflows/security.yml`
 - **Security Policy**: `SECURITY.md`
 - **Claude Agent**: `.claude/agents/security-agent.md`

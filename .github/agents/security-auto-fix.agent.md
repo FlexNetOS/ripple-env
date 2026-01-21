@@ -177,16 +177,17 @@ You should be invoked when:
 
 ### Workflow Integration
 ```yaml
-# Example: Auto-fix after security scan
+# Conceptual Example: Auto-fix after security scan
+# Note: This is a conceptual example showing potential integration.
+# GitHub Copilot agents are invoked through the IDE/CLI, not as GitHub Actions.
 - name: Run Security Scan
   run: trivy fs --severity HIGH,CRITICAL --format json . > scan-results.json
 
-- name: Auto-fix Vulnerabilities
+- name: Create Issue for Security Fixes
   if: failure()
-  uses: github/copilot-agents@v1
-  with:
-    agent: security_auto_fix
-    input: scan-results.json
+  run: |
+    echo "Security vulnerabilities found. Use @security_auto_fix agent to remediate."
+    # See SECURITY_AUTO_FIX_GUIDE.md for integration patterns
 ```
 
 ## Limitations and Escalation

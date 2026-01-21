@@ -14,15 +14,13 @@ if [ ! -d "$AGENTS_DIR" ]; then
     exit 1
 fi
 
-# Find all .agent.md files
-agent_files=$(find "$AGENTS_DIR" -name "*.agent.md" -type f)
-
-if [ -z "$agent_files" ]; then
+# Find all .agent.md files and iterate safely
+if ! find "$AGENTS_DIR" -name "*.agent.md" -type f -print0 | grep -qz .; then
     echo "⚠️  Warning: No .agent.md files found in $AGENTS_DIR"
     exit 0
 fi
 
-for agent_file in $agent_files; do
+while IFS= read -r -d '' agent_file; do
     echo "📝 Validating: $agent_file"
     
     # Check if file has YAML frontmatter
@@ -84,7 +82,7 @@ for agent_file in $agent_files; do
     fi
     
     echo ""
-done
+done < <(find "$AGENTS_DIR" -name "*.agent.md" -type f -print0)
 
 # Summary
 if [ $ERRORS -eq 0 ]; then
