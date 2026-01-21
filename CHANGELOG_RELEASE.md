@@ -1,46 +1,25 @@
-## What's Changed in v1.2.1
-
-### Bug Fixes
-* fix: Correct ROS_DOMAIN_ID test bash syntax for proper shell variable expansion
-* fix: Add missing client-side trpc and utils files for frontend build
+## What's Changed in v1.5.3
 
 ### Other Changes
-* Merge pull request #54 from FlexNetOS/claude/pixi-pnpm-standardization
-* Merge branch 'main' into claude/pixi-pnpm-standardization
-* move files to new locations
-* Merge pull request #50 from FlexNetOS/dependabot/npm_and_yarn/frontend/tools/component-lib-builder/ui/npm_and_yarn-81958fa467
-* Merge branch 'main' into dependabot/npm_and_yarn/frontend/tools/component-lib-builder/ui/npm_and_yarn-81958fa467
-* Merge branch 'main' into dependabot/npm_and_yarn/frontend/tools/component-lib-builder/ui/npm_and_yarn-81958fa467
-* chore(deps): bump the npm_and_yarn group across 2 directories with 3 updates
+* Update .devcontainer/setup.sh
+* Update .devcontainer/setup.sh
+* Merge pull request #67 from FlexNetOS/dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d
+* Merge branch 'main' into dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d
+* Merge pull request #72 from FlexNetOS/copilot/sub-pr-67
+* Merge branch 'dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d' into copilot/sub-pr-67
+* Merge pull request #75 from FlexNetOS/copilot/sub-pr-67-yet-again
+* Merge branch 'dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d' into copilot/sub-pr-67-yet-again
+* Merge pull request #76 from FlexNetOS/copilot/sub-pr-67-one-more-time
+* Merge branch 'dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d' into copilot/sub-pr-67-one-more-time
+* Merge pull request #74 from FlexNetOS/copilot/sub-pr-67-another-one
+* Merge branch 'dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d' into copilot/sub-pr-67-another-one
+* Merge branch 'dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d' into copilot/sub-pr-67
+* Merge pull request #73 from FlexNetOS/copilot/sub-pr-67-again
+* Merge branch 'dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d' into copilot/sub-pr-67-again
+* Merge branch 'dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d' into copilot/sub-pr-67-another-one
+* Merge branch 'dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d' into copilot/sub-pr-67-yet-again
+* Merge branch 'dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d' into copilot/sub-pr-67-one-more-time
+* Merge pull request #77 from FlexNetOS/copilot/sub-pr-67-please-work
+* Merge branch 'dependabot/npm_and_yarn/Synaptic-Mesh/packages/claude-max-market/npm_and_yarn-6be35f979d' into copilot/sub-pr-67-please-work
 
-**Full Changelog**: https://github.com/FlexNetOS/ripple-env/compare/v1.2.0...v1.2.1
-
-## What's Changed in v1.2.0
-
-### Features
-* feat: sync minimalist_sidebar variants and add LazyVim config
-
-### Other Changes
-
-**Full Changelog**: https://github.com/FlexNetOS/ripple-env/compare/v1.1.0...v1.2.0
-
-## What's Changed in v1.1.0
-
-### Features
-* Merge pull request #52 from FlexNetOS/feature/vibe-kanban-integration-plan
-* feat: add vibe-kanban integration plan and initial implementation
-
-### Bug Fixes
-* fix: resolve Nix flake issues and deduplicate docker configs
-
-### Other Changes
-* docs: add conversation summary and handoff prompt for continuation
-* WIP: snapshot local changes
-* Refactor code structure for improved readability and maintainability
-* WIP: pre-stash apply snapshot
-* Merge pull request #49 from FlexNetOS/claude/micro-detail-docs-20260113
-* Merge branch 'main' into claude/micro-detail-docs-20260113
-* Add FlexNetOS WSL configuration and installation scripts
-* Add sidebar panels and AI endpoints
-
-**Full Changelog**: https://github.com/FlexNetOS/ripple-env/compare/v1.0.0-beta.1...v1.1.0
+**Full Changelog**: https://github.com/FlexNetOS/ripple-env/compare/v1.5.2...v1.5.3
