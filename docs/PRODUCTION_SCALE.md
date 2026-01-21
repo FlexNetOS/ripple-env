@@ -374,6 +374,19 @@ swap=4GB          # Swap space
 | Standard | 16-32GB | 4-8 | 2-4GB |
 | GPU | 32-64GB | 8-16 | 4-8GB |
 | Full Stack | 64GB+ | 16+ | 8GB+ |
+| High-End Workstation | 384GB | 40 | 32GB |
+
+**High-End Workstation Profile** (AMD Threadripper PRO 7965WX, 512GB RAM, Dual RTX 5090):
+
+```powershell
+# Bootstrap with high-end profile
+.\bootstrap.ps1 -HardwareProfile "high-end-workstation"
+```
+
+Or use the pre-configured template from WSL:
+```bash
+cp config/wslconfig/high-end-workstation.wslconfig /mnt/c/Users/$USER/.wslconfig
+```
 
 **Apply changes**:
 ```powershell

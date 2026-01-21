@@ -21,9 +21,10 @@ This environment is designed as the foundation for an **agentic system** that ma
 │   Agent         │   Agent         │     Agent                       │
 ├─────────────────┴─────────────────┴─────────────────────────────────┤
 │                       Domain Agents Layer                            │
-├─────────────────────┬─────────────────────┬─────────────────────────┤
-│   Robotics Agent    │   DevOps Agent      │   Nix Agent             │
-├─────────────────────┴─────────────────────┴─────────────────────────┤
+├────────────────┬────────────────┬────────────────┬──────────────────┤
+│ Robotics       │ DevOps         │ Nix            │ Package Mgr      │
+│ Agent          │ Agent          │ Agent          │ Agent            │
+├────────────────┴────────────────┴────────────────┴──────────────────┤
 │                    Shared Context & Memory                          │
 ├─────────────────────────────────────────────────────────────────────┤
 │              AI Infrastructure (LocalAI + AGiXT)                    │
@@ -75,6 +76,13 @@ This environment is designed as the foundation for an **agentic system** that ma
 - Package management and environment setup
 - Cross-platform compatibility (Linux, macOS, WSL2)
 - Module development and debugging
+
+#### Package Manager Agent
+- Package conflict identification and resolution
+- Pixi-first dependency management enforcement
+- Command conversion (npm → pixi pnpm, cargo → pixi cargo)
+- Environment selection and isolation
+- Lock file consistency verification
 
 ### Future Domain Agents (Planned)
 
