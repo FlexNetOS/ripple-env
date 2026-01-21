@@ -7,7 +7,7 @@
 #
 # Tool Management:
 # - Nix: Provides Rust toolchain (cargo, rustc), system tools, and dev utilities
-# - Pixi: Manages Node.js (>=22.0), Python, pnpm, and ROS2 dependencies
+# - Pixi: Manages Node.js 22.x (>=22.0,<23), Python, pnpm, and ROS2 dependencies
 # - Direnv: Auto-loads the Nix development environment
 # - Home-manager: User configuration management (optional)
 set -euo pipefail
