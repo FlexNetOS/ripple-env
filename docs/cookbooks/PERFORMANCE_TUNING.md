@@ -67,6 +67,37 @@ localhostForwarding=true
 | Standard | 8GB | 4 | 100GB | ROS2 + PyTorch CPU |
 | GPU | 16GB | 8 | 200GB | LocalAI + ML models |
 | Full Stack | 32GB | 8+ | 500GB | All services |
+| High-End Workstation | 384GB | 40 | 2TB+ | Multi-GPU AI training, large-scale builds |
+
+**High-End Workstation Profile** (AMD Threadripper PRO 7965WX, 512GB RAM, Dual RTX 5090):
+
+```ini
+[wsl2]
+memory=384GB           # 75% of 512GB for WSL
+processors=40          # 40 of 48 threads
+swap=32GB              # Large swap for AI workloads
+nestedVirtualization=true
+kernelCommandLine=vm.overcommit_memory=1
+
+[experimental]
+autoMemoryReclaim=dropcache
+pageReporting=true
+```
+
+To use this profile during bootstrap:
+```powershell
+.\bootstrap.ps1 -HardwareProfile "high-end-workstation"
+```
+
+Or apply the pre-configured template:
+```bash
+cp config/wslconfig/high-end-workstation.wslconfig /mnt/c/Users/$USER/.wslconfig
+```
+
+Load the high-performance environment inside WSL:
+```bash
+source scripts/high-performance-env.sh
+```
 
 **Evidence**: `scripts/validate-resources.sh` checks these thresholds
 
@@ -333,6 +364,56 @@ export NIX_MAX_JOBS=8
 # Use aggressive caching
 export CCACHE_MAXSIZE=10G
 ```
+
+### High-End Workstation (512GB+ RAM, Dual GPU)
+
+**Target Hardware:**
+- CPU: AMD Ryzen Threadripper PRO 7965WX (24 cores, 48 threads)
+- RAM: 512GB DDR5 ECC
+- GPU: Dual NVIDIA RTX 5090 (32GB VRAM each, 64GB total)
+- Storage: PCIe Gen 5 NVMe SSDs
+
+```bash
+# Load high-performance environment
+source scripts/high-performance-env.sh
+
+# Settings applied automatically:
+# NIX_BUILD_CORES=32, NIX_MAX_JOBS=16, CUDA_VISIBLE_DEVICES=0,1
+
+# Enable all services with maximum resources
+docker compose --profile full --profile gpu up -d
+
+# Build with maximum parallelization
+colcon build --symlink-install --parallel-workers 24
+
+# Multi-GPU training configuration
+export CUDA_VISIBLE_DEVICES=0,1
+export NCCL_P2P_DISABLE=0
+
+# Aggressive caching for large builds
+export CCACHE_MAXSIZE=50G
+```
+
+**Bootstrap for High-End Workstation:**
+```powershell
+# From Windows PowerShell (as Administrator)
+.\bootstrap.ps1 -HardwareProfile "high-end-workstation"
+```
+
+**Or apply config manually:**
+```bash
+# Copy optimized .wslconfig
+cp config/wslconfig/high-end-workstation.wslconfig /mnt/c/Users/$USER/.wslconfig
+
+# Restart WSL from Windows PowerShell
+wsl --shutdown
+wsl
+
+# Load environment inside WSL
+source scripts/high-performance-env.sh
+```
+
+**Evidence**: `config/wslconfig/high-end-workstation.wslconfig` and `scripts/high-performance-env.sh`
 
 ## Troubleshooting Performance Issues
 
