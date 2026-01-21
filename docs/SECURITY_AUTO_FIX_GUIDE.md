@@ -58,7 +58,7 @@ When Trivy finds vulnerabilities in dependencies:
 
 2. **Review Results**:
    ```bash
-   cat trivy-results.json | jq '.Results[] | select(.Vulnerabilities)'
+   jq '.Results[] | select(.Vulnerabilities)' trivy-results.json
    ```
 
 3. **Fix with Agent**:
