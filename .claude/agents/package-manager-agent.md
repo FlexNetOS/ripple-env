@@ -43,7 +43,7 @@ Pixi is the **primary package manager** for this repository. All other package m
 - pnpm is available in Pixi via conda-forge (version pinned in `pixi.toml`)
 - pnpm uses hard links to save disk space and installation time
 - pnpm has stricter dependency resolution preventing phantom dependencies
-- pnpm's flat `node_modules` structure is more compatible with monorepos
+- pnpm's content-addressable store and symlinked `node_modules` layout work well in monorepos while preventing phantom dependencies
 
 ### Environment Selection
 
