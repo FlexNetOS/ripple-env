@@ -116,6 +116,7 @@ When using the CUDA devshell (`.#cuda`):
 - [x] Platform-specific guards for CUDA (Linux-only)
 - [x] Trivy included for security scanning
 - [x] Pre-commit hooks for secret detection
+- [x] **Security Auto-Fix Agent** for automated vulnerability remediation ([docs](docs/SECURITY_AUTO_FIX_GUIDE.md))
 
 ### Planned
 
@@ -123,6 +124,40 @@ When using the CUDA devshell (`.#cuda`):
 - [ ] SBOM (Software Bill of Materials) generation
 - [ ] Signed commits enforcement
 - [ ] Branch protection rules documentation
+
+## Automated Security Fixes
+
+This repository includes a **GitHub Copilot Custom Agent** that automatically fixes security vulnerabilities.
+
+### Quick Start
+
+Use the Security Auto-Fix Agent in GitHub Copilot Chat:
+
+```
+@security_auto_fix Fix the HIGH and CRITICAL vulnerabilities in [file/directory]
+```
+
+**Capabilities:**
+- Fixes code vulnerabilities (SQL injection, XSS, command injection, etc.)
+- Updates vulnerable dependencies to patched versions
+- Removes hard-coded secrets and implements secure alternatives
+- Hardens container configurations
+- Fixes configuration security issues
+
+**Documentation:**
+- [Security Auto-Fix Agent Guide](docs/SECURITY_AUTO_FIX_GUIDE.md)
+- [Agent Configuration](.github/agents/security-auto-fix.agent.md)
+- [Agent Usage Examples](.github/agents/README.md)
+
+### Integration with Security Workflows
+
+The agent integrates with existing security scanning:
+- **CodeQL**: Automatically fix code-level vulnerabilities
+- **Trivy**: Update vulnerable dependencies and container images
+- **Gitleaks**: Remove hard-coded secrets
+- **Grype**: Remediate SBOM vulnerabilities
+
+See [SECURITY_AUTO_FIX_GUIDE.md](docs/SECURITY_AUTO_FIX_GUIDE.md) for integration examples.
 
 ## Third-Party Dependencies
 
