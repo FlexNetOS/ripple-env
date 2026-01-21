@@ -111,8 +111,8 @@
         },
 
         // C/C++ settings
-        // Note: This uses the default GCC from the Nix profile at /nix/var/nix/profiles/default/bin/gcc.
-        // If you specifically need gcc13 for certain C++20 features, update this path to the gcc13 binary in the same profile.
+        // Note: In this devcontainer, /nix/var/nix/profiles/default/bin/gcc resolves to gcc13 installed in the Dockerfile.
+        // If you change the installed GCC version or need a different one, update this path to the appropriate gcc binary in the same profile.
         "C_Cpp.default.compilerPath": "/nix/var/nix/profiles/default/bin/gcc",
         "C_Cpp.default.cStandard": "c17",
         "C_Cpp.default.cppStandard": "c++20",
