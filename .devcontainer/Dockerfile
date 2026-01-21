@@ -232,8 +232,8 @@ RUN nix profile install --impure \
 # Install AI/ML tools (from dev-tools.nix)
 # Note: local-ai is a large package (~500MB+) and may not be available on all platforms
 RUN nix profile install --impure \
-    nixpkgs#aichat \
-    nixpkgs#aider-chat || true
+    nixpkgs#aichat
+RUN ( nix profile install --impure nixpkgs#aider-chat || echo "Warning: failed to install nixpkgs#aider-chat; continuing without aider-chat." )
 RUN nix profile install --impure nixpkgs#local-ai || true
 
 # Install Linux platform-specific tools (from platform.nix)
