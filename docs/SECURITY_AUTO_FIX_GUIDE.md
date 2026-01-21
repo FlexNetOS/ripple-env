@@ -186,7 +186,7 @@ jobs:
         id: check_vulns
         run: |
           if [ -f trivy-results.json ]; then
-            VULN_COUNT=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities // []] | add | length')
+            VULN_COUNT=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities // []] | add | length // 0')
             echo "count=$VULN_COUNT" >> $GITHUB_OUTPUT
             if [ "$VULN_COUNT" -gt 0 ]; then
               echo "::warning::Found $VULN_COUNT vulnerabilities"
