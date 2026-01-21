@@ -78,10 +78,13 @@ export NCCL_DEBUG=WARN
 export NCCL_P2P_DISABLE=0
 export NCCL_IB_DISABLE=1                 # Disable InfiniBand (not present)
 
-# Auto-detect primary network interface for NCCL
-# Fallback to eth0 if detection fails
+# Auto-detect primary network interface for NCCL.
+# Note: Verify your active interface with 'ip addr show' on this system. You can
+# override the detected value by setting NCCL_SOCKET_IFNAME before sourcing this
+# script. We fall back to 'eth0' if detection fails and no override is provided.
 NCCL_INTERFACE=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $5; exit}' || echo "eth0")
-export NCCL_SOCKET_IFNAME="${NCCL_INTERFACE:-eth0}"
+: "${NCCL_SOCKET_IFNAME:=${NCCL_INTERFACE:-eth0}}"
+export NCCL_SOCKET_IFNAME
 
 # WSL2 GPU library path
 if [[ -d "/usr/lib/wsl/lib" ]]; then
