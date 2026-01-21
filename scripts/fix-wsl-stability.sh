@@ -209,9 +209,39 @@ EOF
 
 # Function to create WSL configuration
 create_wsl_config() {
-    echo "⚙️ Creating WSL configuration..."
+    local profile="${1:-standard}"
+    echo "⚙️ Creating WSL configuration (profile: $profile)..."
     
-    cat > /tmp/.wslconfig << 'EOF'
+    case "$profile" in
+        "high-end-workstation")
+            # Optimized for: AMD Threadripper PRO 7965WX (24C/48T), 512GB RAM, Dual RTX 5090
+            cat > /tmp/.wslconfig << 'EOF'
+# WSL2 Configuration - High-End Workstation Profile
+# Hardware: AMD Threadripper PRO 7965WX (24C/48T), 512GB DDR5, Dual RTX 5090
+[wsl2]
+memory=384GB
+swap=32GB
+processors=40
+localhostForwarding=true
+nestedVirtualization=true
+kernelCommandLine=vm.overcommit_memory=1
+networkingMode=NAT
+
+[experimental]
+autoMemoryReclaim=dropcache
+sparseVhd=true
+dnsTunneling=true
+firewall=true
+autoProxy=true
+vmIdleTimeout=300000
+pageReporting=true
+EOF
+            echo "🚀 High-end workstation config created!"
+            echo "   Memory: 384GB | Processors: 40 | Swap: 32GB"
+            ;;
+        *)
+            # Standard profile (conservative for typical systems)
+            cat > /tmp/.wslconfig << 'EOF'
 [wsl2]
 memory=8GB
 processors=4
@@ -223,7 +253,12 @@ nestedVirtualization=false
 autoMemoryReclaim=gradual
 sparseVhd=true
 EOF
+            echo "📦 Standard config created!"
+            echo "   Memory: 8GB | Processors: 4 | Swap: 2GB"
+            ;;
+    esac
     
+    echo ""
     echo "ℹ️ To apply WSL config, copy .wslconfig to your Windows user directory:"
     echo "   cp /tmp/.wslconfig /mnt/c/Users/\$USER/.wslconfig"
     echo "   Then restart WSL: wsl --shutdown"
@@ -231,10 +266,12 @@ EOF
 
 # Main execution
 main() {
+    local profile="${1:-standard}"
+    
     if check_wsl; then
         fix_wsl_issues
         create_robust_aliases
-        create_wsl_config
+        create_wsl_config "$profile"
         
         echo ""
         echo "✅ WSL stability fixes applied!"
@@ -242,7 +279,11 @@ main() {
         echo "🎯 Next steps:"
         echo "   1. Copy .wslconfig to Windows: cp /tmp/.wslconfig /mnt/c/Users/\$USER/.wslconfig"
         echo "   2. Restart WSL: wsl --shutdown"
-        echo "   3. Use 'ripple-enter' to enter stable environment"
+        if [[ "$profile" == "high-end-workstation" ]]; then
+            echo "   3. Load high-performance environment: source scripts/high-performance-env.sh"
+        else
+            echo "   3. Use 'ripple-enter' to enter stable environment"
+        fi
         echo "   4. Use 'pixi-safe' and 'nix-safe' for timeout-protected commands"
         echo "   5. Use 'ripple-save' before long operations"
         echo "   6. Use 'ripple-restore' after WSL reloads"
@@ -250,8 +291,13 @@ main() {
         echo "💡 Pro tips:"
         echo "   - Always run 'ripple-save' before heavy operations"
         echo "   - Use 'cd-ripple' to return to project with recovery"
-        echo "   - Commands have 5-10 minute timeouts to prevent hangs"
-        echo "   - Memory limits prevent WSL crashes"
+        if [[ "$profile" == "high-end-workstation" ]]; then
+            echo "   - High-performance profile uses dropcache for memory reclaim"
+            echo "   - Multi-GPU support enabled for dual RTX 5090"
+        else
+            echo "   - Commands have 5-10 minute timeouts to prevent hangs"
+            echo "   - Memory limits prevent WSL crashes"
+        fi
         
     else
         echo "ℹ️ Not running in WSL - skipping WSL-specific fixes"
