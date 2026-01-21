@@ -26,6 +26,7 @@
 | [ROS2 Development](./skills/ros2-development/SKILL.md) | Building, testing, and running ROS2 packages |
 | [DevOps](./skills/devops/SKILL.md) | CI/CD, GitHub workflows, automation |
 | [Nix Environment](./skills/nix-environment/SKILL.md) | Flakes, home-manager, environment management |
+| [Package Management](./skills/package-management/SKILL.md) | Pixi-first dependency management, conflict resolution |
 | [AI Assistants](./skills/ai-assistants/SKILL.md) | AI tools (aichat, aider, LocalAI, AGiXT) |
 | [AIOS & Cerebrum](./skills/aios-cerebrum/SKILL.md) | Agent OS kernel and SDK for building AI agents |
 | [Distributed Systems](./skills/distributed-systems/SKILL.md) | NATS messaging, Temporal workflows |
@@ -72,6 +73,7 @@
 | [Robotics Agent](./agents/robotics-agent.md) | sonnet | ROS2 development specialist |
 | [DevOps Agent](./agents/devops-agent.md) | sonnet | CI/CD and infrastructure specialist |
 | [Nix Agent](./agents/nix-agent.md) | sonnet | Environment configuration specialist |
+| [Package Manager Agent](./agents/package-manager-agent.md) | sonnet | Package conflict resolution and Pixi integration |
 | [Kubernetes Agent](./agents/kubernetes-agent.md) | sonnet | K8s, Helm, ArgoCD orchestration |
 | [Identity Agent](./agents/identity-agent.md) | sonnet | Keycloak, OPA, Vault integration |
 
@@ -140,6 +142,8 @@ ripple-env/
 │   │   │   └── SKILL.md
 │   │   ├── nix-environment/
 │   │   │   └── SKILL.md
+│   │   ├── package-management/
+│   │   │   └── SKILL.md
 │   │   ├── ai-assistants/
 │   │   │   └── SKILL.md
 │   │   ├── distributed-systems/
@@ -169,6 +173,7 @@ ripple-env/
 │   │   ├── robotics-agent.md         # ROS2 specialist
 │   │   ├── devops-agent.md           # CI/CD specialist
 │   │   ├── nix-agent.md              # Environment specialist
+│   │   ├── package-manager-agent.md  # Package conflict resolution
 │   │   ├── architect-agent.md        # Full-stack architecture
 │   │   ├── pre-verify-agent.md       # Pre-implementation validation
 │   │   └── cross-analysis-agent.md   # Codebase analysis
