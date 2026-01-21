@@ -111,7 +111,6 @@ RUN nix profile install --impure \
 
 # Install build tools and compilation cache
 RUN nix profile install --impure \
-    nixpkgs#gcc \
     nixpkgs#gcc13 \
     nixpkgs#gnumake \
     nixpkgs#cmake \
