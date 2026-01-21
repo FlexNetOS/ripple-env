@@ -27,10 +27,22 @@
     Size of the ext4.vhdx disk in GB (default: 1024 = 1TB)
 
 .PARAMETER MemorySizeGB
-    Memory limit for WSL2 in GB written to .wslconfig (default: 8)
+    Memory limit for WSL2 in GB written to .wslconfig (default: 6)
+    For high-end workstation profile, this is overridden to 384GB.
 
 .PARAMETER SwapSizeGB
-    Size of swap in GB (default: 8)
+    Size of swap in GB (default: 4)
+    For high-end workstation profile, this is overridden to 32GB.
+
+.PARAMETER ProcessorCount
+    Number of processors/threads for WSL2 (default: 4)
+    For high-end workstation profile, this is overridden to 40 threads.
+
+.PARAMETER HardwareProfile
+    Hardware optimization profile. Options:
+    - "standard" (default): Conservative settings for typical systems
+    - "high-end-workstation": Optimized for AMD Threadripper PRO 7965WX, 512GB RAM, Dual RTX 5090
+    - "custom": Use user-specified MemorySizeGB, SwapSizeGB, and ProcessorCount values
 
 .PARAMETER RepoURL
     Git URL to clone inside WSL (default: https://github.com/FlexNetOS/ripple-env.git)
@@ -61,11 +73,24 @@
     .\bootstrap.ps1 -DistroName "MyROS2" -DiskSizeGB 512
 
 .EXAMPLE
+    .\bootstrap.ps1 -HardwareProfile "high-end-workstation"
+    # Optimizes WSL for AMD Threadripper PRO 7965WX, 512GB RAM, Dual RTX 5090
+
+.EXAMPLE
+    .\bootstrap.ps1 -HardwareProfile "custom" -MemorySizeGB 128 -ProcessorCount 16 -SwapSizeGB 16
+    # Custom hardware configuration
+
+.EXAMPLE
     .\bootstrap.ps1 -Resume
 
 .NOTES
     Requires Windows 10 version 2004+ or Windows 11
     Must be run as Administrator
+    
+    Default values (MemorySizeGB=6, ProcessorCount=4) are conservative to support
+    a wide range of systems, including laptops and older desktops. For high-end
+    workstations, use -HardwareProfile "high-end-workstation" which automatically
+    configures optimal settings (384GB RAM, 40 processors).
 #>
 
 [CmdletBinding()]
@@ -74,11 +99,16 @@ param(
     [string]$InstallPath = "$env:USERPROFILE\WSL\NixOS-Ripple",
     [ValidateRange(64, 4096)]
     [int]$DiskSizeGB = 1024,
-    [ValidateRange(2, 256)]
-    [ValidateRange(2, 256)]
+    # Conservative default (6GB) supports most systems; high-end-workstation profile overrides to 384GB
+    [ValidateRange(2, 512)]
     [int]$MemorySizeGB = 6,
     [ValidateRange(1, 64)]
     [int]$SwapSizeGB = 4,
+    # Conservative default (4) supports laptops/desktops; high-end-workstation profile overrides to 40
+    [ValidateRange(1, 128)]
+    [int]$ProcessorCount = 4,
+    [ValidateSet("standard", "high-end-workstation", "custom")]
+    [string]$HardwareProfile = "standard",
     [ValidatePattern('^https?://')]
     [string]$RepoURL = "https://github.com/FlexNetOS/ripple-env.git",
     [string]$RepoFetchRef = "",
@@ -469,21 +499,73 @@ function Set-WSLConfig {
 
     $wslConfigPath = "$env:USERPROFILE\.wslconfig"
 
-    # Updated with realistic memory settings based on actual WSL stability issues
-    $wslConfig = @"
+    # Hardware profile configuration
+    # Profiles: standard (default), high-end-workstation, custom
+    switch ($HardwareProfile) {
+        "high-end-workstation" {
+            # Optimized for: AMD Threadripper PRO 7965WX (24C/48T), 512GB RAM, Dual RTX 5090
+            Write-ColorOutput "Using HIGH-END WORKSTATION profile" "Info"
+            Write-ColorOutput "  Target: Threadripper PRO 7965WX, 512GB RAM, Dual RTX 5090" "Info"
+            $wslConfig = @"
+# WSL2 Configuration - High-End Workstation Profile
+# Hardware: AMD Threadripper PRO 7965WX (24C/48T), 512GB DDR5, Dual RTX 5090
+[wsl2]
+memory=384GB
+swap=32GB
+processors=40
+localhostForwarding=true
+nestedVirtualization=true
+kernelCommandLine=vm.overcommit_memory=1
+networkingMode=NAT
+
+[experimental]
+autoMemoryReclaim=dropcache
+sparseVhd=true
+dnsTunneling=true
+firewall=true
+autoProxy=true
+vmIdleTimeout=300000
+pageReporting=true
+"@
+        }
+        "custom" {
+            # Use user-specified values
+            Write-ColorOutput "Using CUSTOM profile with user-specified values" "Info"
+            $wslConfig = @"
+# WSL2 Configuration - Custom Profile
 [wsl2]
 memory=${MemorySizeGB}GB
 swap=${SwapSizeGB}GB
+processors=${ProcessorCount}
 localhostForwarding=true
-processors=4
+nestedVirtualization=true
+networkingMode=NAT
 
 [experimental]
 autoMemoryReclaim=gradual
 sparseVhd=true
-
-# Memory pressure settings for stability
+dnsTunneling=true
 vmIdleTimeout=300000
 "@
+        }
+        default {
+            # Standard profile (conservative for typical systems)
+            Write-ColorOutput "Using STANDARD profile (conservative settings)" "Info"
+            $wslConfig = @"
+# WSL2 Configuration - Standard Profile
+[wsl2]
+memory=${MemorySizeGB}GB
+swap=${SwapSizeGB}GB
+localhostForwarding=true
+processors=${ProcessorCount}
+
+[experimental]
+autoMemoryReclaim=gradual
+sparseVhd=true
+vmIdleTimeout=300000
+"@
+        }
+    }
 
     Write-ColorOutput "Writing WSL configuration to $wslConfigPath" "Info"
     Set-Content -Path $wslConfigPath -Value $wslConfig -Force

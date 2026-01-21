@@ -1,0 +1,65 @@
+# WSL2 Configuration for High-End Workstation
+# Optimized for: AMD Ryzen Threadripper PRO 7965WX (24C/48T), 512GB DDR5 RAM
+# GPUs: Dual RTX 5090 (32GB each), SSDs: 2x Samsung 9100 PRO 4TB PCIe Gen 5
+# Storage: 24TB + 2x 20TB HDD (NAS-grade)
+#
+# Usage:
+#   Copy this file to: %USERPROFILE%\.wslconfig
+#   Restart WSL: wsl --shutdown
+#
+# Note: Adjust memory/processors based on Windows host requirements.
+# This configuration allocates ~75% of resources to WSL2.
+
+[wsl2]
+# Memory: Allocate 384GB of 512GB (leave 128GB for Windows + GPU overhead)
+memory=384GB
+
+# Processors: Use 40 of 48 threads (leave 8 for Windows tasks)
+processors=40
+
+# Swap: 32GB swap for heavy AI/ML workloads
+swap=32GB
+
+# Enable localhost forwarding for development
+localhostForwarding=true
+
+# Nested virtualization for advanced container workloads
+nestedVirtualization=true
+
+# GPU support enabled (WSL2 GPU paravirtualization for dual RTX 5090)
+# Note: Requires NVIDIA WSL drivers installed on Windows host
+# WSL2 automatically shares GPU resources via paravirtualization
+
+# Allow memory overcommit for large workloads (always overcommit, never check)
+kernelCommandLine=vm.overcommit_memory=1
+
+# Network mode: NAT provides better compatibility
+# Set to "mirrored" for direct network access (requires Windows 11 22H2+)
+networkingMode=NAT
+
+[experimental]
+# Automatic memory reclaim: dropCache releases memory when idle
+# Options: disabled, dropcache, gradual
+autoMemoryReclaim=dropcache
+
+# Sparse VHD: Enable dynamic disk expansion (saves disk space)
+sparseVhd=true
+
+# DNS tunneling for better DNS resolution
+dnsTunneling=true
+
+# Firewall: Enable Windows-WSL firewall integration
+firewall=true
+
+# Use Windows path in WSL
+autoProxy=true
+
+# GPU compute support (critical for dual RTX 5090 CUDA workloads)
+# Ensures proper GPU passthrough for AI/ML training
+bestEffortDnsParsing=true
+
+# Memory idle timeout before reclaiming (5 minutes = 300000ms)
+vmIdleTimeout=300000
+
+# Page reporting improves memory management for large allocations
+pageReporting=true
