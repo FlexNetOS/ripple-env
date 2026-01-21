@@ -4,6 +4,12 @@
 #
 # All tools are pre-installed via Nix in the Dockerfile.
 # This script handles workspace-specific configuration.
+#
+# Tool Management:
+# - Nix: Provides Rust toolchain (cargo, rustc), system tools, and dev utilities
+# - Pixi: Manages Node.js 22.x (>=22.0,<23), Python, pnpm, and ROS2 dependencies
+# - Direnv: Auto-loads the Nix development environment
+# - Home-manager: User configuration management (optional)
 set -euo pipefail
 
 echo "==> Setting up ripple-env workspace..."
@@ -13,8 +19,8 @@ echo "==> Setting up ripple-env workspace..."
 # =============================================================================
 echo "==> Verifying Nix environment..."
 
-# Check core tools are available
-declare -a tools=(
+# Required tools (should always be present)
+declare -a required_tools=(
     "nix"
     "git"
     "gh"
@@ -25,17 +31,33 @@ declare -a tools=(
     "rustc"
     "node"
     "pnpm"
+)
+
+# Optional tools (may not be present in all environments)
+declare -a optional_tools=(
     "grpcurl"
     "protoc"
     "wasm-pack"
     "kubectl"
+    "home-manager"
+    "docker"
 )
 
-for cmd in "${tools[@]}"; do
+echo "  Required tools:"
+for cmd in "${required_tools[@]}"; do
     if command -v "$cmd" >/dev/null 2>&1; then
         echo "    ✓ $cmd"
     else
-        echo "    ✗ $cmd (missing)"
+        echo "    ✗ $cmd (missing - required)"
+    fi
+done
+
+echo "  Optional tools:"
+for cmd in "${optional_tools[@]}"; do
+    if command -v "$cmd" >/dev/null 2>&1; then
+        echo "    ✓ $cmd"
+    else
+        echo "    - $cmd (not installed)"
     fi
 done
 
@@ -81,13 +103,41 @@ fi
 # =============================================================================
 if [ -f "pixi.toml" ]; then
     echo "==> Pixi project detected"
-    echo "    Run 'pixi install' to set up Python/ROS2 environment"
+    echo "    Run 'pixi install' to set up dependencies"
+    echo "    Base dependencies: Node.js (>=22.0), pnpm for cross-platform builds"
+    echo "    Toolchain (Linux): Python, ROS2, ML/AI packages"
     # Optionally auto-install (uncomment if desired):
     # pixi install
 fi
 
 # =============================================================================
-# 6. Git configuration
+# 6. Home-manager configuration
+# =============================================================================
+echo "==> Checking Home-manager configuration..."
+
+mkdir -p "$HOME/.config/home-manager"
+mkdir -p "$HOME/.config/ripple-env"
+mkdir -p "$HOME/.cache/ripple-env"
+
+if [ -f "home.nix" ]; then
+    if [ ! -f "$HOME/.config/home-manager/home.nix" ]; then
+        echo "    Copying home.nix template to $HOME/.config/home-manager/"
+        cp home.nix "$HOME/.config/home-manager/home.nix" 2>/dev/null || true
+    else
+        echo "    Existing home-manager config detected at $HOME/.config/home-manager/home.nix"
+        echo "    To update from this workspace template, review and manually copy ./home.nix if desired."
+    fi
+fi
+
+if command -v home-manager >/dev/null 2>&1; then
+    echo "    ✓ Home-manager available"
+    echo "    Run 'home-manager switch' to apply user configuration"
+else
+    echo "    ⚠ Home-manager not found (optional)"
+fi
+
+# =============================================================================
+# 7. Git configuration
 # =============================================================================
 echo "==> Configuring Git..."
 
@@ -118,6 +168,13 @@ echo "  - cargo $(cargo --version 2>/dev/null || echo 'installed')"
 echo "  - node $(node --version 2>/dev/null || echo 'installed')"
 command -v npm >/dev/null 2>&1 && echo "  - npm $(npm --version 2>/dev/null || echo 'installed')"
 echo "  - pnpm $(pnpm --version 2>/dev/null || echo 'installed')"
+command -v home-manager >/dev/null 2>&1 && echo "  - home-manager $(home-manager --version 2>/dev/null || echo 'installed')"
+echo ""
+echo "Tool Management:"
+echo "  - Nix:     Rust toolchain, system tools, dev utilities"
+echo "  - Pixi:    Node.js (>=22.0), Python, pnpm, ROS2 dependencies"
+echo "  - Direnv:  Auto-loads Nix environment from .envrc"
+echo "  - Home-manager: User configuration (home.nix)"
 echo ""
 echo "Additional tooling:"
 echo "  - Distributed systems: grpcurl, protoc, wasm-pack, websocat"
@@ -134,6 +191,7 @@ echo "  - nushell (nu)"
 echo ""
 echo "Quick start:"
 echo "  1. direnv will auto-load the Nix environment"
-echo "  2. Run 'pixi install' for Python/ROS2 packages"
+echo "  2. Run 'pixi install' for Python/Node.js/ROS2 packages"
 echo "  3. Or run 'nix develop' for the full Nix shell"
+echo "  4. Run 'home-manager switch' to apply user configuration"
 echo ""

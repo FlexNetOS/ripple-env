@@ -1,9 +1,53 @@
 {
   "recommendations": [
+    // Nix ecosystem
     "jnoortheen.nix-ide",
     "mkhl.direnv",
+
+    // Shell & scripting
     "timonwong.shellcheck",
+    "thenuprojectcontributors.vscode-nushell-lang",
     "ms-vscode.powershell",
-    "editorconfig.editorconfig"
+
+    // Python (via Pixi environment)
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "charliermarsh.ruff",
+
+    // Rust (via Nix)
+    "rust-lang.rust-analyzer",
+    "vadimcn.vscode-lldb",
+    "serayuzgur.crates",
+
+    // Node.js / JavaScript / TypeScript (via Pixi)
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+
+    // Data & Config formats
+    "redhat.vscode-yaml",
+    "tamasfe.even-better-toml",
+
+    // Kubernetes & Docker
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
+    "ms-azuretools.vscode-docker",
+
+    // Protocol Buffers / gRPC
+    "zxh404.vscode-proto3",
+
+    // Git & GitHub
+    "github.vscode-pull-request-github",
+    "eamodio.gitlens",
+
+    // ROS
+    "ms-iot.vscode-ros",
+
+    // C/C++
+    "ms-vscode.cpptools",
+    "ms-vscode.cmake-tools",
+
+    // Editor utilities
+    "editorconfig.editorconfig",
+    "usernamehw.errorlens",
+    "christian-kohler.path-intellisense"
   ]
 }
