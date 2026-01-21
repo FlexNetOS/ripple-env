@@ -162,7 +162,7 @@ RUN nix profile install --impure \
     nixpkgs#websocat \
     nixpkgs#graphviz
 
-# Install cryptography and security tools (from distributed.nix)
+# Install cryptography and security tools (from distributed.nix and dev-tools.nix)
 RUN nix profile install --impure \
     nixpkgs#libsodium \
     nixpkgs#age \
