@@ -30,7 +30,7 @@ nestedVirtualization=true
 # Note: Requires NVIDIA WSL drivers installed on Windows host
 # WSL2 automatically shares GPU resources via paravirtualization
 
-# Increase kernel memory for large workloads
+# Allow memory overcommit for large workloads (always overcommit, never check)
 kernelCommandLine=vm.overcommit_memory=1
 
 # Network mode: NAT provides better compatibility
