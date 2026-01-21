@@ -86,6 +86,11 @@
 .NOTES
     Requires Windows 10 version 2004+ or Windows 11
     Must be run as Administrator
+    
+    Default values (MemorySizeGB=6, ProcessorCount=4) are conservative to support
+    a wide range of systems, including laptops and older desktops. For high-end
+    workstations, use -HardwareProfile "high-end-workstation" which automatically
+    configures optimal settings (384GB RAM, 40 processors).
 #>
 
 [CmdletBinding()]
@@ -94,10 +99,12 @@ param(
     [string]$InstallPath = "$env:USERPROFILE\WSL\NixOS-Ripple",
     [ValidateRange(64, 4096)]
     [int]$DiskSizeGB = 1024,
+    # Conservative default (6GB) supports most systems; high-end-workstation profile overrides to 384GB
     [ValidateRange(2, 512)]
     [int]$MemorySizeGB = 6,
     [ValidateRange(1, 64)]
     [int]$SwapSizeGB = 4,
+    # Conservative default (4) supports laptops/desktops; high-end-workstation profile overrides to 40
     [ValidateRange(1, 128)]
     [int]$ProcessorCount = 4,
     [ValidateSet("standard", "high-end-workstation", "custom")]

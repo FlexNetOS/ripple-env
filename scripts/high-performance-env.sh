@@ -77,7 +77,11 @@ export OPENBLAS_NUM_THREADS=16
 export NCCL_DEBUG=WARN
 export NCCL_P2P_DISABLE=0
 export NCCL_IB_DISABLE=1                 # Disable InfiniBand (not present)
-export NCCL_SOCKET_IFNAME=eth0
+
+# Auto-detect primary network interface for NCCL
+# Fallback to eth0 if detection fails
+NCCL_INTERFACE=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $5; exit}' || echo "eth0")
+export NCCL_SOCKET_IFNAME="${NCCL_INTERFACE:-eth0}"
 
 # WSL2 GPU library path
 if [[ -d "/usr/lib/wsl/lib" ]]; then
@@ -91,8 +95,8 @@ fi
 # Increase file descriptor limits for I/O heavy workloads
 ulimit -n 65536 2>/dev/null || true
 
-# Async I/O settings
-export URING_SETUP_CQSIZE=32768
+# Note: io_uring completion queue size is configured programmatically,
+# not via environment variables. The kernel handles optimization automatically.
 
 # Git performance optimizations
 export GIT_PARALLEL_THREADS=32
