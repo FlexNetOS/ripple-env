@@ -15,7 +15,7 @@ if [ ! -d "$AGENTS_DIR" ]; then
 fi
 
 # Find all .agent.md files and iterate safely
-if ! find "$AGENTS_DIR" -name "*.agent.md" -type f -print0 | grep -qz .; then
+if ! find "$AGENTS_DIR" -name "*.agent.md" -type f -print -quit | grep -q .; then
     echo "⚠️  Warning: No .agent.md files found in $AGENTS_DIR"
     exit 0
 fi
