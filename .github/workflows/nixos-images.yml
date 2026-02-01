@@ -87,7 +87,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check if image should be built
         id: check
@@ -188,7 +188,7 @@ jobs:
 
       - name: Upload artifact
         if: steps.check.outputs.enabled == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact_name }}
           path: result-${{ matrix.image }}
@@ -214,7 +214,7 @@ jobs:
 
       - name: Upload size metrics
         if: steps.check.outputs.enabled == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: size-metrics-${{ matrix.image }}
           path: size-metrics-${{ matrix.image }}.json
@@ -241,7 +241,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
@@ -278,7 +278,7 @@ jobs:
 
     steps:
       - name: Download all size metrics
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: size-metrics-*
           merge-multiple: true
@@ -364,10 +364,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
 
