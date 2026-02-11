@@ -36,7 +36,7 @@ jobs:
       images: ${{ steps.extract.outputs.images }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Extract images from docker-compose files
         id: extract
@@ -83,7 +83,7 @@ jobs:
           - openpolicyagent/opa:0.71.0-rootless
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Pull image
         run: docker pull ${{ matrix.image }}
@@ -111,7 +111,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-${{ hashFiles(matrix.image) }}.sarif'
@@ -139,7 +139,7 @@ jobs:
           - netdata/netdata:v2.1.0
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Pull image
         run: docker pull ${{ matrix.image }}
@@ -172,7 +172,7 @@ jobs:
           - nats:2.10.24-alpine
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Pull image
         run: docker pull ${{ matrix.image }}

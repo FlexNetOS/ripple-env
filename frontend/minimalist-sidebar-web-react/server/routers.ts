@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { tasksRouter } from "./tasksRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -23,6 +24,7 @@ const adminProcedure = protectedProcedure.use( ( { ctx, next } ) =>
 
 export const appRouter = router( {
   system: systemRouter,
+  tasks: tasksRouter,
 
   // ==================== AI ROUTER ====================
   ai: router( {
