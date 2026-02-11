@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v21
@@ -105,7 +105,7 @@ jobs:
           COSIGN_EXPERIMENTAL: 1
 
       - name: Upload SBOM Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sbom-${{ github.sha }}
           path: sbom/
@@ -126,10 +126,10 @@ jobs:
     needs: generate-sbom
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download SBOM
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: sbom-${{ github.sha }}
           path: sbom/
@@ -151,7 +151,7 @@ jobs:
           done
 
       - name: Upload Vulnerability Reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: vulnerability-reports-${{ github.sha }}
           path: vulnerability-reports/
