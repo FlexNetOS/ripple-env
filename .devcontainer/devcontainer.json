@@ -7,16 +7,32 @@
     "context": ".."
   },
 
-  // No features needed - everything installed via Nix in Dockerfile
-  // This provides consistency with WSL NixOS and local Nix environments
+  // ==========================================================================
+  // Environment Configuration
+  // ==========================================================================
+  // All tools installed via Nix in Dockerfile for consistency with WSL NixOS
+  // and local Nix environments.
+  //
+  // Node.js and Cargo run through pixi for cross-platform dependency management.
+  // See pixi.toml for Node.js (>=22.0) and package.json for npm scripts.
+  // Rust toolchain is provided via Nix (cargo, rustc, rust-analyzer).
+  //
+  // Supported configurations:
+  // - Nix: flake.nix defines devShells (default, full, cuda, identity)
+  // - Pixi: pixi.toml manages Python, Node.js, and ROS2 dependencies
+  // - Direnv: .envrc auto-loads the Nix development environment
+  // - Home-manager: home.nix provides user configuration management
+  // - Nushell: Modern shell with structured data support
 
   "mounts": [
     // Persistent Nix store for faster rebuilds
     "source=ripple-env-nix-store,target=/nix,type=volume",
     // Pixi cache persistence
     "source=ripple-env-pixi-cache,target=/home/vscode/.pixi,type=volume",
-    // Local bin persistence
-    "source=ripple-env-local-bin,target=/home/vscode/.local,type=volume"
+    // Local bin persistence (pip, cargo installs)
+    "source=ripple-env-local-bin,target=/home/vscode/.local,type=volume",
+    // Home-manager configuration persistence
+    "source=ripple-env-home-manager,target=/home/vscode/.config/home-manager,type=volume"
   ],
 
   "remoteUser": "vscode",
@@ -28,22 +44,27 @@
     "TEMP": "/tmp",
     "PIXI_HOME": "/home/vscode/.pixi",
     "EDITOR": "hx",
-    "VISUAL": "hx"
+    "VISUAL": "hx",
+    // Home-manager integration
+    "HOME_MANAGER_CONFIG": "/home/vscode/.config/home-manager/home.nix",
+    // Ripple environment paths
+    "RIPPLE_ENV_CACHE": "/home/vscode/.cache/ripple-env",
+    "RIPPLE_ENV_CONFIG": "/home/vscode/.config/ripple-env"
   },
 
   // Ensure proper permissions on mounted volumes
-  "onCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.pixi /home/vscode/.local 2>/dev/null || true",
+  "onCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.pixi /home/vscode/.local /home/vscode/.config 2>/dev/null || true",
 
   // Setup workspace environment
   "postCreateCommand": ".devcontainer/setup.sh",
 
-  // Start shell automatically
+  // Start shell automatically with direnv
   "postStartCommand": "direnv allow . 2>/dev/null || true",
 
   "customizations": {
     "vscode": {
       "settings": {
-        // Terminal configuration - multiple shell options
+        // Terminal configuration - multiple shell options (Nushell, Zsh, Bash)
         "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {
           "zsh": {
@@ -60,9 +81,12 @@
           }
         },
         "terminal.integrated.shellIntegration.enabled": true,
+        "terminal.integrated.scrollback": 10000,
 
         // Editor settings
         "files.eol": "\n",
+        "files.insertFinalNewline": true,
+        "files.trimTrailingWhitespace": true,
         "editor.formatOnSave": true,
         "editor.tabSize": 2,
 
@@ -73,6 +97,7 @@
         // Nix settings (nil language server installed via Nix)
         "nix.enableLanguageServer": true,
         "nix.serverPath": "/nix/var/nix/profiles/default/bin/nil",
+        "nix.formatterPath": "/nix/var/nix/profiles/default/bin/nixfmt",
         "nix.serverSettings": {
           "nil": {
             "formatting": {
@@ -88,7 +113,7 @@
           "editor.formatOnSave": true
         },
 
-        // Rust settings
+        // Rust settings (Rust toolchain via Nix)
         "rust-analyzer.cargo.buildScripts.enable": true,
         "rust-analyzer.procMacro.enable": true,
         "[rust]": {
@@ -96,7 +121,7 @@
           "editor.formatOnSave": true
         },
 
-        // Node.js / JavaScript / TypeScript settings
+        // Node.js / JavaScript / TypeScript settings (Node.js via Pixi)
         "[javascript]": {
           "editor.defaultFormatter": "esbenp.prettier-vscode",
           "editor.formatOnSave": true
@@ -108,6 +133,24 @@
         "[json]": {
           "editor.defaultFormatter": "esbenp.prettier-vscode",
           "editor.formatOnSave": true
+        },
+        "[jsonc]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+
+        // YAML / TOML settings
+        "[yaml]": {
+          "editor.defaultFormatter": "redhat.vscode-yaml",
+          "editor.formatOnSave": true
+        },
+        "[toml]": {
+          "editor.defaultFormatter": "tamasfe.even-better-toml",
+          "editor.formatOnSave": true
+        },
+        "[markdown]": {
+          "editor.wordWrap": "on",
+          "files.trimTrailingWhitespace": false
         },
 
         // C/C++ settings
@@ -125,28 +168,32 @@
 
         // Direnv auto-reload
         "direnv.restart.automatic": true,
-        "direnv.path.executable": "/nix/var/nix/profiles/default/bin/direnv"
+        "direnv.path.executable": "/nix/var/nix/profiles/default/bin/direnv",
+
+        // ShellCheck for shell scripts
+        "shellcheck.enable": true
       },
       "extensions": [
         // Nix ecosystem
         "jnoortheen.nix-ide",
         "mkhl.direnv",
 
-        // Shell & scripting
+        // Shell & scripting (Nushell, Bash, PowerShell)
         "timonwong.shellcheck",
         "thenuprojectcontributors.vscode-nushell-lang",
+        "ms-vscode.powershell",
 
-        // Python
+        // Python (via Pixi)
         "ms-python.python",
         "ms-python.vscode-pylance",
         "charliermarsh.ruff",
 
-        // Rust
+        // Rust (via Nix)
         "rust-lang.rust-analyzer",
         "vadimcn.vscode-lldb",
         "serayuzgur.crates",
 
-        // Node.js / JavaScript / TypeScript
+        // Node.js / JavaScript / TypeScript (via Pixi)
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
 
@@ -154,10 +201,8 @@
         "redhat.vscode-yaml",
         "tamasfe.even-better-toml",
 
-        // Kubernetes
+        // Kubernetes & Docker
         "ms-kubernetes-tools.vscode-kubernetes-tools",
-
-        // Docker & Containers
         "ms-azuretools.vscode-docker",
 
         // Protocol Buffers / gRPC
