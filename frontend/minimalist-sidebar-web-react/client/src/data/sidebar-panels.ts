@@ -56,7 +56,7 @@ export const SECTION_ROUTES: Record<string, string> = {
   'contacts': '/dashboard',
   'wallet': '/billing',
   'legal-compliance': '/dashboard',
-  'tasks': '/dashboard',
+  'tasks': '/tasks',
   'projects': '/dashboard',
   'calendar': '/dashboard',
   'files': '/files',
@@ -291,9 +291,9 @@ export const TASKS: SidebarPanel = {
       collapsible: true,
       defaultExpanded: true,
       items: [
-        { id: 'due-today', label: 'Due today', icon: 'Clock', badge: 3, badgeColor: '#F59E0B' },
-        { id: 'in-progress', label: 'In progress', icon: 'Loader', badge: 5, badgeColor: '#EF4444' },
-        { id: 'completed', label: 'Completed', icon: 'CheckCircle', badge: 8, badgeColor: '#22C55E' },
+        { id: 'due-today', label: 'Due today', icon: 'Clock', badge: 3, badgeColor: '#F59E0B', route: '/tasks' },
+        { id: 'in-progress', label: 'In progress', icon: 'Loader', badge: 5, badgeColor: '#EF4444', route: '/tasks' },
+        { id: 'completed', label: 'Completed', icon: 'CheckCircle', badge: 8, badgeColor: '#22C55E', route: '/tasks' },
       ],
     },
     {
@@ -302,8 +302,8 @@ export const TASKS: SidebarPanel = {
       collapsible: true,
       defaultExpanded: true,
       items: [
-        { id: 'priority-tasks', label: 'Priority tasks', icon: 'Flag', badge: 2, badgeColor: '#EF4444' },
-        { id: 'archived', label: 'Archived', icon: 'Archive' },
+        { id: 'priority-tasks', label: 'Priority tasks', icon: 'Flag', badge: 2, badgeColor: '#EF4444', route: '/tasks' },
+        { id: 'archived', label: 'Archived', icon: 'Archive', route: '/tasks' },
       ],
     },
   ],
