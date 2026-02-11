@@ -1,0 +1,14 @@
+==================================
+API Testing Started: Wed Feb 11 16:13:38 EST 2026
+==================================
+
+1. TASKS CRUD ENDPOINTS
+========================
+Testing: tasks.list
+  ✅ PASS
+Testing: tasks.create
+  ✅ PASS
+  Task ID: 1
+Testing: tasks.getById
+  ❌ FAIL
+  Response: {"error":{"json":{"message":"Unsupported POST-request to query procedure at path \"tasks.getById\"","code":-32005,"data":{"code":"METHOD_NOT_SUPPORTED","httpStatus":405,"stack":"TRPCError: Unsupported POST-request to query procedure at path \"tasks.getById\"\n    at <anonymous> (/home/ubuntu/ripple-env/frontend/minimalist-sidebar-web-react/node_modules/.pnpm/@trpc+server@11.8.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:332:17)\n    at Array.map (<anonymous>)\n    at resolveResponse (/home/ubuntu/ripple-env/frontend/minimalist-sidebar-web-react/node_modules/.pnpm/@trpc+server@11.8.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async <anonymous> (/home/ubuntu/ripple-env/frontend/minimalist-sidebar-web-react/node_modules/.pnpm/@trpc+server@11.8.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)","path":"tasks.getById"}}}}

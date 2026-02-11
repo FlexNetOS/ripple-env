@@ -23,12 +23,12 @@ jobs:
       snapshots: ${{ steps.select.outputs.snapshots }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -49,7 +49,7 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout (with LFS)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           lfs: true
@@ -67,7 +67,7 @@ jobs:
           git lfs pull
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -88,7 +88,7 @@ jobs:
     if: ${{ vars.ENABLE_SELF_HOSTED_REPLAY == 'true' && needs.select.outputs.snapshots != '[]' }}
     steps:
       - name: Checkout (with LFS)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           lfs: true
@@ -102,7 +102,7 @@ jobs:
           git lfs pull
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
