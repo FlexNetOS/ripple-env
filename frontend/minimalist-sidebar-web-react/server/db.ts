@@ -11,6 +11,11 @@ import {
   InsertPayment, payments,
   InsertUserSettings, userSettings,
   InsertFavorite, favorites,
+  InsertTask, tasks,
+  InsertTaskComment, taskComments,
+  InsertTaskActivity, taskActivities,
+  InsertTaskTimeEntry, taskTimeEntries,
+  InsertTaskDependency, taskDependencies,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -424,4 +429,150 @@ export async function isFavorite(userId: number, itemId: string) {
     and(eq(favorites.userId, userId), eq(favorites.itemId, itemId))
   ).limit(1);
   return result.length > 0;
+}
+
+// ==================== TASK QUERIES ====================
+
+export async function createTask(task: InsertTask) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(tasks).values(task);
+  return { id: Number(result[0].insertId), ...task };
+}
+
+export async function getTasksByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(tasks).where(eq(tasks.userId, userId)).orderBy(desc(tasks.createdAt));
+}
+
+export async function getTaskById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateTask(id: number, userId: number, data: Partial<InsertTask>) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  await db.update(tasks).set({ ...data, updatedAt: new Date() }).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+  return getTaskById(id);
+}
+
+export async function deleteTask(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Delete related records first
+  await db.delete(taskComments).where(eq(taskComments.taskId, id));
+  await db.delete(taskActivities).where(eq(taskActivities.taskId, id));
+  await db.delete(taskTimeEntries).where(eq(taskTimeEntries.taskId, id));
+  await db.delete(taskDependencies).where(eq(taskDependencies.taskId, id));
+  
+  const result = await db.delete(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+  return result[0].affectedRows > 0;
+}
+
+export async function getSubtasks(parentTaskId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(tasks).where(eq(tasks.parentTaskId, parentTaskId)).orderBy(tasks.createdAt);
+}
+
+// ==================== TASK COMMENT QUERIES ====================
+
+export async function createTaskComment(comment: InsertTaskComment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(taskComments).values(comment);
+  return { id: Number(result[0].insertId), ...comment };
+}
+
+export async function getTaskComments(taskId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(taskComments).where(eq(taskComments.taskId, taskId)).orderBy(taskComments.createdAt);
+}
+
+export async function deleteTaskComment(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const result = await db.delete(taskComments).where(eq(taskComments.id, id));
+  return result[0].affectedRows > 0;
+}
+
+// ==================== TASK ACTIVITY QUERIES ====================
+
+export async function createTaskActivity(activity: InsertTaskActivity) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(taskActivities).values(activity);
+  return { id: Number(result[0].insertId), ...activity };
+}
+
+export async function getTaskActivities(taskId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(taskActivities).where(eq(taskActivities.taskId, taskId)).orderBy(desc(taskActivities.createdAt));
+}
+
+// ==================== TASK TIME ENTRY QUERIES ====================
+
+export async function createTaskTimeEntry(entry: InsertTaskTimeEntry) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(taskTimeEntries).values(entry);
+  return { id: Number(result[0].insertId), ...entry };
+}
+
+export async function getTaskTimeEntries(taskId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(taskTimeEntries).where(eq(taskTimeEntries.taskId, taskId)).orderBy(taskTimeEntries.createdAt);
+}
+
+export async function deleteTaskTimeEntry(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const result = await db.delete(taskTimeEntries).where(eq(taskTimeEntries.id, id));
+  return result[0].affectedRows > 0;
+}
+
+// ==================== TASK DEPENDENCY QUERIES ====================
+
+export async function createTaskDependency(dependency: InsertTaskDependency) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(taskDependencies).values(dependency);
+  return { id: Number(result[0].insertId), ...dependency };
+}
+
+export async function getTaskDependencies(taskId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(taskDependencies).where(eq(taskDependencies.taskId, taskId));
+}
+
+export async function deleteTaskDependency(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const result = await db.delete(taskDependencies).where(eq(taskDependencies.id, id));
+  return result[0].affectedRows > 0;
 }

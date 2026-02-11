@@ -22,6 +22,27 @@
       "when": 1768330050169,
       "tag": "0002_acoustic_logan",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1770834582325,
+      "tag": "0003_lush_alex_wilder",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1770834869448,
+      "tag": "0004_hesitant_amazoness",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1770843925968,
+      "tag": "0005_old_otto_octavius",
+      "breakpoints": true
     }
   ]
 }
