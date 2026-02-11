@@ -16,6 +16,7 @@ import Notifications from "./pages/Notifications";
 import Billing from "./pages/Billing";
 import Pricing from "./pages/Pricing";
 import Settings from "./pages/Settings";
+import TasksEnhancedFinal from "./pages/TasksEnhancedFinal";
 
 // Hook to sync route with active sidebar section
 function useRouteSync() {
@@ -73,6 +74,9 @@ function Router() {
       </Route>
       <Route path="/settings">
         <SidebarWrapper><Settings /></SidebarWrapper>
+      </Route>
+      <Route path="/tasks">
+        <SidebarWrapper><TasksEnhancedFinal /></SidebarWrapper>
       </Route>
       
       {/* Fallback routes */}

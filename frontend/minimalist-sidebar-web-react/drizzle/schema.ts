@@ -178,3 +178,96 @@ export const favorites = mysqlTable("favorites", {
 
 export type Favorite = typeof favorites.$inferSelect;
 export type InsertFavorite = typeof favorites.$inferInsert;
+
+/**
+ * Tasks table for task management with vibe-kanban features
+ */
+export const tasks = mysqlTable("tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: varchar("taskId", { length: 64 }).notNull().unique(), // Human-readable ID like "TASK-1"
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["backlog", "todo", "in_progress", "review", "done", "cancelled"]).default("todo").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  assignee: varchar("assignee", { length: 255 }),
+  dueDate: timestamp("dueDate"),
+  tags: json("tags").$type<string[]>().default([]),
+  estimatedTime: int("estimatedTime"), // in minutes
+  progress: int("progress").default(0).notNull(), // 0-100
+  starred: boolean("starred").default(false).notNull(),
+  // Vibe-kanban inspired features
+  parentTaskId: int("parentTaskId"), // For hierarchical tasks/subtasks
+  sharedTaskId: varchar("sharedTaskId", { length: 128 }), // For shared/collaborative tasks
+  projectId: varchar("projectId", { length: 128 }), // Multi-project support
+  hasInProgressAttempt: boolean("hasInProgressAttempt").default(false).notNull(),
+  lastAttemptFailed: boolean("lastAttemptFailed").default(false).notNull(),
+  executor: varchar("executor", { length: 128 }), // AI agent or user
+  // Recurring task fields
+  isRecurring: boolean("isRecurring").default(false).notNull(),
+  recurrencePattern: varchar("recurrencePattern", { length: 128 }), // "daily", "weekly", "monthly", "custom:0 9 * * 1" (cron)
+  recurrenceEndDate: timestamp("recurrenceEndDate"),
+  parentRecurringTaskId: int("parentRecurringTaskId"), // Reference to the original recurring task
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = typeof tasks.$inferInsert;
+
+/**
+ * Task comments table
+ */
+export const taskComments = mysqlTable("task_comments", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  author: varchar("author", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  avatar: text("avatar"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskComment = typeof taskComments.$inferSelect;
+export type InsertTaskComment = typeof taskComments.$inferInsert;
+
+/**
+ * Task activities table for audit trail
+ */
+export const taskActivities = mysqlTable("task_activities", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  type: mysqlEnum("type", ["created", "updated", "commented", "status_changed", "assigned"]).notNull(),
+  user: varchar("user", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskActivity = typeof taskActivities.$inferSelect;
+export type InsertTaskActivity = typeof taskActivities.$inferInsert;
+
+/**
+ * Task time entries table for time tracking
+ */
+export const taskTimeEntries = mysqlTable("task_time_entries", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  duration: int("duration").notNull(), // in minutes
+  description: text("description").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskTimeEntry = typeof taskTimeEntries.$inferSelect;
+export type InsertTaskTimeEntry = typeof taskTimeEntries.$inferInsert;
+
+/**
+ * Task dependencies table
+ */
+export const taskDependencies = mysqlTable("task_dependencies", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  dependsOnTaskId: int("dependsOnTaskId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskDependency = typeof taskDependencies.$inferSelect;
+export type InsertTaskDependency = typeof taskDependencies.$inferInsert;
