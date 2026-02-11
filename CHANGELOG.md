@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.6.0] - 2026-02-11
+
+### Features
+* Merge pull request #86 from FlexNetOS/feature/tasks-kanban-integration
+* feat: Add Tasks Kanban Board with backend integration
+* feat: Add comprehensive Tasks Kanban Board with backend integration
+
+**Full Changelog**: https://github.com/FlexNetOS/ripple-env/compare/v1.5.3...v1.6.0
+
 ## [v1.2.1] - 2026-01-15
 
 ### Bug Fixes
