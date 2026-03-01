@@ -169,7 +169,7 @@ jobs:
           jq '.' attestations/provenance.json
 
       - name: Upload Provenance
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: slsa-provenance
           path: attestations/provenance.json
@@ -185,7 +185,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download Provenance
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: slsa-provenance
           path: attestations/
@@ -232,7 +232,7 @@ jobs:
           EOF
 
       - name: Upload Signed Attestations
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: signed-attestations
           path: attestations/
@@ -259,7 +259,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download Attestations
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: signed-attestations
           path: attestations/
@@ -315,13 +315,13 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Download Provenance
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: slsa-provenance
           path: attestations/
 
       - name: Attest Build Provenance
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             flake.nix

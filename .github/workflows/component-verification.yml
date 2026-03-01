@@ -86,7 +86,7 @@ jobs:
             --output scripts/verify-components.sh
 
       - name: Upload generated script
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: verification-script
           path: scripts/verify-components.sh

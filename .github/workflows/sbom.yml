@@ -105,7 +105,7 @@ jobs:
           COSIGN_EXPERIMENTAL: 1
 
       - name: Upload SBOM Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ github.sha }}
           path: sbom/
@@ -129,7 +129,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download SBOM
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: sbom-${{ github.sha }}
           path: sbom/
@@ -151,7 +151,7 @@ jobs:
           done
 
       - name: Upload Vulnerability Reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: vulnerability-reports-${{ github.sha }}
           path: vulnerability-reports/
