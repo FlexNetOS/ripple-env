@@ -134,7 +134,7 @@ jobs:
           cat opa-policy-report.md
 
       - name: Upload policy report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: opa-policy-report
           path: opa-policy-report.md
@@ -169,7 +169,7 @@ jobs:
           ls -lh build/opa/bundle.tar.gz
 
       - name: Upload OPA bundle
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: opa-bundle
           path: build/opa/bundle.tar.gz

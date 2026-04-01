@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v21
+        uses: DeterminateSystems/nix-installer-action@v22
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@v13
@@ -132,7 +132,7 @@ jobs:
           EOF
 
       - name: Upload metrics
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: nix-performance-metrics
           path: metrics/
@@ -234,7 +234,7 @@ jobs:
           EOF
 
       - name: Upload Docker metrics
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: docker-performance-metrics
           path: metrics/
@@ -307,7 +307,7 @@ jobs:
           fi
 
       - name: Upload load test results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: load-test-results
           path: load-test-results.txt
@@ -334,7 +334,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download current metrics
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: '*-metrics'
           path: ./current-metrics

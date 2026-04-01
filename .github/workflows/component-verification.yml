@@ -86,7 +86,7 @@ jobs:
             --output scripts/verify-components.sh
 
       - name: Upload generated script
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: verification-script
           path: scripts/verify-components.sh
@@ -111,7 +111,7 @@ jobs:
           df -h
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v21
+        uses: DeterminateSystems/nix-installer-action@v22
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@v13
@@ -197,7 +197,7 @@ jobs:
           df -h
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v21
+        uses: DeterminateSystems/nix-installer-action@v22
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@v13
