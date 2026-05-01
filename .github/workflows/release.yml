@@ -159,7 +159,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Upload Changelog
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: changelog
           path: CHANGELOG_RELEASE.md
@@ -176,7 +176,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download Changelog
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: changelog
 
@@ -189,7 +189,7 @@ jobs:
           git push origin "$VERSION"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.check-release.outputs.version }}
           name: Release ${{ needs.check-release.outputs.version }}
@@ -211,7 +211,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download Changelog
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: changelog
 
